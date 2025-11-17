@@ -10,7 +10,6 @@ from typing import cast
 
 from pydantic import BaseModel
 
-from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.tools.todo import Task, TaskStatus
 from ragbits.chat.interface.types import AuthType
 
@@ -41,6 +40,7 @@ class RagbitsChatModelProvider:
             return self._models_cache
 
         try:
+            from ragbits.agents.confirmation import ConfirmationRequest
             from ragbits.chat.auth.types import (
                 CredentialsLoginRequest,
                 JWTToken,
@@ -54,24 +54,34 @@ class RagbitsChatModelProvider:
                 AuthenticationConfig,
                 ChatContext,
                 ChatMessageRequest,
-                ChatResponseType,
                 ChunkedContent,
                 ConfigResponse,
+                ConfirmationRequestContent,
+                ConfirmationRequestResponse,
                 ConfirmationStatus,
+                ConfirmationStatusContent,
+                ConfirmationStatusResponse,
+                ConversationIdContent,
+                ConversationSummaryContent,
                 FeedbackConfig,
                 FeedbackItem,
                 FeedbackRequest,
                 FeedbackResponse,
                 FeedbackType,
+                FollowupMessagesContent,
                 Image,
                 LiveUpdate,
                 LiveUpdateContent,
                 LiveUpdateType,
                 Message,
+                MessageIdContent,
                 MessageRole,
                 MessageUsage,
                 Reference,
                 StateUpdate,
+                TextContent,
+                TodoItemContent,
+                UsageContent,
             )
             from ragbits.chat.interface.ui_customization import (
                 HeaderCustomization,
@@ -81,7 +91,6 @@ class RagbitsChatModelProvider:
 
             self._models_cache = {
                 # Enums
-                "ChatResponseType": ChatResponseType,
                 "FeedbackType": FeedbackType,
                 "LiveUpdateType": LiveUpdateType,
                 "MessageRole": MessageRole,
@@ -89,8 +98,6 @@ class RagbitsChatModelProvider:
                 # Core data models
                 "ChatContext": ChatContext,
                 "ChunkedContent": ChunkedContent,
-                "ConfirmationRequest": ConfirmationRequest,
-                "ConfirmationStatus": ConfirmationStatus,
                 "LiveUpdate": LiveUpdate,
                 "LiveUpdateContent": LiveUpdateContent,
                 "Message": Message,
@@ -100,12 +107,22 @@ class RagbitsChatModelProvider:
                 "Image": Image,
                 "MessageUsage": MessageUsage,
                 "Task": Task,
+                # Response content wrappers (new way)
+                "TextContent": TextContent,
+                "MessageIdContent": MessageIdContent,
+                "ConversationIdContent": ConversationIdContent,
+                "ConversationSummaryContent": ConversationSummaryContent,
+                "FollowupMessagesContent": FollowupMessagesContent,
+                "UsageContent": UsageContent,
+                "TodoItemContent": TodoItemContent,
+                "ConfirmationRequestContent": ConfirmationRequestContent,
+                "ConfirmationStatusContent": ConfirmationStatusContent,
                 # Configuration models
                 "HeaderCustomization": HeaderCustomization,
                 "UICustomization": UICustomization,
                 "PageMetaCustomization": PageMetaCustomization,
                 "UserSettings": UserSettings,
-                "FeedbackConfig": FeedbackConfig,  # Current from types.py (not deprecated forms.py)
+                "FeedbackConfig": FeedbackConfig,
                 # API response models
                 "ConfigResponse": ConfigResponse,
                 "FeedbackResponse": FeedbackResponse,
@@ -121,6 +138,11 @@ class RagbitsChatModelProvider:
                 "LoginResponse": LoginResponse,
                 "LogoutRequest": LogoutRequest,
                 "User": User,
+                # Confirmation
+                "ConfirmationRequest": ConfirmationRequest,
+                "ConfirmationStatus": ConfirmationStatus,
+                "ConfirmationRequestResponse": ConfirmationRequestResponse,
+                "ConfirmationStatusResponse": ConfirmationStatusResponse,
             }
 
             return self._models_cache
@@ -148,8 +170,6 @@ class RagbitsChatModelProvider:
             "core_data": [
                 "ChatContext",
                 "ChunkedContent",
-                "ConfirmationRequest",
-                "ConfirmationStatus",
                 "LiveUpdate",
                 "LiveUpdateContent",
                 "Message",
@@ -162,6 +182,19 @@ class RagbitsChatModelProvider:
                 "MessageUsage",
                 "Task",
                 "TaskStatus",
+                # Response content wrappers (new way)
+                "TextContent",
+                "MessageIdContent",
+                "ConversationIdContent",
+                "ConversationSummaryContent",
+                "FollowupMessagesContent",
+                "UsageContent",
+                "ClearMessageContent",
+                "TodoItemContent",
+                "ConfirmationRequestContent",
+                "ConfirmationStatusContent",
+                "ConfirmationRequest",
+                "ConfirmationStatus",
             ],
             "configuration": [
                 "HeaderCustomization",

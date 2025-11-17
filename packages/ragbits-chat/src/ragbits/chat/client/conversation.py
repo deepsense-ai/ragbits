@@ -8,10 +8,15 @@ import httpx
 from .._utils import build_api_url, parse_sse_line
 from ..interface.types import (
     ChatResponse,
-    ChatResponseType,
+    ConversationIdResponse,
+    LiveUpdateResponse,
     Message,
+    MessageIdResponse,
     MessageRole,
+    ReferenceResponse,
     StateUpdate,
+    StateUpdateResponse,
+    TextResponse,
 )
 from .exceptions import ChatClientRequestError, ChatClientResponseError
 
@@ -103,21 +108,21 @@ class RagbitsConversation:
 
     def _process_incoming(self, resp: ChatResponse, assistant_index: int) -> None:
         """Update local state based on *resp*."""
-        if resp.as_state_update() is not None:
-            self.conversation_state = resp.as_state_update()
-        elif resp.as_conversation_id() is not None:
-            self.conversation_id = resp.as_conversation_id()
-        elif resp.type is ChatResponseType.MESSAGE_ID:
+        if isinstance(resp, StateUpdateResponse):
+            self.conversation_state = resp.content
+        elif isinstance(resp, ConversationIdResponse):
+            self.conversation_id = resp.content.conversation_id
+        elif isinstance(resp, MessageIdResponse):
             return
 
         assistant_msg = self.history[assistant_index]
 
-        if resp.type is ChatResponseType.LIVE_UPDATE:
+        if isinstance(resp, LiveUpdateResponse):
             assistant_msg.content += f"\n[LIVE_UPDATE]: {resp.content}\n"
-        elif resp.as_reference() is not None:
+        elif isinstance(resp, ReferenceResponse):
             assistant_msg.content += f"\n[REFERENCE]: {resp.content}\n"
-        elif (text_content := resp.as_text()) is not None:
-            assistant_msg.content += text_content
+        elif isinstance(resp, TextResponse):
+            assistant_msg.content += resp.content.text
 
 
 class SyncRagbitsConversation:
@@ -212,18 +217,18 @@ class SyncRagbitsConversation:
 
     def _process_incoming(self, resp: ChatResponse, assistant_index: int) -> None:
         """Update local state based on *resp*."""
-        if resp.as_state_update() is not None:
-            self.conversation_state = resp.as_state_update()
-        elif resp.as_conversation_id() is not None:
-            self.conversation_id = resp.as_conversation_id()
-        elif resp.type is ChatResponseType.MESSAGE_ID:
+        if isinstance(resp, StateUpdateResponse):
+            self.conversation_state = resp.content
+        elif isinstance(resp, ConversationIdResponse):
+            self.conversation_id = resp.content.conversation_id
+        elif isinstance(resp, MessageIdResponse):
             return
 
         assistant_msg = self.history[assistant_index]
 
-        if resp.type is ChatResponseType.LIVE_UPDATE:
+        if isinstance(resp, LiveUpdateResponse):
             assistant_msg.content += f"\n[LIVE_UPDATE]: {resp.content}\n"
-        elif resp.as_reference() is not None:
+        elif isinstance(resp, ReferenceResponse):
             assistant_msg.content += f"\n[REFERENCE]: {resp.content}\n"
-        elif (text_content := resp.as_text()) is not None:
-            assistant_msg.content += text_content
+        elif isinstance(resp, TextResponse):
+            assistant_msg.content += resp.content.text

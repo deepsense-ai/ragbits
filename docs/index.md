@@ -41,10 +41,10 @@ hide:
 
 ### 🔨 Build Reliable & Scalable GenAI Apps
 
-- **Swap LLMs anytime** – Switch between [100+ LLMs via LiteLLM](https://ragbits.deepsense.ai/how-to/llms/use_llms/) or run [local models](https://ragbits.deepsense.ai/how-to/llms/use_local_llms/)).
-- **Type-safe LLM calls** – Use Python generics to [enforce strict type safety](https://ragbits.deepsense.ai/how-to/prompts/use_prompting/#how-to-configure-prompts-output-data-type) in model interactions.
-- **Bring your own vector store** – Connect to [Qdrant](https://ragbits.deepsense.ai/api_reference/core/vector-stores/#ragbits.core.vector_stores.qdrant.QdrantVectorStore), [PgVector](https://ragbits.deepsense.ai/api_reference/core/vector-stores/#ragbits.core.vector_stores.pgvector.PgVectorStore), and more with built-in support.
-- **Developer tools included** – [Manage vector stores](https://ragbits.deepsense.ai/cli/main/#ragbits-vector-store), query pipelines, and [test prompts from your terminal](https://ragbits.deepsense.ai/quickstart/quickstart1_prompts/#testing-the-prompt-from-the-cli).
+- **Swap LLMs anytime** – Switch between [100+ LLMs via LiteLLM](https://ragbits.deepsense.ai/stable/how-to/llms/use_llms/) or run [local models](https://ragbits.deepsense.ai/stable/how-to/llms/use_local_llms/)).
+- **Type-safe LLM calls** – Use Python generics to [enforce strict type safety](https://ragbits.deepsense.ai/stable/how-to/prompts/use_prompting/#how-to-configure-prompts-output-data-type) in model interactions.
+- **Bring your own vector store** – Connect to [Qdrant](https://ragbits.deepsense.ai/stable/api_reference/core/vector-stores/#ragbits.core.vector_stores.qdrant.QdrantVectorStore), [PgVector](https://ragbits.deepsense.ai/stable/api_reference/core/vector-stores/#ragbits.core.vector_stores.pgvector.PgVectorStore), and more with built-in support.
+- **Developer tools included** – [Manage vector stores](https://ragbits.deepsense.ai/stable/cli/main/#ragbits-vector-store), query pipelines, and [test prompts from your terminal](https://ragbits.deepsense.ai/stable/quickstart/quickstart1_prompts/#testing-the-prompt-from-the-cli).
 - **Modular installation** – Install only what you need, reducing dependencies and improving performance.
 
 ### 📚 Fast & Flexible RAG Processing
@@ -52,20 +52,20 @@ hide:
 - **Ingest 20+ formats** – Process PDFs, HTML, spreadsheets, presentations, and more. Process data using [Docling](https://github.com/docling-project/docling), [Unstructured](https://github.com/Unstructured-IO/unstructured) or create a custom parser.
 - **Handle complex data** – Extract tables, images, and structured content with built-in VLMs support.
 - **Connect to any data source** – Use prebuilt connectors for S3, GCS, Azure, or implement your own.
-- **Scale ingestion** – Process large datasets quickly with [Ray-based parallel processing](https://ragbits.deepsense.ai/how-to/document_search/distributed_ingestion/#how-to-ingest-documents-in-a-distributed-fashion).
+- **Scale ingestion** – Process large datasets quickly with [Ray-based parallel processing](https://ragbits.deepsense.ai/stable/how-to/document_search/distributed_ingestion/#how-to-ingest-documents-in-a-distributed-fashion).
 
 ### 🤖 Build Multi-Agent Workflows with Ease
 
-- **Multi-agent coordination** – Create teams of specialized agents with role-based collaboration using [A2A protocol](https://ragbits.deepsense.ai/tutorials/agents/) for interoperability.
-- **Real-time data integration** – Leverage [Model Context Protocol (MCP)](https://ragbits.deepsense.ai/how-to/provide_mcp_tools/) for live web access, database queries, and API integrations.
-- **Conversation state management** – Maintain context across interactions with [automatic history tracking](https://ragbits.deepsense.ai/how-to/agents/define_and_use_agents/#conversation-history/).
+- **Multi-agent coordination** – Create teams of specialized agents with role-based collaboration using [A2A protocol](https://ragbits.deepsense.ai/stable/tutorials/agents/) for interoperability.
+- **Real-time data integration** – Leverage [Model Context Protocol (MCP)](https://ragbits.deepsense.ai/stable/how-to/provide_mcp_tools/) for live web access, database queries, and API integrations.
+- **Conversation state management** – Maintain context across interactions with [automatic history tracking](https://ragbits.deepsense.ai/stable/how-to/agents/define_and_use_agents/#conversation-history/).
 
 ### 🚀 Deploy & Monitor with Confidence
 
-- **Real-time observability** – Track performance with [OpenTelemetry](https://ragbits.deepsense.ai/how-to/project/use_tracing/#opentelemetry-trace-handler) and [CLI insights](https://ragbits.deepsense.ai/how-to/project/use_tracing/#cli-trace-handler).
-- **Built-in testing** – Validate prompts [with promptfoo](https://ragbits.deepsense.ai/how-to/prompts/promptfoo/) before deployment.
+- **Real-time observability** – Track performance with [OpenTelemetry](https://ragbits.deepsense.ai/stable/how-to/project/use_tracing/#opentelemetry-trace-handler) and [CLI insights](https://ragbits.deepsense.ai/stable/how-to/project/use_tracing/#cli-trace-handler).
+- **Built-in testing** – Validate prompts [with promptfoo](https://ragbits.deepsense.ai/stable/how-to/prompts/promptfoo/) before deployment.
 - **Auto-optimization** – Continuously evaluate and refine model performance.
-- **Chat UI** – Deploy [chatbot interface](https://ragbits.deepsense.ai/how-to/chatbots/api/) with API, persistance and user feedback.
+- **Chat UI** – Deploy [chatbot interface](https://ragbits.deepsense.ai/stable/how-to/chatbots/api/) with API, persistance and user feedback.
 
 
 ## Installation

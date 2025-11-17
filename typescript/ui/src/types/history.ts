@@ -32,6 +32,7 @@ export interface ChatMessage {
     string,
     "pending" | "confirmed" | "declined" | "skipped"
   >;
+  extra?: Record<string, unknown>;
 }
 
 export interface Conversation {

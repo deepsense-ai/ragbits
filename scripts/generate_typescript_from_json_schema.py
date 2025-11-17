@@ -189,22 +189,22 @@ def _generate_chat_response_union_type() -> str:
     lines.append(" * Specific chat response types")
     lines.append(" */")
 
-    # Generate specific response interfaces
+    # Generate specific response interfaces using new content wrapper types
     response_interfaces = [
-        ("TextChatResponse", "text", "string"),
+        ("TextChatResponse", "text", "TextContent"),
         ("ReferenceChatResponse", "reference", "Reference"),
-        ("MessageIdChatResponse", "message_id", "string"),
-        ("ConversationIdChatResponse", "conversation_id", "string"),
+        ("MessageIdChatResponse", "message_id", "MessageIdContent"),
+        ("ConversationIdChatResponse", "conversation_id", "ConversationIdContent"),
         ("StateUpdateChatResponse", "state_update", "ServerState"),
         ("LiveUpdateChatResponse", "live_update", "LiveUpdate"),
-        ("FollowupMessagesChatResponse", "followup_messages", "string[]"),
+        ("FollowupMessagesChatResponse", "followup_messages", "FollowupMessagesContent"),
         ("ImageChatResponse", "image", "Image"),
-        ("ClearMessageResponse", "clear_message", "never"),
-        ("MessageUsageChatResponse", "usage", "Record<string, MessageUsage>"),
-        ("TodoItemChatResonse", "todo_item", "Task"),
-        ("ConversationSummaryResponse", "conversation_summary", "string"),
-        ("ConfirmationRequestChatResponse", "confirmation_request", "ConfirmationRequest"),
-        ("ConfirmationStatusChatResponse", "confirmation_status", "ConfirmationStatus"),
+        ("MessageUsageChatResponse", "usage", "UsageContent"),
+        ("ClearMessageChatResponse", "clear_message", "unknown"),
+        ("TodoItemChatResonse", "todo_item", "TodoItemContent"),
+        ("ConversationSummaryResponse", "conversation_summary", "ConversationSummaryContent"),
+        ("ConfirmationRequestChatResponse", "confirmation_request", "ConfirmationRequestContent"),
+        ("ConfirmationStatusChatResponse", "confirmation_status", "ConfirmationStatusContent"),
     ]
 
     internal_response_interfaces = [

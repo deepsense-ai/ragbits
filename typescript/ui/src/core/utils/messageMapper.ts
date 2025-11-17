@@ -10,6 +10,6 @@ export function mapHistoryToMessages(
   return Object.values(history).map((message) => ({
     role: message.role,
     content: message.content,
-    extra: null,
+    extra: message.extra || null,
   }));
 }

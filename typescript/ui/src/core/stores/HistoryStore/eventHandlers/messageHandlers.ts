@@ -1,5 +1,5 @@
 import {
-  ClearMessageResponse,
+  ClearMessageChatResponse,
   ConfirmationRequestChatResponse,
   ConfirmationStatusChatResponse,
   ImageChatResponse,
@@ -29,8 +29,8 @@ export const handleText: PrimaryHandler<TextChatResponse> = (
 
   // Add visual separator if this is the first text after confirmation
   const textToAdd = isAfterConfirmation
-    ? "\n\n" + response.content
-    : response.content;
+    ? "\n\n" + response.content.text
+    : response.content.text;
 
   // Add text content
   message.content += textToAdd;
@@ -55,7 +55,7 @@ export const handleMessageId: PrimaryHandler<MessageIdChatResponse> = (
   ctx,
 ) => {
   const message = draft.history[ctx.messageId];
-  message.serverId = response.content;
+  message.serverId = response.content.message_id;
 };
 
 export const handleLiveUpdate: PrimaryHandler<LiveUpdateChatResponse> = (
@@ -96,7 +96,7 @@ export const handleImage: PrimaryHandler<ImageChatResponse> = (
   });
 };
 
-export const handleClearMessage: PrimaryHandler<ClearMessageResponse> = (
+export const handleClearMessage: PrimaryHandler<ClearMessageChatResponse> = (
   _,
   draft,
   ctx,
@@ -115,7 +115,7 @@ export const handleUsage: PrimaryHandler<MessageUsageChatResponse> = (
   ctx,
 ) => {
   const message = draft.history[ctx.messageId];
-  message.usage = response.content;
+  message.usage = response.content.usage;
 };
 
 export const handleTodoItem: PrimaryHandler<TodoItemChatResonse> = (
@@ -125,12 +125,13 @@ export const handleTodoItem: PrimaryHandler<TodoItemChatResonse> = (
 ) => {
   const message = draft.history[ctx.messageId];
   const tasks = message.tasks ?? [];
+  const task = content.task;
   const newTasks = produce(tasks, (tasksDraft) => {
-    const taskIndex = tasksDraft.findIndex((t) => t.id === content.id);
+    const taskIndex = tasksDraft.findIndex((t) => t.id === task.id);
     if (taskIndex === -1) {
-      tasksDraft.push(content);
+      tasksDraft.push(task);
     } else {
-      tasksDraft[taskIndex] = content;
+      tasksDraft[taskIndex] = task;
     }
   });
 
@@ -144,7 +145,7 @@ export const handleConfirmationRequest: PrimaryHandler<
 
   console.log(
     "📥 Confirmation request received:",
-    response.content.confirmation_id,
+    response.content.confirmation_request.confirmation_id,
   );
 
   // Initialize arrays if they don't exist
@@ -156,8 +157,8 @@ export const handleConfirmationRequest: PrimaryHandler<
   }
 
   // Add to new array-based system
-  message.confirmationRequests.push(response.content);
-  message.confirmationStates[response.content.confirmation_id] = "pending";
+  message.confirmationRequests.push(response.content.confirmation_request);
+  message.confirmationStates[response.content.confirmation_request.confirmation_id] = "pending";
 
   console.log(
     `📊 Total confirmations now: ${message.confirmationRequests.length}`,
@@ -167,7 +168,7 @@ export const handleConfirmationRequest: PrimaryHandler<
 export const handleConfirmationStatus: PrimaryHandler<
   ConfirmationStatusChatResponse
 > = (response, draft) => {
-  const { confirmation_id, status } = response.content;
+  const { confirmation_id, status } = response.content.confirmation_status;
 
   // Find the message with matching confirmation_id and update its state
   Object.values(draft.history).forEach((message) => {

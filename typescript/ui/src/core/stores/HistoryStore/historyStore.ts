@@ -2,7 +2,6 @@ import {
   ChatRequest,
   ChatResponse,
   MessageRole,
-  ChatResponseType,
 } from "@ragbits/api-client-react";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -363,8 +362,8 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
             handleResponse(conversationIdRef, assistantResponseId, response),
           onError: (error: Error) => {
             handleResponse(conversationIdRef, assistantResponseId, {
-              type: ChatResponseType.Text,
-              content: error.message,
+              type: "text",
+              content: { text: error.message },
             });
             stopAnswering(conversationIdRef.current);
           },
@@ -468,8 +467,8 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
             handleResponse(conversationIdRef, assistantResponseId, response),
           onError: (error: Error) => {
             handleResponse(conversationIdRef, assistantResponseId, {
-              type: ChatResponseType.Text,
-              content: error.message,
+              type: 'text',
+              content: { text: error.message },
             });
             stopAnswering(conversationIdRef.current);
           },
