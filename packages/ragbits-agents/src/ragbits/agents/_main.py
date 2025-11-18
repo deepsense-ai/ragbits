@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import json
 import types
 import uuid
@@ -223,8 +224,15 @@ class AgentRunContext(BaseModel, Generic[DepsT]):
     """Whether to stream events from downstream agents when tools execute other agents."""
     downstream_agents: dict[str, "Agent"] = Field(default_factory=dict)
     """Registry of all agents that participated in this run"""
+<<<<<<< HEAD
     confirmed_tools: list[dict[str, Any]] | None = None
     """List of tools that have been confirmed for execution (for confirmation workflow)."""
+=======
+    confirmed_tools: list[dict[str, Any]] | None = Field(
+        default=None,
+        description="List of confirmed/declined tools from the frontend",
+    )
+>>>>>>> 3fcf1ed32 (save merging status)
 
     def register_agent(self, agent: "Agent") -> None:
         """
@@ -294,11 +302,18 @@ class AgentResultStreaming(
         str
         | ToolCall
         | ToolCallResult
+<<<<<<< HEAD
         | ConfirmationRequest
+=======
+>>>>>>> 3fcf1ed32 (save merging status)
         | BasePrompt
         | Usage
         | SimpleNamespace
         | DownstreamAgentResult
+<<<<<<< HEAD
+=======
+        | ConfirmationRequest
+>>>>>>> 3fcf1ed32 (save merging status)
     ]:
         return self
 
@@ -308,11 +323,18 @@ class AgentResultStreaming(
         str
         | ToolCall
         | ToolCallResult
+<<<<<<< HEAD
         | ConfirmationRequest
+=======
+>>>>>>> 3fcf1ed32 (save merging status)
         | BasePrompt
         | Usage
         | SimpleNamespace
         | DownstreamAgentResult
+<<<<<<< HEAD
+=======
+        | ConfirmationRequest
+>>>>>>> 3fcf1ed32 (save merging status)
     ):
         try:
             item = await self._generator.__anext__()
@@ -327,7 +349,11 @@ class AgentResultStreaming(
                         self.tool_calls = []
                     self.tool_calls.append(item)
                 case ConfirmationRequest():
+<<<<<<< HEAD
                     # Pass through confirmation requests to the caller
+=======
+                    # Pass through confirmation requests to the frontend
+>>>>>>> 3fcf1ed32 (save merging status)
                     pass
                 case DownstreamAgentResult():
                     if item.agent_id not in self.downstream:
@@ -967,8 +993,11 @@ class Agent(
             confirmed_tools = context.confirmed_tools or []
 
             # Generate a stable confirmation ID based on tool name and arguments
+<<<<<<< HEAD
             import hashlib
 
+=======
+>>>>>>> 3fcf1ed32 (save merging status)
             confirmation_id = hashlib.sha256(
                 f"{tool_call.name}:{json.dumps(tool_call.arguments, sort_keys=True)}".encode()
             ).hexdigest()[:16]

@@ -89,19 +89,22 @@ export type AuthType = TypeFrom<typeof AuthType>
  * Represents the context of a chat conversation.
  */
 export interface ChatContext {
-    conversation_id: string | null
-    message_id: string | null
-    state: {
-        [k: string]: unknown
-    }
-    user: User | null
-    session_id: string | null
-    confirmed_tools:
-        | {
-              [k: string]: unknown
-          }[]
-        | null
-    [k: string]: unknown
+  conversation_id: string | null;
+  message_id: string | null;
+  state: {
+    [k: string]: unknown;
+  };
+  user: User | null;
+  session_id: string | null;
+  /**
+   * List of confirmed/declined tools from the frontend
+   */
+  confirmed_tools:
+    | {
+        [k: string]: unknown;
+      }[]
+    | null;
+  [k: string]: unknown;
 }
 
 /**

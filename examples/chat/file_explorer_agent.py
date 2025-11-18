@@ -36,8 +36,9 @@ from ragbits.agents.tool import requires_confirmation
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import (
     ChatContext,
-    ChatResponse,
-    ChatResponseType,
+    ChatResponseUnion,
+    ConfirmationRequestContent,
+    ConfirmationRequestResponse,
     LiveUpdateType,
 )
 from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
@@ -594,7 +595,7 @@ class FileExplorerChat(ChatInterface):
         message: str,
         history: ChatFormat,
         context: ChatContext,
-    ) -> AsyncGenerator[ChatResponse, None]:
+    ) -> AsyncGenerator[ChatResponseUnion, None]:
         """
         Chat implementation with non-blocking confirmation support.
 
@@ -629,6 +630,10 @@ class FileExplorerChat(ChatInterface):
             history=history,
         )
         print(f"🔍 Agent created with {len(agent.tools)} tools")  # noqa: T201
+
+        # Debug: Check if tools have requires_confirmation set
+        for tool in agent.tools:
+            print(f"  Tool: {tool.name}, requires_confirmation={tool.requires_confirmation}")  # noqa: T201
 
         # Create agent context with confirmed_tools from the request context
         agent_context: AgentRunContext = AgentRunContext()
@@ -688,10 +693,7 @@ class FileExplorerChat(ChatInterface):
                 case ConfirmationRequest():
                     # Confirmation needed - send to frontend and wait for user response
                     print(f"⚠️  ConfirmationRequest received for tool: {response.tool_name}")  # noqa: T201
-                    yield ChatResponse(
-                        type=ChatResponseType.CONFIRMATION_REQUEST,
-                        content=response,
-                    )
+                    yield ConfirmationRequestResponse(content=ConfirmationRequestContent(confirmation_request=response))
 
                 case ToolCallResult():
                     # Tool execution completed (or pending confirmation)

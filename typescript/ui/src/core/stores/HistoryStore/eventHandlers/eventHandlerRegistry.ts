@@ -117,9 +117,9 @@ ChatHandlerRegistry.register("todo_item", {
 ChatHandlerRegistry.register("conversation_summary", {
   handle: handleConversationSummary,
 });
-ChatHandlerRegistry.register(ChatResponseType.ConfirmationRequest, {
+ChatHandlerRegistry.register("confirmation_request", {
   handle: handleConfirmationRequest,
 });
-ChatHandlerRegistry.register(ChatResponseType.ConfirmationStatus, {
+ChatHandlerRegistry.register("confirmation_status", {
   handle: handleConfirmationStatus,
 });
