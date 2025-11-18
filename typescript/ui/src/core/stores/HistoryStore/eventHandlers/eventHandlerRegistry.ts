@@ -9,6 +9,8 @@ import {
 } from "./nonMessageHandlers";
 import {
   handleClearMessage,
+  handleConfirmationRequest,
+  handleConfirmationStatus,
   handleImage,
   handleLiveUpdate,
   handleMessageId,
@@ -114,4 +116,10 @@ ChatHandlerRegistry.register("todo_item", {
 });
 ChatHandlerRegistry.register("conversation_summary", {
   handle: handleConversationSummary,
+});
+ChatHandlerRegistry.register("confirmation_request", {
+  handle: handleConfirmationRequest,
+});
+ChatHandlerRegistry.register("confirmation_status", {
+  handle: handleConfirmationStatus,
 });

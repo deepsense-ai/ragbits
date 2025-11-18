@@ -73,6 +73,14 @@ export interface ChatContext {
   };
   user: User | null;
   session_id: string | null;
+  /**
+   * List of confirmed/declined tools from the frontend
+   */
+  confirmed_tools:
+    | {
+        [k: string]: unknown;
+      }[]
+    | null;
   [k: string]: unknown;
 }
 

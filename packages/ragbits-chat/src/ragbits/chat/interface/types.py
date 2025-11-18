@@ -317,6 +317,10 @@ class ChatContext(BaseModel):
     state: dict[str, Any] = Field(default_factory=dict)
     user: User | None = None
     session_id: str | None = None
+    confirmed_tools: list[dict[str, Any]] | None = Field(
+        default=None,
+        description="List of confirmed/declined tools from the frontend",
+    )
     model_config = ConfigDict(extra="allow")
 
 
