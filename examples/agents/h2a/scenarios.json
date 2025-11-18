@@ -49,6 +49,31 @@
         "expected_result": "{reservation details}"
       }
     ]
+  },
+  {
+    "name": "Scenario 4",
+    "tasks": [
+      {
+        "task": "I would like to travel to Krakow. What is the best raded hotel there",
+        "expected_result": "Hotel Copernicus"
+      },
+      {
+        "task": "What is the price of the most expensive room in the hotel",
+        "expected_result": "780"
+      },
+      {
+        "task": "is this room available from 2025-01-19 to 2025-01-25",
+        "expected_result": "no, it is not available"
+      },
+      {
+        "task": "what is the nearest availability for that room",
+        "expected_result": "from 2025-01-20 to 2025-01-25"
+      },
+      {
+        "task": "book from 2025-01-20 to 2025-01-25",
+        "expected_result": "{reservation details}"
+      }
+    ]
   }
 ]
 
