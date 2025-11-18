@@ -157,8 +157,10 @@ export const handleConfirmationRequest: PrimaryHandler<
   }
 
   // Add to new array-based system
-  message.confirmationRequests.push(response.content);
-  message.confirmationStates[response.content.confirmation_id] = "pending";
+  message.confirmationRequests.push(response.content.confirmation_request);
+  message.confirmationStates[
+    response.content.confirmation_request.confirmation_id
+  ] = "pending";
 
   console.log(
     `📊 Total confirmations now: ${message.confirmationRequests.length}`,
