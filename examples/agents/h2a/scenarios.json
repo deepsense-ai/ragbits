@@ -1,0 +1,54 @@
+[
+  {
+    "name": "Scenario 1",
+    "tasks": [
+      {
+        "task": "are there rooms available in Krakow on 2025-06-01",
+        "expected_result": "{list of available rooms}"
+      },
+      {
+        "task": "are there delux rooms",
+        "expected_result": "{list of rooms}"
+      },
+      {
+        "task": "book room",
+        "expected_result": "{book room}"
+      }
+    ]
+  },
+  {
+    "name": "Scenario 2",
+    "tasks": [
+      {
+        "task": "find hotels in Warsaw",
+        "expected_result": "{list of hotels in Warsaw}"
+      },
+      {
+        "task": "check availability for 3 nights from April 1, 2025",
+        "expected_result": "{available rooms for specified dates}"
+      },
+      {
+        "task": "book a budget-friendly room",
+        "expected_result": "{booking confirmation}"
+      }
+    ]
+  },
+  {
+    "name": "Scenario 3",
+    "tasks": [
+      {
+        "task": "search for hotels in Gdańsk",
+        "expected_result": "{list of hotels in Gdańsk}"
+      },
+      {
+        "task": "find suite rooms available for weekend starting May 10, 2025",
+        "expected_result": "{available suite rooms}"
+      },
+      {
+        "task": "make a reservation",
+        "expected_result": "{reservation details}"
+      }
+    ]
+  }
+]
+
