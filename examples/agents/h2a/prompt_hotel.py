@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+
 from ragbits.core.prompt import Prompt
 
 
@@ -21,4 +22,3 @@ class HotelPrompt(Prompt[HotelPromptInput]):
     user_prompt = """
     {{ input }}
     """
-

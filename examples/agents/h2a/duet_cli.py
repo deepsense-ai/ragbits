@@ -46,6 +46,8 @@ from ragbits.core.llms import LiteLLM
 
 @dataclass
 class Turn:
+    """A single conversation turn between user and assistant."""
+
     user: str
     assistant: str
 
@@ -92,6 +94,7 @@ class SimulatedUser:
         return False
 
     async def next_message(self, history: list[Turn]) -> str:
+        """Generate the next user message based on conversation history and current task."""
         current_task = self.get_current_task()
         if current_task is None:
             return "Thank you, all tasks are completed."
@@ -175,6 +178,80 @@ def _build_llm(override_model_name: str | None) -> LiteLLM:
     return LiteLLM(model_name=model, use_structured_output=True, api_key=config.openai_api_key)
 
 
+def _initialize_logging(
+    log_file: str | None,
+    scenario: Scenario,
+    agent_model_name: str | None,
+    sim_user_model_name: str | None,
+    checker_model_name: str | None,
+) -> Path | None:
+    """Initialize logging to a file if log_file is provided."""
+    if not log_file:
+        return None
+
+    log_path = Path(log_file)
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    now_warsaw = datetime.now(ZoneInfo("Europe/Warsaw"))
+    with log_path.open("a", encoding="utf-8") as f:
+        f.write("\n" + "=" * 80 + "\n")
+        f.write(f"Session start: {now_warsaw.isoformat()}\n")
+        f.write(f"Scenario: {scenario.name}\n")
+        f.write(f"Tasks: {len(scenario.tasks)}\n")
+        for i, task in enumerate(scenario.tasks, 1):
+            f.write(f"  Task {i}: {task.task}\n")
+            f.write(f"    Expected: {task.expected_result}\n")
+        f.write(f"Hotel agent model: {_build_llm(agent_model_name).model_name}\n")
+        f.write(f"Simulated user model: {_build_llm(sim_user_model_name).model_name}\n")
+        f.write(f"Goal checker model: {_build_llm(checker_model_name).model_name}\n")
+    return log_path
+
+
+def _log_turn(
+    log_path: Path | None,
+    turn_idx: int,
+    task: Task | None,
+    user_msg: str,
+    assistant_msg: str | None = None,
+) -> None:
+    """Log a conversation turn to the log file if logging is enabled."""
+    if not log_path:
+        return
+
+    with log_path.open("a", encoding="utf-8") as f:
+        if task:
+            f.write(f"Turn {turn_idx} - Task: {task.task}\n")
+        f.write(f"Turn {turn_idx} - User: {user_msg}\n")
+        if assistant_msg:
+            f.write(f"Turn {turn_idx} - Assistant: {assistant_msg}\n")
+
+
+def _log_task_check(log_path: Path | None, turn_idx: int, task_done: bool, reason: str) -> None:
+    """Log task completion check result."""
+    if log_path:
+        with log_path.open("a", encoding="utf-8") as f:
+            f.write(f"Turn {turn_idx} - Task check: done={task_done} reason={reason}\n")
+
+
+def _handle_task_completion(
+    log_path: Path | None,
+    sim_user: SimulatedUser,
+    reason: str,
+) -> bool:
+    """Handle task completion: advance to next task and log if needed. Returns True if all tasks done."""
+    print(f"Task completed: {reason}")
+    has_next = sim_user.advance_to_next_task()
+    if not has_next:
+        print("\nAll tasks completed!")
+        return True
+
+    if log_path:
+        with log_path.open("a", encoding="utf-8") as f:
+            next_task = sim_user.get_current_task()
+            if next_task:
+                f.write(f"Moving to next task: {next_task.task}\n")
+    return False
+
+
 async def run_duet(
     scenario: Scenario,
     max_turns: int = 10,
@@ -183,6 +260,11 @@ async def run_duet(
     sim_user_model_name: str | None = None,
     checker_model_name: str | None = None,
 ) -> None:
+    """Run a conversation between the hotel booking agent and a simulated user.
+
+    The conversation proceeds through tasks defined in the scenario, with a goal checker
+    determining when each task is completed. The conversation is logged if a log file is provided.
+    """
     # Create the hotel booking agent directly (as ChatApp does internally)
     llm = _build_llm(agent_model_name)
     hotel_agent = Agent(
@@ -208,22 +290,7 @@ async def run_duet(
     history: list[Turn] = []
 
     # Prepare logging
-    log_path: Path | None = None
-    if log_file:
-        log_path = Path(log_file)
-        log_path.parent.mkdir(parents=True, exist_ok=True)
-        now_warsaw = datetime.now(ZoneInfo("Europe/Warsaw"))
-        with log_path.open("a", encoding="utf-8") as f:
-            f.write("\n" + "=" * 80 + "\n")
-            f.write(f"Session start: {now_warsaw.isoformat()}\n")
-            f.write(f"Scenario: {scenario.name}\n")
-            f.write(f"Tasks: {len(scenario.tasks)}\n")
-            for i, task in enumerate(scenario.tasks, 1):
-                f.write(f"  Task {i}: {task.task}\n")
-                f.write(f"    Expected: {task.expected_result}\n")
-            f.write(f"Hotel agent model: {llm.model_name}\n")
-            f.write(f"Simulated user model: {_build_llm(sim_user_model_name).model_name}\n")
-            f.write(f"Goal checker model: {_build_llm(checker_model_name).model_name}\n")
+    log_path = _initialize_logging(log_file, scenario, agent_model_name, sim_user_model_name, checker_model_name)
 
     # Seed: ask the simulated user for the first message based on the first task
     user_message = await sim_user.next_message(history=[])
@@ -237,10 +304,6 @@ async def run_duet(
         print(f"\n=== Turn {turn_idx} ===")
         print(f"Current Task: {current_task.task}")
         print(f"User: {user_message}")
-        if log_path:
-            with log_path.open("a", encoding="utf-8") as f:
-                f.write(f"Turn {turn_idx} - Task: {current_task.task}\n")
-                f.write(f"Turn {turn_idx} - User: {user_message}\n")
 
         concise_prefix = (
             "[STYLE]\nAnswer helpfully and clearly. "
@@ -256,29 +319,15 @@ async def run_duet(
 
         assistant_reply = "".join(assistant_reply_parts).strip()
         print(f"Assistant: {assistant_reply}")
-        if log_path:
-            with log_path.open("a", encoding="utf-8") as f:
-                f.write(f"Turn {turn_idx} - Assistant: {assistant_reply}\n")
+        _log_turn(log_path, turn_idx, current_task, user_message, assistant_reply)
 
         history.append(Turn(user=user_message, assistant=assistant_reply))
 
         # Ask the judge if current task is achieved
         task_done, reason = await goal_checker.is_task_achieved(current_task, history)
-        if log_path:
-            with log_path.open("a", encoding="utf-8") as f:
-                f.write(f"Turn {turn_idx} - Task check: done={task_done} reason={reason}\n")
-        if task_done:
-            print(f"Task completed: {reason}")
-            # Move to next task
-            has_next = sim_user.advance_to_next_task()
-            if not has_next:
-                print("\nAll tasks completed!")
-                break
-            if log_path:
-                with log_path.open("a", encoding="utf-8") as f:
-                    next_task = sim_user.get_current_task()
-                    if next_task:
-                        f.write(f"Moving to next task: {next_task.task}\n")
+        _log_task_check(log_path, turn_idx, task_done, reason)
+        if task_done and _handle_task_completion(log_path, sim_user, reason):
+            break
 
         # Ask the simulator for the next user message
         user_message = await sim_user.next_message(history)
@@ -349,6 +398,7 @@ def load_scenarios(scenarios_file: str = "scenarios.json") -> list[Scenario]:
 
 
 def parse_args() -> tuple[Scenario, int, str | None, str | None, str | None, str | None]:
+    """Parse command-line arguments and return configuration for the duet conversation."""
     parser = argparse.ArgumentParser(description="Two-agent terminal chat (ragbits hotel agent + simulated user)")
     parser.add_argument(
         "--scenario-id",
@@ -406,6 +456,7 @@ def parse_args() -> tuple[Scenario, int, str | None, str | None, str | None, str
 
 
 def main() -> None:
+    """Main entry point for the duet CLI application."""
     scenario, max_turns, log_file, agent_model_name, sim_user_model_name, checker_model_name = parse_args()
     asyncio.run(
         run_duet(

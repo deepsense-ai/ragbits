@@ -4,6 +4,8 @@ from pydantic_settings import BaseSettings
 
 
 class AppConfig(BaseSettings):
+    """Application configuration settings loaded from environment variables."""
+
     # LLM configuration
     llm_model: str = "gpt-4o-mini"
     openai_api_key: str
@@ -14,6 +16,8 @@ class AppConfig(BaseSettings):
     enable_metrics: bool = True
 
     class Config:
+        """Pydantic configuration for settings loading."""
+
         env_file = Path(__file__).parent.parent.parent / ".env"
 
 
