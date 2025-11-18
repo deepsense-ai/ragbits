@@ -2,7 +2,6 @@ import json
 
 import httpx
 
-
 # =============================================================================
 # Hotel API Tools
 # =============================================================================
@@ -67,7 +66,8 @@ async def get_hotel_details(hotel_id: int) -> str:
         hotel_id: The ID of the hotel to retrieve
 
     Returns:
-        str: JSON string containing hotel details with rooms, including room id, number, type, price, capacity, and amenities
+        str: JSON string containing hotel details with rooms, including room id,
+            number, type, price, capacity, and amenities
     """
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
@@ -150,7 +150,8 @@ async def create_reservation(
         end_date: Check-out date in YYYY-MM-DD format (e.g., "2025-03-12")
 
     Returns:
-        str: JSON string containing reservation details including reservation_id, hotel_name, room details, and total_price
+        str: JSON string containing reservation details including reservation_id,
+            hotel_name, room details, and total_price
     """
     try:
         payload = {
