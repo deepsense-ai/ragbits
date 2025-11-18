@@ -38,7 +38,6 @@ dev-dependencies = [
     "moto~=4.2.7",
     "pytest-postgresql>=7.0.1",
     "ruff>=0.6.8",
-    "markdownify>=1.2.0",
 ]
 
 [tool.uv.sources]
