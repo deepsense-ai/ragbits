@@ -1,8 +1,6 @@
 import json
 
 import httpx
-from bs4 import BeautifulSoup
-from markdownify import markdownify as md
 
 
 # =============================================================================
