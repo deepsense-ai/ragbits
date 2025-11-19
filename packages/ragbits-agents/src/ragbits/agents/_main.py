@@ -16,7 +16,6 @@ from typing import Any, ClassVar, Generic, Literal, TypeVar, Union, cast, overlo
 from pydantic import (
     BaseModel,
     Field,
-    PrivateAttr,
 )
 from typing_extensions import Self
 
@@ -82,11 +81,11 @@ class DownstreamAgentResult:
         str,
         ToolCall,
         ToolCallResult,
-        ConfirmationRequest,
         "DownstreamAgentResult",
         BasePrompt,
         Usage,
         SimpleNamespace,
+        ConfirmationRequest,
     ]
     """The streamed item from the downstream agent."""
 
@@ -149,27 +148,23 @@ class AgentDependencies(BaseModel, Generic[DepsT]):
 
     model_config = {"arbitrary_types_allowed": True}
 
-    _frozen: bool = PrivateAttr(default=False)
-    _value: DepsT | None = PrivateAttr(default=None)
+    _frozen: bool
+    _value: DepsT | None
 
-    def __init__(self, value: DepsT | None = None, **data) -> None:  # type: ignore[no-untyped-def]
-        super().__init__(**data)
+    def __init__(self, value: DepsT | None = None) -> None:
+        super().__init__()
         self._value = value
         self._frozen = False
 
     def __setattr__(self, name: str, value: object) -> None:
-        # Check if we're frozen, but allow setting private attributes during init
-        if name in ("_frozen", "_value"):
-            super().__setattr__(name, value)
-            return
+        is_frozen = False
+        if name != "_frozen":
+            try:
+                is_frozen = object.__getattribute__(self, "_frozen")
+            except AttributeError:
+                is_frozen = False
 
-        try:
-            pydantic_private = object.__getattribute__(self, "__pydantic_private__")
-            is_frozen = pydantic_private.get("_frozen", False)
-        except AttributeError:
-            is_frozen = False
-
-        if is_frozen:
+        if is_frozen and name not in {"_frozen"}:
             raise RuntimeError("Dependencies are immutable after first access")
 
         super().__setattr__(name, value)
@@ -180,34 +175,23 @@ class AgentDependencies(BaseModel, Generic[DepsT]):
 
     @value.setter
     def value(self, value: DepsT) -> None:
-        # Access _frozen from __pydantic_private__ to avoid recursion
-        pydantic_private = object.__getattribute__(self, "__pydantic_private__")
-        if pydantic_private.get("_frozen"):
+        if self._frozen:
             raise RuntimeError("Dependencies are immutable after first access")
-        pydantic_private["_value"] = value
+        self._value = value
 
     def _freeze(self) -> None:
-        # Access _frozen from __pydantic_private__ to avoid recursion
-        pydantic_private = object.__getattribute__(self, "__pydantic_private__")
-        if not pydantic_private.get("_frozen"):
-            pydantic_private["_frozen"] = True
+        if not self._frozen:
+            self._frozen = True
 
     def __getattr__(self, name: str) -> object:
-        # Access _value from __pydantic_private__ to avoid recursion
-        pydantic_private = object.__getattribute__(self, "__pydantic_private__")
-        value = pydantic_private.get("_value")
+        value = object.__getattribute__(self, "_value")
         if value is None:
             raise AttributeError(name)
         self._freeze()
         return getattr(value, name)
 
     def __contains__(self, key: str) -> bool:
-        # Access _value from __pydantic_private__ to avoid recursion
-        try:
-            pydantic_private = object.__getattribute__(self, "__pydantic_private__")
-            value = pydantic_private.get("_value")
-        except AttributeError:
-            return False
+        value = object.__getattribute__(self, "_value")
         return hasattr(value, key) if value is not None else False
 
 
@@ -224,15 +208,10 @@ class AgentRunContext(BaseModel, Generic[DepsT]):
     """Whether to stream events from downstream agents when tools execute other agents."""
     downstream_agents: dict[str, "Agent"] = Field(default_factory=dict)
     """Registry of all agents that participated in this run"""
-<<<<<<< HEAD
-    confirmed_tools: list[dict[str, Any]] | None = None
-    """List of tools that have been confirmed for execution (for confirmation workflow)."""
-=======
     confirmed_tools: list[dict[str, Any]] | None = Field(
         default=None,
         description="List of confirmed/declined tools from the frontend",
     )
->>>>>>> 3fcf1ed32 (save merging status)
 
     def register_agent(self, agent: "Agent") -> None:
         """
@@ -261,11 +240,11 @@ class AgentResultStreaming(
         str
         | ToolCall
         | ToolCallResult
-        | ConfirmationRequest
         | BasePrompt
         | Usage
         | SimpleNamespace
         | DownstreamAgentResult
+        | ConfirmationRequest
     ]
 ):
     """
@@ -280,11 +259,11 @@ class AgentResultStreaming(
             str
             | ToolCall
             | ToolCallResult
-            | ConfirmationRequest
             | DownstreamAgentResult
             | SimpleNamespace
             | BasePrompt
-            | Usage,
+            | Usage
+            | ConfirmationRequest,
             None,
         ],
     ):
@@ -302,18 +281,11 @@ class AgentResultStreaming(
         str
         | ToolCall
         | ToolCallResult
-<<<<<<< HEAD
-        | ConfirmationRequest
-=======
->>>>>>> 3fcf1ed32 (save merging status)
         | BasePrompt
         | Usage
         | SimpleNamespace
         | DownstreamAgentResult
-<<<<<<< HEAD
-=======
         | ConfirmationRequest
->>>>>>> 3fcf1ed32 (save merging status)
     ]:
         return self
 
@@ -323,18 +295,11 @@ class AgentResultStreaming(
         str
         | ToolCall
         | ToolCallResult
-<<<<<<< HEAD
-        | ConfirmationRequest
-=======
->>>>>>> 3fcf1ed32 (save merging status)
         | BasePrompt
         | Usage
         | SimpleNamespace
         | DownstreamAgentResult
-<<<<<<< HEAD
-=======
         | ConfirmationRequest
->>>>>>> 3fcf1ed32 (save merging status)
     ):
         try:
             item = await self._generator.__anext__()
@@ -349,11 +314,7 @@ class AgentResultStreaming(
                         self.tool_calls = []
                     self.tool_calls.append(item)
                 case ConfirmationRequest():
-<<<<<<< HEAD
-                    # Pass through confirmation requests to the caller
-=======
                     # Pass through confirmation requests to the frontend
->>>>>>> 3fcf1ed32 (save merging status)
                     pass
                 case DownstreamAgentResult():
                     if item.agent_id not in self.downstream:
@@ -700,14 +661,14 @@ class Agent(
                 )
 
             generator = cast(
-                _AG[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage],
+                _AG[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage | ConfirmationRequest],
                 generator,
             )
             generator = stream_with_post_processing(generator, post_processors, self)
 
         return AgentResultStreaming(generator)
 
-    async def _stream_internal(  # noqa: PLR0912
+    async def _stream_internal(  # noqa: PLR0912, PLR0915
         self,
         input: str | PromptInputT | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
@@ -718,10 +679,10 @@ class Agent(
         | ToolCall
         | ToolCallResult
         | DownstreamAgentResult
-        | ConfirmationRequest
         | SimpleNamespace
         | BasePrompt
-        | Usage,
+        | Usage
+        | ConfirmationRequest,
         None,
     ]:
         if context is None:
@@ -741,14 +702,35 @@ class Agent(
         reasoning_traces: list[str] = []
 
         with trace(input=input, options=merged_options) as outputs:
+            # Track confirmation IDs that have been requested to detect loops
+            requested_confirmation_ids: set[str] = set()
+            # Track if we should generate text-only summary (no tools)
+            generate_text_only = False
+
             while not max_turns or turn_count < max_turns:
                 returned_tool_call = False
                 self._check_token_limits(merged_options, context.usage, prompt_with_history, self.llm)
 
+                # Determine tool choice for this turn
+                current_tool_choice: ToolChoice | None
+                current_tools: list[Callable[..., Any] | dict[Any, Any]]
+
+                if generate_text_only:
+                    # Force text-only generation (no tool calls)
+                    # Don't set tool_choice when tools is empty (causes OpenAI error)
+                    current_tool_choice = None
+                    current_tools = []
+                elif tool_choice and turn_count == 0:
+                    current_tool_choice = tool_choice
+                    current_tools = [tool.to_function_schema() for tool in tools_mapping.values()]
+                else:
+                    current_tool_choice = None
+                    current_tools = [tool.to_function_schema() for tool in tools_mapping.values()]
+
                 streaming_result = self.llm.generate_streaming(
                     prompt=prompt_with_history,
-                    tools=[tool.to_function_schema() for tool in tools_mapping.values()],
-                    tool_choice=tool_choice if tool_choice and turn_count == 0 else None,
+                    tools=current_tools,
+                    tool_choice=current_tool_choice,
                     options=self._get_llm_options(llm_options, merged_options, context.usage),
                 )
                 tool_chunks = []
@@ -761,6 +743,8 @@ class Agent(
 
                 if len(tool_chunks) > 0:
                     has_pending_confirmation = False
+                    current_turn_confirmation_ids: set[str] = set()
+
                     async for result in self._execute_tool_calls(
                         tool_chunks, tools_mapping, context, merged_options.parallel_tool_calling
                     ):
@@ -768,20 +752,32 @@ class Agent(
                         if isinstance(result, ConfirmationRequest):
                             # Mark that we have a pending confirmation
                             has_pending_confirmation = True
+                            current_turn_confirmation_ids.add(result.confirmation_id)
                         elif isinstance(result, ToolCallResult):
+                            # Add ALL tool results to history (including pending confirmations)
+                            # This allows the agent to see them in the next turn
                             prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
                             returned_tool_call = True
 
-                    # If we have pending confirmations, stop the agent loop
-                    # The agent should not continue until the user confirms/declines
+                    # If we have pending confirmations, prepare for text-only summary generation
                     if has_pending_confirmation:
-                        print("🛑 Pending confirmations detected, stopping agent loop", flush=True)  # noqa: T201
-                        break
+                        # Check if we've already requested these confirmations (infinite loop detection)
+                        if current_turn_confirmation_ids & requested_confirmation_ids:
+                            break
+                        # Add to tracking set
+                        requested_confirmation_ids.update(current_turn_confirmation_ids)
+                        # Set flag to generate text-only summary in next turn
+                        generate_text_only = True
+
+                # If we just generated text-only summary, we're done
+                if generate_text_only and len(tool_chunks) == 0:
+                    break
 
                 turn_count += 1
                 if streaming_result.usage:
                     context.usage += streaming_result.usage
 
+                # Break if no tool was called
                 if not returned_tool_call:
                     break
             else:
@@ -797,7 +793,7 @@ class Agent(
 
             yield outputs
 
-    async def _execute_tool_calls(  # noqa: PLR0912
+    async def _execute_tool_calls(
         self,
         tool_calls: list[ToolCall],
         tools_mapping: dict[str, Tool],
@@ -827,42 +823,11 @@ class Agent(
                 yield item
 
         else:
-            # Collect all confirmation requests before yielding any
-            # This ensures the user sees all confirmations at once
-            confirmation_requests: list[ConfirmationRequest] = []
-            pending_results: list[ToolCallResult] = []
-
             for tool_call in tool_calls:
-                tool_outputs: list[ToolCallResult | DownstreamAgentResult | ConfirmationRequest] = []
                 async for result in self._execute_tool(
                     tool_call=tool_call, tools_mapping=tools_mapping, context=context
                 ):
-                    tool_outputs.append(result)
-
-                # Check if this tool needs confirmation
-                has_confirmation = any(isinstance(r, ConfirmationRequest) for r in tool_outputs)
-
-                if has_confirmation:
-                    # Collect confirmations and pending results, don't yield yet
-                    for output in tool_outputs:
-                        if isinstance(output, ConfirmationRequest):
-                            confirmation_requests.append(output)
-                        elif isinstance(output, ToolCallResult) and output.result == "⏳ Awaiting user confirmation":
-                            pending_results.append(output)
-                else:
-                    # No confirmation needed, yield results immediately
-                    for output in tool_outputs:
-                        yield output
-
-            # After processing all tools, yield all confirmations at once
-            if confirmation_requests:
-                print(f"🎯 Yielding {len(confirmation_requests)} confirmations in batch", flush=True)  # noqa: T201
-                for conf in confirmation_requests:
-                    yield conf
-                print(f"📋 Yielding {len(pending_results)} pending results", flush=True)  # noqa: T201
-                for result in pending_results:
                     yield result
-                print("✅ Finished yielding all confirmations and results, agent should pause now", flush=True)  # noqa: T201
 
     @staticmethod
     def _check_token_limits(
@@ -974,7 +939,7 @@ class Agent(
 
         return tools_mapping
 
-    async def _execute_tool(  # noqa: PLR0912, PLR0915
+    async def _execute_tool(
         self,
         tool_call: ToolCall,
         tools_mapping: dict[str, Tool],
@@ -993,11 +958,6 @@ class Agent(
             confirmed_tools = context.confirmed_tools or []
 
             # Generate a stable confirmation ID based on tool name and arguments
-<<<<<<< HEAD
-            import hashlib
-
-=======
->>>>>>> 3fcf1ed32 (save merging status)
             confirmation_id = hashlib.sha256(
                 f"{tool_call.name}:{json.dumps(tool_call.arguments, sort_keys=True)}".encode()
             ).hexdigest()[:16]
@@ -1012,7 +972,6 @@ class Agent(
 
             if is_declined:
                 # Tool was explicitly declined - skip execution entirely
-                print(f"⏭️  Tool {tool_call.name} was declined, skipping", flush=True)  # noqa: T201
                 yield ToolCallResult(
                     id=tool_call.id,
                     name=tool_call.name,

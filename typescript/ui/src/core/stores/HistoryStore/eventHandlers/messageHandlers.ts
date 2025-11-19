@@ -145,8 +145,6 @@ export const handleConfirmationRequest: PrimaryHandler<
 
   const confirmationId = response.content.confirmation_request.confirmation_id;
 
-  console.log("📥 Confirmation request received:", confirmationId);
-
   // Initialize Records if they don't exist
   if (!message.confirmationRequests) {
     message.confirmationRequests = {};
@@ -157,9 +155,6 @@ export const handleConfirmationRequest: PrimaryHandler<
 
   // Check if this confirmation already exists
   if (confirmationId in message.confirmationRequests) {
-    console.log(
-      `⚠️  Duplicate confirmation request for ${confirmationId} - ignoring`,
-    );
     return;
   }
 
@@ -167,10 +162,6 @@ export const handleConfirmationRequest: PrimaryHandler<
   message.confirmationRequests[confirmationId] =
     response.content.confirmation_request;
   message.confirmationStates[confirmationId] = "pending";
-
-  console.log(
-    `📊 Total confirmations now: ${Object.keys(message.confirmationRequests).length}`,
-  );
 };
 
 export const handleConfirmationStatus: PrimaryHandler<

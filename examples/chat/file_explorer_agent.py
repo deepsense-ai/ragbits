@@ -294,15 +294,6 @@ def create_file(filepath: str, content: str, context: AgentRunContext | None = N
     Returns:
         JSON string with operation result
     """
-    import datetime
-
-    timestamp = datetime.datetime.now().isoformat()
-    confirmed_via = "button" if (context and context.confirmed_tools) else "natural language"
-
-    print(f"🎯 TOOL EXECUTED: create_file at {timestamp}")  # noqa: T201
-    print(f"   Args: filepath={filepath}, content_length={len(content)}")  # noqa: T201
-    print(f"   Confirmed via: {confirmed_via}")  # noqa: T201
-
     is_valid, error, file_path = _validate_path(filepath)
     if not is_valid:
         return json.dumps({"success": False, "error": error}, indent=2)
@@ -345,15 +336,6 @@ def delete_file(filepath: str, context: AgentRunContext | None = None) -> str:
     Returns:
         JSON string with operation result
     """
-    import datetime
-
-    timestamp = datetime.datetime.now().isoformat()
-    confirmed_via = "button" if (context and context.confirmed_tools) else "natural language"
-
-    print(f"🎯 TOOL EXECUTED: delete_file at {timestamp}")  # noqa: T201
-    print(f"   Args: filepath={filepath}")  # noqa: T201
-    print(f"   Confirmed via: {confirmed_via}")  # noqa: T201
-
     is_valid, error, file_path = _validate_path(filepath)
     if not is_valid:
         return json.dumps({"success": False, "error": error}, indent=2)
@@ -397,15 +379,6 @@ def move_file(source: str, destination: str, context: AgentRunContext | None = N
     Returns:
         JSON string with operation result
     """
-    import datetime
-
-    timestamp = datetime.datetime.now().isoformat()
-    confirmed_via = "button" if (context and context.confirmed_tools) else "natural language"
-
-    print(f"🎯 TOOL EXECUTED: move_file at {timestamp}")  # noqa: T201
-    print(f"   Args: source={source}, destination={destination}")  # noqa: T201
-    print(f"   Confirmed via: {confirmed_via}")  # noqa: T201
-
     # Validate both paths
     is_valid_src, error_src, src_path = _validate_path(source)
     is_valid_dst, error_dst, dst_path = _validate_path(destination)
@@ -463,15 +436,6 @@ def create_directory(dirpath: str, context: AgentRunContext | None = None) -> st
     Returns:
         JSON string with operation result
     """
-    import datetime
-
-    timestamp = datetime.datetime.now().isoformat()
-    confirmed_via = "button" if (context and context.confirmed_tools) else "natural language"
-
-    print(f"🎯 TOOL EXECUTED: create_directory at {timestamp}")  # noqa: T201
-    print(f"   Args: dirpath={dirpath}")  # noqa: T201
-    print(f"   Confirmed via: {confirmed_via}")  # noqa: T201
-
     is_valid, error, dir_path = _validate_path(dirpath)
     if not is_valid:
         return json.dumps({"success": False, "error": error}, indent=2)
@@ -507,15 +471,6 @@ def delete_directory(dirpath: str, context: AgentRunContext | None = None) -> st
     Returns:
         JSON string with operation result
     """
-    import datetime
-
-    timestamp = datetime.datetime.now().isoformat()
-    confirmed_via = "button" if (context and context.confirmed_tools) else "natural language"
-
-    print(f"🎯 TOOL EXECUTED: delete_directory at {timestamp}")  # noqa: T201
-    print(f"   Args: dirpath={dirpath}")  # noqa: T201
-    print(f"   Confirmed via: {confirmed_via}")  # noqa: T201
-
     is_valid, error, dir_path = _validate_path(dirpath)
     if not is_valid:
         return json.dumps({"success": False, "error": error}, indent=2)
@@ -605,7 +560,6 @@ class FileExplorerChat(ChatInterface):
         new request with the confirmation in context.confirmed_tools.
         """
         # Create agent with history passed explicitly
-        print(f"🔍 Creating agent with {len(self.tools)} tools: {[t.__name__ for t in self.tools]}")  # noqa: T201
         agent: Agent = Agent(
             llm=self.llm,
             prompt=f"""
@@ -629,11 +583,8 @@ class FileExplorerChat(ChatInterface):
             tools=self.tools,  # type: ignore[arg-type]
             history=history,
         )
-        print(f"🔍 Agent created with {len(agent.tools)} tools")  # noqa: T201
 
         # Debug: Check if tools have requires_confirmation set
-        for tool in agent.tools:
-            print(f"  Tool: {tool.name}, requires_confirmation={tool.requires_confirmation}")  # noqa: T201
 
         # Create agent context with confirmed_tools from the request context
         agent_context: AgentRunContext = AgentRunContext()
@@ -644,7 +595,6 @@ class FileExplorerChat(ChatInterface):
         declined_count = 0
         if context.confirmed_tools:
             agent_context.confirmed_tools = context.confirmed_tools
-            print(f"✅ Set agent context with confirmed_tools: {agent_context.confirmed_tools}")  # noqa: T201
 
             for ct in context.confirmed_tools:
                 if ct.get("confirmed"):
@@ -670,14 +620,10 @@ class FileExplorerChat(ChatInterface):
                 )
 
         # Run agent in streaming mode with the message and history
-        print("🚀 Starting agent.run_streaming...")  # noqa: T201
         async for response in agent.run_streaming(
             agent_message,
             context=agent_context,
         ):
-            # Debug: Log what we're receiving from agent
-            print(f"🔍 Agent yielded: {type(response).__name__}", flush=True)  # noqa: T201
-
             # Pattern match on response types
             match response:
                 case str():
@@ -687,12 +633,10 @@ class FileExplorerChat(ChatInterface):
 
                 case ToolCall():
                     # Tool is being called
-                    print(f"🔧 ToolCall: {response.name}")  # noqa: T201
                     yield self.create_live_update(response.id, LiveUpdateType.START, f"🔧 {response.name}")
 
                 case ConfirmationRequest():
                     # Confirmation needed - send to frontend and wait for user response
-                    print(f"⚠️  ConfirmationRequest received for tool: {response.tool_name}")  # noqa: T201
                     yield ConfirmationRequestResponse(content=ConfirmationRequestContent(confirmation_request=response))
 
                 case ToolCallResult():

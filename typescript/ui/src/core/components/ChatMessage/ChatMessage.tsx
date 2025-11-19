@@ -71,19 +71,35 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     const showConfirmations =
       confirmationRequests && Object.keys(confirmationRequests).length > 0;
 
-    const handleSingleConfirmation = (confirmationId: string) => {
-      console.log("🔍 Single confirmation:", confirmationId);
-      sendSilentConfirmation(messageId, confirmationId, true, ragbitsClient);
+    const handleSingleConfirmation = async (confirmationId: string) => {
+      try {
+        await sendSilentConfirmation(
+          messageId,
+          confirmationId,
+          true,
+          ragbitsClient,
+        );
+      } catch (error) {
+        console.error("Failed to send confirmation:", error);
+        // TODO: Add toast notification for user feedback
+      }
     };
 
-    const handleSingleSkip = (confirmationId: string) => {
-      console.log("🔍 Single skip:", confirmationId);
-      sendSilentConfirmation(messageId, confirmationId, false, ragbitsClient);
+    const handleSingleSkip = async (confirmationId: string) => {
+      try {
+        await sendSilentConfirmation(
+          messageId,
+          confirmationId,
+          false,
+          ragbitsClient,
+        );
+      } catch (error) {
+        console.error("Failed to send skip confirmation:", error);
+        // TODO: Add toast notification for user feedback
+      }
     };
 
-    const handleBulkConfirm = (confirmationIds: string[]) => {
-      console.log("🔍 Bulk confirm:", confirmationIds);
-
+    const handleBulkConfirm = async (confirmationIds: string[]) => {
       // Build decisions for ALL confirmations (confirmed and declined)
       // This ensures the backend knows about all decisions, not just confirmed ones
       const allIds = confirmationRequests
@@ -94,14 +110,21 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
         {} as Record<string, boolean>,
       );
 
-      console.log("📤 Sending all decisions:", decisions);
-      sendSilentConfirmation(messageId, allIds, decisions, ragbitsClient);
+      try {
+        await sendSilentConfirmation(
+          messageId,
+          allIds,
+          decisions,
+          ragbitsClient,
+        );
+      } catch (error) {
+        console.error("Failed to send bulk confirmation:", error);
+        // TODO: Add toast notification for user feedback
+      }
     };
 
-    const handleBulkSkip = (confirmationIds: string[]) => {
-      console.log("🔍 Bulk skip:", confirmationIds);
-
-      // Build decisions for ALL confirmations
+    const handleBulkSkip = async (confirmationIds: string[]) => {
+      // Build decisions for ALL confirmations - mark all as skipped (false)
       const allIds = confirmationRequests
         ? Object.keys(confirmationRequests)
         : [];
@@ -110,7 +133,17 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
         {} as Record<string, boolean>,
       );
 
-      sendSilentConfirmation(messageId, allIds, decisions, ragbitsClient);
+      try {
+        await sendSilentConfirmation(
+          messageId,
+          confirmationIds,
+          decisions,
+          ragbitsClient,
+        );
+      } catch (error) {
+        console.error("Failed to send bulk skip:", error);
+        // TODO: Add toast notification for user feedback
+      }
     };
 
     return (
