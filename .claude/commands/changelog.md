@@ -2,55 +2,187 @@
 description: Generate comprehensive changelog with parallel analysis of changes since last stable release
 ---
 
-# Changelog Generation Command
+# Changelog Generation - Guided Workflow
 
-You are tasked with generating a comprehensive changelog analysis for the Ragbits project.
+Follow this systematic approach to generate comprehensive changelog analysis for release preparation.
 
-## Your Task
+---
 
-1. **Identify the base reference**:
-   - Check for the last stable minor version release in the CHANGELOG files (e.g., 1.3.0, 1.2.0)
-   - If no version is specified, use the "develop" branch as the base
-   - Get all commits since that reference
+## Phase 1: Determine Base Reference
 
-2. **Launch parallel agents** to analyze the changes:
-   - **changelog-summarizer**: Summarize all changes and categorize them
-   - **example-generator**: Identify new features and suggest examples that could be created
-   - **commit-validator**: Validate that commit messages follow conventional commit standards
-   - **style-validator**: Check code style and standards consistency across changes
-   - **changelog-post-writer**: Write a comprehensive changelog post for release notes
+**Objective**: Identify the comparison baseline for changelog generation.
 
-3. **Aggregate results**: Collect outputs from all agents and present a unified summary
+### Steps:
+1. Check CHANGELOG.md files in `packages/*/CHANGELOG.md` for the last stable version (e.g., 1.3.0, 1.2.0)
+2. Look for the most recent version number that's not "Unreleased"
+3. If no clear version found, ask the user which base to use (e.g., "develop" branch, specific tag, or commit)
+4. Report the base reference and commit count to analyze
 
-## Expected Output Format
+### Output:
+```
+📍 Base Reference: [version/branch]
+📊 Commits to analyze: [count]
+📅 Date range: [from] to [now]
+```
 
-Present the results in the following structure:
+**Use TodoWrite**: Create a todo list for the phases:
+- Phase 1: Determine base reference ✓
+- Phase 2: Launch parallel analysis agents
+- Phase 3: Review and consolidate findings
+- Phase 4: Generate final output
 
-### 📊 Changelog Summary
-(Output from changelog-summarizer agent)
+---
 
-### 💡 Example Ideas
-(Output from example-generator agent)
+## Phase 2: Launch Parallel Analysis Agents
 
-### ✅ Commit Standards Validation
-(Output from commit-validator agent)
+**Objective**: Analyze changes from multiple perspectives simultaneously.
 
-### 🎨 Style & Standards Check
-(Output from style-validator agent)
+### IMPORTANT: Launch ALL agents in PARALLEL
+Use a **single message** with **5 Task tool calls** to launch all agents at once:
 
-### 📝 Changelog Post
-(Output from changelog-post-writer agent)
+1. **changelog-summarizer**
+   - Categorize commits by type (feat, fix, refactor, etc.)
+   - Group changes by package
+   - Identify key themes and impact
+
+2. **example-generator**
+   - Identify new features
+   - Suggest practical examples
+   - Propose tutorial ideas
+
+3. **commit-validator**
+   - Validate conventional commit format
+   - Check message quality
+   - Identify compliance issues
+
+4. **style-validator**
+   - Check code style consistency
+   - Validate type hints and docstrings
+   - Review testing standards
+
+5. **changelog-post-writer**
+   - Write user-friendly release notes
+   - Create migration guides for breaking changes
+   - Generate social media blurbs
+
+### Launch Command Structure:
+```
+Launch the following agents in parallel to analyze commits since [base]:
+- changelog-summarizer
+- example-generator
+- commit-validator
+- style-validator
+- changelog-post-writer
+```
+
+**CRITICAL**: Wait for all agents to complete before proceeding to Phase 3.
+
+---
+
+## Phase 3: Review and Consolidate Findings
+
+**Objective**: Aggregate agent outputs and identify key insights.
+
+### Steps:
+1. Review each agent's output carefully
+2. Identify common themes across agents
+3. Note any conflicts or inconsistencies
+4. Highlight critical issues (breaking changes, standards violations)
+5. Prepare cross-references between agent findings
+
+### Consolidation Checklist:
+- [ ] All 5 agents completed successfully
+- [ ] Breaking changes identified and documented
+- [ ] Commit/style issues categorized by severity
+- [ ] New features mapped to example ideas
+- [ ] Key themes and highlights extracted
+
+---
+
+## Phase 4: Generate Final Output
+
+**Objective**: Present comprehensive, actionable changelog analysis.
+
+### Structure:
+
+#### 📊 Changelog Summary
+**From changelog-summarizer agent**
+- Total commits and file changes
+- Changes by category (feat, fix, refactor, etc.)
+- Changes by package
+- Key themes and highlights
+- Impact assessment
+
+#### 💡 Example Ideas
+**From example-generator agent**
+- New features requiring examples
+- Suggested example implementations
+- Tutorial and documentation ideas
+- Improvements to existing examples
+
+#### ✅ Commit Standards Validation
+**From commit-validator agent**
+- Compliance statistics
+- Issues found (critical, warnings, info)
+- Common problems and patterns
+- Recommendations for improvement
+- Exemplary commits
+
+#### 🎨 Style & Standards Check
+**From style-validator agent**
+- Overall quality assessment
+- Type hint and documentation coverage
+- Style inconsistencies
+- Testing gaps
+- Recommendations
+
+#### 📝 Release Notes Draft
+**From changelog-post-writer agent**
+- Complete release announcement
+- Breaking changes with migration guides
+- Feature highlights with examples
+- Social media blurbs
+- Resources and links
+
+#### 🎯 Action Items
+Synthesize findings into actionable next steps:
+1. **Before Release** (critical):
+   - List any blocking issues
+2. **Documentation Needed**:
+   - Examples to create
+   - Migration guides to write
+3. **Process Improvements**:
+   - Standards violations to address
+   - Team guidelines to update
+
+---
 
 ## Important Notes
 
-- Use the Task tool to launch agents in **parallel** for efficiency
-- Each agent should work independently on the same commit range
-- The commit message standard follows: `type(scope): description`
-  - Common types: feat, fix, chore, docs, refactor, test, release
-  - Scope is optional
-- Code follows ruff formatting and linting standards (see pyproject.toml)
-- This is a monorepo with multiple packages under `packages/`
+### Project Context
+- **Monorepo**: Multiple packages under `packages/`
+- **Commit Standard**: `type(scope): description` (Conventional Commits)
+- **Code Style**: ruff (120 char lines), mypy strict, Google-style docstrings
+- **Testing**: pytest with async support
+
+### Best Practices
+- ✅ Launch agents in parallel (one message, multiple Task calls)
+- ✅ Use TodoWrite to track progress through phases
+- ✅ Wait for all agents before consolidating
+- ✅ Highlight breaking changes prominently
+- ✅ Focus on user-facing impacts
+- ✅ Provide actionable recommendations
+
+### Common Pitfalls to Avoid
+- ❌ Don't launch agents sequentially (wastes time)
+- ❌ Don't skip consolidation (agents may have related findings)
+- ❌ Don't ignore commit/style violations (affects release quality)
+- ❌ Don't overlook breaking changes (critical for users)
+
+---
 
 ## Getting Started
 
-First, determine the base reference (last stable version or branch), then launch all agents in parallel with a single message containing multiple Task tool calls.
+**Start with Phase 1**: Identify the base reference, then proceed through phases sequentially.
+
+Each phase builds on the previous one. Use TodoWrite at the start of Phase 1 to create your roadmap.

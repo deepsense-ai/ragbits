@@ -13,23 +13,35 @@ Generates a comprehensive changelog analysis with parallel agents examining chan
 /changelog
 ```
 
-**What it does**:
-1. Identifies the last stable version from CHANGELOGs
-2. Launches 5 parallel agents to analyze the changes:
-   - **changelog-summarizer**: Categorizes and summarizes all changes
-   - **example-generator**: Suggests examples for new features
-   - **commit-validator**: Validates commit message standards
-   - **style-validator**: Checks code style consistency
-   - **changelog-post-writer**: Writes a comprehensive release announcement
+**What it does** (4 phases):
 
-3. Aggregates all results into a unified report
+**Phase 1: Determine Base Reference**
+- Identifies the last stable version from CHANGELOG.md files
+- Reports commit count and date range to analyze
 
-**Output**: A comprehensive report with:
-- Categorized changelog entries
-- Example ideas for new features
-- Commit message compliance report
-- Code style validation
-- Release notes ready for publication
+**Phase 2: Launch Parallel Analysis**
+- Launches 5 specialized agents simultaneously:
+  - **changelog-summarizer**: Categorizes and summarizes all changes
+  - **example-generator**: Suggests examples for new features
+  - **commit-validator**: Validates commit message standards
+  - **style-validator**: Checks code style consistency
+  - **changelog-post-writer**: Writes comprehensive release announcement
+
+**Phase 3: Review and Consolidate**
+- Aggregates agent outputs
+- Identifies common themes and conflicts
+- Highlights critical issues and breaking changes
+
+**Phase 4: Generate Final Output**
+- Presents comprehensive report with:
+  - 📊 Changelog summary (categorized by type and package)
+  - 💡 Example ideas for new features
+  - ✅ Commit message compliance report
+  - 🎨 Code style validation
+  - 📝 Release notes draft
+  - 🎯 Actionable next steps
+
+**Output**: Publication-ready changelog analysis with actionable recommendations
 
 ## Agents
 
@@ -106,11 +118,13 @@ To analyze all changes since the last release and generate a changelog:
 /changelog
 ```
 
-The command will automatically:
-1. Find the last stable version (e.g., 1.3.0)
-2. Get all commits since that version
-3. Run 5 agents in parallel
-4. Present aggregated results
+The command follows a structured 4-phase workflow:
+1. **Phase 1**: Determines base reference (last stable version like 1.3.0)
+2. **Phase 2**: Launches 5 agents in parallel to analyze changes
+3. **Phase 3**: Consolidates findings and identifies key insights
+4. **Phase 4**: Presents comprehensive report with actionable items
+
+The workflow ensures thorough analysis while maintaining efficiency through parallel agent execution.
 
 ### Manual Agent Usage
 
@@ -122,11 +136,14 @@ Launch the changelog-summarizer agent to analyze commits since develop branch
 
 ## Tips
 
-- The `/changelog` command runs agents in **parallel** for efficiency
-- Each agent works independently on the same commit range
-- Results are designed to complement each other
-- The command is especially useful before releases to prepare release notes
+- The `/changelog` command follows a **phased workflow** for systematic analysis
+- **Phase 2** runs all agents in **parallel** for maximum efficiency
+- Each agent provides a unique perspective on the same changes
+- Results are consolidated in **Phase 3** to identify patterns and conflicts
+- The command uses **TodoWrite** to track progress through phases
+- Especially useful before releases to prepare comprehensive release notes
 - You can use this iteratively: run the command, make improvements, run again
+- The phased approach ensures nothing is missed while maintaining speed
 
 ## Customization
 
