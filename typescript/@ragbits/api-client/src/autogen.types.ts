@@ -9,29 +9,6 @@ import type { RJSFSchema } from '@rjsf/utils'
 export type TypeFrom<T> = T[keyof T]
 
 /**
- * Represents the ChatResponseType enum
- */
-export const ChatResponseType = {
-    Text: 'text',
-    Reference: 'reference',
-    StateUpdate: 'state_update',
-    MessageId: 'message_id',
-    ConversationId: 'conversation_id',
-    ConversationSummary: 'conversation_summary',
-    LiveUpdate: 'live_update',
-    FollowupMessages: 'followup_messages',
-    Image: 'image',
-    ChunkedContent: 'chunked_content',
-    ClearMessage: 'clear_message',
-    Usage: 'usage',
-    TodoItem: 'todo_item',
-    ConfirmationRequest: 'confirmation_request',
-    ConfirmationStatus: 'confirmation_status',
-} as const
-
-export type ChatResponseType = TypeFrom<typeof ChatResponseType>
-
-/**
  * Represents the FeedbackType enum
  */
 export const FeedbackType = {
@@ -89,22 +66,22 @@ export type AuthType = TypeFrom<typeof AuthType>
  * Represents the context of a chat conversation.
  */
 export interface ChatContext {
-  conversation_id: string | null;
-  message_id: string | null;
-  state: {
-    [k: string]: unknown;
-  };
-  user: User | null;
-  session_id: string | null;
-  /**
-   * List of confirmed/declined tools from the frontend
-   */
-  confirmed_tools:
-    | {
-        [k: string]: unknown;
-      }[]
-    | null;
-  [k: string]: unknown;
+    conversation_id: string | null
+    message_id: string | null
+    state: {
+        [k: string]: unknown
+    }
+    user: User | null
+    session_id: string | null
+    /**
+     * List of confirmed/declined tools from the frontend
+     */
+    confirmed_tools:
+        | {
+              [k: string]: unknown
+          }[]
+        | null
+    [k: string]: unknown
 }
 
 /**
@@ -117,26 +94,6 @@ export interface ChunkedContent {
     total_chunks: number
     mime_type: string
     data: string
-}
-
-/**
- * Represents a tool confirmation request sent to the user.
- */
-export interface ConfirmationRequest {
-    confirmation_id: string
-    tool_name: string
-    tool_description: string
-    arguments: {
-        [k: string]: unknown
-    }
-}
-
-/**
- * Status update for a confirmation request.
- */
-export interface ConfirmationStatus {
-    confirmation_id: string
-    status: string
 }
 
 /**
@@ -162,6 +119,9 @@ export interface LiveUpdateContent {
 export interface Message {
     role: MessageRole
     content: string
+    /**
+     * Extra information about the message
+     */
     extra: {
         [k: string]: unknown
     } | null
@@ -291,6 +251,20 @@ export interface UsageContent {
  */
 export interface TodoItemContent {
     task: Task
+}
+
+/**
+ * Confirmation request content wrapper.
+ */
+export interface ConfirmationRequestContent {
+    confirmation_request: ConfirmationRequest
+}
+
+/**
+ * Confirmation status content wrapper.
+ */
+export interface ConfirmationStatusContent {
+    confirmation_status: ConfirmationStatus
 }
 
 /**
@@ -536,6 +510,40 @@ export interface User {
 }
 
 /**
+ * Represents a tool confirmation request sent to the user.
+ */
+export interface ConfirmationRequest {
+    confirmation_id: string
+    tool_name: string
+    tool_description: string
+    arguments: {
+        [k: string]: unknown
+    }
+}
+
+/**
+ * Status update for a confirmation request.
+ */
+export interface ConfirmationStatus {
+    confirmation_id: string
+    status: string
+}
+
+/**
+ * Confirmation request response.
+ */
+export interface ConfirmationRequestResponse {
+    content: ConfirmationRequestContent
+}
+
+/**
+ * Confirmation status response.
+ */
+export interface ConfirmationStatusResponse {
+    content: ConfirmationStatusContent
+}
+
+/**
  * Specific chat response types
  */
 export interface TextChatResponse {
@@ -589,28 +597,28 @@ export interface ClearMessageChatResponse {
 }
 
 export interface TodoItemChatResonse {
-  type: 'todo_item';
-  content: TodoItemContent;
+    type: 'todo_item'
+    content: TodoItemContent
 }
 
 export interface ConversationSummaryResponse {
-  type: 'conversation_summary';
-  content: ConversationSummaryContent;
+    type: 'conversation_summary'
+    content: ConversationSummaryContent
 }
 
 export interface ConfirmationRequestChatResponse {
-  type: 'confirmation_request';
-  content: ConfirmationRequest;
+    type: 'confirmation_request'
+    content: ConfirmationRequestContent
 }
 
 export interface ConfirmationStatusChatResponse {
-  type: 'confirmation_status';
-  content: ConfirmationStatus;
+    type: 'confirmation_status'
+    content: ConfirmationStatusContent
 }
 
 export interface ChunkedChatResponse {
-  type: 'chunked_content';
-  content: ChunkedContent;
+    type: 'chunked_content'
+    content: ChunkedContent
 }
 
 /**

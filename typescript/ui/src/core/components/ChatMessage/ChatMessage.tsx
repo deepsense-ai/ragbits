@@ -212,6 +212,9 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                     isLoading={isLoading}
                   />
                 )}
+                {message.hasConfirmationBreak && (
+                  <div className="border-divider my-2 border-t" />
+                )}
                 <MarkdownContent
                   content={content}
                   classNames={classNames?.content}

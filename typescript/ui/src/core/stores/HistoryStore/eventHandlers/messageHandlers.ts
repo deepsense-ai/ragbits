@@ -21,19 +21,23 @@ export const handleText: PrimaryHandler<TextChatResponse> = (
 ) => {
   const message = draft.history[ctx.messageId];
 
-  // Check if this is the first text after confirmation(s)
+  // Check if this is the first text after confirmation break
+  // (confirmations were just resolved and we're receiving post-confirmation text)
   const isAfterConfirmation =
+    message.hasConfirmationBreak &&
     message.confirmationRequests &&
-    Object.keys(message.confirmationRequests).length > 0 &&
-    message.content.length === 0;
+    Object.keys(message.confirmationRequests).length > 0;
 
-  // Add visual separator if this is the first text after confirmation
-  const textToAdd = isAfterConfirmation
-    ? "\n\n" + response.content.text
-    : response.content.text;
+  // Add double newline if this is the first text after confirmation
+  // This separates pre-confirmation text from post-confirmation text
+  if (isAfterConfirmation && !message.content.endsWith("\n\n")) {
+    message.content += "\n\n";
+    // Clear the flag so we only add separator once
+    message.hasConfirmationBreak = false;
+  }
 
   // Add text content
-  message.content += textToAdd;
+  message.content += response.content.text;
 
   // Don't auto-skip here - it's too aggressive and marks confirmations as skipped
   // even during the initial agent response. Instead, confirmations stay "pending"
