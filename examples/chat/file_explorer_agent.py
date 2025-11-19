@@ -570,7 +570,7 @@ class FileExplorerChat(ChatInterface):
 
             CRITICAL: When a user asks you to perform an action, you MUST IMMEDIATELY CALL THE APPROPRIATE TOOL.
             DO NOT ask for permission in text - the system will automatically show a confirmation dialog.
-            Describe what you would do in text.
+            Describe what you will do in text as summary of the action.
 
             Example:
             User: "Create folders test1 and test2"
@@ -583,8 +583,6 @@ class FileExplorerChat(ChatInterface):
             tools=self.tools,  # type: ignore[arg-type]
             history=history,
         )
-
-        # Debug: Check if tools have requires_confirmation set
 
         # Create agent context with confirmed_tools from the request context
         agent_context: AgentRunContext = AgentRunContext()

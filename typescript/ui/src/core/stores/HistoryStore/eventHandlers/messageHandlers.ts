@@ -38,10 +38,6 @@ export const handleText: PrimaryHandler<TextChatResponse> = (
 
   // Add text content
   message.content += response.content.text;
-
-  // Don't auto-skip here - it's too aggressive and marks confirmations as skipped
-  // even during the initial agent response. Instead, confirmations stay "pending"
-  // until user clicks a button or they get marked as skipped by other means
 };
 
 export const handleReference: PrimaryHandler<ReferenceChatResponse> = (
