@@ -566,8 +566,10 @@ class MultiAuthenticationBackend(AuthenticationBackend):
         first_backend = backends[0]
         if hasattr(first_backend, "jwt_secret"):
             self.jwt_secret = first_backend.jwt_secret
-            self.jwt_algorithm = first_backend.jwt_algorithm
-            self.token_expiry_minutes = first_backend.token_expiry_minutes
+            self.jwt_algorithm = getattr(first_backend, "jwt_algorithm", default_options.jwt_algorithm)
+            self.token_expiry_minutes = getattr(
+                first_backend, "token_expiry_minutes", default_options.token_expiry_minutes
+            )
         else:
             # Fallback if first backend doesn't have JWT config
             self.jwt_secret = get_secret_key()
