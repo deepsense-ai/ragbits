@@ -1,3 +1,5 @@
+"""Hotel booking prompt for ragbits agents."""
+
 from pydantic import BaseModel
 
 from ragbits.core.prompt import Prompt

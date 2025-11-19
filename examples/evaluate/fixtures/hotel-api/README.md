@@ -1,29 +1,31 @@
-# Hotel API Example
+# Hotel API Test Fixture
 
-A simple mock hotel booking API for demonstrating agent-based interactions. This FastAPI service manages hotel availability and reservations with data for 15 hotels across 3 Polish cities (Kraków, Warszawa, Gdańsk).
+A simple mock hotel booking API for demonstrating agent-based interactions and evaluation. This FastAPI service manages hotel availability and reservations with data for 15 hotels across 3 Polish cities (Kraków, Warszawa, Gdańsk).
 
-**Note:** This is a mock API with no authentication, payment processing, or real booking functionality.
+**Note:** This is a mock API with no authentication, payment processing, or real booking functionality. It is designed as a test fixture for ragbits evaluation examples.
 
 ## Quick Start
 
-### 1. Install Dependencies
-
-```bash
-cd examples/agents/hotel_api
-uv sync
-```
-
-### 2. Set Up Database
+### 1. Set Up Database
 
 ```bash
 # Create database and populate with mock data
 uv run python populate_db.py
 ```
 
-### 3. Run the API
+### 2. Run the API
+
+From the project root:
 
 ```bash
+cd examples/evaluate/fixtures/hotel-api
 uv run uvicorn app:app --reload --port 8000
+```
+
+Or from the project root:
+
+```bash
+uv run uvicorn examples.evaluate.fixtures.hotel_api.app:app --reload --port 8000
 ```
 
 The API will be available at `http://localhost:8000`. View interactive docs at `http://localhost:8000/docs`.
@@ -98,6 +100,14 @@ curl -X POST "http://localhost:8000/reservations" \
 - **Prices**: 280-850 PLN per night
 - **Availability**: Multiple date windows throughout 2025
 
+## Integration with Ragbits Examples
+
+This API is designed to work with ragbits agent examples, particularly:
+- **Agent Scenarios** (`examples/agents/agent_scenarios/`) - Demonstrates agent-to-agent communication with a simulated user
+- **Shared Hotel Tools** (`examples/evaluate/fixtures/hotel/`) - Reusable hotel booking tools that connect to this API
+
+The hotel tools in `examples/evaluate/fixtures/hotel/tools.py` are configured to connect to `http://localhost:8000` by default.
+
 ## Files
 
 - `app.py` - Main FastAPI application with all endpoints
@@ -106,3 +116,4 @@ curl -X POST "http://localhost:8000/reservations" \
 - `populate_db.py` - Data population script
 - `clear_db.py` - Database cleanup script
 - `hotel.db` - SQLite database (created automatically)
+
