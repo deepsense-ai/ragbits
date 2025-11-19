@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from ragbits.agents import Agent
 from ragbits.agents._main import DownstreamAgentResult
+from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.tool import ToolCallResult
 from ragbits.core.llms import ToolCall
 from ragbits.core.llms.base import Usage
@@ -56,7 +57,15 @@ class TodoResult(BaseModel):
 
 # Type alias for the streaming response union
 StreamingResponseType = (
-    str | TodoResult | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult
+    str
+    | TodoResult
+    | ToolCall
+    | ToolCallResult
+    | BasePrompt
+    | Usage
+    | SimpleNamespace
+    | DownstreamAgentResult
+    | ConfirmationRequest
 )
 
 
