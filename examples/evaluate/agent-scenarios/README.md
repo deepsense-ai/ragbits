@@ -12,7 +12,7 @@ The Agent Scenarios example consists of:
 
 ## Prerequisites
 
-1. The hotel API service must be running (see [Hotel API README](../../evaluate/fixtures/hotel-api/README.md))
+1. The hotel API service must be running (see [Hotel API README](fixtures/hotel-api/README.md))
 2. An OpenAI API key must be set in your environment or `.env` file
 
 ## Quick Start
@@ -24,7 +24,7 @@ In a separate terminal, start the hotel API service:
 From the project root:
 
 ```bash
-cd examples/evaluate/fixtures/hotel-api
+cd examples/evaluate/agent-scenarios/fixtures/hotel-api
 uv run python populate_db.py  # First time setup
 uv run uvicorn app:app --reload --port 8000
 uv run python clear_db.py # Clear the hotel api database
@@ -36,14 +36,14 @@ uv run python clear_db.py # Clear the hotel api database
 From the project root:
 
 ```bash
-uv run python -m examples.agents.agent_scenarios.duet_cli \
+uv run python examples/evaluate/agent-scenarios/duet_cli.py \
   --scenario-id 1 \
   --max-turns 10 \
   --agent-model-name gpt-4o-mini \
   --sim-user-model-name gpt-4o-mini \
   --checker-model-name gpt-4o-mini \
-  --log-file examples/agents/agent_scenarios/duet_conversation.log \
-  --scenarios-file examples/agents/agent_scenarios/scenarios.json
+  --log-file examples/evaluate/agent-scenarios/duet_conversation.log \
+  --scenarios-file examples/evaluate/agent-scenarios/scenarios.json
 ```
 
 ## Command-Line Options
@@ -88,7 +88,7 @@ Example scenario:
 
 ## How It Works
 
-1. **Initialization**: The hotel booking agent is created with hotel booking tools from the shared `examples.evaluate.fixtures.hotel` module
+1. **Initialization**: The hotel booking agent is created with hotel booking tools from the shared `fixtures.hotel` module
 2. **Task Selection**: The simulated user selects the first task from the scenario
 3. **Conversation Loop**:
    - Simulated user generates a message based on the current task
@@ -99,10 +99,10 @@ Example scenario:
 
 ## Architecture
 
-The example uses shared components from `examples/evaluate/fixtures/hotel/`:
+The example uses shared components from `fixtures/hotel/`:
 
-- **Tools** (`examples/evaluate/fixtures/hotel/tools.py`): Hotel API client functions
-- **Prompt** (`examples/evaluate/fixtures/hotel/prompt.py`): Hotel booking assistant prompt template
+- **Tools** (`fixtures/hotel/tools.py`): Hotel API client functions
+- **Prompt** (`fixtures/hotel/prompt.py`): Hotel booking assistant prompt template
 
 This modular design allows the hotel booking functionality to be reused across different examples.
 
@@ -117,6 +117,6 @@ This modular design allows the hotel booking functionality to be reused across d
 
 This example integrates with:
 
-- **Hotel API** (`examples/evaluate/fixtures/hotel-api/`): The backend service providing hotel data
-- **Shared Hotel Module** (`examples/evaluate/fixtures/hotel/`): Reusable hotel booking tools and prompts
+- **Hotel API** (`fixtures/hotel-api/`): The backend service providing hotel data
+- **Shared Hotel Module** (`fixtures/hotel/`): Reusable hotel booking tools and prompts
 

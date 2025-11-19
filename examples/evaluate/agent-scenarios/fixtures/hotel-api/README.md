@@ -10,7 +10,7 @@ A simple mock hotel booking API for demonstrating agent-based interactions and e
 
 ```bash
 # Create database and populate with mock data
-cd examples/evaluate/fixtures/hotel-api
+cd examples/evaluate/agent-scenarios/fixtures/hotel-api
 uv run python populate_db.py
 ```
 
@@ -96,10 +96,10 @@ curl -X POST "http://localhost:8000/reservations" \
 ## Integration with Ragbits Examples
 
 This API is designed to work with ragbits agent examples, particularly:
-- **Agent Scenarios** (`examples/agents/agent_scenarios/`) - Demonstrates agent-to-agent communication with a simulated user
-- **Shared Hotel Tools** (`examples/evaluate/fixtures/hotel/`) - Reusable hotel booking tools that connect to this API
+- **Agent Scenarios** (`examples/evaluate/agent-scenarios/`) - Demonstrates agent-to-agent communication with a simulated user
+- **Shared Hotel Tools** (`examples/evaluate/agent-scenarios/fixtures/hotel/`) - Reusable hotel booking tools that connect to this API
 
-The hotel tools in `examples/evaluate/fixtures/hotel/tools.py` are configured to connect to `http://localhost:8000` by default.
+The hotel tools in `examples/evaluate/agent-scenarios/fixtures/hotel/tools.py` are configured to connect to `http://localhost:8000` by default.
 
 ## Files
 

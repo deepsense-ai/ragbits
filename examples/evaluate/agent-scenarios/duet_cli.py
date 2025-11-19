@@ -7,27 +7,38 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import importlib.util
 import json
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from examples.agents.agent_scenarios.config import config
-from examples.evaluate.fixtures.hotel import (
-    HotelPrompt,
-    HotelPromptInput,
-    cancel_reservation,
-    create_reservation,
-    get_hotel_details,
-    get_reservation,
-    list_cities,
-    list_hotels,
-    list_reservations,
-    search_available_rooms,
-)
 from ragbits.agents import Agent
 from ragbits.core.llms import LiteLLM
+
+# Import config from agent-scenarios directory (hyphenated directory name)
+_config_path = Path(__file__).parent / "config.py"
+_config_spec = importlib.util.spec_from_file_location("config", _config_path)
+_config_module = importlib.util.module_from_spec(_config_spec)
+_config_spec.loader.exec_module(_config_module)
+config = _config_module.config  # noqa: E402
+
+# Import hotel fixtures from fixtures directory (inside hyphenated agent-scenarios)
+_fixtures_hotel_path = Path(__file__).parent / "fixtures" / "hotel" / "__init__.py"
+_fixtures_hotel_spec = importlib.util.spec_from_file_location("fixtures.hotel", _fixtures_hotel_path)
+_fixtures_hotel_module = importlib.util.module_from_spec(_fixtures_hotel_spec)
+_fixtures_hotel_spec.loader.exec_module(_fixtures_hotel_module)
+HotelPrompt = _fixtures_hotel_module.HotelPrompt  # noqa: E402
+HotelPromptInput = _fixtures_hotel_module.HotelPromptInput  # noqa: E402
+cancel_reservation = _fixtures_hotel_module.cancel_reservation  # noqa: E402
+create_reservation = _fixtures_hotel_module.create_reservation  # noqa: E402
+get_hotel_details = _fixtures_hotel_module.get_hotel_details  # noqa: E402
+get_reservation = _fixtures_hotel_module.get_reservation  # noqa: E402
+list_cities = _fixtures_hotel_module.list_cities  # noqa: E402
+list_hotels = _fixtures_hotel_module.list_hotels  # noqa: E402
+list_reservations = _fixtures_hotel_module.list_reservations  # noqa: E402
+search_available_rooms = _fixtures_hotel_module.search_available_rooms  # noqa: E402
 
 
 @dataclass
