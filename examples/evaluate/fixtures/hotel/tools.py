@@ -1,3 +1,9 @@
+"""Hotel API tools for ragbits agents.
+
+These tools provide access to hotel booking functionality via HTTP API calls.
+The tools are designed to work with the hotel_api FastAPI service.
+"""
+
 import json
 
 import httpx

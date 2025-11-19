@@ -1,20 +1,6 @@
 """
 Terminal conversation between the ragbits hotel booking agent and a simulated user.
 
-Run:
-    cd examples/agents/h2a
-
-    uv run python -m duet_cli \
-  --scenario-id 1 \
-  --max-turns 10 \
-  --agent-model-name gpt-4o-mini \
-  --sim-user-model-name gpt-4o-mini \
-  --checker-model-name gpt-4o-mini \
-  --log-file duet_conversation.log
-  --scenarios-file scenarios.json
-
-Scenarios with tasks are defined in scenarios.json file. Use --scenario-id to select a scenario (1, 2, or 3).
-
 """
 
 from __future__ import annotations
@@ -27,9 +13,11 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from config import config
-from prompt_hotel import HotelPrompt, HotelPromptInput
-from tools import (
+from examples.agents.agent_scenarios.config import config
+
+from examples.evaluate.fixtures.hotel import (
+    HotelPrompt,
+    HotelPromptInput,
     cancel_reservation,
     create_reservation,
     get_hotel_details,
@@ -39,7 +27,6 @@ from tools import (
     list_reservations,
     search_available_rooms,
 )
-
 from ragbits.agents import Agent
 from ragbits.core.llms import LiteLLM
 
@@ -359,7 +346,7 @@ def load_scenarios(scenarios_file: str = "scenarios.json") -> list[Scenario]:
       ...
     ]
     """
-    scenarios_path = Path(__file__).parent / scenarios_file
+    scenarios_path = Path(scenarios_file)
     if not scenarios_path.exists():
         raise FileNotFoundError(f"Scenarios file not found: {scenarios_path}")
 
