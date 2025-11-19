@@ -28,7 +28,7 @@ export interface ChatMessage {
   usage?: Record<string, MessageUsage>;
   tasks?: Task[];
   extra?: Record<string, unknown>;
-  confirmationRequests?: ConfirmationRequest[];
+  confirmationRequests?: Record<string, ConfirmationRequest>;
   confirmationStates?: Record<
     string,
     "pending" | "confirmed" | "declined" | "skipped"
