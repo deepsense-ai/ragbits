@@ -1,4 +1,4 @@
-"""Data models for agent scenarios."""
+"""Data models for agent simulation scenarios."""
 
 from __future__ import annotations
 

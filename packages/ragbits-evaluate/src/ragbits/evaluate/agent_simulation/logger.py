@@ -1,4 +1,4 @@
-"""Logging functionality for agent scenarios."""
+"""Logging functionality for agent simulation scenarios."""
 
 from __future__ import annotations
 
@@ -6,12 +6,7 @@ from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-# Import models (works with both normal imports and importlib)
-try:
-    from .models import Scenario, Task
-except ImportError:
-    # Fallback for importlib loading
-    from models import Scenario, Task  # noqa: E402
+from ragbits.evaluate.agent_simulation.models import Scenario, Task
 
 
 class ConversationLogger:

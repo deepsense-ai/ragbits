@@ -11,8 +11,9 @@ from typing import Any
 
 from ragbits.agents import Agent
 from ragbits.core.llms import LiteLLM
+from ragbits.evaluate.agent_simulation import load_scenarios, run_duet
 
-# Setup: add parent directory to path for imports
+# Setup: add parent directory to path for imports (for config and fixtures)
 _parent_dir = Path(__file__).parent
 if str(_parent_dir) not in sys.path:
     sys.path.insert(0, str(_parent_dir))
@@ -29,22 +30,13 @@ def _load_module(module_name: str, file_path: Path) -> Any:  # noqa: ANN401
     return module
 
 
-# Load modules (using importlib due to hyphenated directory name)
+# Load config and hotel fixtures (using importlib due to hyphenated directory name)
 config_module = _load_module("config", _parent_dir / "config.py")
 config = config_module.config  # noqa: E402
 
 hotel_fixtures = _load_module("fixtures.hotel", _parent_dir / "fixtures" / "hotel" / "__init__.py")
 HotelPrompt = hotel_fixtures.HotelPrompt  # noqa: E402
 HotelPromptInput = hotel_fixtures.HotelPromptInput  # noqa: E402
-
-# Load local modules in dependency order
-_load_module("models", _parent_dir / "models.py")
-_load_module("logger", _parent_dir / "logger.py")
-scenarios_module = _load_module("scenarios", _parent_dir / "scenarios.py")
-conversation_module = _load_module("conversation", _parent_dir / "conversation.py")
-
-load_scenarios = scenarios_module.load_scenarios  # noqa: E402
-run_duet = conversation_module.run_duet  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:

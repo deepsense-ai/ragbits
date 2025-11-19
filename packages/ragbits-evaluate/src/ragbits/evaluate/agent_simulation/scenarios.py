@@ -1,16 +1,11 @@
-"""Scenario loading functionality."""
+"""Scenario loading functionality for agent simulation."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-# Import models (works with both normal imports and importlib)
-try:
-    from .models import Scenario, Task
-except ImportError:
-    # Fallback for importlib loading
-    from models import Scenario, Task  # noqa: E402
+from ragbits.evaluate.agent_simulation.models import Scenario, Task
 
 
 def load_scenarios(scenarios_file: str = "scenarios.json") -> list[Scenario]:
@@ -30,6 +25,16 @@ def load_scenarios(scenarios_file: str = "scenarios.json") -> list[Scenario]:
       },
       ...
     ]
+
+    Args:
+        scenarios_file: Path to the JSON file containing scenarios
+
+    Returns:
+        List of Scenario objects
+
+    Raises:
+        FileNotFoundError: If the scenarios file doesn't exist
+        ValueError: If the file format is invalid
     """
     scenarios_path = Path(scenarios_file)
     if not scenarios_path.exists():
