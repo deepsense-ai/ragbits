@@ -414,6 +414,9 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
               }
             });
 
+            // Set flag to show visual separator after confirmations
+            message.hasConfirmationBreak = true;
+
             // Clear the "⏳ Awaiting user confirmation" live update
             // before the agent re-runs and sends new updates
             message.liveUpdates = undefined;
@@ -467,7 +470,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
             handleResponse(conversationIdRef, assistantResponseId, response),
           onError: (error: Error) => {
             handleResponse(conversationIdRef, assistantResponseId, {
-              type: 'text',
+              type: "text",
               content: { text: error.message },
             });
             stopAnswering(conversationIdRef.current);

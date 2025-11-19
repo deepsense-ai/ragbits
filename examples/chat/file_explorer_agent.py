@@ -39,6 +39,9 @@ from ragbits.chat.interface.types import (
     ChatResponseUnion,
     ConfirmationRequestContent,
     ConfirmationRequestResponse,
+    ConfirmationStatus,
+    ConfirmationStatusContent,
+    ConfirmationStatusResponse,
     LiveUpdateType,
 )
 from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
@@ -567,15 +570,12 @@ class FileExplorerChat(ChatInterface):
 
             CRITICAL: When a user asks you to perform an action, you MUST IMMEDIATELY CALL THE APPROPRIATE TOOL.
             DO NOT ask for permission in text - the system will automatically show a confirmation dialog.
-            DO NOT describe what you would do - USE THE TOOL RIGHT AWAY.
+            Describe what you would do in text.
 
             Example:
             User: "Create folders test1 and test2"
-            CORRECT: Immediately call create_directory("test1"), then create_directory("test2")
-            WRONG: "I'll create two folders for you. Shall I proceed?"
-
-            If an action needs confirmation, the system handles it automatically.
-            Your job is to CALL THE TOOLS, not talk about calling them.
+            CORRECT: Immediately call create_directory("test1"), then create_directory("test2") return text
+            "I'll create two folders for you. Please confirm action."
 
             Available tools: {', '.join([t.__name__ for t in self.tools])}
             Restricted to: {TEMP_DIR}
@@ -590,34 +590,27 @@ class FileExplorerChat(ChatInterface):
         agent_context: AgentRunContext = AgentRunContext()
 
         # Check if user declined any confirmations
-        has_declined = False
-        confirmed_count = 0
-        declined_count = 0
         if context.confirmed_tools:
             agent_context.confirmed_tools = context.confirmed_tools
 
+            # Send ConfirmationStatus responses for each processed confirmation
             for ct in context.confirmed_tools:
-                if ct.get("confirmed"):
-                    confirmed_count += 1
-                else:
-                    declined_count += 1
-                    has_declined = True
+                confirmation_id = ct.get("confirmation_id")
+                is_confirmed = ct.get("confirmed")
 
-        # Prepare message for agent based on confirmation status
+                if confirmation_id:
+                    status = "confirmed" if is_confirmed else "declined"
+                    yield ConfirmationStatusResponse(
+                        content=ConfirmationStatusContent(
+                            confirmation_status=ConfirmationStatus(
+                                confirmation_id=confirmation_id,
+                                status=status,
+                            )
+                        )
+                    )
+
+        # Empty message - agent continues with provided confirmations
         agent_message = message
-        if has_declined:
-            # User declined some actions - inform the agent with details
-            if confirmed_count > 0:
-                agent_message = (
-                    f"[SYSTEM: The user confirmed {confirmed_count} action(s) and "
-                    f"declined {declined_count} action(s). Proceed with only the confirmed "
-                    "actions and report the results. Do NOT ask for confirmation again on declined actions.]"
-                )
-            else:
-                agent_message = (
-                    "[SYSTEM: The user declined all actions. Acknowledge this and "
-                    "ask if they want to do something else instead.]"
-                )
 
         # Run agent in streaming mode with the message and history
         async for response in agent.run_streaming(

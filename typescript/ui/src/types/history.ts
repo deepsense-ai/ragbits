@@ -32,6 +32,7 @@ export interface ChatMessage {
     string,
     "pending" | "confirmed" | "declined" | "skipped"
   >;
+  hasConfirmationBreak?: boolean; // Flag to show visual separator after confirmations
   extra?: Record<string, unknown>;
 }
 
