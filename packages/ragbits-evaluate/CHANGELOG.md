@@ -4,6 +4,8 @@
 
 - Feat: introduce agent evaluation pipelines and metrics (HotpotQA, HumanEval, GAIA) (#829)
 
+- Feat: introduce agent simulation module with utilities for agent-to-agent conversation and evaluation scenarios (#857)
+
 ## 1.3.0 (2025-09-11)
 
 ### Changed
