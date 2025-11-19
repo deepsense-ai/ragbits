@@ -85,6 +85,7 @@ class DownstreamAgentResult:
         BasePrompt,
         Usage,
         SimpleNamespace,
+        ConfirmationRequest,
     ]
     """The streamed item from the downstream agent."""
 
@@ -235,7 +236,16 @@ class AgentRunContext(BaseModel, Generic[DepsT]):
 
 
 class AgentResultStreaming(
-    AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult]
+    AsyncIterator[
+        str
+        | ToolCall
+        | ToolCallResult
+        | BasePrompt
+        | Usage
+        | SimpleNamespace
+        | DownstreamAgentResult
+        | ConfirmationRequest
+    ]
 ):
     """
     An async iterator that will collect all yielded items by LLM.generate_streaming(). This object is returned
@@ -246,7 +256,15 @@ class AgentResultStreaming(
     def __init__(
         self,
         generator: AsyncGenerator[
-            str | ToolCall | ToolCallResult | DownstreamAgentResult | SimpleNamespace | BasePrompt | Usage
+            str
+            | ToolCall
+            | ToolCallResult
+            | DownstreamAgentResult
+            | SimpleNamespace
+            | BasePrompt
+            | Usage
+            | ConfirmationRequest,
+            None,
         ],
     ):
         self._generator = generator
@@ -643,20 +661,30 @@ class Agent(
                 )
 
             generator = cast(
-                _AG[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage],
+                _AG[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage | ConfirmationRequest],
                 generator,
             )
             generator = stream_with_post_processing(generator, post_processors, self)
 
         return AgentResultStreaming(generator)
 
-    async def _stream_internal(  # noqa: PLR0912
+    async def _stream_internal(  # noqa: PLR0912, PLR0915
         self,
         input: str | PromptInputT | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-    ) -> AsyncGenerator[str | ToolCall | ToolCallResult | DownstreamAgentResult | SimpleNamespace | BasePrompt | Usage]:
+    ) -> AsyncGenerator[
+        str
+        | ToolCall
+        | ToolCallResult
+        | DownstreamAgentResult
+        | SimpleNamespace
+        | BasePrompt
+        | Usage
+        | ConfirmationRequest,
+        None,
+    ]:
         if context is None:
             context = AgentRunContext()
 
@@ -674,14 +702,35 @@ class Agent(
         reasoning_traces: list[str] = []
 
         with trace(input=input, options=merged_options) as outputs:
+            # Track confirmation IDs that have been requested to detect loops
+            requested_confirmation_ids: set[str] = set()
+            # Track if we should generate text-only summary (no tools)
+            generate_text_only = False
+
             while not max_turns or turn_count < max_turns:
                 returned_tool_call = False
                 self._check_token_limits(merged_options, context.usage, prompt_with_history, self.llm)
 
+                # Determine tool choice for this turn
+                current_tool_choice: ToolChoice | None
+                current_tools: list[Callable[..., Any] | dict[Any, Any]]
+
+                if generate_text_only:
+                    # Force text-only generation (no tool calls)
+                    # Don't set tool_choice when tools is empty (causes OpenAI error)
+                    current_tool_choice = None
+                    current_tools = []
+                elif tool_choice and turn_count == 0:
+                    current_tool_choice = tool_choice
+                    current_tools = [tool.to_function_schema() for tool in tools_mapping.values()]
+                else:
+                    current_tool_choice = None
+                    current_tools = [tool.to_function_schema() for tool in tools_mapping.values()]
+
                 streaming_result = self.llm.generate_streaming(
                     prompt=prompt_with_history,
-                    tools=[tool.to_function_schema() for tool in tools_mapping.values()],
-                    tool_choice=tool_choice if tool_choice and turn_count == 0 else None,
+                    tools=current_tools,
+                    tool_choice=current_tool_choice,
                     options=self._get_llm_options(llm_options, merged_options, context.usage),
                 )
                 tool_chunks = []
@@ -693,18 +742,42 @@ class Agent(
                         tool_chunks.append(chunk)
 
                 if len(tool_chunks) > 0:
+                    has_pending_confirmation = False
+                    current_turn_confirmation_ids: set[str] = set()
+
                     async for result in self._execute_tool_calls(
                         tool_chunks, tools_mapping, context, merged_options.parallel_tool_calling
                     ):
                         yield result
-                        if isinstance(result, ToolCallResult):
+                        if isinstance(result, ConfirmationRequest):
+                            # Mark that we have a pending confirmation
+                            has_pending_confirmation = True
+                            current_turn_confirmation_ids.add(result.confirmation_id)
+                        elif isinstance(result, ToolCallResult):
+                            # Add ALL tool results to history (including pending confirmations)
+                            # This allows the agent to see them in the next turn
                             prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
-                        returned_tool_call = True
+                            returned_tool_call = True
+
+                    # If we have pending confirmations, prepare for text-only summary generation
+                    if has_pending_confirmation:
+                        # Check if we've already requested these confirmations (infinite loop detection)
+                        if current_turn_confirmation_ids & requested_confirmation_ids:
+                            break
+                        # Add to tracking set
+                        requested_confirmation_ids.update(current_turn_confirmation_ids)
+                        # Set flag to generate text-only summary in next turn
+                        generate_text_only = True
+
+                # If we just generated text-only summary, we're done
+                if generate_text_only and len(tool_chunks) == 0:
+                    break
 
                 turn_count += 1
                 if streaming_result.usage:
                     context.usage += streaming_result.usage
 
+                # Break if no tool was called
                 if not returned_tool_call:
                     break
             else:
@@ -726,7 +799,7 @@ class Agent(
         tools_mapping: dict[str, Tool],
         context: AgentRunContext,
         parallel_tool_calling: bool,
-    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult, None]:
+    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult | ConfirmationRequest, None]:
         """Execute tool calls either in parallel or sequentially based on `parallel_tool_calling` value."""
         if parallel_tool_calling:
             queue: asyncio.Queue = asyncio.Queue()
@@ -871,7 +944,7 @@ class Agent(
         tool_call: ToolCall,
         tools_mapping: dict[str, Tool],
         context: AgentRunContext,
-    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult, None]:
+    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult | ConfirmationRequest, None]:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
         if tool_call.name not in tools_mapping:
@@ -899,7 +972,6 @@ class Agent(
 
             if is_declined:
                 # Tool was explicitly declined - skip execution entirely
-                print(f"⏭️  Tool {tool_call.name} was declined, skipping", flush=True)  # noqa: T201
                 yield ToolCallResult(
                     id=tool_call.id,
                     name=tool_call.name,

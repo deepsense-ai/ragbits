@@ -3,6 +3,7 @@ from collections.abc import AsyncGenerator
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Generic, Optional, cast
 
+from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.tool import ToolCallResult
 from ragbits.core.llms.base import LLMClientOptionsT, ToolCall, Usage
 from ragbits.core.prompt.base import BasePrompt
@@ -71,9 +72,9 @@ class StreamingPostProcessor(ABC, BasePostProcessor[LLMClientOptionsT, PromptInp
     @abstractmethod
     async def process_streaming(
         self,
-        chunk: str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage,
+        chunk: str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage | ConfirmationRequest,
         agent: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
-    ) -> str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage:
+    ) -> str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage | ConfirmationRequest:
         """
         Process chunks during streaming.
 
@@ -88,13 +89,15 @@ class StreamingPostProcessor(ABC, BasePostProcessor[LLMClientOptionsT, PromptInp
 
 
 async def stream_with_post_processing(
-    generator: AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage],
+    generator: AsyncGenerator[
+        str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage | ConfirmationRequest, None
+    ],
     post_processors: (
         list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
         | list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
     ),
     agent: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
-) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage]:
+) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage | ConfirmationRequest, None]:
     """
     Stream with support for both streaming and non-streaming post-processors.
 

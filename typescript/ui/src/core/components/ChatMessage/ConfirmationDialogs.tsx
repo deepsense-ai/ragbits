@@ -140,6 +140,14 @@ const ConfirmationDialogs = ({
         transition={{ duration: 0.2 }}
         className="my-2 flex flex-col gap-3"
       >
+        {/* Status announcement for screen readers */}
+        {hasPending && (
+          <div role="status" aria-live="polite" className="sr-only">
+            {pendingRequests.length} confirmation
+            {pendingRequests.length > 1 ? "s" : ""} pending
+          </div>
+        )}
+
         {/* Bulk action buttons */}
         {hasPending && (
           <div className="flex flex-wrap gap-2">
@@ -149,6 +157,7 @@ const ConfirmationDialogs = ({
               variant="solid"
               onPress={handleConfirmAll}
               isDisabled={isLoading}
+              aria-label={`Confirm all ${pendingRequests.length} pending actions`}
             >
               ✓ Confirm All ({pendingRequests.length})
             </Button>
@@ -158,6 +167,7 @@ const ConfirmationDialogs = ({
               variant="bordered"
               onPress={handleSkipAll}
               isDisabled={isLoading}
+              aria-label={`Skip all ${pendingRequests.length} pending actions`}
             >
               ⏭ Skip All
             </Button>
@@ -168,6 +178,7 @@ const ConfirmationDialogs = ({
                 variant="flat"
                 onPress={handleConfirmSelected}
                 isDisabled={isLoading}
+                aria-label={`Confirm ${selectedIds.size} selected actions`}
               >
                 ✓ Confirm Selected ({selectedIds.size})
               </Button>
@@ -243,7 +254,10 @@ const ConfirmationDialogs = ({
                     {shortDescription}
                   </p>
                   {argsDisplay && isPending && (
-                    <p className="text-tiny text-default-500 mt-1 truncate">
+                    <p
+                      className="text-tiny text-default-500 mt-1 truncate"
+                      id={`conf-args-${req.confirmation_id}`}
+                    >
                       {argsDisplay}
                     </p>
                   )}
@@ -257,6 +271,12 @@ const ConfirmationDialogs = ({
                       variant="solid"
                       onPress={() => handleSingleConfirm(req.confirmation_id)}
                       isDisabled={isLoading}
+                      aria-label={`Confirm ${req.tool_name}: ${shortDescription}`}
+                      aria-describedby={
+                        argsDisplay
+                          ? `conf-args-${req.confirmation_id}`
+                          : undefined
+                      }
                     >
                       Do it
                     </Button>
@@ -266,6 +286,7 @@ const ConfirmationDialogs = ({
                       variant="bordered"
                       onPress={() => handleSingleSkip(req.confirmation_id)}
                       isDisabled={isLoading}
+                      aria-label={`Skip ${req.tool_name}: ${shortDescription}`}
                     >
                       Skip
                     </Button>

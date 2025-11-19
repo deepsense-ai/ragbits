@@ -170,8 +170,6 @@ export default function ChatHistory() {
                 return null;
               }
 
-              console.log(summary);
-
               const isSelected = conversation === currentConversation;
               const isEdited = conversation === editingKey;
               const variant = isSelected ? "solid" : "light";
