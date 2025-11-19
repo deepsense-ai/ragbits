@@ -65,6 +65,10 @@ with suppress(ImportError):
 
     from ragbits.core.llms import LiteLLM
 
+# Confirmation ID length: 16 hex chars provides sufficient uniqueness
+# while being compact for display and storage
+CONFIRMATION_ID_LENGTH = 16
+
 _Input = TypeVar("_Input", bound=BaseModel)
 _Output = TypeVar("_Output")
 
@@ -960,7 +964,7 @@ class Agent(
             # Generate a stable confirmation ID based on tool name and arguments
             confirmation_id = hashlib.sha256(
                 f"{tool_call.name}:{json.dumps(tool_call.arguments, sort_keys=True)}".encode()
-            ).hexdigest()[:16]
+            ).hexdigest()[:CONFIRMATION_ID_LENGTH]
 
             # Check if this specific tool call has been confirmed or declined
             is_confirmed = any(

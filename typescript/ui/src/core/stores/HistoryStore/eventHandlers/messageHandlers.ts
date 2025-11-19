@@ -22,18 +22,14 @@ export const handleText: PrimaryHandler<TextChatResponse> = (
   const message = draft.history[ctx.messageId];
 
   // Check if this is the first text after confirmation break
-  // (confirmations were just resolved and we're receiving post-confirmation text)
-  const isAfterConfirmation =
-    message.hasConfirmationBreak &&
-    message.confirmationRequests &&
-    Object.keys(message.confirmationRequests).length > 0;
-
-  // Add double newline if this is the first text after confirmation
-  // This separates pre-confirmation text from post-confirmation text
-  if (isAfterConfirmation && !message.content.endsWith("\n\n")) {
-    message.content += "\n\n";
-    // Clear the flag so we only add separator once
+  // Clear flag immediately to prevent race conditions with rapid chunks
+  if (message.hasConfirmationBreak) {
     message.hasConfirmationBreak = false;
+
+    // Add double newline separator if not already present
+    if (!message.content.endsWith("\n\n")) {
+      message.content += "\n\n";
+    }
   }
 
   // Add text content
@@ -166,18 +162,32 @@ export const handleConfirmationRequest: PrimaryHandler<
 
 export const handleConfirmationStatus: PrimaryHandler<
   ConfirmationStatusChatResponse
-> = (response, draft) => {
+> = (response, draft, ctx) => {
   const { confirmation_id, status } = response.content.confirmation_status;
 
-  // Find the message with matching confirmation_id and update its state
-  Object.values(draft.history).forEach((message) => {
+  // Optimize: Check current message first (most likely location)
+  const currentMessage = draft.history[ctx.messageId];
+  if (
+    currentMessage?.confirmationStates &&
+    confirmation_id in currentMessage.confirmationStates
+  ) {
+    // Type-safe status assignment
+    if (status === "confirmed" || status === "declined") {
+      currentMessage.confirmationStates[confirmation_id] = status;
+    }
+    return;
+  }
+
+  // Fallback: Search all messages if not in current message
+  for (const message of Object.values(draft.history)) {
     if (
       message.confirmationStates &&
       confirmation_id in message.confirmationStates
     ) {
-      message.confirmationStates[confirmation_id] = status as
-        | "confirmed"
-        | "declined";
+      if (status === "confirmed" || status === "declined") {
+        message.confirmationStates[confirmation_id] = status;
+      }
+      break; // Stop after first match
     }
-  });
+  }
 };

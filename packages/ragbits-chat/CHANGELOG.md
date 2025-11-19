@@ -3,7 +3,7 @@
 ## Unreleased
 - Add automatic topic extraction to be used as conversation title with ability to edit in the client side (#840)
 - Add todo list component to the UI, add support for todo events in API (#827)
-
+- Add support for confirmation requests in chat (#853)
 - customizable HeroUI theme (#841)
 
 ### Added
