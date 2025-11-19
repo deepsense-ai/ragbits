@@ -27,6 +27,7 @@ From the project root:
 cd examples/evaluate/fixtures/hotel-api
 uv run python populate_db.py  # First time setup
 uv run uvicorn app:app --reload --port 8000
+uv run python clear_db.py # Clear the hotel api database
 ```
 
 

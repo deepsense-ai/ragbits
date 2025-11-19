@@ -14,7 +14,6 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from examples.agents.agent_scenarios.config import config
-
 from examples.evaluate.fixtures.hotel import (
     HotelPrompt,
     HotelPromptInput,

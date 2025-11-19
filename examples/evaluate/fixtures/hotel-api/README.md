@@ -10,23 +10,16 @@ A simple mock hotel booking API for demonstrating agent-based interactions and e
 
 ```bash
 # Create database and populate with mock data
+cd examples/evaluate/fixtures/hotel-api
 uv run python populate_db.py
 ```
 
 ### 2. Run the API
 
-From the project root:
-
 ```bash
-cd examples/evaluate/fixtures/hotel-api
 uv run uvicorn app:app --reload --port 8000
 ```
 
-Or from the project root:
-
-```bash
-uv run uvicorn examples.evaluate.fixtures.hotel_api.app:app --reload --port 8000
-```
 
 The API will be available at `http://localhost:8000`. View interactive docs at `http://localhost:8000/docs`.
 
