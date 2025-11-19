@@ -4,7 +4,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 type ConfirmationDialogsProps = {
-  confirmationRequests: ConfirmationRequest[];
+  confirmationRequests: Record<string, ConfirmationRequest>;
   confirmationStates: Record<
     string,
     "pending" | "confirmed" | "declined" | "skipped"
@@ -13,6 +13,7 @@ type ConfirmationDialogsProps = {
   onSkip: (confirmationId: string) => void;
   onBulkConfirm: (confirmationIds: string[]) => void;
   onBulkSkip: (confirmationIds: string[]) => void;
+  isLoading: boolean;
 };
 
 const ConfirmationDialogs = ({
@@ -22,8 +23,12 @@ const ConfirmationDialogs = ({
   onSkip,
   onBulkConfirm,
   onBulkSkip,
+  isLoading,
 }: ConfirmationDialogsProps) => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Convert Record to array for easier iteration
+  const confirmationRequestsArray = Object.values(confirmationRequests);
 
   // Helper function to format arguments for display
   const formatArguments = (args: Record<string, unknown>): string => {
@@ -67,7 +72,7 @@ const ConfirmationDialogs = ({
     return `Execute ${toolName}`;
   };
 
-  const pendingRequests = confirmationRequests.filter(
+  const pendingRequests = confirmationRequestsArray.filter(
     (req) => confirmationStates[req.confirmation_id] === "pending",
   );
 
@@ -143,6 +148,7 @@ const ConfirmationDialogs = ({
               color="success"
               variant="solid"
               onPress={handleConfirmAll}
+              isDisabled={isLoading}
             >
               ✓ Confirm All ({pendingRequests.length})
             </Button>
@@ -151,6 +157,7 @@ const ConfirmationDialogs = ({
               color="default"
               variant="bordered"
               onPress={handleSkipAll}
+              isDisabled={isLoading}
             >
               ⏭ Skip All
             </Button>
@@ -160,6 +167,7 @@ const ConfirmationDialogs = ({
                 color="success"
                 variant="flat"
                 onPress={handleConfirmSelected}
+                isDisabled={isLoading}
               >
                 ✓ Confirm Selected ({selectedIds.size})
               </Button>
@@ -169,9 +177,9 @@ const ConfirmationDialogs = ({
 
         {/* List of confirmations */}
         <div
-          className={`flex flex-col gap-2 ${confirmationRequests.length > 3 ? "max-h-[400px] overflow-y-auto pr-2" : ""}`}
+          className={`flex flex-col gap-2 ${confirmationRequestsArray.length > 3 ? "max-h-[400px] overflow-y-auto pr-2" : ""}`}
         >
-          {confirmationRequests.map((req) => {
+          {confirmationRequestsArray.map((req) => {
             const state = confirmationStates[req.confirmation_id] || "pending";
             const isPending = state === "pending";
             const isSkipped = state === "skipped";
@@ -204,6 +212,7 @@ const ConfirmationDialogs = ({
                     }
                     size="sm"
                     className="shrink-0"
+                    isDisabled={isLoading}
                   />
                 )}
 
@@ -247,6 +256,7 @@ const ConfirmationDialogs = ({
                       color="success"
                       variant="solid"
                       onPress={() => handleSingleConfirm(req.confirmation_id)}
+                      isDisabled={isLoading}
                     >
                       Do it
                     </Button>
@@ -255,6 +265,7 @@ const ConfirmationDialogs = ({
                       color="default"
                       variant="bordered"
                       onPress={() => handleSingleSkip(req.confirmation_id)}
+                      isDisabled={isLoading}
                     >
                       Skip
                     </Button>

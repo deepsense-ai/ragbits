@@ -24,7 +24,7 @@ export const handleText: PrimaryHandler<TextChatResponse> = (
   // Check if this is the first text after confirmation(s)
   const isAfterConfirmation =
     message.confirmationRequests &&
-    message.confirmationRequests.length > 0 &&
+    Object.keys(message.confirmationRequests).length > 0 &&
     message.content.length === 0;
 
   // Add visual separator if this is the first text after confirmation
@@ -143,27 +143,33 @@ export const handleConfirmationRequest: PrimaryHandler<
 > = (response, draft, ctx) => {
   const message = draft.history[ctx.messageId];
 
-  console.log(
-    "📥 Confirmation request received:",
-    response.content.confirmation_request.confirmation_id,
-  );
+  const confirmationId = response.content.confirmation_request.confirmation_id;
 
-  // Initialize arrays if they don't exist
+  console.log("📥 Confirmation request received:", confirmationId);
+
+  // Initialize Records if they don't exist
   if (!message.confirmationRequests) {
-    message.confirmationRequests = [];
+    message.confirmationRequests = {};
   }
   if (!message.confirmationStates) {
     message.confirmationStates = {};
   }
 
-  // Add to new array-based system
-  message.confirmationRequests.push(response.content.confirmation_request);
-  message.confirmationStates[
-    response.content.confirmation_request.confirmation_id
-  ] = "pending";
+  // Check if this confirmation already exists
+  if (confirmationId in message.confirmationRequests) {
+    console.log(
+      `⚠️  Duplicate confirmation request for ${confirmationId} - ignoring`,
+    );
+    return;
+  }
+
+  // Add to Record-based system (prevents duplicates by design)
+  message.confirmationRequests[confirmationId] =
+    response.content.confirmation_request;
+  message.confirmationStates[confirmationId] = "pending";
 
   console.log(
-    `📊 Total confirmations now: ${message.confirmationRequests.length}`,
+    `📊 Total confirmations now: ${Object.keys(message.confirmationRequests).length}`,
   );
 };
 

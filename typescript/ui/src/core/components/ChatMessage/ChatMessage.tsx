@@ -69,7 +69,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     const showLiveUpdates = liveUpdates && Object.keys(liveUpdates).length > 0;
 
     const showConfirmations =
-      confirmationRequests && confirmationRequests.length > 0;
+      confirmationRequests && Object.keys(confirmationRequests).length > 0;
 
     const handleSingleConfirmation = (confirmationId: string) => {
       console.log("🔍 Single confirmation:", confirmationId);
@@ -86,8 +86,9 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
 
       // Build decisions for ALL confirmations (confirmed and declined)
       // This ensures the backend knows about all decisions, not just confirmed ones
-      const allIds =
-        confirmationRequests?.map((req) => req.confirmation_id) || [];
+      const allIds = confirmationRequests
+        ? Object.keys(confirmationRequests)
+        : [];
       const decisions = allIds.reduce(
         (acc, id) => ({ ...acc, [id]: confirmationIds.includes(id) }),
         {} as Record<string, boolean>,
@@ -101,8 +102,9 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
       console.log("🔍 Bulk skip:", confirmationIds);
 
       // Build decisions for ALL confirmations
-      const allIds =
-        confirmationRequests?.map((req) => req.confirmation_id) || [];
+      const allIds = confirmationRequests
+        ? Object.keys(confirmationRequests)
+        : [];
       const decisions = allIds.reduce(
         (acc, id) => ({ ...acc, [id]: false }),
         {} as Record<string, boolean>,
@@ -174,6 +176,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                     onSkip={handleSingleSkip}
                     onBulkConfirm={handleBulkConfirm}
                     onBulkSkip={handleBulkSkip}
+                    isLoading={isLoading}
                   />
                 )}
                 <MarkdownContent

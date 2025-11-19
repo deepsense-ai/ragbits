@@ -27,7 +27,7 @@ export interface ChatMessage {
   images?: Record<string, Image["url"]>;
   usage?: Record<string, MessageUsage>;
   tasks?: Task[];
-  confirmationRequests?: ConfirmationRequest[];
+  confirmationRequests?: Record<string, ConfirmationRequest>;
   confirmationStates?: Record<
     string,
     "pending" | "confirmed" | "declined" | "skipped"
