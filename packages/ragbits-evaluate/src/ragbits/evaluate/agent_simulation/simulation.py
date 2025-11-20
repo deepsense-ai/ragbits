@@ -115,20 +115,24 @@ class GoalChecker:
 
 
 class ToolUsageChecker:
-    """A lightweight judge model that verifies whether the agent used the expected tools.
+    """A simple comparator that verifies whether the agent used the expected tools.
 
-    It inspects the tool calls made during the conversation and checks if they match
-    the expected tools for the current task.
+    It checks if all expected tools from the task were called during the conversation turn.
     """
 
-    def __init__(self, llm: LiteLLM, scenario: Scenario) -> None:
-        self.llm = llm
+    def __init__(self, scenario: Scenario) -> None:
         self.scenario = scenario
 
-    async def check_tool_usage(
-        self, current_task: Task, tool_calls: list[ToolCallResult], history: list[Turn]
-    ) -> tuple[bool, str]:
-        """Check if the expected tools were used for the current task."""
+    def check_tool_usage(self, current_task: Task, tool_calls: list[ToolCallResult]) -> tuple[bool, str]:  # noqa: PLR6301
+        """Check if the expected tools were used for the current task.
+
+        Args:
+            current_task: The current task being evaluated
+            tool_calls: List of tool calls made during this turn
+
+        Returns:
+            Tuple of (success: bool, reason: str)
+        """
         if not current_task.expected_tools:
             return True, "No expected tools specified"
 
@@ -148,50 +152,7 @@ class ToolUsageChecker:
                 f"Expected tools not used: {', '.join(missing_tools)}. Tools called: {', '.join(called_tool_names)}",
             )
 
-        # Use LLM to verify tool usage was appropriate for the task
-        history_text = []
-        for t in history:
-            history_text.append(f"User: {t.user}\nAssistant: {t.assistant}")
-        history_block = "\n\n".join(history_text) if history_text else "(no prior messages)"
-
-        tool_calls_text = "\n".join([f"- {tc.name}({tc.arguments})" for tc in tool_calls])
-
-        prompt = (
-            "[SYSTEM]\n"
-            "You are a tool usage evaluator for an agent conversation. "
-            "Verify that the tools used by the agent were appropriate and necessary for completing the task.\n"
-            f"Current task: {current_task.task}\n"
-            f"Expected tools: {', '.join(expected_tool_names)}\n"
-            f"Tools actually called: {', '.join(called_tool_names)}\n\n"
-            "Respond with a concise JSON object ONLY, no extra text, with fields:\n"
-            '{"appropriate": true|false, "reason": "short reason"}\n\n'
-            "[CONVERSATION]\n"
-            f"{history_block}\n\n"
-            "[TOOL CALLS]\n"
-            f"{tool_calls_text}\n\n"
-            "[TASK]\nReturn the JSON now:"
-        )
-
-        response = await self.llm.generate(prompt=prompt)
-        text = response.strip()
-        # Be robust to slight deviations by attempting a minimal parse
-        appropriate = True
-        reason = ""
-        try:
-            data = json.loads(text)
-            appropriate = bool(data.get("appropriate", True))
-            reason = str(data.get("reason", "")).strip()
-        except Exception:
-            # Fallback: if all expected tools were called, consider it appropriate
-            upper = text.upper()
-            if "APPROPRIATE" in upper and "FALSE" in upper:
-                appropriate = False
-            reason = text
-
-        if not appropriate:
-            return False, f"Tool usage inappropriate: {reason}"
-
-        return True, f"All expected tools used appropriately: {', '.join(called_tool_names)}"
+        return True, f"All expected tools used: {', '.join(called_tool_names)}"
 
 
 def build_llm(model_name: str | None, default_model: str, api_key: str) -> LiteLLM:

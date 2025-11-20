@@ -46,8 +46,8 @@ async def run_duet(  # noqa: PLR0912
     sim_user = SimulatedUser(llm=build_llm(sim_user_model_name, default_model, api_key), scenario=scenario)
     # Independent goal checker model
     goal_checker = GoalChecker(llm=build_llm(checker_model_name, default_model, api_key), scenario=scenario)
-    # Tool usage checker
-    tool_checker = ToolUsageChecker(llm=build_llm(checker_model_name, default_model, api_key), scenario=scenario)
+    # Tool usage checker (simple comparator, no LLM needed)
+    tool_checker = ToolUsageChecker(scenario=scenario)
 
     history: list[Turn] = []
     logger = ConversationLogger(log_file)
@@ -92,7 +92,7 @@ async def run_duet(  # noqa: PLR0912
 
         # Check tool usage if expected tools are specified
         if current_task.expected_tools:
-            tools_used_correctly, tool_reason = await tool_checker.check_tool_usage(current_task, tool_calls, history)
+            tools_used_correctly, tool_reason = tool_checker.check_tool_usage(current_task, tool_calls)
             logger.log_tool_check(turn_idx, tools_used_correctly, tool_reason, tool_calls)
             if not tools_used_correctly:
                 print(f"Tool usage issue: {tool_reason}")
