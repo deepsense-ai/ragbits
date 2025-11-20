@@ -19,6 +19,8 @@ class Task:
 
     task: str
     expected_result: str
+    expected_tools: list[str] | None = None
+    """Optional list of tool names that should be used to complete this task."""
 
 
 @dataclass

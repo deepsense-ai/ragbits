@@ -9,6 +9,7 @@ The Agent Scenarios example consists of:
 - **Hotel Booking Agent**: A ragbits agent that uses hotel booking tools to help users find and book hotel rooms
 - **Simulated User**: An LLM-driven user simulator that generates realistic user messages based on tasks
 - **Goal Checker**: An LLM-based judge that evaluates whether tasks have been completed successfully
+- **Tool Usage Checker**: An LLM-based evaluator that verifies the agent is using the expected tools for each task
 
 ## Prerequisites
 
@@ -64,6 +65,7 @@ Scenarios are defined in `scenarios.json`. Each scenario contains:
 - **tasks**: List of tasks to complete sequentially
   - **task**: Description of what the user wants to accomplish
   - **expected_result**: What should happen when the task is completed
+  - **expected_tools** (optional): List of tool names that should be used to complete this task
 
 Example scenario:
 ```json
@@ -72,19 +74,38 @@ Example scenario:
   "tasks": [
     {
       "task": "are there rooms available in Krakow on 2025-06-01",
-      "expected_result": "{list of available rooms}"
+      "expected_result": "{list of available rooms}",
+      "expected_tools": ["search_available_rooms"]
     },
     {
       "task": "are there delux rooms",
-      "expected_result": "{list of rooms}"
+      "expected_result": "{list of rooms}",
+      "expected_tools": ["search_available_rooms"]
     },
     {
       "task": "book room",
-      "expected_result": "{book room}"
+      "expected_result": "{book room}",
+      "expected_tools": ["create_reservation"]
     }
   ]
 }
 ```
+
+When `expected_tools` is specified, the system will:
+- Track all tool calls made during the conversation turn
+- Verify that all expected tools were used
+- Use an LLM to evaluate if the tool usage was appropriate for the task
+- Log the results and display feedback in the console
+
+Available hotel booking tools:
+- `list_cities` - Get a list of all available cities
+- `list_hotels` - List hotels, optionally filtered by city
+- `get_hotel_details` - Get detailed information about a specific hotel
+- `search_available_rooms` - Search for available rooms with filters (dates, city, price, room type)
+- `create_reservation` - Create a new hotel reservation
+- `list_reservations` - List reservations, optionally filtered by guest name
+- `get_reservation` - Get details of a specific reservation
+- `cancel_reservation` - Cancel a reservation
 
 ## How It Works
 
@@ -93,9 +114,10 @@ Example scenario:
 3. **Conversation Loop**:
    - Simulated user generates a message based on the current task
    - Hotel booking agent processes the message and may call tools
+   - Tool usage checker verifies expected tools were used (if `expected_tools` is specified)
    - Goal checker evaluates if the task is complete
    - If complete, move to the next task; otherwise, continue the conversation
-4. **Logging**: All turns and task completions are logged to a file
+4. **Logging**: All turns, tool calls, tool usage checks, and task completions are logged to a file
 
 ## Architecture
 

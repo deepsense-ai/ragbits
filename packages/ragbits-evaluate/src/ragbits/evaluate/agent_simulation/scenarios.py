@@ -18,7 +18,8 @@ def load_scenarios(scenarios_file: str = "scenarios.json") -> list[Scenario]:
         "tasks": [
           {
             "task": "task description",
-            "expected_result": "expected result description"
+            "expected_result": "expected result description",
+            "expected_tools": ["tool1", "tool2"]  # optional
           },
           ...
         ]
@@ -64,7 +65,10 @@ def load_scenarios(scenarios_file: str = "scenarios.json") -> list[Scenario]:
 
             task_desc = task_data.get("task", "")
             expected_result = task_data.get("expected_result", "")
-            tasks.append(Task(task=task_desc, expected_result=expected_result))
+            expected_tools = task_data.get("expected_tools")
+            if expected_tools is not None and not isinstance(expected_tools, list):
+                raise ValueError(f"expected_tools must be a list or null, got {type(expected_tools).__name__}")
+            tasks.append(Task(task=task_desc, expected_result=expected_result, expected_tools=expected_tools))
 
         scenarios.append(Scenario(name=name, tasks=tasks))
 
