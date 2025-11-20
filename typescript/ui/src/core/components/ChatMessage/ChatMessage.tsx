@@ -80,7 +80,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
           ragbitsClient,
         );
       } catch (error) {
-        // Error will be handled by the chat system
+        console.error(error);
       }
     };
 
@@ -93,7 +93,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
           ragbitsClient,
         );
       } catch (error) {
-        // Error will be handled by the chat system
+        console.error(error);
       }
     };
 
@@ -116,7 +116,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
           ragbitsClient,
         );
       } catch (error) {
-        // Error will be handled by the chat system
+        console.error(error);
       }
     };
 
@@ -138,7 +138,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
           ragbitsClient,
         );
       } catch (error) {
-        // Error will be handled by the chat system
+        console.error(error);
       }
     };
 
