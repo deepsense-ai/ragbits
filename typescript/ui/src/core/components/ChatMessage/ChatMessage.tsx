@@ -80,8 +80,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
           ragbitsClient,
         );
       } catch (error) {
-        console.error("Failed to send confirmation:", error);
-        // TODO: Add toast notification for user feedback
+        console.error(error);
       }
     };
 
@@ -94,8 +93,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
           ragbitsClient,
         );
       } catch (error) {
-        console.error("Failed to send skip confirmation:", error);
-        // TODO: Add toast notification for user feedback
+        console.error(error);
       }
     };
 
@@ -118,8 +116,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
           ragbitsClient,
         );
       } catch (error) {
-        console.error("Failed to send bulk confirmation:", error);
-        // TODO: Add toast notification for user feedback
+        console.error(error);
       }
     };
 
@@ -141,8 +138,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
           ragbitsClient,
         );
       } catch (error) {
-        console.error("Failed to send bulk skip:", error);
-        // TODO: Add toast notification for user feedback
+        console.error(error);
       }
     };
 
