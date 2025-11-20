@@ -19,6 +19,20 @@ vi.mock("../../src/core/stores/HistoryStore/selectors", () => {
   };
 });
 
+vi.mock("@ragbits/api-client-react", () => {
+  return {
+    useRagbitsContext: vi.fn(() => ({
+      client: {
+        // Mock client methods if needed
+      },
+    })),
+    MessageRole: {
+      Assistant: "assistant",
+      User: "user",
+    },
+  };
+});
+
 import userEvent from "@testing-library/user-event";
 import {
   useConversationProperty,
@@ -41,6 +55,9 @@ function mockStore(
   (useHistoryStore as unknown as Mock).mockImplementation((selector) =>
     selector({
       addMessage: vi.fn(),
+      actions: {
+        sendSilentConfirmation: vi.fn(),
+      },
     }),
   );
   (useMessage as Mock).mockImplementation(() => {
