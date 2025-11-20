@@ -101,16 +101,11 @@ class GoalChecker:
         # Be robust to slight deviations by attempting a minimal parse
         done = False
         reason = ""
-        try:
-            data = json.loads(text)
-            done = bool(data.get("done", False))
-            reason = str(data.get("reason", "")).strip()
-        except Exception:
-            # Fallback: simple heuristics
-            upper = text.upper()
-            if "DONE" in upper and "FALSE" not in upper:
-                done = True
-            reason = text
+
+        data = json.loads(text)
+        done = bool(data.get("done", False))
+        reason = str(data.get("reason", "")).strip()
+
         return done, reason
 
 

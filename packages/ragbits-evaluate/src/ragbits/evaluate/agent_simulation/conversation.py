@@ -11,7 +11,7 @@ from ragbits.evaluate.agent_simulation.models import Scenario, Turn
 from ragbits.evaluate.agent_simulation.simulation import GoalChecker, SimulatedUser, ToolUsageChecker, build_llm
 
 
-async def run_duet(  # noqa: PLR0912
+async def run_duet(  # noqa: PLR0912, PLR0915
     scenario: Scenario,
     agent: Agent,
     prompt_input_class: type[Any],  # noqa: ANN401
@@ -107,7 +107,8 @@ async def run_duet(  # noqa: PLR0912
             next_task = sim_user.get_current_task()
             if next_task:
                 logger.log_task_transition(next_task)
-
+        else:
+            print(f"Task not completed: {reason}")
         # Ask the simulator for the next user message
         user_message = await sim_user.next_message(history)
 
