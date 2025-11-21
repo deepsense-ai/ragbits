@@ -25,9 +25,7 @@ export default function LogoutButton() {
 
     try {
       // No body needed - session is in HTTP-only cookie
-      const response = await logoutRequestFactory.call({
-        body: {},
-      });
+      const response = await logoutRequestFactory.call();
 
       if (!response.success) {
         return;

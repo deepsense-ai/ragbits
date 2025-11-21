@@ -58,7 +58,7 @@ describe("LogoutButton", () => {
     await user.click(button);
 
     await waitFor(() => {
-      expect(callMock).toHaveBeenCalledWith({ body: {} });
+      expect(callMock).toHaveBeenCalledWith();
       expect(logoutMock).toHaveBeenCalled();
       expect(navigateMock).toHaveBeenCalledWith("/login");
     });
