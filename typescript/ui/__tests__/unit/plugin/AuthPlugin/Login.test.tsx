@@ -81,7 +81,6 @@ describe("CredentialsLogin component", () => {
   it("successful login calls API, login, initialize store, and navigates", async () => {
     callMock.mockResolvedValue({
       success: true,
-      jwt_token: "token123",
       user: { user_id: "user-1" },
     });
 
@@ -99,7 +98,7 @@ describe("CredentialsLogin component", () => {
       expect(callMock).toHaveBeenCalledWith({
         body: { username: "user123", password: "password" },
       });
-      expect(loginMock).toHaveBeenCalledWith({ user_id: "user-1" }, "token123");
+      expect(loginMock).toHaveBeenCalledWith({ user_id: "user-1" });
       expect(initializeUserStoreMock).toHaveBeenCalledWith("user-1");
       expect(navigateMock).toHaveBeenCalledWith("/");
     });

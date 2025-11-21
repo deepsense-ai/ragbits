@@ -5,9 +5,6 @@ export const CredentialsLoginPluginName = "CredentialsLoginPlugin";
 export const CredentialsLoginPlugin = createPlugin({
   name: CredentialsLoginPluginName,
   components: {
-    CredentialsLogin: lazy(
-      () => import("../components/CredentialsLogin"),
-    ),
+    CredentialsLogin: lazy(() => import("../components/CredentialsLogin")),
   },
 });
-

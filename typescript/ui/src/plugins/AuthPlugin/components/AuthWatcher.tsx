@@ -1,51 +1,40 @@
-import { useCallback, useEffect, useRef } from "react";
-import { useNavigate } from "react-router";
+import { useEffect } from "react";
 import { useStore } from "zustand";
 import { authStore } from "../stores/authStore";
-import { useConversationProperty } from "../../../core/stores/HistoryStore/selectors";
+import { useRagbitsContext } from "@ragbits/api-client-react";
+import { useInitializeUserStore } from "../../../core/stores/HistoryStore/useInitializeUserStore";
 
 /**
- * Ensures that we logout users when the token exipres
+ * Ensures that we logout users when the session expires
  */
 export function AuthWatcher() {
-  const { token, tokenExpiration, logout } = useStore(authStore, (s) => s);
-  const isConversationLoading = useConversationProperty((s) => s.isLoading);
-  const navigate = useNavigate();
-  const loadingRef = useRef(isConversationLoading);
+  const { logout, login, setHydrated } = useStore(authStore, (s) => s);
+  const { client } = useRagbitsContext();
+  const initializeUserStore = useInitializeUserStore();
 
+  // Check session on mount
   useEffect(() => {
-    loadingRef.current = isConversationLoading;
-  }, [isConversationLoading]);
-
-  const handleLogoutWhenReady = useCallback(() => {
-    const check = () => {
-      if (!loadingRef.current) {
+    const checkSession = async () => {
+      try {
+        const user = await client.makeRequest("/api/user");
+        if (user) {
+          login(user);
+          // Initialize the history store with user-specific key
+          initializeUserStore(user.user_id);
+        } else {
+          logout();
+        }
+      } catch (error) {
+        console.error("Failed to check session:", error);
         logout();
-        navigate("/login");
-      } else {
-        setTimeout(check, 500);
+      } finally {
+        setHydrated();
       }
     };
-    check();
-  }, [logout, navigate]);
 
-  useEffect(() => {
-    if (!token || !tokenExpiration) return;
-
-    const now = Date.now();
-    const timeUntilExpiration = tokenExpiration - now;
-
-    if (timeUntilExpiration <= 0) {
-      handleLogoutWhenReady();
-      return;
-    }
-
-    const timeoutId = setTimeout(() => {
-      handleLogoutWhenReady();
-    }, timeUntilExpiration);
-
-    return () => clearTimeout(timeoutId);
-  }, [token, tokenExpiration, handleLogoutWhenReady]);
+    checkSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run only once on mount
 
   return null;
 }

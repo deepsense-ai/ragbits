@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ConfigurableComponent
 
-from .types import JWTToken, OAuth2Credentials, User, UserCredentials
+from .types import OAuth2Credentials, User, UserCredentials
 
 
 class AuthOptions(Options):
@@ -22,7 +22,7 @@ class AuthenticationResponse(BaseModel):
 
     success: bool
     user: User | None = None
-    jwt_token: JWTToken | None = None
+    session_id: str | None = None
     error_message: str | None = None
 
 
@@ -60,17 +60,16 @@ class AuthenticationBackend(ConfigurableComponent[AuthOptions], ABC):
         pass
 
     @abstractmethod
-    async def validate_token(self, token: str) -> AuthenticationResponse:
+    async def validate_session(self, session_id: str) -> AuthenticationResponse:
         """
-        Validate a JWT jwt_token.
+        Validate a session.
 
         Args:
-            token: The JWT jwt_token to validate
+            session_id: The session ID to validate
 
         Returns:
             AuthenticationResult with user if valid
         """
-        # Default implementation for backward compatibility
         pass
 
     @abstractmethod
