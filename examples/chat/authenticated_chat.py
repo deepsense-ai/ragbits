@@ -61,6 +61,8 @@ from collections.abc import AsyncGenerator
 
 from ragbits.chat.auth import ListAuthenticationBackend
 from ragbits.chat.auth.backends import MultiAuthenticationBackend, OAuth2AuthenticationBackend
+from ragbits.chat.auth.oauth2_providers import DiscordOAuth2Provider
+from ragbits.chat.auth.session_store import InMemorySessionStore
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
 from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
@@ -266,7 +268,10 @@ def get_auth_backend() -> ListAuthenticationBackend:
         },
     ]
 
-    return ListAuthenticationBackend(users)
+    return ListAuthenticationBackend(
+        users=users,
+        session_store=InMemorySessionStore(),
+    )
 
 
 def get_discord_auth_backend() -> OAuth2AuthenticationBackend:
@@ -288,7 +293,7 @@ def get_discord_auth_backend() -> OAuth2AuthenticationBackend:
     3. Discord redirects back to /api/auth/callback/discord with authorization code
     4. Backend exchanges code for access token
     5. Backend fetches user info from Discord API
-    6. Backend creates JWT token and authenticates user
+    6. Backend creates session and authenticates user
 
     Note: The redirect_uri is automatically set to the provider-specific endpoint.
     If you need a custom redirect_uri, you can pass it explicitly or set OAUTH2_REDIRECT_URI env var.
@@ -297,7 +302,8 @@ def get_discord_auth_backend() -> OAuth2AuthenticationBackend:
     # DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, and optionally OAUTH2_REDIRECT_URI
     # If not set, redirect_uri defaults to http://localhost:8000/api/auth/callback/discord
     return OAuth2AuthenticationBackend(
-        # provider defaults to DiscordOAuth2Provider
+        session_store=InMemorySessionStore(),
+        provider=DiscordOAuth2Provider(),
     )
 
 

@@ -41,7 +41,6 @@ class RagbitsChatModelProvider:
 
         try:
             from ragbits.chat.auth.types import (
-                JWTToken,
                 LoginRequest,
                 LoginResponse,
                 LogoutRequest,
@@ -118,7 +117,6 @@ class RagbitsChatModelProvider:
                 "AuthenticationConfig": AuthenticationConfig,
                 "UserCredentials": UserCredentials,
                 "OAuth2Credentials": OAuth2Credentials,
-                "JWTToken": JWTToken,
                 "LoginRequest": LoginRequest,
                 "LoginResponse": LoginResponse,
                 "LogoutRequest": LogoutRequest,
@@ -157,7 +155,6 @@ class RagbitsChatModelProvider:
                 "ServerState",
                 "FeedbackItem",
                 "Image",
-                "JWTToken",
                 "User",
                 "MessageUsage",
                 "Task",

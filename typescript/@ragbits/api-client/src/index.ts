@@ -86,7 +86,13 @@ export class RagbitsClient {
             headers['Authorization'] = `Bearer ${this.auth.getToken()}`
         }
 
-        const response = await fetch(url, { ...options, headers })
+        const response = await fetch(url, {
+            ...options,
+            headers,
+            ...(this.auth?.credentials
+                ? { credentials: this.auth?.credentials }
+                : {}),
+        })
 
         if (response.status === 401) {
             this.auth?.onUnauthorized?.()
@@ -256,6 +262,9 @@ export class RagbitsClient {
                         headers,
                         body: JSON.stringify(data),
                         signal,
+                        ...(this.auth?.credentials
+                            ? { credentials: this.auth?.credentials }
+                            : {}),
                     }
                 )
 

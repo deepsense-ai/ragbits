@@ -34,22 +34,22 @@ export default function CredentialsLogin() {
     const password = formData.get("password") as string;
 
     try {
-      // Replace with your API call
+      // Login with credentials - backend sets HTTP-only cookie
       const response = await loginRequestFactory.call({
         body: { username, password },
       });
 
-      if (!response.success || !response.jwt_token || !response.user) {
+      if (!response.success || !response.user) {
         setError(true);
         return;
       }
 
-      login(response.user, response.jwt_token);
+      login(response.user);
       initializeUserStore(response.user.user_id);
       navigate("/");
     } catch (e) {
-      setError(true);
       console.error("Failed to login", e);
+      setError(true);
     }
   };
 
@@ -111,4 +111,3 @@ export default function CredentialsLogin() {
     </form>
   );
 }
-
