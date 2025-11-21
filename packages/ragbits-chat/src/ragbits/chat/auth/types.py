@@ -46,18 +46,6 @@ class LoginResponse(BaseModel):
     error_message: str | None = Field(None, description="Error message if login failed")
 
 
-class LogoutRequest(BaseModel):
-    """
-    Request body for user logout.
-
-    With session-based authentication using HTTP-only cookies,
-    no request body is needed. The session ID is read from the cookie.
-    This empty model is kept for API consistency.
-    """
-
-    pass
-
-
 class OAuth2AuthorizeResponse(BaseModel):
     """
     Response for OAuth2 authorization URL request
