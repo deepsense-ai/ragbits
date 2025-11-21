@@ -43,6 +43,7 @@ class RagbitsChatModelProvider:
             from ragbits.chat.auth.types import (
                 LoginRequest,
                 LoginResponse,
+                OAuth2AuthorizeResponse,
                 OAuth2Credentials,
                 User,
                 UserCredentials,
@@ -118,6 +119,7 @@ class RagbitsChatModelProvider:
                 # API response models
                 "ConfigResponse": ConfigResponse,
                 "FeedbackResponse": FeedbackResponse,
+                "OAuth2AuthorizeResponse": OAuth2AuthorizeResponse,
                 "OAuth2ProviderConfig": OAuth2ProviderConfig,
                 # API request models
                 "ChatRequest": ChatMessageRequest,
@@ -126,7 +128,6 @@ class RagbitsChatModelProvider:
                 "AuthType": AuthType,
                 "AuthenticationConfig": AuthenticationConfig,
                 "UserCredentials": UserCredentials,
-                "OAuth2Credentials": OAuth2Credentials,
                 "LoginRequest": LoginRequest,
                 "LoginResponse": LoginResponse,
                 "User": User,
@@ -198,6 +199,7 @@ class RagbitsChatModelProvider:
                 "UserCredentials",
                 "OAuth2Credentials",
                 "LoginRequest",
+                "LogoutRequest",
             ],
         }
 

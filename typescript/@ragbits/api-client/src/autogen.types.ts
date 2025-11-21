@@ -350,6 +350,20 @@ export interface FeedbackResponse {
 }
 
 /**
+ * Response for OAuth2 authorization URL request
+ */
+export interface OAuth2AuthorizeResponse {
+    /**
+     * URL to redirect user to for OAuth2 authorization
+     */
+    authorize_url: string
+    /**
+     * State parameter for CSRF protection
+     */
+    state: string
+}
+
+/**
  * Configuration for an OAuth2 provider.
  */
 export interface OAuth2ProviderConfig {
@@ -427,14 +441,6 @@ export interface AuthenticationConfig {
 export interface UserCredentials {
     username: string
     password: string
-}
-
-/**
- * Represents OAuth2 authentication data from Discord.
- */
-export interface OAuth2Credentials {
-    access_token: string
-    token_type: string
 }
 
 /**
