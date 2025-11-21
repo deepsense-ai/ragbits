@@ -4,10 +4,8 @@ import {
     FeedbackResponse,
     ChatRequest,
     ChatResponse,
-    LogoutRequest,
     LoginRequest,
     LoginResponse,
-    OAuth2AuthorizeResponse,
     User,
 } from './autogen.types'
 
@@ -58,7 +56,7 @@ export interface BaseApiEndpoints {
     '/api/config': EndpointDefinition<never, ConfigResponse>
     '/api/feedback': EndpointDefinition<FeedbackRequest, FeedbackResponse>
     '/api/auth/login': EndpointDefinition<LoginRequest, LoginResponse>
-    '/api/auth/logout': EndpointDefinition<LogoutRequest, GenericResponse>
+    '/api/auth/logout': EndpointDefinition<never, GenericResponse>
     '/api/user': EndpointDefinition<never, User>
     '/api/theme': EndpointDefinition<never, string>
 }
