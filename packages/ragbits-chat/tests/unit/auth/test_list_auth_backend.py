@@ -193,6 +193,7 @@ class TestListAuthSessionOperations:
         auth_result = await auth_backend.authenticate_with_credentials(credentials)
 
         # Validate the session
+        assert auth_result.session_id is not None
         result = await auth_backend.validate_session(auth_result.session_id)
 
         assert result.success is True
@@ -244,8 +245,6 @@ class TestListAuthSessionOperations:
         assert "expired-session" not in session_store.sessions
 
 
-
-
 class TestListAuthSessionRevocation:
     """Test session revocation functionality."""
 
@@ -257,6 +256,7 @@ class TestListAuthSessionRevocation:
         test_password = "password123"  # noqa: S106,S105
         credentials = UserCredentials(username="alice", password=test_password)
         auth_result = await auth_backend.authenticate_with_credentials(credentials)
+        assert auth_result.session_id is not None
         session_id = auth_result.session_id
 
         # Session should be valid
@@ -292,6 +292,8 @@ class TestListAuthSessionRevocation:
         bob_result = await auth_backend.authenticate_with_credentials(bob_creds)
 
         # Both sessions should be valid
+        assert alice_result.session_id is not None
+        assert bob_result.session_id is not None
         alice_validation = await auth_backend.validate_session(alice_result.session_id)
         bob_validation = await auth_backend.validate_session(bob_result.session_id)
         assert alice_validation.success is True
@@ -444,7 +446,9 @@ class TestListAuthIntegration:
         result = await backend.authenticate_with_credentials(credentials)
 
         # Get the session from store
+        assert result.session_id is not None
         session = await session_store.get_session(result.session_id)
+        assert session is not None
 
         # Check expiry time is approximately 12 hours from now
         time_diff = session.expires_at - session.created_at

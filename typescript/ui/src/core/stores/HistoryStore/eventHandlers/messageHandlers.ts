@@ -118,22 +118,3 @@ export const handleTodoItem: PrimaryHandler<TodoItemChatResonse> = (
 
   message.tasks = newTasks;
 };
-
-export const handleTodoItem: PrimaryHandler<TodoItemChatResonse> = (
-  { content },
-  draft,
-  ctx,
-) => {
-  const message = draft.history[ctx.messageId];
-  const tasks = message.tasks ?? [];
-  const newTasks = produce(tasks, (tasksDraft) => {
-    const taskIndex = tasksDraft.findIndex((t) => t.id === content.id);
-    if (taskIndex === -1) {
-      tasksDraft.push(content);
-    } else {
-      tasksDraft[taskIndex] = content;
-    }
-  });
-
-  message.tasks = newTasks;
-};
