@@ -104,6 +104,10 @@ class ListAuthenticationBackend(AuthenticationBackend):
 
         return AuthenticationResponse(success=True, user=session.user)
 
+    async def validate_token(self, token: str) -> AuthenticationResponse:  # noqa: PLR6301
+        """JWT token validation not supported - use session-based authentication."""
+        return AuthenticationResponse(success=False, error_message="JWT token validation not supported")
+
     async def authenticate_with_oauth2(  # noqa: PLR6301
         self, oauth_credentials: OAuth2Credentials
     ) -> AuthenticationResponse:
@@ -451,6 +455,21 @@ class OAuth2AuthenticationBackend(AuthenticationBackend):
 
         return AuthenticationResponse(success=True, user=session.user)
 
+    async def validate_token(self, token: str) -> AuthenticationResponse:  # noqa: PLR6301
+        """
+        JWT token validation not supported - use session-based authentication.
+
+        This backend uses session-based authentication with HTTP-only cookies.
+        Use validate_session() instead.
+
+        Args:
+            token: JWT token (not supported)
+
+        Returns:
+            AuthenticationResponse with error
+        """
+        return AuthenticationResponse(success=False, error_message="JWT token validation not supported")
+
     async def revoke_token(self, token: str) -> bool:
         """
         Revoke a session.
@@ -547,7 +566,6 @@ class MultiAuthenticationBackend(AuthenticationBackend):
         error_msg = "; ".join(errors) if errors else "OAuth2 authentication failed"
         return AuthenticationResponse(success=False, error_message=error_msg)
 
-
     async def validate_session(self, session_id: str) -> AuthenticationResponse:
         """
         Validate a session.
@@ -566,6 +584,21 @@ class MultiAuthenticationBackend(AuthenticationBackend):
                     return result
 
         return AuthenticationResponse(success=False, error_message="Invalid or expired session")
+
+    async def validate_token(self, token: str) -> AuthenticationResponse:  # noqa: PLR6301
+        """
+        JWT token validation not supported - use session-based authentication.
+
+        This backend uses session-based authentication with HTTP-only cookies.
+        Use validate_session() instead.
+
+        Args:
+            token: JWT token (not supported)
+
+        Returns:
+            AuthenticationResponse with error
+        """
+        return AuthenticationResponse(success=False, error_message="JWT token validation not supported")
 
     async def revoke_token(self, token: str) -> bool:
         """
