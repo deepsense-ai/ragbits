@@ -1,5 +1,5 @@
 import {
-  ClearMessageResponse,
+  ClearMessageChatResponse,
   ImageChatResponse,
   LiveUpdateChatResponse,
   LiveUpdateType,
@@ -18,7 +18,7 @@ export const handleText: PrimaryHandler<TextChatResponse> = (
   ctx,
 ) => {
   const message = draft.history[ctx.messageId];
-  message.content += response.content;
+  message.content += response.content.text;
 };
 
 export const handleReference: PrimaryHandler<ReferenceChatResponse> = (
@@ -36,7 +36,7 @@ export const handleMessageId: PrimaryHandler<MessageIdChatResponse> = (
   ctx,
 ) => {
   const message = draft.history[ctx.messageId];
-  message.serverId = response.content;
+  message.serverId = response.content.message_id;
 };
 
 export const handleLiveUpdate: PrimaryHandler<LiveUpdateChatResponse> = (
@@ -77,7 +77,7 @@ export const handleImage: PrimaryHandler<ImageChatResponse> = (
   });
 };
 
-export const handleClearMessage: PrimaryHandler<ClearMessageResponse> = (
+export const handleClearMessage: PrimaryHandler<ClearMessageChatResponse> = (
   _,
   draft,
   ctx,
@@ -96,7 +96,27 @@ export const handleUsage: PrimaryHandler<MessageUsageChatResponse> = (
   ctx,
 ) => {
   const message = draft.history[ctx.messageId];
-  message.usage = response.content;
+  message.usage = response.content.usage;
+};
+
+export const handleTodoItem: PrimaryHandler<TodoItemChatResonse> = (
+  { content },
+  draft,
+  ctx,
+) => {
+  const message = draft.history[ctx.messageId];
+  const tasks = message.tasks ?? [];
+  const task = content.task;
+  const newTasks = produce(tasks, (tasksDraft) => {
+    const taskIndex = tasksDraft.findIndex((t) => t.id === task.id);
+    if (taskIndex === -1) {
+      tasksDraft.push(task);
+    } else {
+      tasksDraft[taskIndex] = task;
+    }
+  });
+
+  message.tasks = newTasks;
 };
 
 export const handleTodoItem: PrimaryHandler<TodoItemChatResonse> = (

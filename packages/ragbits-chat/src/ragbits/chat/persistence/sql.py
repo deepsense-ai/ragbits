@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import Sequence
 from typing import Any, Protocol, TypeVar
 
 import sqlalchemy
@@ -187,7 +188,7 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
         self,
         message: str,
         response: str,
-        extra_responses: list[ChatResponse],
+        extra_responses: Sequence[ChatResponse],
         context: ChatContext,
         timestamp: float,
     ) -> None:
@@ -208,8 +209,10 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
             if context.conversation_id:
                 await self._ensure_conversation_exists(session, context.conversation_id)
 
-            # Convert to JSON-serializable format (SQLAlchemy will handle the JSON serialization)
-            extra_responses_data = [r.model_dump(mode="json") for r in extra_responses]
+            # Convert to JSON-serializable format with type information
+            extra_responses_data = [
+                {"type": r.get_type(), "content": r.content.model_dump(mode="json")} for r in extra_responses
+            ]
             context_data = context.model_dump(mode="json")
 
             # Create interaction record

@@ -40,7 +40,7 @@
         "@rjsf/utils": "^5.24.12",
         "@testing-library/jest-dom": "^6.4.0",
         "@types/node": "^20.0.0",
-        "@vitest/coverage-v8": "^1.6.0",
+        "@vitest/coverage-v8": "^4.0.7",
         "eslint": "^9.17.0",
         "globals": "^15.14.0",
         "msw": "^2.0.0",
@@ -48,6 +48,6 @@
         "tsup": "^8.0.0",
         "typescript": "^5.0.0",
         "typescript-eslint": "^8.18.2",
-        "vitest": "^1.6.0"
+        "vitest": "^4.0.7"
     }
 }

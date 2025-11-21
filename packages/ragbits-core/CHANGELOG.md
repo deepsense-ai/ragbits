@@ -1,6 +1,9 @@
 # CHANGELOG
 
 ## Unreleased
+- Add Support for Thinking in agents (#837)
+
+- Add name parameter and slightly refactor HuggingFace dataloder (#829)
 
 ## 1.3.0 (2025-09-11)
 

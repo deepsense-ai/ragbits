@@ -26,6 +26,7 @@ export interface ChatMessage {
   images?: Record<string, Image["url"]>;
   usage?: Record<string, MessageUsage>;
   tasks?: Task[];
+  extra?: Record<string, unknown>;
 }
 
 export interface Conversation {
