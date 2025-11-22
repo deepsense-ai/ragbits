@@ -154,6 +154,45 @@ async def chat(self, message: str, history: ChatFormat, context: ChatContext) ->
         yield self.create_text_response(chunk)
 ```
 
+### Custom Response Types
+
+Create your own custom response types to send structured, typed data from your backend to your frontend. This is useful for analytics dashboards, product catalogs, notifications, forms, and any application-specific data structures.
+
+```python
+from pydantic import Field
+from ragbits.chat.interface.types import ResponseContent, ChatResponse
+
+# Define your custom content
+class AnalyticsContent(ResponseContent):
+    """Dashboard analytics data."""
+    total_users: int = Field(..., ge=0)
+    revenue: float = Field(..., ge=0)
+
+    def get_type(self) -> str:
+        return "analytics"
+
+# Define the response wrapper
+class AnalyticsResponse(ChatResponse[AnalyticsContent]):
+    """Analytics response."""
+
+# Use it in your chat
+async def chat(self, message: str, history: ChatFormat, context: ChatContext) -> AsyncGenerator[ChatResponse, None]:
+    if "analytics" in message.lower():
+        analytics = AnalyticsContent(total_users=15234, revenue=125430.50)
+        yield AnalyticsResponse(content=analytics)
+```
+
+Custom responses provide:
+- **Type Safety**: Full IDE autocomplete and type checking
+- **Validation**: Automatic field validation through Pydantic
+- **Serialization**: Seamless JSON conversion for API transmission
+- **Frontend Integration**: Type identifiers help frontends render responses correctly
+
+For detailed information on creating custom response types, see:
+- [How-To: Create Custom Response Types](./custom_responses.md)
+- Example: `examples/chat/custom_responses_example.py`
+- Simple Example: `examples/chat/simple_custom_response.py`
+
 ## State Management
 
 Ragbits Chat provides secure state management to maintain conversation context across requests. State data is automatically signed using HMAC to prevent tampering.
