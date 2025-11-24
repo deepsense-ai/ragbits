@@ -57,7 +57,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse
-from ragbits.chat.persistence.sql import SQLHistoryPersistence, SQLHistoryPersistenceOptions
+from ragbits.chat.persistence import SQLHistoryPersistence, SQLHistoryPersistenceOptions
 from ragbits.core.prompt import ChatFormat
 
 
