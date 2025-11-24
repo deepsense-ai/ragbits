@@ -29,3 +29,11 @@ class Scenario:
 
     name: str
     tasks: list[Task]
+
+
+@dataclass
+class Personality:
+    """A personality definition for the simulated user."""
+
+    name: str
+    description: str

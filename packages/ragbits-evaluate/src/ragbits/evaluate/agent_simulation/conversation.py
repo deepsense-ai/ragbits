@@ -9,7 +9,7 @@ from ragbits.agents.tool import ToolCallResult
 from ragbits.core.llms import Usage
 from ragbits.evaluate.agent_simulation.deepeval_evaluator import DeepEvalEvaluator
 from ragbits.evaluate.agent_simulation.logger import ConversationLogger
-from ragbits.evaluate.agent_simulation.models import Scenario, Turn
+from ragbits.evaluate.agent_simulation.models import Personality, Scenario, Turn
 from ragbits.evaluate.agent_simulation.simulation import GoalChecker, SimulatedUser, ToolUsageChecker, build_llm
 
 
@@ -25,6 +25,7 @@ async def run_duet(  # noqa: PLR0912, PLR0915
     default_model: str = "gpt-4o-mini",
     api_key: str = "",
     user_message_prefix: str = "",
+    personality: Personality | None = None,
 ) -> None:
     """Run a conversation between an agent and a simulated user.
 
@@ -43,9 +44,12 @@ async def run_duet(  # noqa: PLR0912, PLR0915
         default_model: Default LLM model name
         api_key: API key for LLM
         user_message_prefix: Optional prefix to add to user messages before sending to agent
+        personality: Optional personality to use for the simulated user
     """
     # Simulated user uses an independent llm (can share the same provider)
-    sim_user = SimulatedUser(llm=build_llm(sim_user_model_name, default_model, api_key), scenario=scenario)
+    sim_user = SimulatedUser(
+        llm=build_llm(sim_user_model_name, default_model, api_key), scenario=scenario, personality=personality
+    )
     # Independent goal checker model
     goal_checker = GoalChecker(llm=build_llm(checker_model_name, default_model, api_key), scenario=scenario)
     # Tool usage checker (simple comparator, no LLM needed)
@@ -53,7 +57,7 @@ async def run_duet(  # noqa: PLR0912, PLR0915
 
     history: list[Turn] = []
     logger = ConversationLogger(log_file)
-    logger.initialize_session(scenario, agent_model_name, sim_user_model_name, checker_model_name)
+    logger.initialize_session(scenario, agent_model_name, sim_user_model_name, checker_model_name, personality)
     deepeval_evaluator = DeepEvalEvaluator()
     total_usage = Usage()
 

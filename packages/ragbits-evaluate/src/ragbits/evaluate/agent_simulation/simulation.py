@@ -7,7 +7,7 @@ import re
 
 from ragbits.agents.tool import ToolCallResult
 from ragbits.core.llms import LiteLLM
-from ragbits.evaluate.agent_simulation.models import Scenario, Task, Turn
+from ragbits.evaluate.agent_simulation.models import Personality, Scenario, Task, Turn
 
 
 class SimulatedUser:
@@ -17,9 +17,10 @@ class SimulatedUser:
     and the current task. It only moves to the next task when the current one is completed.
     """
 
-    def __init__(self, llm: LiteLLM, scenario: Scenario) -> None:
+    def __init__(self, llm: LiteLLM, scenario: Scenario, personality: Personality | None = None) -> None:
         self.llm = llm
         self.scenario = scenario
+        self.personality = personality
         self.current_task_idx = 0
 
     def get_current_task(self) -> Task | None:
@@ -51,11 +52,15 @@ class SimulatedUser:
             completed_tasks = ", ".join([t.task for t in self.scenario.tasks[: self.current_task_idx]])
             task_context += f"\nCompleted tasks: {completed_tasks}"
 
+        personality_instruction = ""
+        if self.personality:
+            personality_instruction = f"\n\nPersonality: {self.personality.description}"
+
         prompt = (
             "[SYSTEM]\n"
             "You are simulating a concise human user in a terminal chat. "
             f"Scenario: {self.scenario.name}\n"
-            f"{task_context}\n"
+            f"{task_context}{personality_instruction}\n"
             "Given the assistant's last reply and the conversation so far, "
             "write ONLY the next user message to work on the current task. Be specific and brief.\n\n"
             "[CONVERSATION]\n"

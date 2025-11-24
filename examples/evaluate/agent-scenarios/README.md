@@ -47,10 +47,27 @@ uv run python examples/evaluate/agent-scenarios/duet_cli.py \
   --scenarios-file examples/evaluate/agent-scenarios/scenarios.json
 ```
 
+To use a specific personality for the simulated user:
+
+```bash
+uv run python examples/evaluate/agent-scenarios/duet_cli.py \
+  --scenario-id 1 \
+  --max-turns 10 \
+  --agent-model-name gpt-4o-mini \
+  --sim-user-model-name gpt-4o-mini \
+  --checker-model-name gpt-4o-mini \
+  --log-file examples/evaluate/agent-scenarios/duet_conversation.log \
+  --scenarios-file examples/evaluate/agent-scenarios/scenarios.json \
+  --personality-id 1 \
+  --personalities-file examples/evaluate/agent-scenarios/personalities.json
+```
+
 ## Command-Line Options
 
 - `--scenario-id` (required): Select a scenario from scenarios.json (1, 2, 3, or 4)
 - `--scenarios-file`: Path to scenarios file (default: `scenarios.json`)
+- `--personality-id` (optional): Select a personality from personalities.json (1-based index). If not provided, no specific personality is used
+- `--personalities-file`: Path to personalities file (default: `personalities.json`)
 - `--max-turns`: Maximum number of conversation turns (default: 10)
 - `--log-file`: Path to log file for conversation history (default: `duet_conversations.log`)
 - `--agent-model-name`: LLM model for the hotel booking agent (defaults to `config.llm_model`)
@@ -97,6 +114,23 @@ When `expected_tools` is specified, the system will:
 - Use an LLM to evaluate if the tool usage was appropriate for the task
 - Log the results and display feedback in the console
 
+## Personalities
+
+Personalities are defined in `personalities.json` and allow you to customize the behavior and communication style of the simulated user. Each personality has:
+
+- **name**: Descriptive name for the personality
+- **description**: Instructions that modify how the simulated user communicates (e.g., formal vs. casual, budget-conscious vs. luxury-focused)
+
+Example personality:
+```json
+{
+  "name": "Personality 1",
+  "description": "You are a friendly and enthusiastic person. You use casual language and show excitement about your travel plans. You often use exclamation marks and express gratitude."
+}
+```
+
+When a personality is selected via `--personality-id`, the personality description is included in the system prompt for the simulated user, influencing how they phrase their messages and interact with the agent. If no personality is specified, the simulated user uses default behavior without any personality-specific instructions.
+
 Available hotel booking tools:
 - `list_cities` - Get a list of all available cities
 - `list_hotels` - List hotels, optionally filtered by city
@@ -109,15 +143,15 @@ Available hotel booking tools:
 
 ## How It Works
 
-1. **Initialization**: The hotel booking agent is created with hotel booking tools from the shared `fixtures.hotel` module
+1. **Initialization**: The hotel booking agent is created with hotel booking tools from the shared `fixtures.hotel` module. If a personality is specified, it is loaded and will influence the simulated user's communication style.
 2. **Task Selection**: The simulated user selects the first task from the scenario
 3. **Conversation Loop**:
-   - Simulated user generates a message based on the current task
+   - Simulated user generates a message based on the current task (and personality, if specified)
    - Hotel booking agent processes the message and may call tools
    - Tool usage checker verifies expected tools were used (if `expected_tools` is specified)
    - Goal checker evaluates if the task is complete
    - If complete, move to the next task; otherwise, continue the conversation
-4. **Logging**: All turns, tool calls, tool usage checks, and task completions are logged to a file
+4. **Logging**: All turns, tool calls, tool usage checks, task completions, and the selected personality (if any) are logged to a file
 
 ## Architecture
 
@@ -132,6 +166,7 @@ This modular design allows the hotel booking functionality to be reused across d
 
 - `duet_cli.py` - Main CLI application for running conversations
 - `scenarios.json` - Task scenarios for testing
+- `personalities.json` - Personality definitions for the simulated user
 - `config.py` - Configuration settings (LLM model, API keys, etc.)
 - `README.md` - This file
 

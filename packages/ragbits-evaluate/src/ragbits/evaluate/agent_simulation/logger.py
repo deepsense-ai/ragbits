@@ -9,7 +9,7 @@ from zoneinfo import ZoneInfo
 
 from ragbits.agents.tool import ToolCallResult
 from ragbits.core.llms import Usage
-from ragbits.evaluate.agent_simulation.models import Scenario, Task
+from ragbits.evaluate.agent_simulation.models import Personality, Scenario, Task
 
 
 class ConversationLogger:
@@ -28,6 +28,7 @@ class ConversationLogger:
         agent_model_name: str | None,
         sim_user_model_name: str | None,
         checker_model_name: str | None,
+        personality: Personality | None = None,
     ) -> None:
         """Initialize a new logging session with scenario metadata."""
         if not self.log_path:
@@ -45,6 +46,11 @@ class ConversationLogger:
             f.write(f"Agent model: {agent_model_name or 'default'}\n")
             f.write(f"Simulated user model: {sim_user_model_name or 'default'}\n")
             f.write(f"Goal checker model: {checker_model_name or 'default'}\n")
+            if personality:
+                f.write(f"Personality: {personality.name}\n")
+                f.write(f"Personality description: {personality.description}\n")
+            else:
+                f.write("Personality: none (default)\n")
 
     def log_turn(
         self,

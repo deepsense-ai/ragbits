@@ -11,7 +11,7 @@ from typing import Any
 
 from ragbits.agents import Agent
 from ragbits.core.llms import LiteLLM
-from ragbits.evaluate.agent_simulation import load_scenarios, run_duet
+from ragbits.evaluate.agent_simulation import load_personalities, load_scenarios, run_duet
 
 # Setup: add parent directory to path for imports (for config and fixtures)
 _parent_dir = Path(__file__).parent
@@ -44,6 +44,10 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Two-agent terminal chat (ragbits hotel agent + simulated user)")
     parser.add_argument("--scenario-id", type=int, required=True, help="Scenario ID (1-based index)")
     parser.add_argument("--scenarios-file", type=str, default="scenarios.json", help="Path to scenarios file")
+    parser.add_argument("--personality-id", type=int, help="Personality ID (1-based index, optional)")
+    parser.add_argument(
+        "--personalities-file", type=str, default="personalities.json", help="Path to personalities file"
+    )
     parser.add_argument("--max-turns", type=int, default=10, help="Max number of conversation turns")
     parser.add_argument("--log-file", type=str, default="duet_conversations.log", help="Path to log file")
     parser.add_argument("--agent-model-name", type=str, help="Override agent LLM model name")
@@ -61,6 +65,14 @@ def main() -> None:
     if args.scenario_id < 1 or args.scenario_id > len(scenarios):
         raise ValueError(f"Scenario ID {args.scenario_id} out of range. Available: 1-{len(scenarios)}")
     scenario = scenarios[args.scenario_id - 1]
+
+    # Load and validate personality (if provided)
+    personality = None
+    if args.personality_id is not None:
+        personalities = load_personalities(args.personalities_file)
+        if args.personality_id < 1 or args.personality_id > len(personalities):
+            raise ValueError(f"Personality ID {args.personality_id} out of range. Available: 1-{len(personalities)}")
+        personality = personalities[args.personality_id - 1]
 
     # Create hotel booking agent
     agent = Agent(
@@ -102,6 +114,7 @@ def main() -> None:
             default_model=config.llm_model,
             api_key=config.openai_api_key,
             user_message_prefix=message_prefix,
+            personality=personality,
         )
     )
 
