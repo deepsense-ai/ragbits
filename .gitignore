@@ -8,6 +8,7 @@ venv/
 .venv/
 __pycache__/
 **.egg-info/
+.deepeval/
 
 # Local cursor rules
 .cursor/rules/local/

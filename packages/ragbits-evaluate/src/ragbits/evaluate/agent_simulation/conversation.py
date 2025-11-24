@@ -6,6 +6,7 @@ from typing import Any
 
 from ragbits.agents import Agent
 from ragbits.agents.tool import ToolCallResult
+from ragbits.evaluate.agent_simulation.deepeval_evaluator import DeepEvalEvaluator
 from ragbits.evaluate.agent_simulation.logger import ConversationLogger
 from ragbits.evaluate.agent_simulation.models import Scenario, Turn
 from ragbits.evaluate.agent_simulation.simulation import GoalChecker, SimulatedUser, ToolUsageChecker, build_llm
@@ -52,6 +53,7 @@ async def run_duet(  # noqa: PLR0912, PLR0915
     history: list[Turn] = []
     logger = ConversationLogger(log_file)
     logger.initialize_session(scenario, agent_model_name, sim_user_model_name, checker_model_name)
+    deepeval_evaluator = DeepEvalEvaluator()
 
     # Seed: ask the simulated user for the first message based on the first task
     user_message = await sim_user.next_message(history=[])
@@ -114,5 +116,22 @@ async def run_duet(  # noqa: PLR0912, PLR0915
 
     else:
         print("\nReached maximum number of turns. Exiting.")
+
+    # Evaluate conversation with DeepEval metrics
+    if history:
+        print("\n=== Running DeepEval Evaluation ===")
+        try:
+            evaluation_results = deepeval_evaluator.evaluate_conversation(history)
+            logger.log_deepeval_metrics(evaluation_results)
+            for metric_name, result in evaluation_results.items():
+                score = result.get("score")
+                if score is not None:
+                    print(f"{metric_name}: {score:.4f}")
+                else:
+                    error = result.get("error", "Unknown error")
+                    print(f"{metric_name}: Error - {error}")
+        except Exception as e:
+            print(f"Error during DeepEval evaluation: {e}")
+            logger.log_deepeval_metrics({"error": str(e)})
 
     logger.finalize_session()

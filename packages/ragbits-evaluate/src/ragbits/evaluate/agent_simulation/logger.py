@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 from zoneinfo import ZoneInfo
 
 from ragbits.agents.tool import ToolCallResult
@@ -93,6 +94,42 @@ class ConversationLogger:
                     f"Turn {turn_idx} - Tool check: appropriate={tools_used_correctly} "
                     f"tools_called={tool_names} reason={reason}\n"
                 )
+
+    def log_deepeval_metrics(self, metrics: dict[str, Any] | dict[str, dict[str, float | str | None]]) -> None:
+        """Log DeepEval evaluation metrics to the log file.
+
+        Args:
+            metrics: Dictionary of metric names to their evaluation results, or error dict
+        """
+        if not self.log_path:
+            return
+
+        with self.log_path.open("a", encoding="utf-8") as f:
+            f.write("\n--- DeepEval Evaluation Metrics ---\n")
+            if "error" in metrics and isinstance(metrics["error"], str):
+                # Handle error case
+                f.write(f"DeepEval Error: {metrics['error']}\n")
+            else:
+                # Handle normal metrics case
+                for metric_name, result in metrics.items():
+                    if not isinstance(result, dict):
+                        continue
+                    score = result.get("score")
+                    reason = result.get("reason")
+                    success = result.get("success")
+                    error = result.get("error")
+
+                    f.write(f"Metric: {metric_name}\n")
+                    if error:
+                        f.write(f"  Error: {error}\n")
+                    else:
+                        if score is not None:
+                            f.write(f"  Score: {score:.4f}\n")
+                        if success is not None:
+                            f.write(f"  Success: {success}\n")
+                        if reason:
+                            f.write(f"  Reason: {reason}\n")
+            f.write("--- End DeepEval Metrics ---\n")
 
     def finalize_session(self) -> None:
         """Finalize the logging session."""

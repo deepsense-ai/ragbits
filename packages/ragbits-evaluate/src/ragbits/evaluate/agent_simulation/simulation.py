@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 
 from ragbits.agents.tool import ToolCallResult
 from ragbits.core.llms import LiteLLM
@@ -102,9 +103,32 @@ class GoalChecker:
         done = False
         reason = ""
 
-        data = json.loads(text)
-        done = bool(data.get("done", False))
-        reason = str(data.get("reason", "")).strip()
+        if not text:
+            return False, "Empty response from goal checker"
+
+        # Try to extract JSON from markdown code blocks if present
+        code_block_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
+        if code_block_match:
+            text = code_block_match.group(1)
+
+        # Try to find JSON object in the text
+        json_match = re.search(r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}", text, re.DOTALL)
+        if json_match:
+            text = json_match.group(0)
+
+        try:
+            data = json.loads(text)
+            done = bool(data.get("done", False))
+            reason = str(data.get("reason", "")).strip()
+        except json.JSONDecodeError:
+            # If JSON parsing fails, try to infer from response text
+            reason = f"Failed to parse JSON response: {text[:100]}"
+            # Heuristic: if response contains "done" or "completed" or "true", assume done
+            text_lower = text.lower()
+            if any(word in text_lower for word in ["done", "completed", "true", "yes", "success"]):
+                done = True
+            elif any(word in text_lower for word in ["not done", "incomplete", "false", "no", "failed"]):
+                done = False
 
         return done, reason
 
