@@ -8,6 +8,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from ragbits.agents.tool import ToolCallResult
+from ragbits.core.llms import Usage
 from ragbits.evaluate.agent_simulation.models import Scenario, Task
 
 
@@ -52,6 +53,7 @@ class ConversationLogger:
         user_msg: str,
         assistant_msg: str | None = None,
         tool_calls: list[ToolCallResult] | None = None,
+        usage: Usage | None = None,
     ) -> None:
         """Log a conversation turn to the log file."""
         if not self.log_path:
@@ -66,6 +68,12 @@ class ConversationLogger:
             if tool_calls:
                 for tool_call in tool_calls:
                     f.write(f"Turn {turn_idx} - Tool: {tool_call.name}({tool_call.arguments})\n")
+            if usage:
+                f.write(
+                    f"Turn {turn_idx} - Token usage: {usage.total_tokens} total "
+                    f"({usage.prompt_tokens} prompt + {usage.completion_tokens} completion), "
+                    f"estimated cost: ${usage.estimated_cost:.6f}\n"
+                )
 
     def log_task_check(self, turn_idx: int, task_done: bool, reason: str) -> None:
         """Log task completion check result."""
@@ -94,6 +102,20 @@ class ConversationLogger:
                     f"Turn {turn_idx} - Tool check: appropriate={tools_used_correctly} "
                     f"tools_called={tool_names} reason={reason}\n"
                 )
+
+    def log_total_usage(self, usage: Usage) -> None:
+        """Log total token usage for the entire conversation."""
+        if not self.log_path:
+            return
+
+        with self.log_path.open("a", encoding="utf-8") as f:
+            f.write("\n--- Total Token Usage ---\n")
+            f.write(
+                f"Total tokens: {usage.total_tokens} "
+                f"({usage.prompt_tokens} prompt + {usage.completion_tokens} completion)\n"
+            )
+            f.write(f"Total estimated cost: ${usage.estimated_cost:.6f}\n")
+            f.write("--- End Total Token Usage ---\n")
 
     def log_deepeval_metrics(self, metrics: dict[str, Any] | dict[str, dict[str, float | str | None]]) -> None:
         """Log DeepEval evaluation metrics to the log file.

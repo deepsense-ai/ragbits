@@ -6,6 +6,7 @@ from typing import Any
 
 from ragbits.agents import Agent
 from ragbits.agents.tool import ToolCallResult
+from ragbits.core.llms import Usage
 from ragbits.evaluate.agent_simulation.deepeval_evaluator import DeepEvalEvaluator
 from ragbits.evaluate.agent_simulation.logger import ConversationLogger
 from ragbits.evaluate.agent_simulation.models import Scenario, Turn
@@ -54,6 +55,7 @@ async def run_duet(  # noqa: PLR0912, PLR0915
     logger = ConversationLogger(log_file)
     logger.initialize_session(scenario, agent_model_name, sim_user_model_name, checker_model_name)
     deepeval_evaluator = DeepEvalEvaluator()
+    total_usage = Usage()
 
     # Seed: ask the simulated user for the first message based on the first task
     user_message = await sim_user.next_message(history=[])
@@ -74,17 +76,28 @@ async def run_duet(  # noqa: PLR0912, PLR0915
         assistant_reply_parts: list[str] = []
         tool_calls: list[ToolCallResult] = []
 
-        async for chunk in agent.run_streaming(prompt_input):
+        # Get the streaming result object to access usage after iteration
+        streaming_result = agent.run_streaming(prompt_input)
+        async for chunk in streaming_result:
             if isinstance(chunk, str):
                 assistant_reply_parts.append(chunk)
             elif isinstance(chunk, ToolCallResult):
                 tool_calls.append(chunk)
 
+        # Get usage from streaming_result (accumulated during iteration)
+        turn_usage = streaming_result.usage
+
+        total_usage += turn_usage
         assistant_reply = "".join(assistant_reply_parts).strip()
         print(f"Assistant: {assistant_reply}")
         if tool_calls:
             print(f"Tools used: {[tc.name for tc in tool_calls]}")
-        logger.log_turn(turn_idx, current_task, user_message, assistant_reply, tool_calls)
+        print(
+            f"Token usage: {turn_usage.total_tokens} total "
+            f"({turn_usage.prompt_tokens} prompt + {turn_usage.completion_tokens} completion), "
+            f"estimated cost: ${turn_usage.estimated_cost:.6f}"
+        )
+        logger.log_turn(turn_idx, current_task, user_message, assistant_reply, tool_calls, turn_usage)
 
         history.append(Turn(user=user_message, assistant=assistant_reply))
 
@@ -116,6 +129,15 @@ async def run_duet(  # noqa: PLR0912, PLR0915
 
     else:
         print("\nReached maximum number of turns. Exiting.")
+
+    # Print total token usage summary
+    print("\n=== Total Token Usage ===")
+    print(
+        f"Total tokens: {total_usage.total_tokens} "
+        f"({total_usage.prompt_tokens} prompt + {total_usage.completion_tokens} completion)"
+    )
+    print(f"Total estimated cost: ${total_usage.estimated_cost:.6f}")
+    logger.log_total_usage(total_usage)
 
     # Evaluate conversation with DeepEval metrics
     if history:
