@@ -39,7 +39,7 @@ from sqlalchemy.ext.asyncio import create_async_engine
 
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse
-from ragbits.chat.persistence import AnalyticsSQLHistoryPersistence, SQLHistoryPersistenceOptions
+from ragbits.chat.persistence import SQLHistoryPersistence, SQLHistoryPersistenceOptions
 from ragbits.core.prompt import ChatFormat
 
 
@@ -106,7 +106,7 @@ class ChatWithAnalytics(ChatInterface):
 
     conversation_history = True
 
-    def __init__(self, history_persistence: AnalyticsSQLHistoryPersistence) -> None:
+    def __init__(self, history_persistence: SQLHistoryPersistence) -> None:
         self.history_persistence = history_persistence
 
     async def chat(
@@ -180,12 +180,12 @@ async def create_sample_conversations(
     return conversation_ids
 
 
-async def _setup_database() -> tuple[Any, AnalyticsSQLHistoryPersistence, ChatWithAnalytics, str]:
+async def _setup_database() -> tuple[Any, SQLHistoryPersistence, ChatWithAnalytics, str]:
     """Setup database and chat components."""
     database_url = "sqlite+aiosqlite:///./chat_analytics.db"
     engine = create_async_engine(database_url, echo=False)
 
-    persistence = AnalyticsSQLHistoryPersistence(
+    persistence = SQLHistoryPersistence(
         sqlalchemy_engine=engine,
         options=SQLHistoryPersistenceOptions(
             conversations_table="analytics_conversations",
@@ -197,7 +197,7 @@ async def _setup_database() -> tuple[Any, AnalyticsSQLHistoryPersistence, ChatWi
     return engine, persistence, chat, database_url
 
 
-async def _demonstrate_overall_statistics(persistence: AnalyticsSQLHistoryPersistence) -> None:
+async def _demonstrate_overall_statistics(persistence: SQLHistoryPersistence) -> None:
     """Display overall statistics."""
     print("Overall Statistics")
     print("-" * 80)
@@ -213,7 +213,7 @@ async def _demonstrate_overall_statistics(persistence: AnalyticsSQLHistoryPersis
     print()
 
 
-async def _demonstrate_recent_conversations(persistence: AnalyticsSQLHistoryPersistence) -> None:
+async def _demonstrate_recent_conversations(persistence: SQLHistoryPersistence) -> None:
     """Display recent conversations."""
     print("Recent Conversations")
     print("-" * 80)
@@ -226,7 +226,7 @@ async def _demonstrate_recent_conversations(persistence: AnalyticsSQLHistoryPers
         print()
 
 
-async def _demonstrate_search(persistence: AnalyticsSQLHistoryPersistence) -> None:
+async def _demonstrate_search(persistence: SQLHistoryPersistence) -> None:
     """Demonstrate search functionality."""
     print("Search Example: Finding interactions about 'Python'")
     print("-" * 80)
@@ -244,7 +244,7 @@ async def _demonstrate_search(persistence: AnalyticsSQLHistoryPersistence) -> No
         print()
 
 
-async def _demonstrate_date_range(persistence: AnalyticsSQLHistoryPersistence) -> None:
+async def _demonstrate_date_range(persistence: SQLHistoryPersistence) -> None:
     """Demonstrate date range query."""
     print("Date Range Example: Interactions from last hour")
     print("-" * 80)
@@ -259,7 +259,7 @@ async def _demonstrate_date_range(persistence: AnalyticsSQLHistoryPersistence) -
     print()
 
 
-async def _demonstrate_export(persistence: AnalyticsSQLHistoryPersistence, conversation_ids: list[str]) -> None:
+async def _demonstrate_export(persistence: SQLHistoryPersistence, conversation_ids: list[str]) -> None:
     """Demonstrate conversation export."""
     print("Export Example: Exporting a conversation")
     print("-" * 80)
@@ -280,7 +280,7 @@ async def _demonstrate_export(persistence: AnalyticsSQLHistoryPersistence, conve
         print()
 
 
-async def _demonstrate_deletion(persistence: AnalyticsSQLHistoryPersistence, conversation_ids: list[str]) -> None:
+async def _demonstrate_deletion(persistence: SQLHistoryPersistence, conversation_ids: list[str]) -> None:
     """Demonstrate conversation deletion."""
     print("Management Example: Deleting a conversation")
     print("-" * 80)

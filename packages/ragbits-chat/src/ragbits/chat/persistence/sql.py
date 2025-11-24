@@ -282,35 +282,6 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
                 for interaction in interactions
             ]
 
-    @classmethod
-    def from_config(cls, config: dict) -> Self:
-        """
-        Initializes the class with the provided configuration.
-
-        Args:
-            config: A dictionary containing configuration details for the class.
-
-        Returns:
-            An instance of the class initialized with the provided configuration.
-        """
-        engine_options = ObjectConstructionConfig.model_validate(config["sqlalchemy_engine"])
-        config["sqlalchemy_engine"] = create_async_engine(engine_options.config["url"])
-        return cls(**config)
-
-
-class AnalyticsSQLHistoryPersistence(SQLHistoryPersistence):
-    """
-    Extended SQLHistoryPersistence with analytics and management features.
-
-    This class adds advanced querying, analytics, and management capabilities
-    on top of the base SQLHistoryPersistence, including:
-
-    - Querying conversation history with custom filters
-    - Analyzing conversation patterns and metrics
-    - Exporting conversation data
-    - Managing conversation lifecycle (archiving, deletion)
-    """
-
     async def get_conversation_count(self) -> int:
         """
         Get the total number of conversations.
@@ -449,7 +420,7 @@ class AnalyticsSQLHistoryPersistence(SQLHistoryPersistence):
         await self._init_db()
 
         async with AsyncSession(self.sqlalchemy_engine) as session:
-            query = sqlalchemy.select(self.ChatInteraction).where(
+            stmt = sqlalchemy.select(self.ChatInteraction).where(
                 and_(
                     self.ChatInteraction.timestamp >= start_timestamp,
                     self.ChatInteraction.timestamp <= end_timestamp,
@@ -457,11 +428,11 @@ class AnalyticsSQLHistoryPersistence(SQLHistoryPersistence):
             )
 
             if conversation_id:
-                query = query.where(self.ChatInteraction.conversation_id == conversation_id)
+                stmt = stmt.where(self.ChatInteraction.conversation_id == conversation_id)
 
-            query = query.order_by(self.ChatInteraction.timestamp)
+            stmt = stmt.order_by(self.ChatInteraction.timestamp)
 
-            result = await session.execute(query)
+            result = await session.execute(stmt)
             interactions = result.scalars().all()
 
             return [
@@ -584,3 +555,18 @@ class AnalyticsSQLHistoryPersistence(SQLHistoryPersistence):
                 "avg_message_length": round(avg_message_length or 0, 2),
                 "avg_response_length": round(avg_response_length or 0, 2),
             }
+
+    @classmethod
+    def from_config(cls, config: dict) -> Self:
+        """
+        Initializes the class with the provided configuration.
+
+        Args:
+            config: A dictionary containing configuration details for the class.
+
+        Returns:
+            An instance of the class initialized with the provided configuration.
+        """
+        engine_options = ObjectConstructionConfig.model_validate(config["sqlalchemy_engine"])
+        config["sqlalchemy_engine"] = create_async_engine(engine_options.config["url"])
+        return cls(**config)
