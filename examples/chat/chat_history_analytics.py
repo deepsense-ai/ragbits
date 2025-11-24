@@ -1,7 +1,7 @@
 """
 Ragbits Chat Example: Advanced History Persistence with Analytics
 
-This example demonstrates usage of AnalyticsSQLHistoryPersistence including:
+This example demonstrates usage of SQLHistoryPersistence analytics features including:
 
 - Querying conversation history with custom filters
 - Analyzing conversation patterns and metrics
@@ -180,7 +180,7 @@ async def create_sample_conversations(
     return conversation_ids
 
 
-async def _setup_database() -> tuple[Any, SQLHistoryPersistence, ChatWithAnalytics, str]:
+async def _setup_database() -> tuple[Any, ChatWithAnalytics, str]:
     """Setup database and chat components."""
     database_url = "sqlite+aiosqlite:///./chat_analytics.db"
     engine = create_async_engine(database_url, echo=False)
@@ -194,14 +194,14 @@ async def _setup_database() -> tuple[Any, SQLHistoryPersistence, ChatWithAnalyti
     )
 
     chat = ChatWithAnalytics(history_persistence=persistence)
-    return engine, persistence, chat, database_url
+    return engine, chat, database_url
 
 
-async def _demonstrate_overall_statistics(persistence: SQLHistoryPersistence) -> None:
-    """Display overall statistics."""
+async def _demonstrate_overall_statistics(chat: ChatWithAnalytics) -> None:
+    """Display overall statistics using ChatInterface methods."""
     print("Overall Statistics")
     print("-" * 80)
-    stats = await persistence.get_conversation_statistics()
+    stats = await chat.get_conversation_statistics()
 
     print(f"Total Conversations: {stats['total_conversations']}")
     print(f"Total Interactions: {stats['total_interactions']}")
@@ -213,11 +213,11 @@ async def _demonstrate_overall_statistics(persistence: SQLHistoryPersistence) ->
     print()
 
 
-async def _demonstrate_recent_conversations(persistence: SQLHistoryPersistence) -> None:
-    """Display recent conversations."""
+async def _demonstrate_recent_conversations(chat: ChatWithAnalytics) -> None:
+    """Display recent conversations using ChatInterface methods."""
     print("Recent Conversations")
     print("-" * 80)
-    recent = await persistence.get_recent_conversations(limit=3)
+    recent = await chat.get_recent_conversations(limit=3)
 
     for i, conv in enumerate(recent, 1):
         print(f"{i}. Conversation ID: {conv['id'][:8]}...")
@@ -226,11 +226,11 @@ async def _demonstrate_recent_conversations(persistence: SQLHistoryPersistence) 
         print()
 
 
-async def _demonstrate_search(persistence: SQLHistoryPersistence) -> None:
-    """Demonstrate search functionality."""
+async def _demonstrate_search(chat: ChatWithAnalytics) -> None:
+    """Demonstrate search functionality using ChatInterface methods."""
     print("Search Example: Finding interactions about 'Python'")
     print("-" * 80)
-    search_results = await persistence.search_interactions(
+    search_results = await chat.search_interactions(
         query="Python",
         search_in_messages=True,
         search_in_responses=True,
@@ -244,14 +244,14 @@ async def _demonstrate_search(persistence: SQLHistoryPersistence) -> None:
         print()
 
 
-async def _demonstrate_date_range(persistence: SQLHistoryPersistence) -> None:
-    """Demonstrate date range query."""
+async def _demonstrate_date_range(chat: ChatWithAnalytics) -> None:
+    """Demonstrate date range query using ChatInterface methods."""
     print("Date Range Example: Interactions from last hour")
     print("-" * 80)
     now = datetime.now().timestamp()
     one_hour_ago = (datetime.now() - timedelta(hours=1)).timestamp()
 
-    recent_interactions = await persistence.get_interactions_by_date_range(
+    recent_interactions = await chat.get_interactions_by_date_range(
         start_timestamp=one_hour_ago,
         end_timestamp=now,
     )
@@ -259,12 +259,12 @@ async def _demonstrate_date_range(persistence: SQLHistoryPersistence) -> None:
     print()
 
 
-async def _demonstrate_export(persistence: SQLHistoryPersistence, conversation_ids: list[str]) -> None:
-    """Demonstrate conversation export."""
+async def _demonstrate_export(chat: ChatWithAnalytics, conversation_ids: list[str]) -> None:
+    """Demonstrate conversation export using ChatInterface methods."""
     print("Export Example: Exporting a conversation")
     print("-" * 80)
     if conversation_ids:
-        export_data = await persistence.export_conversation(
+        export_data = await chat.export_conversation(
             conversation_ids[0],
             include_metadata=True,
         )
@@ -280,20 +280,20 @@ async def _demonstrate_export(persistence: SQLHistoryPersistence, conversation_i
         print()
 
 
-async def _demonstrate_deletion(persistence: SQLHistoryPersistence, conversation_ids: list[str]) -> None:
-    """Demonstrate conversation deletion."""
+async def _demonstrate_deletion(chat: ChatWithAnalytics, conversation_ids: list[str]) -> None:
+    """Demonstrate conversation deletion using ChatInterface methods."""
     print("Management Example: Deleting a conversation")
     print("-" * 80)
     if len(conversation_ids) > 1:
         conversation_to_delete = conversation_ids[-1]
         print(f"Deleting conversation: {conversation_to_delete[:8]}...")
 
-        deleted = await persistence.delete_conversation(conversation_to_delete)
+        deleted = await chat.delete_conversation(conversation_to_delete)
         if deleted:
             print("✓ Conversation deleted successfully")
 
             # Verify deletion
-            new_count = await persistence.get_conversation_count()
+            new_count = await chat.get_conversation_count()
             print(f"  Remaining conversations: {new_count}")
         else:
             print("✗ Conversation not found")
@@ -324,18 +324,18 @@ async def demonstrate_analytics() -> None:
     print()
 
     # Setup database
-    engine, persistence, chat, database_url = await _setup_database()
+    engine, chat, database_url = await _setup_database()
 
     # Create sample data
     conversation_ids = await create_sample_conversations(chat, num_conversations=5)
 
-    # Demonstrate various features
-    await _demonstrate_overall_statistics(persistence)
-    await _demonstrate_recent_conversations(persistence)
-    await _demonstrate_search(persistence)
-    await _demonstrate_date_range(persistence)
-    await _demonstrate_export(persistence, conversation_ids)
-    await _demonstrate_deletion(persistence, conversation_ids)
+    # Demonstrate various features using ChatInterface methods
+    await _demonstrate_overall_statistics(chat)
+    await _demonstrate_recent_conversations(chat)
+    await _demonstrate_search(chat)
+    await _demonstrate_date_range(chat)
+    await _demonstrate_export(chat, conversation_ids)
+    await _demonstrate_deletion(chat, conversation_ids)
 
     # Print summary
     _print_summary(database_url)
