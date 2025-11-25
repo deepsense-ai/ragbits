@@ -13,8 +13,7 @@ from .types import OAuth2Credentials, User, UserCredentials
 class AuthOptions(Options):
     """Options for authentication backends."""
 
-    jwt_algorithm: str = "HS256"
-    token_expiry_minutes: int = 24 * 60
+    pass
 
 
 class AuthenticationResponse(BaseModel):
@@ -73,12 +72,12 @@ class AuthenticationBackend(ConfigurableComponent[AuthOptions], ABC):
         pass
 
     @abstractmethod
-    async def revoke_token(self, token: str) -> bool:
+    async def revoke_session(self, session_id: str) -> bool:
         """
         Revoke/logout a session.
 
         Args:
-            token: The jwt_token to revoke
+            session_id: The session ID to revoke
 
         Returns:
             True if successfully revoked

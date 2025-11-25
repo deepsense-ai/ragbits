@@ -44,7 +44,6 @@ class RagbitsChatModelProvider:
                 LoginRequest,
                 LoginResponse,
                 OAuth2AuthorizeResponse,
-                OAuth2Credentials,
                 User,
                 UserCredentials,
             )

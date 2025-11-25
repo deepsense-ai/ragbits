@@ -264,7 +264,7 @@ class TestListAuthSessionRevocation:
         assert result.success is True
 
         # Revoke the session
-        success = await auth_backend.revoke_token(session_id)
+        success = await auth_backend.revoke_session(session_id)
         assert success is True
 
         # Session should no longer be valid
@@ -275,7 +275,7 @@ class TestListAuthSessionRevocation:
     @staticmethod
     async def test_revoke_invalid_session(auth_backend: ListAuthenticationBackend) -> None:
         """Test revoking an invalid session ID."""
-        success = await auth_backend.revoke_token("invalid-session-id")
+        success = await auth_backend.revoke_session("invalid-session-id")
         assert success is False
 
     @pytest.mark.asyncio
@@ -300,7 +300,7 @@ class TestListAuthSessionRevocation:
         assert bob_validation.success is True
 
         # Revoke alice's session
-        success = await auth_backend.revoke_token(alice_result.session_id)
+        success = await auth_backend.revoke_session(alice_result.session_id)
         assert success is True
 
         # Alice's session should be invalid, Bob's should still be valid
@@ -393,7 +393,7 @@ class TestListAuthIntegration:
         assert validate_result.user.username == "alice"
 
         # Step 3: Revoke session
-        revoke_success = await auth_backend.revoke_token(session_id)
+        revoke_success = await auth_backend.revoke_session(session_id)
         assert revoke_success is True
 
         # Step 4: Verify session is invalid after revocation

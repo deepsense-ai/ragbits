@@ -1,4 +1,4 @@
-"""
+r"""
 Ragbits Chat Example: Authenticated Chat Interface
 
 This example demonstrates how to use the `AuthenticatedChatInterface` to create a chat application
