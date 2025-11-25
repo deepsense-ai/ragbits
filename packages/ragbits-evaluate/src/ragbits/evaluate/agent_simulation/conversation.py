@@ -13,6 +13,33 @@ from ragbits.evaluate.agent_simulation.models import Personality, Scenario, Turn
 from ragbits.evaluate.agent_simulation.simulation import GoalChecker, SimulatedUser, ToolUsageChecker, build_llm
 
 
+def evaluate_with_deepeval(history: list[Turn], logger: ConversationLogger) -> None:
+    """Evaluate conversation with DeepEval metrics.
+
+    Args:
+        history: List of conversation turns to evaluate
+        logger: Logger instance to record evaluation results
+    """
+    if not history:
+        return
+
+    print("\n=== Running DeepEval Evaluation ===")
+    deepeval_evaluator = DeepEvalEvaluator()
+    try:
+        evaluation_results = deepeval_evaluator.evaluate_conversation(history)
+        logger.log_deepeval_metrics(evaluation_results)
+        for metric_name, result in evaluation_results.items():
+            score = result.get("score")
+            if score is not None:
+                print(f"{metric_name}: {score:.4f}")
+            else:
+                error = result.get("error", "Unknown error")
+                print(f"{metric_name}: Error - {error}")
+    except Exception as e:
+        print(f"Error during DeepEval evaluation: {e}")
+        logger.log_deepeval_metrics({"error": str(e)})
+
+
 async def run_duet(  # noqa: PLR0912, PLR0915
     scenario: Scenario,
     agent: Agent,
@@ -58,7 +85,6 @@ async def run_duet(  # noqa: PLR0912, PLR0915
     history: list[Turn] = []
     logger = ConversationLogger(log_file)
     logger.initialize_session(scenario, agent_model_name, sim_user_model_name, checker_model_name, personality)
-    deepeval_evaluator = DeepEvalEvaluator()
     total_usage = Usage()
 
     # Seed: ask the simulated user for the first message based on the first task
@@ -144,20 +170,6 @@ async def run_duet(  # noqa: PLR0912, PLR0915
     logger.log_total_usage(total_usage)
 
     # Evaluate conversation with DeepEval metrics
-    if history:
-        print("\n=== Running DeepEval Evaluation ===")
-        try:
-            evaluation_results = deepeval_evaluator.evaluate_conversation(history)
-            logger.log_deepeval_metrics(evaluation_results)
-            for metric_name, result in evaluation_results.items():
-                score = result.get("score")
-                if score is not None:
-                    print(f"{metric_name}: {score:.4f}")
-                else:
-                    error = result.get("error", "Unknown error")
-                    print(f"{metric_name}: Error - {error}")
-        except Exception as e:
-            print(f"Error during DeepEval evaluation: {e}")
-            logger.log_deepeval_metrics({"error": str(e)})
+    evaluate_with_deepeval(history, logger)
 
     logger.finalize_session()
