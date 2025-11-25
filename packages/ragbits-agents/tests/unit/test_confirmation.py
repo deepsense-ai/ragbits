@@ -225,7 +225,7 @@ def test_tool_from_callable_explicit_and_decorator():
 @pytest.mark.asyncio
 async def test_agent_yields_confirmation_request_streaming(llm_with_confirmed_tool_call: MockLLM):
     """Test that agent yields ConfirmationRequest in streaming mode."""
-    agent = Agent(
+    agent: Agent = Agent(
         llm=llm_with_confirmed_tool_call,
         prompt="Test prompt",
         tools=[confirmed_tool],
@@ -247,7 +247,7 @@ async def test_agent_yields_confirmation_request_streaming(llm_with_confirmed_to
 @pytest.mark.asyncio
 async def test_agent_multiple_confirmations_streaming(llm_with_multiple_confirmed_tools: MockLLM):
     """Test that agent yields multiple ConfirmationRequests."""
-    agent = Agent(
+    agent: Agent = Agent(
         llm=llm_with_multiple_confirmed_tools,
         prompt="Test prompt",
         tools=[confirmed_tool],
@@ -274,7 +274,7 @@ async def test_agent_multiple_confirmations_streaming(llm_with_multiple_confirme
 @pytest.mark.asyncio
 async def test_agent_mixed_tools_streaming(llm_with_mixed_tools: MockLLM):
     """Test that agent handles mix of confirmed and regular tools."""
-    agent = Agent(
+    agent: Agent = Agent(
         llm=llm_with_mixed_tools,
         prompt="Test prompt",
         tools=[simple_tool, confirmed_tool],
@@ -292,7 +292,7 @@ async def test_agent_mixed_tools_streaming(llm_with_mixed_tools: MockLLM):
 @pytest.mark.asyncio
 async def test_agent_executes_confirmed_tool_streaming(llm_with_confirmed_tool_call: MockLLM):
     """Test that agent executes tool when confirmed."""
-    agent = Agent(
+    agent: Agent = Agent(
         llm=llm_with_confirmed_tool_call,
         prompt="Test prompt",
         tools=[confirmed_tool],
@@ -303,7 +303,7 @@ async def test_agent_executes_confirmed_tool_streaming(llm_with_confirmed_tool_c
     conf_req = next(c for c in chunks_1 if isinstance(c, ConfirmationRequest))
 
     # Second run - with confirmation
-    context = AgentRunContext(
+    context: AgentRunContext = AgentRunContext(
         confirmed_tools=[
             {
                 "confirmation_id": conf_req.confirmation_id,
@@ -314,7 +314,7 @@ async def test_agent_executes_confirmed_tool_streaming(llm_with_confirmed_tool_c
 
     # Create new LLM that returns final response after tool execution
     llm_final = MockLLM(default_options=MockLLMOptions(response="Tool executed successfully"))
-    agent_confirmed = Agent(
+    agent_confirmed: Agent = Agent(
         llm=llm_final,
         prompt="Test prompt",
         tools=[confirmed_tool],
@@ -330,7 +330,7 @@ async def test_agent_executes_confirmed_tool_streaming(llm_with_confirmed_tool_c
 @pytest.mark.asyncio
 async def test_agent_skips_declined_tool_streaming(llm_with_confirmed_tool_call: MockLLM):
     """Test that agent skips tool when declined."""
-    agent = Agent(
+    agent: Agent = Agent(
         llm=llm_with_confirmed_tool_call,
         prompt="Test prompt",
         tools=[confirmed_tool],
@@ -341,7 +341,7 @@ async def test_agent_skips_declined_tool_streaming(llm_with_confirmed_tool_call:
     conf_req = next(c for c in chunks_1 if isinstance(c, ConfirmationRequest))
 
     # Second run - with decline
-    context = AgentRunContext(
+    context: AgentRunContext = AgentRunContext(
         confirmed_tools=[
             {
                 "confirmation_id": conf_req.confirmation_id,
@@ -363,7 +363,7 @@ async def test_agent_skips_declined_tool_streaming(llm_with_confirmed_tool_call:
 @pytest.mark.asyncio
 async def test_agent_partial_confirmation_streaming(llm_with_multiple_confirmed_tools: MockLLM):
     """Test that agent handles partial confirmations correctly."""
-    agent = Agent(
+    agent: Agent = Agent(
         llm=llm_with_multiple_confirmed_tools,
         prompt="Test prompt",
         tools=[confirmed_tool],
@@ -375,7 +375,7 @@ async def test_agent_partial_confirmation_streaming(llm_with_multiple_confirmed_
     assert len(conf_requests) == 2
 
     # Confirm only the first one
-    context = AgentRunContext(
+    context: AgentRunContext = AgentRunContext(
         confirmed_tools=[
             {
                 "confirmation_id": conf_requests[0].confirmation_id,
@@ -397,7 +397,7 @@ async def test_agent_partial_confirmation_streaming(llm_with_multiple_confirmed_
 @pytest.mark.asyncio
 async def test_confirmation_id_is_stable(llm_with_confirmed_tool_call: MockLLM):
     """Test that same tool + arguments generates same confirmation ID."""
-    agent = Agent(
+    agent: Agent = Agent(
         llm=llm_with_confirmed_tool_call,
         prompt="Test prompt",
         tools=[confirmed_tool],
@@ -436,7 +436,7 @@ def test_confirmation_id_generation():
 @pytest.mark.asyncio
 async def test_agent_confirmation_non_streaming(llm_with_confirmed_tool_call: MockLLM):
     """Test that confirmation works in non-streaming mode."""
-    agent = Agent(
+    agent: Agent = Agent(
         llm=llm_with_confirmed_tool_call,
         prompt="Test prompt",
         tools=[confirmed_tool],
@@ -455,9 +455,9 @@ async def test_agent_confirmation_non_streaming(llm_with_confirmed_tool_call: Mo
 async def test_empty_confirmed_tools_list():
     """Test that empty confirmed_tools list doesn't cause issues."""
     llm = MockLLM(default_options=MockLLMOptions(response="Test response"))
-    agent = Agent(llm=llm, prompt="Test", tools=[confirmed_tool])
+    agent: Agent = Agent(llm=llm, prompt="Test", tools=[confirmed_tool])
 
-    context = AgentRunContext(confirmed_tools=[])
+    context: AgentRunContext = AgentRunContext(confirmed_tools=[])
     result = await agent.run("Test", context=context)
 
     assert result.content == "Test response"
@@ -479,10 +479,10 @@ async def test_malformed_confirmed_tools():
             ],
         )
     )
-    agent = Agent(llm=llm, prompt="Test", tools=[confirmed_tool])
+    agent: Agent = Agent(llm=llm, prompt="Test", tools=[confirmed_tool])
 
     # Missing confirmation_id
-    context = AgentRunContext(
+    context: AgentRunContext = AgentRunContext(
         confirmed_tools=[
             {"confirmed": True}  # Missing confirmation_id
         ]
@@ -517,7 +517,7 @@ async def test_confirmation_with_history():
         {"role": "assistant", "content": "Previous response"},
     ]
 
-    agent = Agent(
+    agent: Agent = Agent(
         llm=llm,
         prompt="You are a helpful assistant",
         tools=[confirmed_tool],

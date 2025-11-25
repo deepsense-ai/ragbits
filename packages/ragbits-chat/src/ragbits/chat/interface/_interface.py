@@ -9,7 +9,6 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Callable
 from typing import Any
 
-from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.tools.todo import Task
 from ragbits.chat.interface.summary import SummaryGenerator
 from ragbits.chat.interface.ui_customization import UICustomization
@@ -27,6 +26,7 @@ from .types import (
     ChatResponseUnion,
     ClearMessageContent,
     ClearMessageResponse,
+    ConfirmationRequestResponse,
     ConversationIdContent,
     ConversationIdResponse,
     ConversationSummaryContent,
@@ -58,7 +58,7 @@ from .types import (
 logger = logging.getLogger(__name__)
 
 
-def with_chat_metadata(
+def with_chat_metadata(  # noqa: PLR0915
     func: Callable[["ChatInterface", str, ChatFormat, ChatContext], AsyncGenerator[ChatResponseUnion, None]],
 ) -> Callable[["ChatInterface", str, ChatFormat | None, ChatContext | None], AsyncGenerator[ChatResponseUnion, None]]:
     """
@@ -68,7 +68,7 @@ def with_chat_metadata(
     """
 
     @functools.wraps(func)
-    async def wrapper(
+    async def wrapper(  # noqa: PLR0915
         self: "ChatInterface", message: str, history: ChatFormat | None = None, context: ChatContext | None = None
     ) -> AsyncGenerator[ChatResponseUnion, None]:
         start_time = time.time()
@@ -115,7 +115,7 @@ def with_chat_metadata(
 
         responses = []
         main_response = ""
-        extra_responses = []
+        extra_responses: list[ChatResponseUnion] = []
         pending_confirmations = []
         timestamp = time.time()
         response_token_count = 0.0

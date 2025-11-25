@@ -256,7 +256,6 @@ class ConfirmationRequestContent(ResponseContent):
         return "confirmation_request"
 
 
-
 class ChatResponseType(str, Enum):
     """Types of responses that can be returned by the chat interface.
 
@@ -291,15 +290,6 @@ class ChatResponseType(str, Enum):
     USAGE = "usage"
     TODO_ITEM = "todo_item"
     CONFIRMATION_REQUEST = "confirmation_request"
-
-
-class ConfirmationStatus(BaseModel):
-    """Status update for a confirmation request."""
-
-    confirmation_id: str
-    """ID of the confirmation request being updated."""
-    status: str  # "confirmed" or "declined"
-    """The confirmation status."""
 
 
 class ChatContext(BaseModel):
@@ -699,7 +689,8 @@ class ChatResponse(BaseModel, ABC, Generic[ChatResponseContentT]):
         """
         warnings.warn(
             "The 'as_confirmation_request()' method is deprecated. Use isinstance() checks instead "
-            "(e.g., if isinstance(response, ConfirmationRequestResponse): req = response.content.confirmation_request). "
+            "(e.g., if isinstance(response, ConfirmationRequestResponse): "
+            "req = response.content.confirmation_request). "
             "This method will be removed in version 2.0.0.",
             DeprecationWarning,
             stacklevel=2,
