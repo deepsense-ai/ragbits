@@ -88,6 +88,16 @@
         "expected_tools": ["create_reservation"]
       }
     ]
+  },
+  {
+    "name": "Scenario 5",
+    "tasks": [
+      {
+        "task": "book room in Krakow on 2030-06-01",
+        "expected_result": "",
+        "expected_tools": ["list_hotels"]
+      }
+    ]
   }
 ]
 
