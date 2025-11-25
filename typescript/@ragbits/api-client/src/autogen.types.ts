@@ -97,6 +97,18 @@ export interface ChunkedContent {
 }
 
 /**
+ * Represents a tool confirmation request sent to the user.
+ */
+export interface ConfirmationRequest {
+    confirmation_id: string
+    tool_name: string
+    tool_description: string
+    arguments: {
+        [k: string]: unknown
+    }
+}
+
+/**
  * Represents an live update performed by an agent.
  */
 export interface LiveUpdate {
@@ -251,20 +263,6 @@ export interface UsageContent {
  */
 export interface TodoItemContent {
     task: Task
-}
-
-/**
- * Confirmation request content wrapper.
- */
-export interface ConfirmationRequestContent {
-    confirmation_request: ConfirmationRequest
-}
-
-/**
- * Confirmation status content wrapper.
- */
-export interface ConfirmationStatusContent {
-    confirmation_status: ConfirmationStatus
 }
 
 /**
@@ -510,40 +508,6 @@ export interface User {
 }
 
 /**
- * Represents a tool confirmation request sent to the user.
- */
-export interface ConfirmationRequest {
-    confirmation_id: string
-    tool_name: string
-    tool_description: string
-    arguments: {
-        [k: string]: unknown
-    }
-}
-
-/**
- * Status update for a confirmation request.
- */
-export interface ConfirmationStatus {
-    confirmation_id: string
-    status: string
-}
-
-/**
- * Confirmation request response.
- */
-export interface ConfirmationRequestResponse {
-    content: ConfirmationRequestContent
-}
-
-/**
- * Confirmation status response.
- */
-export interface ConfirmationStatusResponse {
-    content: ConfirmationStatusContent
-}
-
-/**
  * Specific chat response types
  */
 export interface TextChatResponse {
@@ -608,12 +572,7 @@ export interface ConversationSummaryResponse {
 
 export interface ConfirmationRequestChatResponse {
     type: 'confirmation_request'
-    content: ConfirmationRequestContent
-}
-
-export interface ConfirmationStatusChatResponse {
-    type: 'confirmation_status'
-    content: ConfirmationStatusContent
+    content: ConfirmationRequest
 }
 
 export interface ChunkedChatResponse {
@@ -638,4 +597,3 @@ export type ChatResponse =
     | TodoItemChatResonse
     | ConversationSummaryResponse
     | ConfirmationRequestChatResponse
-    | ConfirmationStatusChatResponse

@@ -95,7 +95,6 @@ class RagbitsChatModelProvider:
                 "ChatContext": ChatContext,
                 "ChunkedContent": ChunkedContent,
                 "ConfirmationRequest": ConfirmationRequest,
-                "ConfirmationStatus": ConfirmationStatus,
                 "LiveUpdate": LiveUpdate,
                 "LiveUpdateContent": LiveUpdateContent,
                 "Message": Message,

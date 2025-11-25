@@ -10,7 +10,6 @@ import {
 import {
   handleClearMessage,
   handleConfirmationRequest,
-  handleConfirmationStatus,
   handleImage,
   handleLiveUpdate,
   handleMessageId,
@@ -119,7 +118,4 @@ ChatHandlerRegistry.register("conversation_summary", {
 });
 ChatHandlerRegistry.register("confirmation_request", {
   handle: handleConfirmationRequest,
-});
-ChatHandlerRegistry.register("confirmation_status", {
-  handle: handleConfirmationStatus,
 });

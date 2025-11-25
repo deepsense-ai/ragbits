@@ -39,9 +39,6 @@ from ragbits.chat.interface.types import (
     ChatResponseUnion,
     ConfirmationRequestContent,
     ConfirmationRequestResponse,
-    ConfirmationStatus,
-    ConfirmationStatusContent,
-    ConfirmationStatusResponse,
     LiveUpdateType,
 )
 from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
@@ -584,38 +581,10 @@ class FileExplorerChat(ChatInterface):
             history=history,
         )
 
-        # Debug: Check if tools have requires_confirmation set
-
-        # Create agent context with confirmed_tools from the request context
-        agent_context: AgentRunContext = AgentRunContext()
-
-        # Check if user declined any confirmations
-        if context.confirmed_tools:
-            agent_context.confirmed_tools = context.confirmed_tools
-
-            # Send ConfirmationStatus responses for each processed confirmation
-            for ct in context.confirmed_tools:
-                confirmation_id = ct.get("confirmation_id")
-                is_confirmed = ct.get("confirmed")
-
-                if confirmation_id:
-                    status = "confirmed" if is_confirmed else "declined"
-                    yield ConfirmationStatusResponse(
-                        content=ConfirmationStatusContent(
-                            confirmation_status=ConfirmationStatus(
-                                confirmation_id=confirmation_id,
-                                status=status,
-                            )
-                        )
-                    )
-
-        # Empty message - agent continues with provided confirmations
-        agent_message = message
-
         # Run agent in streaming mode with the message and history
         async for response in agent.run_streaming(
-            agent_message,
-            context=agent_context,
+            message=message,
+            context=context,
         ):
             # Pattern match on response types
             match response:

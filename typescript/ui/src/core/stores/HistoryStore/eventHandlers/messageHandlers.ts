@@ -1,7 +1,6 @@
 import {
   ClearMessageChatResponse,
   ConfirmationRequestChatResponse,
-  ConfirmationStatusChatResponse,
   ImageChatResponse,
   LiveUpdateChatResponse,
   LiveUpdateType,
@@ -143,7 +142,7 @@ export const handleConfirmationRequest: PrimaryHandler<
 > = (response, draft, ctx) => {
   const message = draft.history[ctx.messageId];
 
-  const confirmationId = response.content.confirmation_request.confirmation_id;
+  const confirmationId = response.content.confirmation_id;
 
   // Initialize Records if they don't exist
   if (!message.confirmationRequests) {
@@ -159,39 +158,6 @@ export const handleConfirmationRequest: PrimaryHandler<
   }
 
   // Add to Record-based system (prevents duplicates by design)
-  message.confirmationRequests[confirmationId] =
-    response.content.confirmation_request;
+  message.confirmationRequests[confirmationId] = response.content;
   message.confirmationStates[confirmationId] = "pending";
-};
-
-export const handleConfirmationStatus: PrimaryHandler<
-  ConfirmationStatusChatResponse
-> = (response, draft, ctx) => {
-  const { confirmation_id, status } = response.content.confirmation_status;
-
-  // Optimize: Check current message first (most likely location)
-  const currentMessage = draft.history[ctx.messageId];
-  if (
-    currentMessage?.confirmationStates &&
-    confirmation_id in currentMessage.confirmationStates
-  ) {
-    // Type-safe status assignment
-    if (status === "confirmed" || status === "declined") {
-      currentMessage.confirmationStates[confirmation_id] = status;
-    }
-    return;
-  }
-
-  // Fallback: Search all messages if not in current message
-  for (const message of Object.values(draft.history)) {
-    if (
-      message.confirmationStates &&
-      confirmation_id in message.confirmationStates
-    ) {
-      if (status === "confirmed" || status === "declined") {
-        message.confirmationStates[confirmation_id] = status;
-      }
-      break; // Stop after first match
-    }
-  }
 };

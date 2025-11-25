@@ -204,7 +204,6 @@ def _generate_chat_response_union_type() -> str:
         ("TodoItemChatResonse", "todo_item", "TodoItemContent"),
         ("ConversationSummaryResponse", "conversation_summary", "ConversationSummaryContent"),
         ("ConfirmationRequestChatResponse", "confirmation_request", "ConfirmationRequest"),
-        ("ConfirmationStatusChatResponse", "confirmation_status", "ConfirmationStatus"),
     ]
 
     internal_response_interfaces = [
