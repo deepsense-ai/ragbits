@@ -649,7 +649,7 @@ class RagbitsAPI:
                 return response
 
             # Delete the session from store
-            success = await self.auth_backend.revoke_token(session_id)
+            success = await self.auth_backend.revoke_session(session_id)
 
             response = JSONResponse(content={"success": success})
             # Clear the session cookie
