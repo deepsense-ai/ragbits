@@ -2,10 +2,21 @@
 
 import json
 import re
+from enum import Enum
 
 from ragbits.agents.tool import ToolCallResult
 from ragbits.core.llms import LiteLLM
 from ragbits.evaluate.agent_simulation.models import Personality, Scenario, Task, Turn
+
+__all__ = ["GoalChecker", "SimulatedUser", "TaskStatus", "ToolUsageChecker", "build_llm"]
+
+
+class TaskStatus(str, Enum):
+    """Status of a task in the simulation."""
+
+    IN_PROGRESS = "in_progress"
+    COMPLETED = "completed"
+    IMPOSSIBLE = "impossible"
 
 
 class SimulatedUser:
@@ -80,8 +91,12 @@ class GoalChecker:
         self.llm = llm
         self.scenario = scenario
 
-    async def is_task_achieved(self, current_task: Task, history: list[Turn]) -> tuple[bool, str]:
-        """Check if the current task has been completed based on the conversation history."""
+    async def is_task_achieved(self, current_task: Task, history: list[Turn]) -> tuple[TaskStatus, str]:
+        """Check if the current task has been completed or is impossible based on the conversation history.
+
+        Returns:
+            Tuple of (TaskStatus, reason string)
+        """
         history_text = []
         for t in history:
             history_text.append(f"User: {t.user}\nAssistant: {t.assistant}")
@@ -90,11 +105,16 @@ class GoalChecker:
         prompt = (
             "[SYSTEM]\n"
             "You are a strict task-completion judge for a user-assistant conversation. "
-            "Decide if the assistant has fulfilled the current task.\n"
+            "Decide if the assistant has fulfilled the current task, or if the task is impossible to fulfill.\n"
             f"Current task: {current_task.task}\n"
             f"Expected result: {current_task.expected_result}\n\n"
+            "A task is IMPOSSIBLE if:\n"
+            "- The assistant explicitly states the request cannot be fulfilled "
+            "(e.g., no data available, date too far in future)\n"
+            "- The required information or resources are not available\n"
+            "- The task is fundamentally unachievable given the constraints\n\n"
             "Respond with a concise JSON object ONLY, no extra text, with fields:\n"
-            '{"done": true|false, "reason": "short reason"}\n\n'
+            '{"status": "completed"|"in_progress"|"impossible", "reason": "short reason"}\n\n'
             "[CONVERSATION]\n"
             f"{history_block}\n\n"
             "[TASK]\nReturn the JSON now:"
@@ -103,11 +123,11 @@ class GoalChecker:
         response = await self.llm.generate(prompt=prompt)
         text = response.strip()
         # Be robust to slight deviations by attempting a minimal parse
-        done = False
+        status = TaskStatus.IN_PROGRESS
         reason = ""
 
         if not text:
-            return False, "Empty response from goal checker"
+            return TaskStatus.IN_PROGRESS, "Empty response from goal checker"
 
         # Try to extract JSON from markdown code blocks if present
         code_block_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
@@ -121,19 +141,41 @@ class GoalChecker:
 
         try:
             data = json.loads(text)
-            done = bool(data.get("done", False))
+            status_str = str(data.get("status", "in_progress")).lower().strip()
             reason = str(data.get("reason", "")).strip()
+
+            # Map status string to enum
+            if status_str == "completed":
+                status = TaskStatus.COMPLETED
+            elif status_str == "impossible":
+                status = TaskStatus.IMPOSSIBLE
+            else:
+                status = TaskStatus.IN_PROGRESS
         except json.JSONDecodeError:
             # If JSON parsing fails, try to infer from response text
             reason = f"Failed to parse JSON response: {text[:100]}"
-            # Heuristic: if response contains "done" or "completed" or "true", assume done
             text_lower = text.lower()
-            if any(word in text_lower for word in ["done", "completed", "true", "yes", "success"]):
-                done = True
-            elif any(word in text_lower for word in ["not done", "incomplete", "false", "no", "failed"]):
-                done = False
 
-        return done, reason
+            # Check for impossible indicators first
+            if any(
+                word in text_lower
+                for word in [
+                    "impossible",
+                    "cannot be fulfilled",
+                    "not available",
+                    "no data",
+                    "unable to",
+                    "cannot fulfill",
+                ]
+            ):
+                status = TaskStatus.IMPOSSIBLE
+            # Then check for completion indicators
+            elif any(word in text_lower for word in ["done", "completed", "true", "yes", "success", "fulfilled"]):
+                status = TaskStatus.COMPLETED
+            elif any(word in text_lower for word in ["not done", "incomplete", "false", "no", "failed"]):
+                status = TaskStatus.IN_PROGRESS
+
+        return status, reason
 
 
 class ToolUsageChecker:

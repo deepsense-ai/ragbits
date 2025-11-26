@@ -1,5 +1,7 @@
 """Conversation orchestration for agent simulation scenarios."""
 
+import asyncio
+
 from ragbits.agents.tool import ToolCallResult
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext
@@ -7,7 +9,13 @@ from ragbits.core.llms import Usage
 from ragbits.evaluate.agent_simulation.deepeval_evaluator import DeepEvalEvaluator
 from ragbits.evaluate.agent_simulation.logger import ConversationLogger
 from ragbits.evaluate.agent_simulation.models import Personality, Scenario, Turn
-from ragbits.evaluate.agent_simulation.simulation import GoalChecker, SimulatedUser, ToolUsageChecker, build_llm
+from ragbits.evaluate.agent_simulation.simulation import (
+    GoalChecker,
+    SimulatedUser,
+    TaskStatus,
+    ToolUsageChecker,
+    build_llm,
+)
 
 
 def evaluate_with_deepeval(history: list[Turn], logger: ConversationLogger) -> None:
@@ -114,6 +122,7 @@ async def run_duet(  # noqa: PLR0912, PLR0915
             context=dummy_chat_context,
         )
 
+        # Fully consume the async generator
         async for chunk in stream:
             if isinstance(chunk, str):
                 assistant_reply_parts.append(chunk)
@@ -137,9 +146,16 @@ async def run_duet(  # noqa: PLR0912, PLR0915
         # Update simulation-visible history (Turn objects)
         history.append(Turn(user=user_message, assistant=assistant_reply))
 
-        # Ask the judge if current task is achieved
-        task_done, reason = await goal_checker.is_task_achieved(current_task, history)
-        logger.log_task_check(turn_idx, task_done, reason)
+        # Ask the judge if current task is achieved or impossible
+        task_status, reason = await goal_checker.is_task_achieved(current_task, history)
+        logger.log_task_check(turn_idx, task_status == TaskStatus.COMPLETED, reason)
+
+        # Check if task is impossible - end simulation early
+        if task_status == TaskStatus.IMPOSSIBLE:
+            print(f"\nTask cannot be fulfilled: {reason}")
+            print("Ending simulation early due to impossible task.")
+            logger.log_impossible_task(turn_idx, current_task, reason)
+            break
 
         # Check tool usage if expected tools are specified
         if current_task.expected_tools:
@@ -149,7 +165,7 @@ async def run_duet(  # noqa: PLR0912, PLR0915
                 print(f"Tool usage issue: {tool_reason}")
             else:
                 print(f"Tool usage verified: {tool_reason}")
-        if task_done:
+        if task_status == TaskStatus.COMPLETED:
             print(f"Task completed: {reason}")
             has_next = sim_user.advance_to_next_task()
             if not has_next:
@@ -159,7 +175,7 @@ async def run_duet(  # noqa: PLR0912, PLR0915
             if next_task:
                 logger.log_task_transition(next_task)
         else:
-            print(f"Task not completed: {reason}")
+            print(f"Task in progress: {reason}")
         # Ask the simulator for the next user message
         user_message = await sim_user.next_message(history)
 
@@ -179,3 +195,7 @@ async def run_duet(  # noqa: PLR0912, PLR0915
     evaluate_with_deepeval(history, logger)
 
     logger.finalize_session()
+
+    # Give the event loop a chance to clean up any pending tasks
+    # This helps prevent IndexError in asyncio event loop cleanup
+    await asyncio.sleep(0)
