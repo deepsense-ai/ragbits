@@ -1,7 +1,5 @@
 """Data models for agent simulation scenarios."""
 
-from __future__ import annotations
-
 from dataclasses import dataclass
 
 

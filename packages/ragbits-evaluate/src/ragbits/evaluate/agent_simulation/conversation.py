@@ -1,7 +1,5 @@
 """Conversation orchestration for agent simulation scenarios."""
 
-from __future__ import annotations
-
 from typing import Any
 
 from ragbits.agents import Agent
@@ -44,7 +42,7 @@ async def run_duet(  # noqa: PLR0912, PLR0915
     scenario: Scenario,
     agent: Agent,
     prompt_input_class: type[Any],  # noqa: ANN401
-    max_turns: int = 10,
+    max_turns: int = 10,  # max turns of the whole conversation, if needed could be changed to max turns per task
     log_file: str | None = None,
     agent_model_name: str | None = None,
     sim_user_model_name: str | None = None,

@@ -1,7 +1,5 @@
 """Terminal conversation between the ragbits hotel booking agent and a simulated user."""
 
-from __future__ import annotations
-
 import argparse
 import asyncio
 import importlib.util
