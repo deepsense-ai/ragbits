@@ -17,6 +17,7 @@ logger = getLogger(__name__)
 
 class HotelChat(ChatInterface):
     """A simple example implementation of the ChatInterface for hotel booking agent."""
+
     def __init__(self, model_name: str, api_key: str) -> None:
         self.llm = LiteLLM(model_name=model_name, use_structured_output=True, api_key=api_key)
         self.agent = Agent(
