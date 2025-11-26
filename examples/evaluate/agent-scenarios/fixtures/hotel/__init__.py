@@ -4,8 +4,6 @@ This module provides reusable hotel booking tools and prompts that can be used
 across different evaluation examples and agent scenarios.
 """
 
-from hotel_chat import HotelChat
-
 from . import prompt, tools
 
 # Re-export prompt classes
@@ -23,7 +21,6 @@ list_reservations = tools.list_reservations
 search_available_rooms = tools.search_available_rooms
 
 __all__ = [
-    "HotelChat",
     "HotelPrompt",
     "HotelPromptInput",
     "cancel_reservation",
