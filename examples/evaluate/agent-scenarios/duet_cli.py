@@ -2,39 +2,11 @@
 
 import argparse
 import asyncio
-import importlib.util
-import sys
-from pathlib import Path
-from typing import Any
 
-from ragbits.agents import Agent
-from ragbits.core.llms import LiteLLM
+from config import config
+from fixtures.hotel.hotel_chat import HotelChat
+
 from ragbits.evaluate.agent_simulation import load_personalities, load_scenarios, run_duet
-
-# Setup: add parent directory to path for imports (for config and fixtures)
-_parent_dir = Path(__file__).parent
-if str(_parent_dir) not in sys.path:
-    sys.path.insert(0, str(_parent_dir))
-
-
-def _load_module(module_name: str, file_path: Path) -> Any:  # noqa: ANN401
-    """Load a module using importlib and register it in sys.modules."""
-    spec = importlib.util.spec_from_file_location(module_name, file_path)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Could not load module {module_name} from {file_path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module  # Register before execution for dataclass support
-    spec.loader.exec_module(module)
-    return module
-
-
-# Load config and hotel fixtures (using importlib due to hyphenated directory name)
-config_module = _load_module("config", _parent_dir / "config.py")
-config = config_module.config  # noqa: E402
-
-hotel_fixtures = _load_module("fixtures.hotel", _parent_dir / "fixtures" / "hotel" / "__init__.py")
-HotelPrompt = hotel_fixtures.HotelPrompt  # noqa: E402
-HotelPromptInput = hotel_fixtures.HotelPromptInput  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -72,26 +44,6 @@ def main() -> None:
             raise ValueError(f"Personality ID {args.personality_id} out of range. Available: 1-{len(personalities)}")
         personality = personalities[args.personality_id - 1]
 
-    # Create hotel booking agent
-    agent = Agent(
-        llm=LiteLLM(
-            model_name=args.agent_model_name or config.llm_model,
-            use_structured_output=True,
-            api_key=config.openai_api_key,
-        ),
-        prompt=HotelPrompt,
-        tools=[
-            hotel_fixtures.list_cities,
-            hotel_fixtures.list_hotels,
-            hotel_fixtures.get_hotel_details,
-            hotel_fixtures.search_available_rooms,
-            hotel_fixtures.create_reservation,
-            hotel_fixtures.list_reservations,
-            hotel_fixtures.get_reservation,
-            hotel_fixtures.cancel_reservation,
-        ],
-    )
-
     # Hotel-specific message prefix
     message_prefix = (
         "[STYLE]\nAnswer helpfully and clearly. "
@@ -99,11 +51,11 @@ def main() -> None:
         "If information is unavailable, explain why briefly.\n\n"
     )
 
+    hotel_chat = HotelChat(args.agent_model_name or config.llm_model, config.openai_api_key)
     asyncio.run(
         run_duet(
             scenario=scenario,
-            agent=agent,
-            prompt_input_class=HotelPromptInput,
+            chat=hotel_chat,
             max_turns=args.max_turns,
             log_file=args.log_file,
             agent_model_name=args.agent_model_name,

@@ -1,9 +1,7 @@
 """Conversation orchestration for agent simulation scenarios."""
-
-from typing import Any
-
-from ragbits.agents import Agent
 from ragbits.agents.tool import ToolCallResult
+from ragbits.chat.interface import ChatInterface
+from ragbits.chat.interface.types import TextResponse
 from ragbits.core.llms import Usage
 from ragbits.evaluate.agent_simulation.deepeval_evaluator import DeepEvalEvaluator
 from ragbits.evaluate.agent_simulation.logger import ConversationLogger
@@ -40,8 +38,7 @@ def evaluate_with_deepeval(history: list[Turn], logger: ConversationLogger) -> N
 
 async def run_duet(  # noqa: PLR0912, PLR0915
     scenario: Scenario,
-    agent: Agent,
-    prompt_input_class: type[Any],  # noqa: ANN401
+    chat: ChatInterface,
     max_turns: int = 10,  # max turns of the whole conversation, if needed could be changed to max turns per task
     log_file: str | None = None,
     agent_model_name: str | None = None,
@@ -60,7 +57,7 @@ async def run_duet(  # noqa: PLR0912, PLR0915
     Args:
         scenario: The scenario containing tasks to complete
         agent: The agent to interact with
-        prompt_input_class: The class to use for creating prompt inputs
+        chat: An instantiated ChatInterface used to drive the assistant side of the conversation.
         max_turns: Maximum number of conversation turns
         log_file: Optional path to log file
         agent_model_name: Optional override for agent LLM model name
@@ -86,7 +83,7 @@ async def run_duet(  # noqa: PLR0912, PLR0915
     total_usage = Usage()
 
     # Seed: ask the simulated user for the first message based on the first task
-    user_message = await sim_user.next_message(history=[])
+    user_message = await sim_user.next_message(history=history)
 
     for turn_idx in range(1, max_turns + 1):
         current_task = sim_user.get_current_task()
@@ -100,20 +97,30 @@ async def run_duet(  # noqa: PLR0912, PLR0915
 
         # Add optional prefix to user message
         full_user_message = user_message_prefix + user_message if user_message_prefix else user_message
-        prompt_input = prompt_input_class(input=full_user_message)
+
         assistant_reply_parts: list[str] = []
         tool_calls: list[ToolCallResult] = []
+        turn_usage: Usage = Usage()
 
-        # Get the streaming result object to access usage after iteration
-        streaming_result = agent.run_streaming(prompt_input)
-        async for chunk in streaming_result:
-            if isinstance(chunk, str):
-                assistant_reply_parts.append(chunk)
+        stream = chat.chat(
+            message=full_user_message,
+            history=[
+                d
+                for turn in history
+                for d in ({"role": "user", "text": turn.user}, {"role": "assistant", "text": turn.assistant})
+            ],
+        )
+
+        async for chunk in stream:
+            if isinstance(chunk, TextResponse):
+                assistant_reply_parts.append(chunk.as_text())
             elif isinstance(chunk, ToolCallResult):
                 tool_calls.append(chunk)
-
-        # Get usage from streaming_result (accumulated during iteration)
-        turn_usage = streaming_result.usage
+            elif isinstance(chunk, TextResponse):
+                # typed text response
+                assistant_reply_parts.append(chunk.content.text)
+            elif isinstance(chunk, Usage):
+                turn_usage += chunk
 
         total_usage += turn_usage
         assistant_reply = "".join(assistant_reply_parts).strip()
@@ -127,6 +134,7 @@ async def run_duet(  # noqa: PLR0912, PLR0915
         )
         logger.log_turn(turn_idx, current_task, user_message, assistant_reply, tool_calls, turn_usage)
 
+        # Update simulation-visible history (Turn objects)
         history.append(Turn(user=user_message, assistant=assistant_reply))
 
         # Ask the judge if current task is achieved
