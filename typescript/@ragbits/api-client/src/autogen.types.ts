@@ -97,18 +97,6 @@ export interface ChunkedContent {
 }
 
 /**
- * Represents a tool confirmation request sent to the user.
- */
-export interface ConfirmationRequest {
-    confirmation_id: string
-    tool_name: string
-    tool_description: string
-    arguments: {
-        [k: string]: unknown
-    }
-}
-
-/**
  * Represents an live update performed by an agent.
  */
 export interface LiveUpdate {
@@ -215,6 +203,18 @@ export interface Task {
 }
 
 /**
+ * Represents a tool confirmation request sent to the user.
+ */
+export interface ConfirmationRequest {
+    confirmation_id: string
+    tool_name: string
+    tool_description: string
+    arguments: {
+        [k: string]: unknown
+    }
+}
+
+/**
  * Text content wrapper.
  */
 export interface TextContent {
@@ -263,6 +263,13 @@ export interface UsageContent {
  */
 export interface TodoItemContent {
     task: Task
+}
+
+/**
+ * Confirmation request content wrapper.
+ */
+export interface ConfirmationRequestContent {
+    confirmation_request: ConfirmationRequest
 }
 
 /**
@@ -572,7 +579,7 @@ export interface ConversationSummaryResponse {
 
 export interface ConfirmationRequestChatResponse {
     type: 'confirmation_request'
-    content: ConfirmationRequest
+    content: ConfirmationRequestContent
 }
 
 export interface ChunkedChatResponse {

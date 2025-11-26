@@ -12,7 +12,7 @@ from pydantic import BaseModel
 
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.tools.todo import Task, TaskStatus
-from ragbits.chat.interface.types import AuthType
+from ragbits.chat.interface.types import AuthType, ConfirmationRequestContent
 
 
 class RagbitsChatModelProvider:
@@ -93,7 +93,6 @@ class RagbitsChatModelProvider:
                 # Core data models
                 "ChatContext": ChatContext,
                 "ChunkedContent": ChunkedContent,
-                "ConfirmationRequest": ConfirmationRequest,
                 "LiveUpdate": LiveUpdate,
                 "LiveUpdateContent": LiveUpdateContent,
                 "Message": Message,
@@ -103,6 +102,7 @@ class RagbitsChatModelProvider:
                 "Image": Image,
                 "MessageUsage": MessageUsage,
                 "Task": Task,
+                "ConfirmationRequest": ConfirmationRequest,
                 # Response content wrappers (new way)
                 "TextContent": TextContent,
                 "MessageIdContent": MessageIdContent,
@@ -111,6 +111,7 @@ class RagbitsChatModelProvider:
                 "FollowupMessagesContent": FollowupMessagesContent,
                 "UsageContent": UsageContent,
                 "TodoItemContent": TodoItemContent,
+                "ConfirmationRequestContent": ConfirmationRequestContent,
                 # Configuration models
                 "HeaderCustomization": HeaderCustomization,
                 "UICustomization": UICustomization,
@@ -159,7 +160,6 @@ class RagbitsChatModelProvider:
             "core_data": [
                 "ChatContext",
                 "ChunkedContent",
-                "ConfirmationRequest",
                 "LiveUpdate",
                 "LiveUpdateContent",
                 "Message",
@@ -181,6 +181,7 @@ class RagbitsChatModelProvider:
                 "UsageContent",
                 "ClearMessageContent",
                 "TodoItemContent",
+                "ConfirmationRequestContent",
             ],
             "configuration": [
                 "HeaderCustomization",

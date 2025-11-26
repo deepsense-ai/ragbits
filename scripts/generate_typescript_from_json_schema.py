@@ -203,7 +203,7 @@ def _generate_chat_response_union_type() -> str:
         ("ClearMessageChatResponse", "clear_message", "unknown"),
         ("TodoItemChatResonse", "todo_item", "TodoItemContent"),
         ("ConversationSummaryResponse", "conversation_summary", "ConversationSummaryContent"),
-        ("ConfirmationRequestChatResponse", "confirmation_request", "ConfirmationRequest"),
+        ("ConfirmationRequestChatResponse", "confirmation_request", "ConfirmationRequestContent"),
     ]
 
     internal_response_interfaces = [

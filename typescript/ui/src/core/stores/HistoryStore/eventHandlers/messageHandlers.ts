@@ -142,7 +142,7 @@ export const handleConfirmationRequest: PrimaryHandler<
 > = (response, draft, ctx) => {
   const message = draft.history[ctx.messageId];
 
-  const confirmationId = response.content.confirmation_id;
+  const confirmationId = response.content.confirmation_request.confirmation_id;
 
   // Initialize Records if they don't exist
   if (!message.confirmationRequests) {
@@ -158,6 +158,7 @@ export const handleConfirmationRequest: PrimaryHandler<
   }
 
   // Add to Record-based system (prevents duplicates by design)
-  message.confirmationRequests[confirmationId] = response.content;
+  message.confirmationRequests[confirmationId] =
+    response.content.confirmation_request;
   message.confirmationStates[confirmationId] = "pending";
 };

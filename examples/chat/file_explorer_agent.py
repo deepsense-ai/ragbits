@@ -581,10 +581,17 @@ class FileExplorerChat(ChatInterface):
             history=history,
         )
 
+        # Create agent context with confirmed_tools from the request context
+        agent_context: AgentRunContext = AgentRunContext()
+
+        # Pass confirmed_tools from ChatContext to AgentRunContext
+        if context.confirmed_tools:
+            agent_context.confirmed_tools = context.confirmed_tools
+
         # Run agent in streaming mode with the message and history
         async for response in agent.run_streaming(
-            message=message,
-            context=context,
+            message,
+            context=agent_context,
         ):
             # Pattern match on response types
             match response:

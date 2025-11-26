@@ -26,7 +26,6 @@ from .types import (
     ChatResponseUnion,
     ClearMessageContent,
     ClearMessageResponse,
-    ConfirmationRequestResponse,
     ConversationIdContent,
     ConversationIdResponse,
     ConversationSummaryContent,
@@ -116,7 +115,6 @@ def with_chat_metadata(  # noqa: PLR0915
         responses = []
         main_response = ""
         extra_responses: list[ChatResponseUnion] = []
-        pending_confirmations = []
         timestamp = time.time()
         response_token_count = 0.0
         first_token_time = None
@@ -140,10 +138,6 @@ def with_chat_metadata(  # noqa: PLR0915
                     main_response = main_response + response.content.text
                     # Rough token estimation (words * 1.3 for subword tokens)
                     response_token_count += len(response.content.text.split()) * 1.3
-                elif isinstance(response, ConfirmationRequestResponse):
-                    # Collect confirmation requests to store in message extra
-                    pending_confirmations.append(response.content.confirmation_request.model_dump())
-                    extra_responses.append(response)
                 else:
                     extra_responses.append(response)
                 yield response
