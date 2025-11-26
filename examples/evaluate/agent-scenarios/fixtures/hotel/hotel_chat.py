@@ -9,8 +9,17 @@ from ragbits.core.llms import LiteLLM
 from ragbits.core.llms.base import Usage
 from ragbits.core.prompt import ChatFormat
 
-from . import HotelPrompt, HotelPromptInput
-from . import tools as hotel_fixtures
+from .prompt import HotelPrompt, HotelPromptInput
+from .tools import (
+    cancel_reservation,
+    create_reservation,
+    get_hotel_details,
+    get_reservation,
+    list_cities,
+    list_hotels,
+    list_reservations,
+    search_available_rooms,
+)
 
 logger = getLogger(__name__)
 
@@ -24,14 +33,14 @@ class HotelChat(ChatInterface):
             llm=self.llm,
             prompt=HotelPrompt,
             tools=[
-                hotel_fixtures.list_cities,
-                hotel_fixtures.list_hotels,
-                hotel_fixtures.get_hotel_details,
-                hotel_fixtures.search_available_rooms,
-                hotel_fixtures.create_reservation,
-                hotel_fixtures.list_reservations,
-                hotel_fixtures.get_reservation,
-                hotel_fixtures.cancel_reservation,
+                list_cities,
+                list_hotels,
+                get_hotel_details,
+                search_available_rooms,
+                create_reservation,
+                list_reservations,
+                get_reservation,
+                cancel_reservation,
             ],
         )
 

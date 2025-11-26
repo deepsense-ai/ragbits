@@ -5,6 +5,7 @@ across different evaluation examples and agent scenarios.
 """
 
 from . import prompt, tools
+from .hotel_chat import HotelChat
 
 # Re-export prompt classes
 HotelPrompt = prompt.HotelPrompt
@@ -20,7 +21,9 @@ list_hotels = tools.list_hotels
 list_reservations = tools.list_reservations
 search_available_rooms = tools.search_available_rooms
 
+
 __all__ = [
+    "HotelChat",
     "HotelPrompt",
     "HotelPromptInput",
     "cancel_reservation",
