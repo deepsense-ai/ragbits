@@ -123,6 +123,26 @@
         "expected_tools": ["create_reservation"]
       }
     ]
+  },
+  {
+    "name": "Scenario 6",
+    "tasks": [
+      {
+        "task": "search for hotels in Gdańsk",
+        "expected_result": "{list of hotels in Gdańsk}",
+        "expected_tools": ["list_hotels"]
+      },
+      {
+        "task": "find suite rooms available for weekend starting May 10, 2025",
+        "expected_result": "{available suite rooms}",
+        "expected_tools": ["search_available_rooms"]
+      },
+      {
+        "task": "make a reservation; your name is Andrzej Strzelba",
+        "expected_result": "{reservation details}",
+        "expected_tools": ["create_reservation"]
+      }
+    ]
   }
 ]
 
