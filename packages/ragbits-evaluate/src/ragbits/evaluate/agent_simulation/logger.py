@@ -91,6 +91,14 @@ class ConversationLogger:
             with self.log_path.open("a", encoding="utf-8") as f:
                 f.write(f"Moving to next task: {next_task.task}\n")
 
+    def log_impossible_task(self, turn_idx: int, task: Task, reason: str) -> None:
+        """Log that a task was determined to be impossible to fulfill."""
+        if self.log_path:
+            with self.log_path.open("a", encoding="utf-8") as f:
+                f.write(f"Turn {turn_idx} - Task impossible: {task.task}\n")
+                f.write(f"Turn {turn_idx} - Reason: {reason}\n")
+                f.write("Simulation ended early due to impossible task.\n")
+
     def log_tool_check(
         self,
         turn_idx: int,
