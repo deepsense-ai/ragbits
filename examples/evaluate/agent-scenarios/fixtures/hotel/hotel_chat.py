@@ -59,7 +59,7 @@ class HotelChat(ChatInterface):
 
         async for response in stream:
             if isinstance(response, str):
-                yield self.create_text_response(response)
+                yield response
             if isinstance(response, ToolCallResult):
                 yield response
 

@@ -2,7 +2,7 @@
 
 from ragbits.agents.tool import ToolCallResult
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.types import TextResponse
+from ragbits.chat.interface.types import ChatContext
 from ragbits.core.llms import Usage
 from ragbits.evaluate.agent_simulation.deepeval_evaluator import DeepEvalEvaluator
 from ragbits.evaluate.agent_simulation.logger import ConversationLogger
@@ -102,6 +102,7 @@ async def run_duet(  # noqa: PLR0912, PLR0915
         assistant_reply_parts: list[str] = []
         tool_calls: list[ToolCallResult] = []
         turn_usage: Usage = Usage()
+        dummy_chat_context = ChatContext()
 
         stream = chat.chat(
             message=full_user_message,
@@ -110,16 +111,14 @@ async def run_duet(  # noqa: PLR0912, PLR0915
                 for turn in history
                 for d in ({"role": "user", "text": turn.user}, {"role": "assistant", "text": turn.assistant})
             ],
+            context=dummy_chat_context,
         )
 
         async for chunk in stream:
-            if isinstance(chunk, TextResponse):
-                assistant_reply_parts.append(chunk.as_text())
+            if isinstance(chunk, str):
+                assistant_reply_parts.append(chunk)
             elif isinstance(chunk, ToolCallResult):
                 tool_calls.append(chunk)
-            elif isinstance(chunk, TextResponse):
-                # typed text response
-                assistant_reply_parts.append(chunk.content.text)
             elif isinstance(chunk, Usage):
                 turn_usage += chunk
 
