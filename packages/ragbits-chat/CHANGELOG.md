@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Change auth backend from jwt to http-only cookie based authentication, add support for OAuth2 authentication (#867)
 
 - Split params into path params, query params in API client (#871)
 - Fix bug causing conversation not to be selected when navigating to it from url(#872)
