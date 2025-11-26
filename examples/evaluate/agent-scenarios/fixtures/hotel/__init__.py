@@ -23,6 +23,7 @@ search_available_rooms = tools.search_available_rooms
 
 
 __all__ = [
+    "HotelChat",
     "HotelPrompt",
     "HotelPromptInput",
     "cancel_reservation",
