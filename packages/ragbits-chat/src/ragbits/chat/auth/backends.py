@@ -278,8 +278,18 @@ class OAuth2AuthenticationBackend(AuthenticationBackend):
         self.client_secret = client_secret or os.getenv(f"{self.provider.name.upper()}_CLIENT_SECRET")
 
         # Use provider-specific callback URL for better isolation and debugging
-        default_redirect_uri = f"http://localhost:8000/api/auth/callback/{self.provider.name}"
-        self.redirect_uri = redirect_uri or os.getenv("OAUTH2_REDIRECT_URI") or default_redirect_uri
+        if not redirect_uri:
+            # Get base URL from environment variable or use default
+            base_url = os.getenv("OAUTH2_CALLBACK_BASE_URL", "http://localhost:8000")
+            # Remove trailing slash from base URL
+            base_url = base_url.rstrip("/")
+            # Construct redirect URI with base URL and provider name
+            redirect_uri = f"{base_url}/api/auth/callback/{self.provider.name}"
+
+        # remove trailing slash from redirect URI
+        redirect_uri = redirect_uri.rstrip("/")
+        # set redirect URI on the backend
+        self.redirect_uri = redirect_uri
 
         if not self.client_id or not self.client_secret:
             raise ValueError(

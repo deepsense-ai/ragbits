@@ -86,6 +86,13 @@ class RagbitsAPI:
         self.auth_backend = self._load_auth_backend(auth_backend)
         self.theme_path = Path(theme_path) if theme_path else None
 
+        # get frontend base URL from environment variable or use default
+        frontend_base_url = os.getenv("FRONTEND_BASE_URL", "http://localhost:8000")
+        # remove trailing slash from frontend base URL
+        frontend_base_url = frontend_base_url.rstrip("/")
+        # set frontend base URL on the API
+        self.frontend_base_url = frontend_base_url
+
         @asynccontextmanager
         async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             await self.chat_interface.setup()
@@ -681,17 +688,19 @@ class RagbitsAPI:
         # Verify required parameters
         if not code:
             # Redirect to login with error
-            return RedirectResponse(url="/login?error=missing_code", status_code=302)
+            return RedirectResponse(url=f"{self.frontend_base_url}/login?error=missing_code", status_code=302)
 
         # Verify state parameter for CSRF protection
         if not state or not backend.verify_state(state):
-            return RedirectResponse(url="/login?error=invalid_state", status_code=302)
+            return RedirectResponse(url=f"{self.frontend_base_url}/login?error=invalid_state", status_code=302)
 
         try:
             # Exchange code for access token
             access_token = await backend.exchange_code_for_token(code)
             if not access_token:
-                return RedirectResponse(url="/login?error=token_exchange_failed", status_code=302)
+                return RedirectResponse(
+                    url=f"{self.frontend_base_url}/login?error=token_exchange_failed", status_code=302
+                )
 
             # Authenticate with the access token
             oauth_credentials = OAuth2Credentials(access_token=access_token, token_type="Bearer")  # noqa: S106
@@ -699,10 +708,10 @@ class RagbitsAPI:
 
             if not auth_result.success or not auth_result.session_id:
                 error_msg = auth_result.error_message or "Authentication failed"
-                return RedirectResponse(url=f"/login?error={error_msg}", status_code=302)
+                return RedirectResponse(url=f"{self.frontend_base_url}/login?error={error_msg}", status_code=302)
 
             # Success! Create redirect response with session cookie
-            response = RedirectResponse(url="/", status_code=302)
+            response = RedirectResponse(url=f"{self.frontend_base_url}/", status_code=302)
 
             # Set secure HTTP-only cookie
             session_expiry_seconds = backend.session_expiry_hours * 3600
@@ -720,7 +729,7 @@ class RagbitsAPI:
 
         except Exception as e:
             logger.error(f"OAuth2 callback error: {e}")
-            return RedirectResponse(url="/login?error=internal_error", status_code=302)
+            return RedirectResponse(url=f"{self.frontend_base_url}/login?error=internal_error", status_code=302)
 
     @staticmethod
     async def _chat_response_to_sse(

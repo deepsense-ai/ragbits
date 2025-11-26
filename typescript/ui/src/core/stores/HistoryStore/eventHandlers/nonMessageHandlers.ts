@@ -52,12 +52,3 @@ export const handleConversationSummary: PrimaryHandler<
 > = ({ content }, draft) => {
   draft.summary = content.summary;
 };
-<<<<<<< HEAD
-
-export const handleConversationSummary: PrimaryHandler<
-  ConversationSummaryResponse
-> = ({ content }, draft) => {
-  draft.summary = content.summary;
-};
-=======
->>>>>>> 5f25ceb44 (resolve conflicts)
