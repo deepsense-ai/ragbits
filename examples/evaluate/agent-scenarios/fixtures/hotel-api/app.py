@@ -376,8 +376,8 @@ def list_hotels(
 
     query = session.query(HotelNS)
     if city:
-        query = query.filter(Hotel.city == city)
-    hotels = query.order_by(Hotel.name).all()
+        query = query.filter(HotelNS.city == city)
+    hotels = query.order_by(HotelNS.name).all()
 
     return [
         HotelResponse(
