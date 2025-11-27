@@ -48,6 +48,7 @@ nav:
         - "Setup API & UI": how-to/chatbots/api.md
       - Evaluate:
           - "Evaluate pipelines": how-to/evaluate/evaluate.md
+          - "Agent simulation": how-to/evaluate/agent_simulation.md
           - "Create custom evaluation pipeline": how-to/evaluate/custom_evaluation_pipeline.md
           - "Create custom evaluation metric": how-to/evaluate/custom_metric.md
           - "Create custom data loader": how-to/evaluate/custom_dataloader.md
@@ -87,6 +88,7 @@ nav:
         - api_reference/evaluate/dataloaders.md
         - api_reference/evaluate/pipelines.md
         - api_reference/evaluate/metrics.md
+        - api_reference/evaluate/agent_simulation.md
       - Chatbots:
           - api_reference/chat/compressors/base.md
           - api_reference/chat/compressors/llm.md

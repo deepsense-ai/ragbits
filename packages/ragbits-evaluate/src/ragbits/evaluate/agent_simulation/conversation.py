@@ -58,7 +58,6 @@ async def run_duet(  # noqa: PLR0912, PLR0915
 
     Args:
         scenario: The scenario containing tasks to complete
-        agent: The agent to interact with
         chat: An instantiated ChatInterface used to drive the assistant side of the conversation.
         max_turns_scenario: Maximum number of conversation turns for the entire scenario
         max_turns_task: Maximum number of conversation turns per task (None for no limit)
