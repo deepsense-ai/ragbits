@@ -15,9 +15,12 @@ import httpx
 HOTEL_API_BASE_URL = "http://localhost:8000"
 
 
-async def list_cities() -> str:
+async def list_cities(process_id: int | str | None = None) -> str:
     """
     Get a list of all available cities with hotels.
+
+    Args:
+        process_id: Optional identifier used by callers (e.g. agent/process tracing).
 
     Returns:
         str: JSON string containing list of city names
@@ -36,11 +39,12 @@ async def list_cities() -> str:
         return f"Error processing cities: {e}"
 
 
-async def list_hotels(city: str | None = None) -> str:
+async def list_hotels(process_id: int | str | None = None, city: str | None = None) -> str:
     """
     Get a list of hotels, optionally filtered by city.
 
     Args:
+        process_id: Optional identifier used by callers (e.g. agent/process tracing).
         city: Optional city name to filter hotels (e.g., "Kraków", "Warszawa", "Gdańsk")
 
     Returns:
@@ -64,11 +68,12 @@ async def list_hotels(city: str | None = None) -> str:
         return f"Error processing hotels: {e}"
 
 
-async def get_hotel_details(hotel_id: int) -> str:
+async def get_hotel_details(process_id: int | str | None = None, hotel_id: int | None = None) -> str:
     """
     Get detailed information about a specific hotel including all its rooms.
 
     Args:
+        process_id: Optional identifier used by callers (e.g. agent/process tracing).
         hotel_id: The ID of the hotel to retrieve
 
     Returns:
@@ -90,8 +95,9 @@ async def get_hotel_details(hotel_id: int) -> str:
 
 
 async def search_available_rooms(
-    start_date: str,
-    end_date: str,
+    process_id: int | str | None = None,
+    start_date: str = None,
+    end_date: str = None,
     city: str | None = None,
     min_price: float | None = None,
     max_price: float | None = None,
@@ -101,6 +107,7 @@ async def search_available_rooms(
     Search for available rooms matching the specified criteria.
 
     Args:
+        process_id: Optional identifier used by callers (e.g. agent/process tracing).
         start_date: Check-in date in YYYY-MM-DD format (e.g., "2025-03-01")
         end_date: Check-out date in YYYY-MM-DD format (e.g., "2025-03-05")
         city: Optional city name to filter by (e.g., "Kraków", "Warszawa", "Gdańsk")
@@ -139,16 +146,18 @@ async def search_available_rooms(
 
 
 async def create_reservation(
-    hotel_id: int,
-    room_id: int,
-    guest_name: str,
-    start_date: str,
-    end_date: str,
+    process_id: int | str | None = None,
+    hotel_id: int = None,
+    room_id: int = None,
+    guest_name: str | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
 ) -> str:
     """
     Create a new hotel reservation.
 
     Args:
+        process_id: Optional identifier used by callers (e.g. agent/process tracing).
         hotel_id: The ID of the hotel
         room_id: The ID of the room to reserve
         guest_name: Name of the guest making the reservation
@@ -185,11 +194,12 @@ async def create_reservation(
         return f"Error processing reservation: {e}"
 
 
-async def list_reservations(guest_name: str | None = None) -> str:
+async def list_reservations(process_id: int | str | None = None, guest_name: str | None = None) -> str:
     """
     Get a list of reservations, optionally filtered by guest name.
 
     Args:
+        process_id: Optional identifier used by callers (e.g. agent/process tracing).
         guest_name: Optional guest name to filter reservations (partial match supported)
 
     Returns:
@@ -213,11 +223,12 @@ async def list_reservations(guest_name: str | None = None) -> str:
         return f"Error processing reservations: {e}"
 
 
-async def get_reservation(reservation_id: int) -> str:
+async def get_reservation(process_id: int | str | None = None, reservation_id: int | None = None) -> str:
     """
     Get details of a specific reservation.
 
     Args:
+        process_id: Optional identifier used by callers (e.g. agent/process tracing).
         reservation_id: The ID of the reservation to retrieve
 
     Returns:
@@ -237,11 +248,12 @@ async def get_reservation(reservation_id: int) -> str:
         return f"Error processing reservation: {e}"
 
 
-async def cancel_reservation(reservation_id: int) -> str:
+async def cancel_reservation(process_id: int | str | None = None, reservation_id: int | None = None) -> str:
     """
     Cancel an existing reservation and free up the room.
 
     Args:
+        process_id: Optional identifier used by callers (e.g. agent/process tracing).
         reservation_id: The ID of the reservation to cancel
 
     Returns:
