@@ -40,7 +40,8 @@ def evaluate_with_deepeval(history: list[Turn], logger: ConversationLogger) -> N
 async def run_duet(  # noqa: PLR0912, PLR0915
     scenario: Scenario,
     chat: ChatInterface,
-    max_turns: int = 10,  # max turns of the whole conversation, if needed could be changed to max turns per task
+    max_turns_scenario: int = 15,
+    max_turns_task: int | None = 4,
     log_file: str | None = None,
     agent_model_name: str | None = None,
     sim_user_model_name: str | None = None,
@@ -59,7 +60,8 @@ async def run_duet(  # noqa: PLR0912, PLR0915
         scenario: The scenario containing tasks to complete
         agent: The agent to interact with
         chat: An instantiated ChatInterface used to drive the assistant side of the conversation.
-        max_turns: Maximum number of conversation turns
+        max_turns_scenario: Maximum number of conversation turns for the entire scenario
+        max_turns_task: Maximum number of conversation turns per task (None for no limit)
         log_file: Optional path to log file
         agent_model_name: Optional override for agent LLM model name
         sim_user_model_name: Optional override for simulated user LLM model name
@@ -86,13 +88,29 @@ async def run_duet(  # noqa: PLR0912, PLR0915
     # Seed: ask the simulated user for the first message based on the first task
     user_message = await sim_user.next_message(history=history)
 
-    for turn_idx in range(1, max_turns + 1):
+    turns_for_current_task = 0
+    current_task_id = None
+
+    for turn_idx in range(1, max_turns_scenario + 1):
         current_task = sim_user.get_current_task()
         if current_task is None:
             print("\nAll tasks completed!")
             break
 
-        print(f"\n=== Turn {turn_idx} ===")
+        # Track turns per task
+        if current_task_id != id(current_task):
+            # New task started, reset counter
+            turns_for_current_task = 0
+            current_task_id = id(current_task)
+
+        # Check if we've exceeded max turns for this task
+        if max_turns_task is not None and turns_for_current_task >= max_turns_task:
+            print(f"\nReached maximum number of turns ({max_turns_task}) for current task. Exiting.")
+            break
+
+        turns_for_current_task += 1
+
+        print(f"\n=== Turn {turn_idx} (Task turn: {turns_for_current_task}) ===")
         print(f"Current Task: {current_task.task}")
         print(f"User: {user_message}")
 
@@ -128,7 +146,7 @@ async def run_duet(  # noqa: PLR0912, PLR0915
         if tool_calls:
             print(f"Tools used: {[tc.name for tc in tool_calls]}")
         print(
-            f"Token usage: {turn_usage.total_tokens} total "
+            f"Assistant token usage: {turn_usage.total_tokens} total "
             f"({turn_usage.prompt_tokens} prompt + {turn_usage.completion_tokens} completion), "
             f"estimated cost: ${turn_usage.estimated_cost:.6f}"
         )
@@ -158,6 +176,9 @@ async def run_duet(  # noqa: PLR0912, PLR0915
             next_task = sim_user.get_current_task()
             if next_task:
                 logger.log_task_transition(next_task)
+            # Reset task turn counter when moving to next task
+            turns_for_current_task = 0
+            current_task_id = id(next_task) if next_task else None
         else:
             print(f"Task not completed: {reason}")
         # Ask the simulator for the next user message
@@ -167,9 +188,9 @@ async def run_duet(  # noqa: PLR0912, PLR0915
         print("\nReached maximum number of turns. Exiting.")
 
     # Print total token usage summary
-    print("\n=== Total Token Usage ===")
+    print("\n=== Total Assistant Token Usage ===")
     print(
-        f"Total tokens: {total_usage.total_tokens} "
+        f"Total assistant tokens: {total_usage.total_tokens} "
         f"({total_usage.prompt_tokens} prompt + {total_usage.completion_tokens} completion)"
     )
     print(f"Total estimated cost: ${total_usage.estimated_cost:.6f}")

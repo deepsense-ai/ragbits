@@ -74,7 +74,7 @@ class ConversationLogger:
                     f.write(f"Turn {turn_idx} - Tool: {tool_call.name}({tool_call.arguments})\n")
             if usage:
                 f.write(
-                    f"Turn {turn_idx} - Token usage: {usage.total_tokens} total "
+                    f"Turn {turn_idx} - Assistant token usage: {usage.total_tokens} total "
                     f"({usage.prompt_tokens} prompt + {usage.completion_tokens} completion), "
                     f"estimated cost: ${usage.estimated_cost:.6f}\n"
                 )
@@ -108,18 +108,18 @@ class ConversationLogger:
                 )
 
     def log_total_usage(self, usage: Usage) -> None:
-        """Log total token usage for the entire conversation."""
+        """Log total assistant token usage for the entire conversation."""
         if not self.log_path:
             return
 
         with self.log_path.open("a", encoding="utf-8") as f:
-            f.write("\n--- Total Token Usage ---\n")
+            f.write("\n--- Total Assistant Token Usage ---\n")
             f.write(
-                f"Total tokens: {usage.total_tokens} "
+                f"Total assistant tokens: {usage.total_tokens} "
                 f"({usage.prompt_tokens} prompt + {usage.completion_tokens} completion)\n"
             )
             f.write(f"Total estimated cost: ${usage.estimated_cost:.6f}\n")
-            f.write("--- End Total Token Usage ---\n")
+            f.write("--- End Total Assistant Token Usage ---\n")
 
     def log_deepeval_metrics(self, metrics: dict[str, Any] | dict[str, dict[str, float | str | None]]) -> None:
         """Log DeepEval evaluation metrics to the log file.

@@ -39,7 +39,8 @@ From the project root:
 ```bash
 uv run python examples/evaluate/agent-scenarios/duet_cli.py \
   --scenario-id 1 \
-  --max-turns 10 \
+  --max-turns-scenario 15 \
+  --max-turns-task 4 \
   --agent-model-name gpt-4o-mini \
   --sim-user-model-name gpt-4o-mini \
   --checker-model-name gpt-4o-mini \
@@ -52,7 +53,8 @@ To use a specific personality for the simulated user:
 ```bash
 uv run python examples/evaluate/agent-scenarios/duet_cli.py \
   --scenario-id 1 \
-  --max-turns 10 \
+  --max-turns-scenario 15 \
+  --max-turns-task 4 \
   --agent-model-name gpt-4o-mini \
   --sim-user-model-name gpt-4o-mini \
   --checker-model-name gpt-4o-mini \
@@ -68,7 +70,8 @@ uv run python examples/evaluate/agent-scenarios/duet_cli.py \
 - `--scenarios-file`: Path to scenarios file (default: `scenarios.json`)
 - `--personality-id` (optional): Select a personality from personalities.json (1-based index). If not provided, no specific personality is used
 - `--personalities-file`: Path to personalities file (default: `personalities.json`)
-- `--max-turns`: Maximum number of conversation turns (default: 10)
+- `--max-turns-scenario`: Maximum number of conversation turns for the entire scenario (default: 15). If exceeded, the conversation exits
+- `--max-turns-task`: Maximum number of conversation turns per task (default: 4). If exceeded, the conversation exits (same behavior as max_turns_scenario)
 - `--log-file`: Path to log file for conversation history (default: `duet_conversations.log`)
 - `--agent-model-name`: LLM model for the hotel booking agent (defaults to `config.llm_model`)
 - `--sim-user-model-name`: LLM model for the simulated user (defaults to `config.llm_model`)
@@ -151,6 +154,7 @@ Available hotel booking tools:
    - Tool usage checker verifies expected tools were used (if `expected_tools` is specified)
    - Goal checker evaluates if the task is complete
    - If complete, move to the next task; otherwise, continue the conversation
+   - The conversation stops when all tasks are completed, the per-task turn limit (`max_turns_task`) is exceeded, or the scenario turn limit (`max_turns_scenario`) is reached
 4. **Logging**: All turns, tool calls, tool usage checks, task completions, and the selected personality (if any) are logged to a file
 
 ## Architecture

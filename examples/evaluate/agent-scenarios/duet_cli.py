@@ -18,7 +18,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--personalities-file", type=str, default="personalities.json", help="Path to personalities file"
     )
-    parser.add_argument("--max-turns", type=int, default=10, help="Max number of conversation turns")
+    parser.add_argument(
+        "--max-turns-scenario", type=int, default=15, help="Max number of conversation turns for the entire scenario"
+    )
+    parser.add_argument("--max-turns-task", type=int, default=4, help="Max number of conversation turns per task")
     parser.add_argument("--log-file", type=str, default="duet_conversations.log", help="Path to log file")
     parser.add_argument("--agent-model-name", type=str, help="Override agent LLM model name")
     parser.add_argument("--sim-user-model-name", type=str, help="Override simulated user LLM model name")
@@ -56,7 +59,8 @@ def main() -> None:
         run_duet(
             scenario=scenario,
             chat=hotel_chat,
-            max_turns=args.max_turns,
+            max_turns_scenario=args.max_turns_scenario,
+            max_turns_task=args.max_turns_task,
             log_file=args.log_file,
             agent_model_name=args.agent_model_name,
             sim_user_model_name=args.sim_user_model_name,
