@@ -5,7 +5,7 @@ from ragbits.evaluate.agent_simulation.deepeval_evaluator import DeepEvalEvaluat
 from ragbits.evaluate.agent_simulation.logger import ConversationLogger
 from ragbits.evaluate.agent_simulation.models import Personality, Scenario, Task, Turn
 from ragbits.evaluate.agent_simulation.scenarios import load_personalities, load_scenarios
-from ragbits.evaluate.agent_simulation.simulation import GoalChecker, SimulatedUser, TaskStatus
+from ragbits.evaluate.agent_simulation.simulation import GoalChecker, SimulatedUser
 
 __all__ = [
     "ConversationLogger",
@@ -15,7 +15,6 @@ __all__ = [
     "Scenario",
     "SimulatedUser",
     "Task",
-    "TaskStatus",
     "Turn",
     "load_personalities",
     "load_scenarios",
