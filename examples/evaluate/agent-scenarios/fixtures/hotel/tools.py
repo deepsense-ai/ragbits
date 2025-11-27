@@ -27,7 +27,7 @@ async def list_cities(process_id: int | str | None = None) -> str:
     """
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(f"{HOTEL_API_BASE_URL}/cities")
+            response = await client.get(f"{HOTEL_API_BASE_URL}/{process_id}_cities")
             response.raise_for_status()
             cities = response.json()
             return json.dumps(cities, indent=2)
@@ -56,7 +56,7 @@ async def list_hotels(process_id: int | str | None = None, city: str | None = No
             params["city"] = city
 
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(f"{HOTEL_API_BASE_URL}/hotels", params=params)
+            response = await client.get(f"{HOTEL_API_BASE_URL}/{process_id}_hotels", params=params)
             response.raise_for_status()
             hotels = response.json()
             return json.dumps(hotels, indent=2)
@@ -82,7 +82,7 @@ async def get_hotel_details(process_id: int | str | None = None, hotel_id: int |
     """
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(f"{HOTEL_API_BASE_URL}/hotels/{hotel_id}")
+            response = await client.get(f"{HOTEL_API_BASE_URL}/{process_id}_hotels/{hotel_id}")
             response.raise_for_status()
             hotel = response.json()
             return json.dumps(hotel, indent=2)
@@ -133,7 +133,7 @@ async def search_available_rooms(
             params["room_type"] = room_type
 
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(f"{HOTEL_API_BASE_URL}/rooms/available", params=params)
+            response = await client.get(f"{HOTEL_API_BASE_URL}/{process_id}_rooms/available", params=params)
             response.raise_for_status()
             rooms = response.json()
             return json.dumps(rooms, indent=2)
@@ -179,7 +179,7 @@ async def create_reservation(
 
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
-                f"{HOTEL_API_BASE_URL}/reservations",
+                f"{HOTEL_API_BASE_URL}/{process_id}_reservations",
                 json=payload,
                 headers={"Content-Type": "application/json"},
             )
@@ -211,7 +211,7 @@ async def list_reservations(process_id: int | str | None = None, guest_name: str
             params["guest_name"] = guest_name
 
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(f"{HOTEL_API_BASE_URL}/reservations", params=params)
+            response = await client.get(f"{HOTEL_API_BASE_URL}/{process_id}_reservations", params=params)
             response.raise_for_status()
             reservations = response.json()
             return json.dumps(reservations, indent=2)
@@ -236,7 +236,7 @@ async def get_reservation(process_id: int | str | None = None, reservation_id: i
     """
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.get(f"{HOTEL_API_BASE_URL}/reservations/{reservation_id}")
+            response = await client.get(f"{HOTEL_API_BASE_URL}/{process_id}_reservations/{reservation_id}")
             response.raise_for_status()
             reservation = response.json()
             return json.dumps(reservation, indent=2)
@@ -261,7 +261,7 @@ async def cancel_reservation(process_id: int | str | None = None, reservation_id
     """
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.delete(f"{HOTEL_API_BASE_URL}/reservations/{reservation_id}")
+            response = await client.delete(f"{HOTEL_API_BASE_URL}/{process_id}_reservations/{reservation_id}")
             response.raise_for_status()
             result = response.json()
             return json.dumps(result, indent=2)

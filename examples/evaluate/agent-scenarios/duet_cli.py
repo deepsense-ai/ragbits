@@ -54,7 +54,7 @@ def main() -> None:
         "If information is unavailable, explain why briefly.\n\n"
     )
 
-    hotel_chat = HotelChat(args.agent_model_name or config.llm_model, config.openai_api_key)
+    hotel_chat = HotelChat(args.agent_model_name or config.llm_model, config.openai_api_key, 1)
     asyncio.run(
         run_duet(
             scenario=scenario,
