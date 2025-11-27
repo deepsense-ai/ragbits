@@ -1,4 +1,6 @@
-from collections.abc import AsyncGenerator
+import inspect
+from collections.abc import AsyncGenerator, Callable
+from functools import wraps
 from logging import getLogger
 
 from ragbits.agents import Agent
@@ -27,20 +29,20 @@ logger = getLogger(__name__)
 class HotelChat(ChatInterface):
     """A simple example implementation of the ChatInterface for hotel booking agent."""
 
-    def __init__(self, model_name: str, api_key: str) -> None:
+    def __init__(self, model_name: str, api_key: str, process_id: int | str | None = None) -> None:
         self.llm = LiteLLM(model_name=model_name, use_structured_output=True, api_key=api_key)
         self.agent = Agent(
             llm=self.llm,
             prompt=HotelPrompt,
             tools=[
-                list_cities,
-                list_hotels,
-                get_hotel_details,
-                search_available_rooms,
-                create_reservation,
-                list_reservations,
-                get_reservation,
-                cancel_reservation,
+                self._preconfigure_tool(list_cities, process_id),
+                self._preconfigure_tool(list_hotels, process_id),
+                self._preconfigure_tool(get_hotel_details, process_id),
+                self._preconfigure_tool(search_available_rooms, process_id),
+                self._preconfigure_tool(create_reservation, process_id),
+                self._preconfigure_tool(list_reservations, process_id),
+                self._preconfigure_tool(get_reservation, process_id),
+                self._preconfigure_tool(cancel_reservation, process_id),
             ],
         )
 
@@ -74,6 +76,31 @@ class HotelChat(ChatInterface):
 
         if stream.usage and isinstance(stream.usage, Usage):
             yield stream.usage
+
+    @staticmethod
+    def _preconfigure_tool(func: Callable[..., object], process_id: int | str | None) -> Callable[..., object]:
+        """Return a callable that calls `func(process_id, *args, **kwargs)` and
+        preserves original function metadata (like __name__ and __doc__).
+
+        If process_id is None we return the original function unchanged.
+        Supports both sync and async functions.
+        """
+        if process_id is None:
+            return func
+
+        if inspect.iscoroutinefunction(func):
+
+            @wraps(func)
+            async def _wrapped(*args, **kwargs) -> object:
+                return await func(process_id, *args, **kwargs)
+
+            return _wrapped
+
+        @wraps(func)
+        def _wrapped(*args, **kwargs) -> object:
+            return func(process_id, *args, **kwargs)
+
+        return _wrapped
 
     async def generate_conversation_summary(self, message: str, history: ChatFormat, context: ChatContext) -> str:
         """Delegate to the configured summary generator."""
