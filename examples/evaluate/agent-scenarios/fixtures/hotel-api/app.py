@@ -1,8 +1,11 @@
+"""FastAPI application implementing a hotel availability and reservation API."""
+
 from __future__ import annotations
 
 import json
 from collections.abc import Generator
 from datetime import date, datetime, timedelta
+from functools import lru_cache
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Query, status
@@ -242,6 +245,80 @@ def initialize_database() -> None:
     Base.metadata.create_all(bind=engine)
 
 
+@lru_cache(maxsize=64)
+def get_namespaced_models(namespace: str) -> tuple:
+    """Return namespaced model classes & base for a given namespace.
+
+    This dynamically creates a new DeclarativeBase subclass and models
+    with tables suffixed by the namespace so multiple separate table sets
+    may coexist in a single SQLite file.
+    """
+
+    class NamespacedBase(DeclarativeBase):
+        pass
+
+    class HotelNS(NamespacedBase):
+        __tablename__ = f"hotels_{namespace}"
+
+        id: Mapped[int] = mapped_column(primary_key=True, index=True)
+        name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+        city: Mapped[str] = mapped_column(String, nullable=False, index=True)
+        address: Mapped[str] = mapped_column(String, nullable=False)
+        rating: Mapped[float] = mapped_column(Float, nullable=False)
+        amenities: Mapped[str] = mapped_column(Text, nullable=False)
+
+        rooms: Mapped[list] = relationship("RoomNS", back_populates="hotel", cascade="all, delete-orphan")
+
+    class RoomNS(NamespacedBase):
+        __tablename__ = f"rooms_{namespace}"
+        __table_args__ = (UniqueConstraint("hotel_id", "number", name=f"uq_room_number_{namespace}"),)
+
+        id: Mapped[int] = mapped_column(primary_key=True, index=True)
+        number: Mapped[str] = mapped_column(String, nullable=False)
+        hotel_id: Mapped[int] = mapped_column(ForeignKey(HotelNS.__tablename__ + ".id"), nullable=False)
+        room_type: Mapped[str] = mapped_column(String, nullable=False)
+        price_per_night: Mapped[float] = mapped_column(Float, nullable=False)
+        capacity: Mapped[int] = mapped_column(Integer, nullable=False)
+        amenities: Mapped[str] = mapped_column(Text, nullable=False)
+
+        hotel: Mapped[HotelNS] = relationship("HotelNS", back_populates="rooms")
+        availability: Mapped[list] = relationship(
+            "RoomAvailabilityNS", back_populates="room", cascade="all, delete-orphan"
+        )
+        reservations: Mapped[list] = relationship("ReservationNS", back_populates="room", cascade="all, delete-orphan")
+
+    class RoomAvailabilityNS(NamespacedBase):
+        __tablename__ = f"room_availability_{namespace}"
+        __table_args__ = (UniqueConstraint("room_id", "available_date", name=f"uq_room_date_{namespace}"),)
+
+        id: Mapped[int] = mapped_column(primary_key=True, index=True)
+        room_id: Mapped[int] = mapped_column(ForeignKey(RoomNS.__tablename__ + ".id"), nullable=False)
+        available_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+        is_reserved: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+        room: Mapped[RoomNS] = relationship("RoomNS", back_populates="availability")
+
+    class ReservationNS(NamespacedBase):
+        __tablename__ = f"reservations_{namespace}"
+
+        id: Mapped[int] = mapped_column(primary_key=True, index=True)
+        room_id: Mapped[int] = mapped_column(ForeignKey(RoomNS.__tablename__ + ".id"), nullable=False)
+        guest_name: Mapped[str] = mapped_column(String, nullable=False)
+        start_date: Mapped[date] = mapped_column(Date, nullable=False)
+        end_date: Mapped[date] = mapped_column(Date, nullable=False)
+        created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+        room: Mapped[RoomNS] = relationship("RoomNS", back_populates="reservations")
+
+    return NamespacedBase, HotelNS, RoomNS, RoomAvailabilityNS, ReservationNS
+
+
+def ensure_namespaced_tables(namespace: str) -> None:
+    """Create the namespaced tables for the given namespace if they don't exist."""
+    NamespacedBase, *_ = get_namespaced_models(str(namespace))
+    NamespacedBase.metadata.create_all(bind=engine)
+
+
 # =============================================================================
 # FastAPI Application
 # =============================================================================
@@ -272,10 +349,13 @@ def on_startup() -> None:
 # =============================================================================
 
 
-@app.get("/cities", response_model=list[str])
-def list_cities(session: Session = Depends(get_session)) -> list[str]:  # noqa: B008
+@app.get("/{pid}_cities", response_model=list[str])
+def list_cities(pid: int, session: Session = Depends(get_session)) -> list[str]:  # noqa: B008
     """Return all available cities."""
-    cities = session.query(Hotel.city).distinct().order_by(Hotel.city).all()
+    ensure_namespaced_tables(pid)
+    _, HotelNS, *_ = get_namespaced_models(str(pid))
+
+    cities = session.query(HotelNS.city).distinct().order_by(HotelNS.city).all()
     return [city[0] for city in cities]
 
 
@@ -284,13 +364,17 @@ def list_cities(session: Session = Depends(get_session)) -> list[str]:  # noqa: 
 # =============================================================================
 
 
-@app.get("/hotels", response_model=list[HotelResponse])
+@app.get("/{pid}_hotels", response_model=list[HotelResponse])
 def list_hotels(
+    pid: int,
     city: str | None = Query(None, description="Filter by city"),  # noqa: B008
     session: Session = Depends(get_session),  # noqa: B008
 ) -> list[HotelResponse]:
     """Return hotels, optionally filtered by city."""
-    query = session.query(Hotel)
+    ensure_namespaced_tables(pid)
+    _, HotelNS, *_ = get_namespaced_models(str(pid))
+
+    query = session.query(HotelNS)
     if city:
         query = query.filter(Hotel.city == city)
     hotels = query.order_by(Hotel.name).all()
@@ -308,13 +392,17 @@ def list_hotels(
     ]
 
 
-@app.get("/hotels/{hotel_id}", response_model=HotelDetailResponse)
+@app.get("/{pid}_hotels/{hotel_id}", response_model=HotelDetailResponse)
 def get_hotel_detail(
+    pid: int,
     hotel_id: int,
     session: Session = Depends(get_session),  # noqa: B008
 ) -> HotelDetailResponse:
     """Get detailed information about a specific hotel including all rooms."""
-    hotel = session.query(Hotel).filter(Hotel.id == hotel_id).one_or_none()
+    ensure_namespaced_tables(pid)
+    _, HotelNS, *_ = get_namespaced_models(str(pid))
+
+    hotel = session.query(HotelNS).filter(HotelNS.id == hotel_id).one_or_none()
     if hotel is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -349,8 +437,9 @@ def get_hotel_detail(
 # =============================================================================
 
 
-@app.get("/rooms/available", response_model=list[AvailableRoomResponse])
+@app.get("/{pid}_rooms/available", response_model=list[AvailableRoomResponse])
 def find_available_rooms(
+    pid: int,
     start_date: date = Query(..., description="Check-in date"),  # noqa: B008
     end_date: date = Query(..., description="Check-out date"),  # noqa: B008
     city: str | None = Query(None, description="Filter by city"),  # noqa: B008
@@ -366,15 +455,18 @@ def find_available_rooms(
             detail="end_date must be on or after start_date.",
         )
 
+    ensure_namespaced_tables(pid)
+    _, HotelNS, RoomNS, RoomAvailabilityNS, *_ = get_namespaced_models(str(pid))
+
     # Build hotel query with filters
-    hotel_query = session.query(Hotel)
+    hotel_query = session.query(HotelNS)
     if city:
         hotel_query = hotel_query.filter(Hotel.city == city)
 
     available_rooms: list[AvailableRoomResponse] = []
 
     for hotel in hotel_query.all():
-        room_query = session.query(Room).filter(Room.hotel_id == hotel.id)
+        room_query = session.query(RoomNS).filter(RoomNS.hotel_id == hotel.id)
 
         # Apply room filters
         if min_price is not None:
@@ -387,12 +479,12 @@ def find_available_rooms(
         for room in room_query.all():
             # Check if room is available for all requested dates
             availability_entries = (
-                session.query(RoomAvailability)
+                session.query(RoomAvailabilityNS)
                 .filter(
-                    RoomAvailability.room_id == room.id,
-                    RoomAvailability.available_date >= start_date,
-                    RoomAvailability.available_date <= end_date,
-                    RoomAvailability.is_reserved.is_(False),
+                    RoomAvailabilityNS.room_id == room.id,
+                    RoomAvailabilityNS.available_date >= start_date,
+                    RoomAvailabilityNS.available_date <= end_date,
+                    RoomAvailabilityNS.is_reserved.is_(False),
                 )
                 .count()
             )
@@ -421,8 +513,9 @@ def find_available_rooms(
 # =============================================================================
 
 
-@app.post("/reservations", response_model=ReservationResponse, status_code=status.HTTP_201_CREATED)
+@app.post("/{pid}_reservations", response_model=ReservationResponse, status_code=status.HTTP_201_CREATED)
 def create_reservation(
+    pid: int,
     reservation: ReservationRequest,
     session: Session = Depends(get_session),  # noqa: B008
 ) -> ReservationResponse:
@@ -433,8 +526,12 @@ def create_reservation(
             detail="end_date must be on or after start_date.",
         )
 
+    # Resolve namespaced models and ensure tables exist
+    ensure_namespaced_tables(pid)
+    _, HotelNS, RoomNS, RoomAvailabilityNS, ReservationNS = get_namespaced_models(str(pid))
+
     # Verify hotel exists
-    hotel = session.query(Hotel).filter(Hotel.id == reservation.hotel_id).one_or_none()
+    hotel = session.query(HotelNS).filter(HotelNS.id == reservation.hotel_id).one_or_none()
     if hotel is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -442,7 +539,7 @@ def create_reservation(
         )
 
     # Verify room exists and belongs to hotel
-    room = session.query(Room).filter(Room.id == reservation.room_id, Room.hotel_id == hotel.id).one_or_none()
+    room = session.query(RoomNS).filter(RoomNS.id == reservation.room_id, RoomNS.hotel_id == hotel.id).one_or_none()
     if room is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -451,12 +548,12 @@ def create_reservation(
 
     # Check availability for all requested dates
     availability_entries = (
-        session.query(RoomAvailability)
+        session.query(RoomAvailabilityNS)
         .filter(
-            RoomAvailability.room_id == room.id,
-            RoomAvailability.available_date >= reservation.start_date,
-            RoomAvailability.available_date <= reservation.end_date,
-            RoomAvailability.is_reserved.is_(False),
+            RoomAvailabilityNS.room_id == room.id,
+            RoomAvailabilityNS.available_date >= reservation.start_date,
+            RoomAvailabilityNS.available_date <= reservation.end_date,
+            RoomAvailabilityNS.is_reserved.is_(False),
         )
         .all()
     )
@@ -473,7 +570,7 @@ def create_reservation(
         entry.is_reserved = True
 
     # Create reservation
-    reservation_record = Reservation(
+    reservation_record = ReservationNS(
         room_id=room.id,
         guest_name=reservation.guest_name,
         start_date=reservation.start_date,
@@ -499,13 +596,18 @@ def create_reservation(
     )
 
 
-@app.get("/reservations", response_model=list[ReservationResponse])
+@app.get("/{pid}_reservations", response_model=list[ReservationResponse])
 def list_reservations(
+    pid: int,
     guest_name: str | None = Query(None, description="Filter by guest name"),  # noqa: B008
     session: Session = Depends(get_session),  # noqa: B008
 ) -> list[ReservationResponse]:
     """Return all reservations, optionally filtered by guest name."""
-    query = session.query(Reservation).join(Room).join(Hotel)
+    ensure_namespaced_tables(pid)
+    _, HotelNS, RoomNS, *_ = get_namespaced_models(str(pid))
+    ReservationNS = get_namespaced_models(str(pid))[4]
+
+    query = session.query(ReservationNS).join(RoomNS).join(HotelNS)
 
     if guest_name:
         query = query.filter(Reservation.guest_name.ilike(f"%{guest_name}%"))
@@ -533,14 +635,19 @@ def list_reservations(
     return response
 
 
-@app.get("/reservations/{reservation_id}", response_model=ReservationResponse)
+@app.get("/{pid}_reservations/{reservation_id}", response_model=ReservationResponse)
 def get_reservation(
+    pid: int,
     reservation_id: int,
     session: Session = Depends(get_session),  # noqa: B008
 ) -> ReservationResponse:
     """Get details of a specific reservation."""
+    ensure_namespaced_tables(pid)
+    _, HotelNS, RoomNS, *_ = get_namespaced_models(str(pid))
+    ReservationNS = get_namespaced_models(str(pid))[4]
+
     reservation = (
-        session.query(Reservation).filter(Reservation.id == reservation_id).join(Room).join(Hotel).one_or_none()
+        session.query(ReservationNS).filter(ReservationNS.id == reservation_id).join(RoomNS).join(HotelNS).one_or_none()
     )
 
     if reservation is None:
@@ -565,13 +672,17 @@ def get_reservation(
     )
 
 
-@app.delete("/reservations/{reservation_id}", response_model=MessageResponse)
+@app.delete("/{pid}_reservations/{reservation_id}", response_model=MessageResponse)
 def cancel_reservation(
+    pid: int,
     reservation_id: int,
     session: Session = Depends(get_session),  # noqa: B008
 ) -> MessageResponse:
     """Cancel an existing reservation and free the associated room nights."""
-    reservation_obj = session.query(Reservation).filter(Reservation.id == reservation_id).one_or_none()
+    ensure_namespaced_tables(pid)
+    _, RoomAvailabilityNS, ReservationNS = get_namespaced_models(str(pid))
+
+    reservation_obj = session.query(ReservationNS).filter(ReservationNS.id == reservation_id).one_or_none()
     if reservation_obj is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -580,11 +691,11 @@ def cancel_reservation(
 
     # Free up the reserved dates
     availability_entries = (
-        session.query(RoomAvailability)
+        session.query(RoomAvailabilityNS)
         .filter(
-            RoomAvailability.room_id == reservation_obj.room_id,
-            RoomAvailability.available_date >= reservation_obj.start_date,
-            RoomAvailability.available_date <= reservation_obj.end_date,
+            RoomAvailabilityNS.room_id == reservation_obj.room_id,
+            RoomAvailabilityNS.available_date >= reservation_obj.start_date,
+            RoomAvailabilityNS.available_date <= reservation_obj.end_date,
         )
         .all()
     )
