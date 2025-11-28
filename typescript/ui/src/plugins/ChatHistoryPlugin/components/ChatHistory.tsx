@@ -19,7 +19,7 @@ import { useShallow } from "zustand/shallow";
 import { zip } from "lodash";
 
 export default function ChatHistory() {
-  const { deleteConversation, newConversation, setConversationProperties } =
+  const { selectConversation,deleteConversation, newConversation, setConversationProperties } =
     useHistoryActions();
   const navigate = useNavigate();
   const conversations = useHistoryStore(
@@ -74,6 +74,7 @@ export default function ChatHistory() {
   };
 
   const handleNavigate = (conversationId: string) => {
+    selectConversation(conversationId);
     navigate(getConversationRoute(conversationId));
   };
 
