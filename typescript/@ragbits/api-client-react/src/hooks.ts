@@ -87,8 +87,7 @@ export function useRagbitsCall<
                 // Now we can use the properly typed makeRequest
                 const result = await client.makeRequest<Endpoints>(
                     endpoint,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                    requestOptions as any // Type assertion needed here due to conditional types
+                    requestOptions
                 )
 
                 // Only update state if request wasn't aborted
