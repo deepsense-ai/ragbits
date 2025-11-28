@@ -267,7 +267,7 @@ def get_namespaced_models(namespace: str) -> tuple:
         rating: Mapped[float] = mapped_column(Float, nullable=False)
         amenities: Mapped[str] = mapped_column(Text, nullable=False)
 
-        rooms: Mapped[list] = relationship("RoomNS", back_populates="hotel", cascade="all, delete-orphan")
+        rooms: Mapped[list] = relationship("RoomNS", back_populates="hotel", cascade="all, delete-orphan", uselist=True)
 
     class RoomNS(NamespacedBase):
         __tablename__ = f"rooms_{namespace}"
@@ -285,7 +285,9 @@ def get_namespaced_models(namespace: str) -> tuple:
         availability: Mapped[list] = relationship(
             "RoomAvailabilityNS", back_populates="room", cascade="all, delete-orphan"
         )
-        reservations: Mapped[list] = relationship("ReservationNS", back_populates="room", cascade="all, delete-orphan")
+        reservations: Mapped[list] = relationship(
+            "ReservationNS", back_populates="room", cascade="all, delete-orphan", uselist=True
+        )
 
     class RoomAvailabilityNS(NamespacedBase):
         __tablename__ = f"room_availability_{namespace}"
@@ -470,11 +472,11 @@ def find_available_rooms(
 
         # Apply room filters
         if min_price is not None:
-            room_query = room_query.filter(Room.price_per_night >= min_price)
+            room_query = room_query.filter(RoomNS.price_per_night >= min_price)
         if max_price is not None:
-            room_query = room_query.filter(Room.price_per_night <= max_price)
+            room_query = room_query.filter(RoomNS.price_per_night <= max_price)
         if room_type:
-            room_query = room_query.filter(Room.room_type == room_type)
+            room_query = room_query.filter(RoomNS.room_type == room_type)
 
         for room in room_query.all():
             # Check if room is available for all requested dates
@@ -610,9 +612,9 @@ def list_reservations(
     query = session.query(ReservationNS).join(RoomNS).join(HotelNS)
 
     if guest_name:
-        query = query.filter(Reservation.guest_name.ilike(f"%{guest_name}%"))
+        query = query.filter(ReservationNS.guest_name.ilike(f"%{guest_name}%"))
 
-    reservations = query.order_by(Reservation.created_at.desc()).all()
+    reservations = query.order_by(ReservationNS.created_at.desc()).all()
 
     response: list[ReservationResponse] = []
     for res in reservations:
@@ -680,7 +682,7 @@ def cancel_reservation(
 ) -> MessageResponse:
     """Cancel an existing reservation and free the associated room nights."""
     ensure_namespaced_tables(pid)
-    _, RoomAvailabilityNS, ReservationNS = get_namespaced_models(str(pid))
+    _, _, _, RoomAvailabilityNS, ReservationNS = get_namespaced_models(str(pid))
 
     reservation_obj = session.query(ReservationNS).filter(ReservationNS.id == reservation_id).one_or_none()
     if reservation_obj is None:
