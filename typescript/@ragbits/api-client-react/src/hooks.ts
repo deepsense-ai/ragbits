@@ -30,8 +30,7 @@ export function useRagbitsCall<
     URL extends keyof Endpoints = keyof Endpoints,
 >(
     endpoint: URL,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    defaultOptions?: Record<string, any>
+    defaultOptions?: Partial<RequestOptions<URL, Endpoints>>
 ): RagbitsCallResult<URL, Endpoints, Error> {
     const { client } = useRagbitsContext()
     const [data, setData] = useState<EndpointResponse<URL, Endpoints> | null>(

@@ -110,6 +110,14 @@ export type EndpointMethod<
 > = Endpoints[URL]['method']
 
 /**
+ * Check if an object type has any required properties
+ * - {} extends T means all properties are optional → false
+ * - {} doesn't extend T means at least one property is required → true
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+type HasRequiredKeys<T> = T extends never ? false : {} extends T ? false : true
+
+/**
  * Generic request options for API endpoints with typed methods, path params, query params, and body
  * - pathParams is REQUIRED when PathParams is not never
  * - queryParams is REQUIRED when it's a specific type (not never, not undefined)
@@ -132,9 +140,9 @@ export type RequestOptions<
     : { pathParams: Endpoints[URL]['pathParams'] }) &
     (Endpoints[URL]['queryParams'] extends never
         ? { queryParams?: never }
-        : Endpoints[URL]['queryParams'] extends undefined
-          ? { queryParams?: Endpoints[URL]['queryParams'] }
-          : { queryParams: Endpoints[URL]['queryParams'] }) &
+        : HasRequiredKeys<Endpoints[URL]['queryParams']> extends true
+          ? { queryParams: Endpoints[URL]['queryParams'] } // Has required property
+          : { queryParams?: Endpoints[URL]['queryParams'] }) & // All properties optional
     (Endpoints[URL]['request'] extends never
         ? { body?: never }
         : Endpoints[URL]['request'] extends undefined
@@ -161,13 +169,13 @@ export type HasRequiredParams<
             : Endpoints[URL]['request'] extends undefined
               ? false
               : true // request is defined and not undefined -> required!
-        : Endpoints[URL]['queryParams'] extends undefined
-          ? Endpoints[URL]['request'] extends never
+        : HasRequiredKeys<Endpoints[URL]['queryParams']> extends true
+          ? true // queryParams has required keys -> options required!
+          : Endpoints[URL]['request'] extends never
+            ? false
+            : Endpoints[URL]['request'] extends undefined
               ? false
-              : Endpoints[URL]['request'] extends undefined
-                ? false
-                : true // request is defined and not undefined -> required!
-          : true // queryParams is defined and not undefined -> required!
+              : true // request is defined and not undefined -> required!
     : true // pathParams is defined -> required!
 
 /**
