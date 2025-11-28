@@ -232,14 +232,14 @@ async def main() -> None:
     # Load scenario and personality
     scenarios = load_scenarios("scenarios.json")
     scenario = scenarios[0]
-    
+
     personalities = load_personalities("personalities.json")
     personality = personalities[0]  # Optional
-    
+
     # Create chat interface
     hotel_chat = HotelChat(model_name="gpt-4o-mini", api_key="your-api-key")
     await hotel_chat.setup()
-    
+
     # Run simulation
     await run_duet(
         scenario=scenario,
