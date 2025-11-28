@@ -33,9 +33,10 @@ export interface StreamCallbacks<T, E = Error> {
     onClose?: () => void | Promise<void>
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface EndpointDefinition<
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Req = any,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     Res = any,
     PathParams = never,
     QueryParams = never,
@@ -108,10 +109,10 @@ export interface RequestOptions<
         ? undefined
         : Endpoints[URL]['request']
     pathParams?: Endpoints[URL]['pathParams'] extends never
-        ? never
+        ? undefined
         : Endpoints[URL]['pathParams']
     queryParams?: Endpoints[URL]['queryParams'] extends never
-        ? never
+        ? undefined
         : Endpoints[URL]['queryParams']
     headers?: Record<string, string>
     signal?: AbortSignal
