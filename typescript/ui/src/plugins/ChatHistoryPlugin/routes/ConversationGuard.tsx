@@ -20,6 +20,7 @@ export default function ConversationGuard({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (isValidConversation) {
+      selectConversation(conversationId);
       return;
     }
 

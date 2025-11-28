@@ -78,7 +78,6 @@ export default function ChatHistory() {
   };
 
   const handleNavigate = (conversationId: string) => {
-    selectConversation(conversationId);
     navigate(getConversationRoute(conversationId));
   };
 
@@ -169,8 +168,6 @@ export default function ChatHistory() {
               if (!conversation || isTemporaryConversation(conversation)) {
                 return null;
               }
-
-              console.log(summary);
 
               const isSelected = conversation === currentConversation;
               const isEdited = conversation === editingKey;
