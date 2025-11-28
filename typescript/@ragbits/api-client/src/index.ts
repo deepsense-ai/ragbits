@@ -115,11 +115,8 @@ export class RagbitsClient {
         const {
             method = 'GET',
             body,
-<<<<<<< Updated upstream
-=======
             pathParams,
             queryParams,
->>>>>>> Stashed changes
             headers = {},
             ...restOptions
         } = options || {}
@@ -135,12 +132,6 @@ export class RagbitsClient {
                 typeof body === 'string' ? body : JSON.stringify(body)
         }
 
-<<<<<<< Updated upstream
-        const response = await this._makeRequest(
-            this._buildApiUrl(endpoint.toString()),
-            requestOptions
-        )
-=======
         // Build URL with path parameters
         let url = endpoint.toString()
 
@@ -171,7 +162,6 @@ export class RagbitsClient {
         url = this._buildApiUrl(url)
 
         const response = await this._makeRequest(url, requestOptions)
->>>>>>> Stashed changes
         return response.json()
     }
 

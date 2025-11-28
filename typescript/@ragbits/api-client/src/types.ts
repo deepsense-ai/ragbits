@@ -107,15 +107,12 @@ export interface RequestOptions<
     body?: Endpoints[URL]['request'] extends never
         ? undefined
         : Endpoints[URL]['request']
-<<<<<<< Updated upstream
-=======
     pathParams?: Endpoints[URL]['pathParams'] extends never
         ? never
         : Endpoints[URL]['pathParams']
     queryParams?: Endpoints[URL]['queryParams'] extends never
         ? never
         : Endpoints[URL]['queryParams']
->>>>>>> Stashed changes
     headers?: Record<string, string>
     signal?: AbortSignal
 }
