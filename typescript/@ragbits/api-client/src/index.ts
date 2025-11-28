@@ -140,15 +140,15 @@ export class RagbitsClient {
 
         // Replace path parameters (e.g., :id, :userId)
         if (pathParams) {
-            url = url.replace(/:([^/]+)/g, (match, paramName) => {
+            url = url.replace(/:([^/]+)/g, (_, paramName) => {
                 if (paramName in pathParams) {
                     const value = (pathParams as Record<string, unknown>)[
                         paramName
                     ]
                     return encodeURIComponent(String(value))
+                } else {
+                    throw new Error(`Path parameter ${paramName} is required`)
                 }
-                // If path param not provided, leave the placeholder
-                return match
             })
         }
 

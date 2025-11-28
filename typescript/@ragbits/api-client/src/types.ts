@@ -114,14 +114,18 @@ export type EndpointMethod<
  * - {} extends T means all properties are optional → false
  * - {} doesn't extend T means at least one property is required → true
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
-type HasRequiredKeys<T> = T extends never ? false : {} extends T ? false : true
+export type HasRequiredKeys<T> = T extends never
+    ? false
+    : // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+      {} extends T
+      ? false
+      : true
 
 /**
  * Generic request options for API endpoints with typed methods, path params, query params, and body
  * - pathParams is REQUIRED when PathParams is not never
- * - queryParams is REQUIRED when it's a specific type (not never, not undefined)
- * - queryParams is OPTIONAL when it's never or undefined
+ * - queryParams is REQUIRED when it has required keys inside
+ * - queryParams is OPTIONAL when all keys are optional or it's never
  * - body is REQUIRED when it's a specific type (not never, not undefined)
  * - body is OPTIONAL when it's never or undefined
  */
@@ -150,11 +154,20 @@ export type RequestOptions<
           : { body: Endpoints[URL]['request'] })
 
 /**
+ * Check if a type is not never and not undefined
+ */
+export type IsRequired<T> = T extends never
+    ? false
+    : T extends undefined
+      ? false
+      : true
+
+/**
  * Check if an endpoint has any required parameters
  * Returns true if any of these conditions are met:
- * - pathParams is not never, OR
- * - queryParams is not never AND not undefined, OR
- * - request/body is not never AND not undefined
+ * - pathParams is defined (not never), OR
+ * - queryParams has any required keys inside, OR
+ * - body/request is required (not never, not undefined)
  */
 export type HasRequiredParams<
     URL extends keyof Endpoints,
@@ -163,20 +176,10 @@ export type HasRequiredParams<
         [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
     },
 > = Endpoints[URL]['pathParams'] extends never
-    ? Endpoints[URL]['queryParams'] extends never
-        ? Endpoints[URL]['request'] extends never
-            ? false
-            : Endpoints[URL]['request'] extends undefined
-              ? false
-              : true // request is defined and not undefined -> required!
-        : HasRequiredKeys<Endpoints[URL]['queryParams']> extends true
-          ? true // queryParams has required keys -> options required!
-          : Endpoints[URL]['request'] extends never
-            ? false
-            : Endpoints[URL]['request'] extends undefined
-              ? false
-              : true // request is defined and not undefined -> required!
-    : true // pathParams is defined -> required!
+    ? HasRequiredKeys<Endpoints[URL]['queryParams']> extends true
+        ? true
+        : IsRequired<Endpoints[URL]['request']>
+    : true
 
 /**
  * Conditional options parameter for makeRequest
