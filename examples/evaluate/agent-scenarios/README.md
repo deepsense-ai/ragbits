@@ -18,15 +18,15 @@ The Agent Scenarios example consists of:
 
 ## Quick Start
 
-### 1. Start the Hotel API
+### 1. Start the Hotel API (optional)
 
-In a separate terminal, start the hotel API service:
+The duet CLI now bootstraps the Hotel API automatically: it seeds the database for every process id it needs (based on the scenarios you select), runs the API server, waits for it to become healthy, and shuts it down once all runs finish. You only need to start the API manually if you want to inspect or interact with it directly.
 
-From the project root:
+To start it manually, use the helper script (from the project root):
 
 ```bash
 cd examples/evaluate/agent-scenarios/fixtures/hotel-api
-uv run python populate_db.py  # First time setup
+uv run python populate_db.py  --ids 1 2 3 4 # First time setup, remember ids are potential process ids not scenario ids
 uv run uvicorn app:app --reload --port 8000
 uv run python clear_db.py # Clear the hotel api database
 ```
@@ -47,6 +47,10 @@ uv run python examples/evaluate/agent-scenarios/duet_cli.py \
   --log-file examples/evaluate/agent-scenarios/duet_conversation.log \
   --scenarios-file examples/evaluate/agent-scenarios/scenarios.json
 ```
+
+> **Note:** During startup the CLI populates the database for each internal process id (one per selected scenario/personality pair), launches `uvicorn`, and waits for `http://localhost:8000/openapi.json` to respond before the agent interactions begin. When all batches finish the server process is shut down automatically.
+
+> After the runs complete the CLI also invokes `clear_db.py` to drop all namespaced tables and delete the SQLite file, so each invocation starts from a clean slate. If you want to keep the data for debugging, interrupt the CLI before it reaches the cleanup step.
 
 To run multiple scenarios or to use specific personalities for the simulated user:
 

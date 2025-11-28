@@ -1,13 +1,26 @@
 """Terminal conversation between the ragbits hotel booking agent and a simulated user."""
 
+from __future__ import annotations
+
 import argparse
 import asyncio
+import signal
+import subprocess
+import time
 from itertools import zip_longest
+from pathlib import Path
+from urllib.error import URLError
+from urllib.request import urlopen
 
 from config import config
 from fixtures.hotel.hotel_chat import HotelChat
 
 from ragbits.evaluate.agent_simulation import load_personalities, load_scenarios, run_duet
+
+HOTEL_API_DIR = Path(__file__).resolve().parent / "fixtures" / "hotel-api"
+SERVER_HEALTHCHECK_URL = "http://localhost:8000/openapi.json"
+SERVER_START_TIMEOUT = 30.0
+SERVER_POLL_INTERVAL = 0.5
 
 
 def parse_args() -> argparse.Namespace:
@@ -48,6 +61,58 @@ def parse_args() -> argparse.Namespace:
         help="Number of run_coroutines to run concurrently (batch size for async execution).",
     )
     return parser.parse_args()
+
+
+def _populate_database(process_ids: list[int]) -> None:
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        "populate_db.py",
+        "--ids",
+        *map(str, process_ids),
+    ]
+    subprocess.run(cmd, cwd=HOTEL_API_DIR, check=True)  # noqa: S603
+
+
+def _start_uvicorn() -> subprocess.Popen[bytes]:
+    cmd = ["uv", "run", "uvicorn", "app:app", "--reload", "--port", "8000"]
+    return subprocess.Popen(cmd, cwd=HOTEL_API_DIR)  # noqa: S603
+
+
+def _wait_for_server(timeout: float) -> None:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        try:
+            with urlopen(SERVER_HEALTHCHECK_URL, timeout=2):  # noqa: S310
+                return
+        except URLError:
+            time.sleep(SERVER_POLL_INTERVAL)
+    raise RuntimeError(f"Timed out waiting for hotel API at {SERVER_HEALTHCHECK_URL}")
+
+
+def _stop_process(proc: subprocess.Popen[bytes]) -> None:
+    if proc.poll() is not None:
+        return
+    proc.send_signal(signal.SIGINT)
+    try:
+        proc.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+
+
+def _clear_database() -> None:
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        "clear_db.py",
+    ]
+    subprocess.run(cmd, cwd=HOTEL_API_DIR, check=True, text=True, input="yes\n")  # noqa: S603
 
 
 def main() -> None:
@@ -120,8 +185,23 @@ def main() -> None:
         ]
         await asyncio.gather(*tasks)
 
-    # Run all selected pairs with the requested concurrency
-    asyncio.run(_run_all(pairs, args.batch_size))
+    process_ids = list(range(1, len(pairs) + 1))
+    if not process_ids:
+        raise ValueError("At least one scenario id must be provided.")
+
+    _populate_database(process_ids)
+
+    server_process: subprocess.Popen[bytes] | None = None
+    try:
+        server_process = _start_uvicorn()
+        _wait_for_server(SERVER_START_TIMEOUT)
+
+        # Run all selected pairs with the requested concurrency
+        asyncio.run(_run_all(pairs, args.batch_size))
+    finally:
+        if server_process is not None:
+            _stop_process(server_process)
+        _clear_database()
 
 
 if __name__ == "__main__":
