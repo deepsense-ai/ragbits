@@ -210,6 +210,9 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
   actions: {
     selectConversation: (conversationId) => {
       set((draft) => {
+        if (draft.currentConversation === conversationId) {
+          return;
+        }
         const conversation = draft.conversations[conversationId];
         if (!conversation) {
           throw new Error(
