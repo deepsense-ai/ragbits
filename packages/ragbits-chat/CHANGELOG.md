@@ -1,7 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
-
+- Fix bug causing conversation not to be selected when navigating to it from url(#872)
 ### Added
 
 - Add automatic topic extraction to be used as conversation title with ability to edit in the client side (#840)

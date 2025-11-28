@@ -20,7 +20,6 @@ import { zip } from "lodash";
 
 export default function ChatHistory() {
   const {
-    selectConversation,
     deleteConversation,
     newConversation,
     setConversationProperties,
