@@ -70,7 +70,10 @@ export interface BaseStreamingEndpoints {
  * Extract endpoint paths as a union type
  */
 export type EndpointPath<
-    Endpoints extends { [K in keyof Endpoints]: EndpointDefinition },
+    Endpoints extends {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
+    },
 > = keyof Endpoints
 
 /**
@@ -78,7 +81,10 @@ export type EndpointPath<
  */
 export type EndpointRequest<
     URL extends keyof Endpoints,
-    Endpoints extends { [K in keyof Endpoints]: EndpointDefinition },
+    Endpoints extends {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
+    },
 > = Endpoints[URL]['request']
 
 /**
@@ -86,7 +92,10 @@ export type EndpointRequest<
  */
 export type EndpointResponse<
     URL extends keyof Endpoints,
-    Endpoints extends { [K in keyof Endpoints]: EndpointDefinition },
+    Endpoints extends {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
+    },
 > = Endpoints[URL]['response']
 
 /**
@@ -94,26 +103,88 @@ export type EndpointResponse<
  */
 export type EndpointMethod<
     URL extends keyof Endpoints,
-    Endpoints extends { [K in keyof Endpoints]: EndpointDefinition },
+    Endpoints extends {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
+    },
 > = Endpoints[URL]['method']
 
 /**
- * Generic request options for API endpoints with typed methods, body, path params, and query params
+ * Generic request options for API endpoints with typed methods, path params, query params, and body
+ * - pathParams is REQUIRED when PathParams is not never
+ * - queryParams is REQUIRED when it's a specific type (not never, not undefined)
+ * - queryParams is OPTIONAL when it's never or undefined
+ * - body is REQUIRED when it's a specific type (not never, not undefined)
+ * - body is OPTIONAL when it's never or undefined
  */
-export interface RequestOptions<
+export type RequestOptions<
     URL extends keyof Endpoints,
-    Endpoints extends { [K in keyof Endpoints]: EndpointDefinition },
-> {
+    Endpoints extends {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
+    },
+> = {
     method?: Endpoints[URL]['method']
-    body?: Endpoints[URL]['request'] extends never
-        ? undefined
-        : Endpoints[URL]['request']
-    pathParams?: Endpoints[URL]['pathParams'] extends never
-        ? undefined
-        : Endpoints[URL]['pathParams']
-    queryParams?: Endpoints[URL]['queryParams'] extends never
-        ? undefined
-        : Endpoints[URL]['queryParams']
     headers?: Record<string, string>
     signal?: AbortSignal
-}
+} & (Endpoints[URL]['pathParams'] extends never
+    ? { pathParams?: never }
+    : { pathParams: Endpoints[URL]['pathParams'] }) &
+    (Endpoints[URL]['queryParams'] extends never
+        ? { queryParams?: never }
+        : Endpoints[URL]['queryParams'] extends undefined
+          ? { queryParams?: Endpoints[URL]['queryParams'] }
+          : { queryParams: Endpoints[URL]['queryParams'] }) &
+    (Endpoints[URL]['request'] extends never
+        ? { body?: never }
+        : Endpoints[URL]['request'] extends undefined
+          ? { body?: Endpoints[URL]['request'] }
+          : { body: Endpoints[URL]['request'] })
+
+/**
+ * Check if an endpoint has any required parameters
+ * Returns true if any of these conditions are met:
+ * - pathParams is not never, OR
+ * - queryParams is not never AND not undefined, OR
+ * - request/body is not never AND not undefined
+ */
+export type HasRequiredParams<
+    URL extends keyof Endpoints,
+    Endpoints extends {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
+    },
+> = Endpoints[URL]['pathParams'] extends never
+    ? Endpoints[URL]['queryParams'] extends never
+        ? Endpoints[URL]['request'] extends never
+            ? false
+            : Endpoints[URL]['request'] extends undefined
+              ? false
+              : true // request is defined and not undefined -> required!
+        : Endpoints[URL]['queryParams'] extends undefined
+          ? Endpoints[URL]['request'] extends never
+              ? false
+              : Endpoints[URL]['request'] extends undefined
+                ? false
+                : true // request is defined and not undefined -> required!
+          : true // queryParams is defined and not undefined -> required!
+    : true // pathParams is defined -> required!
+
+/**
+ * Conditional options parameter for makeRequest
+ * - Required if endpoint has:
+ *   - pathParams, OR
+ *   - queryParams with specific type (not undefined), OR
+ *   - body with specific type (not undefined)
+ * - Optional otherwise
+ */
+export type MakeRequestOptions<
+    URL extends keyof Endpoints,
+    Endpoints extends {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
+    },
+> =
+    HasRequiredParams<URL, Endpoints> extends true
+        ? [options: RequestOptions<URL, Endpoints>]
+        : [options?: RequestOptions<URL, Endpoints>]

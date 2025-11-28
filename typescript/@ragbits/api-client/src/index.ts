@@ -5,9 +5,9 @@ import type {
     BaseApiEndpoints,
     EndpointDefinition,
     EndpointResponse,
-    RequestOptions,
     BaseStreamingEndpoints,
     EndpointRequest,
+    MakeRequestOptions,
 } from './types'
 
 /**
@@ -105,13 +105,16 @@ export class RagbitsClient {
      */
     async makeRequest<
         Endpoints extends {
-            [K in keyof Endpoints]: EndpointDefinition
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
         } = BaseApiEndpoints,
         URL extends keyof Endpoints = keyof Endpoints,
     >(
         endpoint: URL,
-        options?: RequestOptions<URL, Endpoints>
+        ...args: MakeRequestOptions<URL, Endpoints>
     ): Promise<EndpointResponse<URL, Endpoints>> {
+        const options = args[0]
+
         const {
             method = 'GET',
             body,
@@ -139,8 +142,9 @@ export class RagbitsClient {
         if (pathParams) {
             url = url.replace(/:([^/]+)/g, (match, paramName) => {
                 if (paramName in pathParams) {
-                    const value =
-                        pathParams[paramName as keyof typeof pathParams]
+                    const value = (pathParams as Record<string, unknown>)[
+                        paramName
+                    ]
                     return encodeURIComponent(String(value))
                 }
                 // If path param not provided, leave the placeholder
@@ -174,7 +178,8 @@ export class RagbitsClient {
      */
     makeStreamRequest<
         Endpoints extends {
-            [K in keyof Endpoints]: EndpointDefinition
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
         } = BaseStreamingEndpoints,
         URL extends keyof Endpoints = keyof Endpoints,
     >(
