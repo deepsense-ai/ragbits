@@ -38,7 +38,7 @@ From the project root:
 
 ```bash
 uv run python examples/evaluate/agent-scenarios/duet_cli.py \
-  --scenario-id 1 \
+  --scenario-ids 1 \
   --max-turns-scenario 15 \
   --max-turns-task 4 \
   --agent-model-name gpt-4o-mini \
@@ -48,11 +48,11 @@ uv run python examples/evaluate/agent-scenarios/duet_cli.py \
   --scenarios-file examples/evaluate/agent-scenarios/scenarios.json
 ```
 
-To use a specific personality for the simulated user:
+To run multiple scenarios or to use specific personalities for the simulated user:
 
 ```bash
 uv run python examples/evaluate/agent-scenarios/duet_cli.py \
-  --scenario-id 1 \
+  --scenario-ids 1 2 3 \
   --max-turns-scenario 15 \
   --max-turns-task 4 \
   --agent-model-name gpt-4o-mini \
@@ -60,15 +60,16 @@ uv run python examples/evaluate/agent-scenarios/duet_cli.py \
   --checker-model-name gpt-4o-mini \
   --log-file examples/evaluate/agent-scenarios/duet_conversation.log \
   --scenarios-file examples/evaluate/agent-scenarios/scenarios.json \
-  --personality-id 1 \
-  --personalities-file examples/evaluate/agent-scenarios/personalities.json
+  --personality-ids 1 2 3 \
+  --personalities-file examples/evaluate/agent-scenarios/personalities.json \
+  --batch-size 2
 ```
 
 ## Command-Line Options
 
-- `--scenario-id` (required): Select a scenario from scenarios.json (1, 2, 3, or 4)
+- `--scenario-ids` (required): Select one or more scenarios from scenarios.json (1-based indices). Pass several IDs separated by space to run multiple scenarios.
 - `--scenarios-file`: Path to scenarios file (default: `scenarios.json`)
-- `--personality-id` (optional): Select a personality from personalities.json (1-based index). If not provided, no specific personality is used
+- `--personality-ids` (optional): Select zero or more personalities from personalities.json (1-based indices). When provided, personality IDs will be paired with `--scenario-ids` one-to-one (missing personality ids will be treated as None). If fewer personality ids are provided than scenarios, the remaining scenarios will use the default simulated user behavior.
 - `--personalities-file`: Path to personalities file (default: `personalities.json`)
 - `--max-turns-scenario`: Maximum number of conversation turns for the entire scenario (default: 15). If exceeded, the conversation exits
 - `--max-turns-task`: Maximum number of conversation turns per task (default: 4). If exceeded, the conversation exits (same behavior as max_turns_scenario)
@@ -76,6 +77,7 @@ uv run python examples/evaluate/agent-scenarios/duet_cli.py \
 - `--agent-model-name`: LLM model for the hotel booking agent (defaults to `config.llm_model`)
 - `--sim-user-model-name`: LLM model for the simulated user (defaults to `config.llm_model`)
 - `--checker-model-name`: LLM model for the goal checker (defaults to `config.llm_model`)
+ - `--batch-size`: How many scenario runs to execute concurrently (default: 2). Useful when running multiple scenarios in parallel to control resource usage.
 
 ## Scenarios
 
@@ -132,7 +134,9 @@ Example personality:
 }
 ```
 
-When a personality is selected via `--personality-id`, the personality description is included in the system prompt for the simulated user, influencing how they phrase their messages and interact with the agent. If no personality is specified, the simulated user uses default behavior without any personality-specific instructions.
+When a personality is selected via `--personality-ids` (or when one personality id is supplied), the personality description is included in the system prompt for the simulated user, influencing how they phrase their messages and interact with the agent. If no personality id is supplied for a given scenario, the simulated user will use default behavior without any personality-specific instructions.
+
+Note about logs when running multiple scenarios concurrently: if you provide a `--log-file` path and run multiple scenarios in parallel, the CLI will append a per-run suffix to avoid write conflicts. Example: `duet_conversation.log.pid1_s1_p1` (process id, scenario id, personality id).
 
 Available hotel booking tools:
 - `list_cities` - Get a list of all available cities
