@@ -51,71 +51,80 @@ class Base(DeclarativeBase):
     """Base class for declarative SQLAlchemy models."""
 
 
-class Hotel(Base):
-    """SQLAlchemy model for a hotel."""
+@lru_cache(maxsize=64)
+def get_namespaced_models(namespace: str) -> tuple:
+    """Return namespaced model classes & base for a given namespace.
 
-    __tablename__ = "hotels"
+    This dynamically creates a new DeclarativeBase subclass and models
+    with tables suffixed by the namespace so multiple separate table sets
+    may coexist in a single SQLite file.
+    """
 
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-    city: Mapped[str] = mapped_column(String, nullable=False, index=True)
-    address: Mapped[str] = mapped_column(String, nullable=False)
-    rating: Mapped[float] = mapped_column(Float, nullable=False)
-    amenities: Mapped[str] = mapped_column(Text, nullable=False)  # JSON stored as text
+    class NamespacedBase(DeclarativeBase):
+        pass
 
-    rooms: Mapped[list[Room]] = relationship("Room", back_populates="hotel", cascade="all, delete-orphan")
+    class HotelNS(NamespacedBase):
+        __tablename__ = f"hotels_{namespace}"
+
+        id: Mapped[int] = mapped_column(primary_key=True, index=True)
+        name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+        city: Mapped[str] = mapped_column(String, nullable=False, index=True)
+        address: Mapped[str] = mapped_column(String, nullable=False)
+        rating: Mapped[float] = mapped_column(Float, nullable=False)
+        amenities: Mapped[str] = mapped_column(Text, nullable=False)
+
+        rooms: Mapped[list] = relationship("RoomNS", back_populates="hotel", cascade="all, delete-orphan", uselist=True)
+
+    class RoomNS(NamespacedBase):
+        __tablename__ = f"rooms_{namespace}"
+        __table_args__ = (UniqueConstraint("hotel_id", "number", name=f"uq_room_number_{namespace}"),)
+
+        id: Mapped[int] = mapped_column(primary_key=True, index=True)
+        number: Mapped[str] = mapped_column(String, nullable=False)
+        hotel_id: Mapped[int] = mapped_column(ForeignKey(HotelNS.__tablename__ + ".id"), nullable=False)
+        room_type: Mapped[str] = mapped_column(String, nullable=False)
+        price_per_night: Mapped[float] = mapped_column(Float, nullable=False)
+        capacity: Mapped[int] = mapped_column(Integer, nullable=False)
+        amenities: Mapped[str] = mapped_column(Text, nullable=False)
+
+        hotel: Mapped[HotelNS] = relationship("HotelNS", back_populates="rooms")
+        availability: Mapped[list] = relationship(
+            "RoomAvailabilityNS", back_populates="room", cascade="all, delete-orphan"
+        )
+        reservations: Mapped[list] = relationship(
+            "ReservationNS", back_populates="room", cascade="all, delete-orphan", uselist=True
+        )
+
+    class RoomAvailabilityNS(NamespacedBase):
+        __tablename__ = f"room_availability_{namespace}"
+        __table_args__ = (UniqueConstraint("room_id", "available_date", name=f"uq_room_date_{namespace}"),)
+
+        id: Mapped[int] = mapped_column(primary_key=True, index=True)
+        room_id: Mapped[int] = mapped_column(ForeignKey(RoomNS.__tablename__ + ".id"), nullable=False)
+        available_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+        is_reserved: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+
+        room: Mapped[RoomNS] = relationship("RoomNS", back_populates="availability", uselist=False)
+
+    class ReservationNS(NamespacedBase):
+        __tablename__ = f"reservations_{namespace}"
+
+        id: Mapped[int] = mapped_column(primary_key=True, index=True)
+        room_id: Mapped[int] = mapped_column(ForeignKey(RoomNS.__tablename__ + ".id"), nullable=False)
+        guest_name: Mapped[str] = mapped_column(String, nullable=False)
+        start_date: Mapped[date] = mapped_column(Date, nullable=False)
+        end_date: Mapped[date] = mapped_column(Date, nullable=False)
+        created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+        room: Mapped[RoomNS] = relationship("RoomNS", back_populates="reservations", uselist=False)
+
+    return NamespacedBase, HotelNS, RoomNS, RoomAvailabilityNS, ReservationNS
 
 
-class Room(Base):
-    """SQLAlchemy model for a hotel room."""
-
-    __tablename__ = "rooms"
-    __table_args__ = (UniqueConstraint("hotel_id", "number", name="uq_room_number"),)
-
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    number: Mapped[str] = mapped_column(String, nullable=False)
-    hotel_id: Mapped[int] = mapped_column(ForeignKey("hotels.id"), nullable=False)
-    room_type: Mapped[str] = mapped_column(String, nullable=False)  # standard, deluxe, suite
-    price_per_night: Mapped[float] = mapped_column(Float, nullable=False)
-    capacity: Mapped[int] = mapped_column(Integer, nullable=False)
-    amenities: Mapped[str] = mapped_column(Text, nullable=False)  # JSON stored as text
-
-    hotel: Mapped[Hotel] = relationship("Hotel", back_populates="rooms")
-    availability: Mapped[list[RoomAvailability]] = relationship(
-        "RoomAvailability", back_populates="room", cascade="all, delete-orphan"
-    )
-    reservations: Mapped[list[Reservation]] = relationship(
-        "Reservation", back_populates="room", cascade="all, delete-orphan"
-    )
-
-
-class RoomAvailability(Base):
-    """Tracks per-day availability for a specific room."""
-
-    __tablename__ = "room_availability"
-    __table_args__ = (UniqueConstraint("room_id", "available_date", name="uq_room_date"),)
-
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id"), nullable=False)
-    available_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
-    is_reserved: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-
-    room: Mapped[Room] = relationship("Room", back_populates="availability")
-
-
-class Reservation(Base):
-    """Reservation record for a room on specific dates."""
-
-    __tablename__ = "reservations"
-
-    id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id"), nullable=False)
-    guest_name: Mapped[str] = mapped_column(String, nullable=False)
-    start_date: Mapped[date] = mapped_column(Date, nullable=False)
-    end_date: Mapped[date] = mapped_column(Date, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-
-    room: Mapped[Room] = relationship("Room", back_populates="reservations")
+def ensure_namespaced_tables(namespace: str) -> None:
+    """Create the namespaced tables for the given namespace if they don't exist."""
+    NamespacedBase, *_ = get_namespaced_models(str(namespace))
+    NamespacedBase.metadata.create_all(bind=engine)
 
 
 # =============================================================================
@@ -245,82 +254,6 @@ def initialize_database() -> None:
     Base.metadata.create_all(bind=engine)
 
 
-@lru_cache(maxsize=64)
-def get_namespaced_models(namespace: str) -> tuple:
-    """Return namespaced model classes & base for a given namespace.
-
-    This dynamically creates a new DeclarativeBase subclass and models
-    with tables suffixed by the namespace so multiple separate table sets
-    may coexist in a single SQLite file.
-    """
-
-    class NamespacedBase(DeclarativeBase):
-        pass
-
-    class HotelNS(NamespacedBase):
-        __tablename__ = f"hotels_{namespace}"
-
-        id: Mapped[int] = mapped_column(primary_key=True, index=True)
-        name: Mapped[str] = mapped_column(String, unique=True, nullable=False)
-        city: Mapped[str] = mapped_column(String, nullable=False, index=True)
-        address: Mapped[str] = mapped_column(String, nullable=False)
-        rating: Mapped[float] = mapped_column(Float, nullable=False)
-        amenities: Mapped[str] = mapped_column(Text, nullable=False)
-
-        rooms: Mapped[list] = relationship("RoomNS", back_populates="hotel", cascade="all, delete-orphan", uselist=True)
-
-    class RoomNS(NamespacedBase):
-        __tablename__ = f"rooms_{namespace}"
-        __table_args__ = (UniqueConstraint("hotel_id", "number", name=f"uq_room_number_{namespace}"),)
-
-        id: Mapped[int] = mapped_column(primary_key=True, index=True)
-        number: Mapped[str] = mapped_column(String, nullable=False)
-        hotel_id: Mapped[int] = mapped_column(ForeignKey(HotelNS.__tablename__ + ".id"), nullable=False)
-        room_type: Mapped[str] = mapped_column(String, nullable=False)
-        price_per_night: Mapped[float] = mapped_column(Float, nullable=False)
-        capacity: Mapped[int] = mapped_column(Integer, nullable=False)
-        amenities: Mapped[str] = mapped_column(Text, nullable=False)
-
-        hotel: Mapped[HotelNS] = relationship("HotelNS", back_populates="rooms")
-        availability: Mapped[list] = relationship(
-            "RoomAvailabilityNS", back_populates="room", cascade="all, delete-orphan"
-        )
-        reservations: Mapped[list] = relationship(
-            "ReservationNS", back_populates="room", cascade="all, delete-orphan", uselist=True
-        )
-
-    class RoomAvailabilityNS(NamespacedBase):
-        __tablename__ = f"room_availability_{namespace}"
-        __table_args__ = (UniqueConstraint("room_id", "available_date", name=f"uq_room_date_{namespace}"),)
-
-        id: Mapped[int] = mapped_column(primary_key=True, index=True)
-        room_id: Mapped[int] = mapped_column(ForeignKey(RoomNS.__tablename__ + ".id"), nullable=False)
-        available_date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
-        is_reserved: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-
-        room: Mapped[RoomNS] = relationship("RoomNS", back_populates="availability")
-
-    class ReservationNS(NamespacedBase):
-        __tablename__ = f"reservations_{namespace}"
-
-        id: Mapped[int] = mapped_column(primary_key=True, index=True)
-        room_id: Mapped[int] = mapped_column(ForeignKey(RoomNS.__tablename__ + ".id"), nullable=False)
-        guest_name: Mapped[str] = mapped_column(String, nullable=False)
-        start_date: Mapped[date] = mapped_column(Date, nullable=False)
-        end_date: Mapped[date] = mapped_column(Date, nullable=False)
-        created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-
-        room: Mapped[RoomNS] = relationship("RoomNS", back_populates="reservations")
-
-    return NamespacedBase, HotelNS, RoomNS, RoomAvailabilityNS, ReservationNS
-
-
-def ensure_namespaced_tables(namespace: str) -> None:
-    """Create the namespaced tables for the given namespace if they don't exist."""
-    NamespacedBase, *_ = get_namespaced_models(str(namespace))
-    NamespacedBase.metadata.create_all(bind=engine)
-
-
 # =============================================================================
 # FastAPI Application
 # =============================================================================
@@ -402,7 +335,7 @@ def get_hotel_detail(
 ) -> HotelDetailResponse:
     """Get detailed information about a specific hotel including all rooms."""
     ensure_namespaced_tables(pid)
-    _, HotelNS, *_ = get_namespaced_models(str(pid))
+    _, HotelNS, RoomNS, *_ = get_namespaced_models(str(pid))
 
     hotel = session.query(HotelNS).filter(HotelNS.id == hotel_id).one_or_none()
     if hotel is None:
@@ -410,7 +343,7 @@ def get_hotel_detail(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Hotel with ID {hotel_id} not found.",
         )
-
+    room_query = session.query(RoomNS).filter_by(hotel_id=hotel.id).all()
     rooms = [
         RoomResponse(
             id=room.id,
@@ -420,7 +353,7 @@ def get_hotel_detail(
             capacity=room.capacity,
             amenities=json.loads(room.amenities),
         )
-        for room in hotel.rooms
+        for room in room_query
     ]
 
     return HotelDetailResponse(
@@ -463,7 +396,7 @@ def find_available_rooms(
     # Build hotel query with filters
     hotel_query = session.query(HotelNS)
     if city:
-        hotel_query = hotel_query.filter(Hotel.city == city)
+        hotel_query = hotel_query.filter(HotelNS.city == city)
 
     available_rooms: list[AvailableRoomResponse] = []
 
