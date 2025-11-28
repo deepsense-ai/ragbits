@@ -115,6 +115,11 @@ export class RagbitsClient {
         const {
             method = 'GET',
             body,
+<<<<<<< Updated upstream
+=======
+            pathParams,
+            queryParams,
+>>>>>>> Stashed changes
             headers = {},
             ...restOptions
         } = options || {}
@@ -122,7 +127,7 @@ export class RagbitsClient {
         const requestOptions: RequestInit = {
             method,
             headers,
-            ...restOptions, // This will include signal and other fetch options
+            ...restOptions,
         }
 
         if (body && method !== 'GET') {
@@ -130,10 +135,43 @@ export class RagbitsClient {
                 typeof body === 'string' ? body : JSON.stringify(body)
         }
 
+<<<<<<< Updated upstream
         const response = await this._makeRequest(
             this._buildApiUrl(endpoint.toString()),
             requestOptions
         )
+=======
+        // Build URL with path parameters
+        let url = endpoint.toString()
+
+        // Replace path parameters (e.g., :id, :userId)
+        if (pathParams) {
+            url = url.replace(/:([^/]+)/g, (match, paramName) => {
+                if (paramName in pathParams) {
+                    const value =
+                        pathParams[paramName as keyof typeof pathParams]
+                    return encodeURIComponent(String(value))
+                }
+                // If path param not provided, leave the placeholder
+                return match
+            })
+        }
+
+        // Add query parameters
+        if (queryParams && Object.keys(queryParams).length > 0) {
+            const searchParams = new URLSearchParams()
+            for (const [key, value] of Object.entries(queryParams)) {
+                if (value !== undefined && value !== null) {
+                    searchParams.append(key, String(value))
+                }
+            }
+            url += `?${searchParams.toString()}`
+        }
+
+        url = this._buildApiUrl(url)
+
+        const response = await this._makeRequest(url, requestOptions)
+>>>>>>> Stashed changes
         return response.json()
     }
 

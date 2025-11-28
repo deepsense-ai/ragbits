@@ -34,10 +34,17 @@ export interface StreamCallbacks<T, E = Error> {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export interface EndpointDefinition<Req = any, Res = any> {
+export interface EndpointDefinition<
+    Req = any,
+    Res = any,
+    PathParams = never,
+    QueryParams = never,
+> {
     method: string
     request: Req
     response: Res
+    pathParams: PathParams
+    queryParams: QueryParams
 }
 
 /**
@@ -90,7 +97,7 @@ export type EndpointMethod<
 > = Endpoints[URL]['method']
 
 /**
- * Generic request options for API endpoints with typed methods and body
+ * Generic request options for API endpoints with typed methods, body, path params, and query params
  */
 export interface RequestOptions<
     URL extends keyof Endpoints,
@@ -100,6 +107,15 @@ export interface RequestOptions<
     body?: Endpoints[URL]['request'] extends never
         ? undefined
         : Endpoints[URL]['request']
+<<<<<<< Updated upstream
+=======
+    pathParams?: Endpoints[URL]['pathParams'] extends never
+        ? never
+        : Endpoints[URL]['pathParams']
+    queryParams?: Endpoints[URL]['queryParams'] extends never
+        ? never
+        : Endpoints[URL]['queryParams']
+>>>>>>> Stashed changes
     headers?: Record<string, string>
     signal?: AbortSignal
 }
