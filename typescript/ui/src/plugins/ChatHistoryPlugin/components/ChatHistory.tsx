@@ -19,11 +19,8 @@ import { useShallow } from "zustand/shallow";
 import { zip } from "lodash";
 
 export default function ChatHistory() {
-  const {
-    deleteConversation,
-    newConversation,
-    setConversationProperties,
-  } = useHistoryActions();
+  const { deleteConversation, newConversation, setConversationProperties } =
+    useHistoryActions();
   const navigate = useNavigate();
   const conversations = useHistoryStore(
     useShallow((s) => Object.keys(s.conversations).reverse()),
