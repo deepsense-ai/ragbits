@@ -17,7 +17,6 @@ __pycache__/
 __pycache__/
 *.py[cod]
 *$py.class
-examples/evaluate/agent-scenarios/fixtures/hotel-api/test_db.py
 # C extensions
 *.so
 
