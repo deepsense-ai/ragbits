@@ -41,6 +41,12 @@ from ragbits.chat.interface.types import (
     UsageContent,
     UsageResponse,
 )
+from ragbits.chat.persistence import (
+    FileHistoryPersistence,
+    HistoryPersistenceStrategy,
+    SQLHistoryPersistence,
+    SQLHistoryPersistenceOptions,
+)
 
 __all__ = [
     "AuthenticationBackend",
@@ -54,8 +60,10 @@ __all__ = [
     "ConversationIdResponse",
     "ConversationSummaryContent",
     "ConversationSummaryResponse",
+    "FileHistoryPersistence",
     "FollowupMessagesContent",
     "FollowupMessagesResponse",
+    "HistoryPersistenceStrategy",
     "ImageResponse",
     "ListAuthenticationBackend",
     "LiveUpdateResponse",
@@ -68,6 +76,8 @@ __all__ = [
     "Reference",
     "ReferenceResponse",
     "ResponseContent",
+    "SQLHistoryPersistence",
+    "SQLHistoryPersistenceOptions",
     "StateUpdate",
     "StateUpdateResponse",
     "SyncRagbitsChatClient",

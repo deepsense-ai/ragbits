@@ -1,9 +1,10 @@
 import uuid
 from collections.abc import Sequence
+from datetime import datetime
 from typing import Any, Protocol, TypeVar
 
 import sqlalchemy
-from sqlalchemy import JSON, TIMESTAMP, Column, Float, ForeignKey, Integer, String, Text, func
+from sqlalchemy import JSON, TIMESTAMP, Column, Float, ForeignKey, Integer, String, Text, and_, desc, func
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engine
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
@@ -280,6 +281,280 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
                 }
                 for interaction in interactions
             ]
+
+    async def get_conversation_count(self) -> int:
+        """
+        Get the total number of conversations.
+
+        Returns:
+            The total count of conversations in the database.
+        """
+        await self._init_db()
+
+        async with AsyncSession(self.sqlalchemy_engine) as session:
+            result = await session.execute(sqlalchemy.select(func.count()).select_from(self.Conversation))
+            return result.scalar() or 0
+
+    async def get_total_interactions_count(self) -> int:
+        """
+        Get the total number of chat interactions across all conversations.
+
+        Returns:
+            The total count of interactions in the database.
+        """
+        await self._init_db()
+
+        async with AsyncSession(self.sqlalchemy_engine) as session:
+            result = await session.execute(sqlalchemy.select(func.count()).select_from(self.ChatInteraction))
+            return result.scalar() or 0
+
+    async def get_recent_conversations(self, limit: int = 10) -> list[dict[str, Any]]:
+        """
+        Get the most recent conversations.
+
+        Args:
+            limit: Maximum number of conversations to retrieve.
+
+        Returns:
+            List of conversation dictionaries with metadata including id, created_at,
+            and interaction_count.
+        """
+        await self._init_db()
+
+        async with AsyncSession(self.sqlalchemy_engine) as session:
+            result = await session.execute(
+                sqlalchemy.select(self.Conversation).order_by(desc(self.Conversation.created_at)).limit(limit)
+            )
+            conversations = result.scalars().all()
+
+            conversation_data = []
+            for conv in conversations:
+                # Get interaction count for this conversation
+                interaction_result = await session.execute(
+                    sqlalchemy.select(func.count())
+                    .select_from(self.ChatInteraction)
+                    .where(self.ChatInteraction.conversation_id == conv.id)
+                )
+                interaction_count = interaction_result.scalar() or 0
+
+                conversation_data.append(
+                    {
+                        "id": conv.id,
+                        "created_at": conv.created_at,
+                        "interaction_count": interaction_count,
+                    }
+                )
+
+            return conversation_data
+
+    async def search_interactions(
+        self,
+        query: str,
+        search_in_messages: bool = True,
+        search_in_responses: bool = True,
+        limit: int = 20,
+    ) -> list[dict[str, Any]]:
+        """
+        Search for interactions containing specific text.
+
+        Args:
+            query: Text to search for.
+            search_in_messages: Whether to search in user messages.
+            search_in_responses: Whether to search in assistant responses.
+            limit: Maximum number of results.
+
+        Returns:
+            List of matching interactions with id, conversation_id, message_id,
+            message, response, and timestamp.
+        """
+        await self._init_db()
+
+        async with AsyncSession(self.sqlalchemy_engine) as session:
+            filters = []
+            if search_in_messages:
+                filters.append(self.ChatInteraction.message.contains(query))
+            if search_in_responses:
+                filters.append(self.ChatInteraction.response.contains(query))
+
+            if not filters:
+                return []
+
+            result = await session.execute(
+                sqlalchemy.select(self.ChatInteraction)
+                .where(sqlalchemy.or_(*filters))
+                .order_by(desc(self.ChatInteraction.timestamp))
+                .limit(limit)
+            )
+            interactions = result.scalars().all()
+
+            return [
+                {
+                    "id": interaction.id,
+                    "conversation_id": interaction.conversation_id,
+                    "message_id": interaction.message_id,
+                    "message": interaction.message,
+                    "response": interaction.response,
+                    "timestamp": interaction.timestamp,
+                }
+                for interaction in interactions
+            ]
+
+    async def get_interactions_by_date_range(
+        self,
+        start_timestamp: float,
+        end_timestamp: float,
+        conversation_id: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """
+        Get interactions within a specific time range.
+
+        Args:
+            start_timestamp: Start of the time range (Unix timestamp).
+            end_timestamp: End of the time range (Unix timestamp).
+            conversation_id: Optional conversation ID to filter by.
+
+        Returns:
+            List of interactions in the time range with id, conversation_id,
+            message_id, message, response, timestamp, and created_at.
+        """
+        await self._init_db()
+
+        async with AsyncSession(self.sqlalchemy_engine) as session:
+            stmt = sqlalchemy.select(self.ChatInteraction).where(
+                and_(
+                    self.ChatInteraction.timestamp >= start_timestamp,
+                    self.ChatInteraction.timestamp <= end_timestamp,
+                )
+            )
+
+            if conversation_id:
+                stmt = stmt.where(self.ChatInteraction.conversation_id == conversation_id)
+
+            stmt = stmt.order_by(self.ChatInteraction.timestamp)
+
+            result = await session.execute(stmt)
+            interactions = result.scalars().all()
+
+            return [
+                {
+                    "id": interaction.id,
+                    "conversation_id": interaction.conversation_id,
+                    "message_id": interaction.message_id,
+                    "message": interaction.message,
+                    "response": interaction.response,
+                    "timestamp": interaction.timestamp,
+                    "created_at": interaction.created_at,
+                }
+                for interaction in interactions
+            ]
+
+    async def export_conversation(
+        self,
+        conversation_id: str,
+        include_metadata: bool = True,
+    ) -> dict[str, Any]:
+        """
+        Export a complete conversation with all metadata.
+
+        Args:
+            conversation_id: The conversation to export.
+            include_metadata: Whether to include extra metadata in interactions.
+
+        Returns:
+            Dictionary containing conversation_id, export_timestamp, interaction_count,
+            and interactions list.
+        """
+        interactions = await self.get_conversation_interactions(conversation_id)
+
+        export_data: dict[str, Any] = {
+            "conversation_id": conversation_id,
+            "export_timestamp": datetime.now().isoformat(),
+            "interaction_count": len(interactions),
+            "interactions": interactions
+            if include_metadata
+            else [
+                {
+                    "message": i["message"],
+                    "response": i["response"],
+                    "timestamp": i["timestamp"],
+                }
+                for i in interactions
+            ],
+        }
+
+        return export_data
+
+    async def delete_conversation(self, conversation_id: str) -> bool:
+        """
+        Delete a conversation and all its interactions.
+
+        Args:
+            conversation_id: The conversation to delete.
+
+        Returns:
+            True if the conversation was deleted, False if it didn't exist.
+        """
+        await self._init_db()
+
+        async with AsyncSession(self.sqlalchemy_engine) as session, session.begin():
+            # Check if conversation exists
+            result = await session.execute(sqlalchemy.select(self.Conversation).filter_by(id=conversation_id))
+            conversation = result.scalar_one_or_none()
+
+            if not conversation:
+                return False
+
+            # Delete the conversation (interactions will be cascade deleted)
+            await session.delete(conversation)
+            await session.commit()
+            return True
+
+    async def get_conversation_statistics(self) -> dict[str, Any]:
+        """
+        Get overall statistics about stored conversations.
+
+        Returns:
+            Dictionary containing total_conversations, total_interactions,
+            avg_interactions_per_conversation, first_interaction, last_interaction,
+            avg_message_length, and avg_response_length.
+        """
+        await self._init_db()
+
+        async with AsyncSession(self.sqlalchemy_engine) as session:
+            # Total counts
+            conversation_count = await self.get_conversation_count()
+            interaction_count = await self.get_total_interactions_count()
+
+            # Average interactions per conversation
+            avg_interactions = interaction_count / conversation_count if conversation_count > 0 else 0
+
+            # Get timestamp range
+            timestamp_result = await session.execute(
+                sqlalchemy.select(
+                    func.min(self.ChatInteraction.timestamp),
+                    func.max(self.ChatInteraction.timestamp),
+                )
+            )
+            min_ts, max_ts = timestamp_result.one()
+
+            # Calculate message length statistics
+            message_lengths_result = await session.execute(
+                sqlalchemy.select(
+                    func.avg(func.length(self.ChatInteraction.message)),
+                    func.avg(func.length(self.ChatInteraction.response)),
+                )
+            )
+            avg_message_length, avg_response_length = message_lengths_result.one()
+
+            return {
+                "total_conversations": conversation_count,
+                "total_interactions": interaction_count,
+                "avg_interactions_per_conversation": round(avg_interactions, 2),
+                "first_interaction": datetime.fromtimestamp(min_ts).isoformat() if min_ts else None,
+                "last_interaction": datetime.fromtimestamp(max_ts).isoformat() if max_ts else None,
+                "avg_message_length": round(avg_message_length or 0, 2),
+                "avg_response_length": round(avg_response_length or 0, 2),
+            }
 
     @classmethod
     def from_config(cls, config: dict) -> Self:
