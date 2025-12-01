@@ -1,6 +1,6 @@
 [project]
 name = "ragbits-evaluate"
-version = "1.4.0.dev202511160236"
+version = "1.4.0.dev202511290233"
 description = "Evaluation module for Ragbits components"
 readme = "README.md"
 requires-python = ">=3.10"

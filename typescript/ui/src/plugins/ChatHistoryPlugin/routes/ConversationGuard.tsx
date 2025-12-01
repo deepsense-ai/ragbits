@@ -20,6 +20,7 @@ export default function ConversationGuard({ children }: PropsWithChildren) {
 
   useEffect(() => {
     if (isValidConversation) {
+      selectConversation(conversationId);
       return;
     }
 
@@ -29,7 +30,13 @@ export default function ConversationGuard({ children }: PropsWithChildren) {
     }
     selectConversation(newestConversation);
     navigate(getConversationRoute(newestConversation), { replace: true });
-  }, [conversations, isValidConversation, navigate, selectConversation]);
+  }, [
+    conversations,
+    isValidConversation,
+    navigate,
+    selectConversation,
+    conversationId,
+  ]);
 
   return children;
 }
