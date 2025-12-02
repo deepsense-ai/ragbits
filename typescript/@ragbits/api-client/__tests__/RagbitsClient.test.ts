@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { RagbitsClient, FeedbackType } from '../src'
+import { RagbitsClient, FeedbackType, ChatResponse } from '../src'
 import { server } from './setup'
 import { http, HttpResponse } from 'msw'
 import type { FeedbackRequest } from '../src'
@@ -145,7 +145,7 @@ describe('RagbitsClient', () => {
 
     describe('makeStreamRequest', () => {
         it('should handle streaming response', async () => {
-            const messages: unknown[] = []
+            const messages: ChatResponse[] = []
             const errors: Error[] = []
             let closed = false
 
@@ -182,19 +182,19 @@ describe('RagbitsClient', () => {
             expect(messages).toHaveLength(4)
             expect(messages[0]).toEqual({
                 type: 'text',
-                content: 'Hello there!',
+                content: { text: 'Hello there!' },
             })
             expect(messages[1]).toEqual({
                 type: 'text',
-                content: 'How can I help you?',
+                content: { text: 'How can I help you?' },
             })
             expect(messages[2]).toEqual({
                 type: 'message_id',
-                content: 'msg-123',
+                content: { message_id: 'msg-123' },
             })
             expect(messages[3]).toEqual({
                 type: 'conversation_id',
-                content: 'conv-456',
+                content: { conversation_id: 'conv-456' },
             })
             expect(errors).toHaveLength(0)
             expect(closed).toBe(true)
@@ -484,7 +484,10 @@ describe('RagbitsClient', () => {
             server.use(
                 http.post('http://127.0.0.1:8000/api/chat', ({ request }) => {
                     const customHeader = request.headers.get('X-Custom-Header')
-                    const message = { type: 'text', content: customHeader }
+                    const message = {
+                        type: 'text',
+                        content: { text: customHeader },
+                    }
                     const encoder = new TextEncoder()
                     const stream = new ReadableStream({
                         start(controller) {
@@ -512,7 +515,7 @@ describe('RagbitsClient', () => {
                             return
                         }
 
-                        messages.push(data.content)
+                        messages.push(data.content.text)
                     },
                     onError: () => {},
                 },

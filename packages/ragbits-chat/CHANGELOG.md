@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Split params into path params, query params in API client (#871)
 - Fix bug causing conversation not to be selected when navigating to it from url(#872)
 ### Added
 
