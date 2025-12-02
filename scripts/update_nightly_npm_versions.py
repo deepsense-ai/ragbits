@@ -58,13 +58,6 @@ def update_package_json(package_dir: Path, new_version: str) -> None:
     data["version"] = new_version
     print(f"Updated {package_dir.name}: {old_version} → {new_version}")
 
-    # Update @ragbits/* dependencies to use the nightly version
-    if "dependencies" in data:
-        for dep_name in data["dependencies"]:
-            if dep_name.startswith("@ragbits/"):
-                data["dependencies"][dep_name] = new_version
-                print(f"Updated dependency in {package_dir.name}: {dep_name}@{new_version}")
-
     # Write updated package.json with proper formatting
     with open(package_json_path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=4)
