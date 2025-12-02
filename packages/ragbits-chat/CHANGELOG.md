@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## Unreleased
+- Split params into path params, query params in API client (#871)
+
 
 - Fix bug causing conversation not to be selected when navigating to it from url(#872)
 - CI/CD for nightly npm builds, update ragbits-api-client-react deps to install latest version of the @ragbits/api-client (#873)

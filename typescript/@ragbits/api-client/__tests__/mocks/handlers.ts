@@ -1,5 +1,6 @@
 import { http, HttpResponse } from 'msw'
 import { defaultConfigResponse } from '../utils'
+import { ChatResponse } from '../../src'
 
 export const handlers = [
     // Config endpoint with conditional error handling
@@ -65,11 +66,14 @@ export const handlers = [
 
         const stream = new ReadableStream({
             start(controller) {
-                const messages = [
-                    { type: 'text', content: 'Hello there!' },
-                    { type: 'text', content: 'How can I help you?' },
-                    { type: 'message_id', content: 'msg-123' },
-                    { type: 'conversation_id', content: 'conv-456' },
+                const messages: ChatResponse[] = [
+                    { type: 'text', content: { text: 'Hello there!' } },
+                    { type: 'text', content: { text: 'How can I help you?' } },
+                    { type: 'message_id', content: { message_id: 'msg-123' } },
+                    {
+                        type: 'conversation_id',
+                        content: { conversation_id: 'conv-456' },
+                    },
                 ]
 
                 messages.forEach((message, index) => {
