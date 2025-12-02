@@ -30,7 +30,7 @@ Searching for elements is performed using a vector store. [`DocumentSearch`][rag
     from ragbits.document_search import DocumentSearch
 
     # Create a sparse embedder
-    sparse_embedder = FastEmbedSparseEmbedder(model_name="BAAI/bge-small-en-v1.5")
+    sparse_embedder = FastEmbedSparseEmbedder(model_name="prithivida/Splade_PP_en-distil-cocodenser-retriever")
 
     # Create a vector store with the sparse embedder
     vector_store = QdrantVectorStore(embedder=sparse_embedder, index_name="sparse_index", ...)
@@ -56,7 +56,7 @@ Searching for elements is performed using a vector store. [`DocumentSearch`][rag
     dense_embedder = LiteLLMEmbedder(model="text-embedding-3-small", ...)
 
     # Create a sparse embedder
-    sparse_embedder = FastEmbedSparseEmbedder(model_name="BAAI/bge-small-en-v1.5")
+    sparse_embedder = FastEmbedSparseEmbedder(model_name="prithivida/Splade_PP_en-distil-cocodenser-retriever")
 
     # Create vector stores with different embedders
     vector_store_dense = InMemoryVectorStore(embedder=dense_embedder)

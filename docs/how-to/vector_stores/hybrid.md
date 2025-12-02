@@ -43,7 +43,7 @@ vector_store_dense = InMemoryVectorStore(
 
 # Create a sparse vector store using sparse embeddings
 vector_store_sparse = InMemoryVectorStore(
-    embedder=FastEmbedSparseEmbedder(model_name="BAAI/bge-small-en-v1.5")
+    embedder=FastEmbedSparseEmbedder(model_name="prithivida/Splade_PP_en-distil-cocodenser-retriever")
 )
 
 # Combine them into a hybrid search vector store
