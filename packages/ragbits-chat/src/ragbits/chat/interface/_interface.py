@@ -108,16 +108,14 @@ def with_chat_metadata(
             # Generate summary to serve as title for new conversations
             try:
                 summary = await self.generate_conversation_summary(message, history, context)
-                yield ConversationSummaryResponse(content=ConversationSummaryContent(summary=summary))
+                if summary is not None:
+                    yield ConversationSummaryResponse(content=ConversationSummaryContent(summary=summary))
             except Exception:
                 logger.exception("Failed to generate conversation title")
 
-        responses = []
-        main_response = ""
-        extra_responses = []
+        responses, main_response, extra_responses = [], "", []
         timestamp = time.time()
-        response_token_count = 0.0
-        first_token_time = None
+        response_token_count, first_token_time = 0.0, None
 
         try:
             async for response in func(self, message, history, context):
@@ -394,9 +392,20 @@ class ChatInterface(ABC):
 
         logger.info(f"[{self.__class__.__name__}] Saving {feedback} for message {message_id} with payload {payload}")
 
-    async def generate_conversation_summary(self, message: str, history: ChatFormat, context: ChatContext) -> str:
-        """Delegate to the configured summary generator."""
-        if not self.summary_generator:
-            raise Exception("Tried to invoke `generate_conversation_summary`. No SummaryGenerator found.")
+    async def generate_conversation_summary(
+        self, message: str, history: ChatFormat, context: ChatContext
+    ) -> str | None:
+        """
+        Handles conversation summary generation.
 
-        return await self.summary_generator.generate(message, history, context)
+        If a SummaryGenerator is not configured, this logs a warning and returns None,
+        preventing log spam from unnecessary exceptions.
+        """
+        if self.summary_generator:
+            return await self.summary_generator.generate(message, history, context)
+
+        logging.warning(
+            "Attempted to invoke `generate_conversation_summary`, but no SummaryGenerator was found. "
+            "Execution will continue without generating a summary."
+        )
+        return None
