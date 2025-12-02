@@ -114,7 +114,7 @@ export type EndpointMethod<
  * - {} extends T means all properties are optional → false
  * - {} doesn't extend T means at least one property is required → true
  */
-export type HasRequiredKeys<T> = T extends never
+export type HasRequiredKeys<T> = [T] extends [never]
     ? false
     : // eslint-disable-next-line @typescript-eslint/no-empty-object-type
       {} extends T
@@ -156,7 +156,7 @@ export type RequestOptions<
 /**
  * Check if a type is not never and not undefined
  */
-export type IsRequired<T> = T extends never
+export type IsRequired<T> = [T] extends [never]
     ? false
     : T extends undefined
       ? false
