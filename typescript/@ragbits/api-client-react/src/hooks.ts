@@ -7,8 +7,13 @@ import type {
     BaseApiEndpoints,
     EndpointRequest,
     BaseStreamingEndpoints,
+    MakeRequestOptions,
 } from '@ragbits/api-client'
-import type { RagbitsCallResult, RagbitsStreamResult } from './types'
+import type {
+    RagbitsCallResult,
+    RagbitsStreamResult,
+    CallFunction,
+} from './types'
 import { useRagbitsContext } from './RagbitsContextProvider'
 
 /**
@@ -19,12 +24,13 @@ import { useRagbitsContext } from './RagbitsContextProvider'
  */
 export function useRagbitsCall<
     Endpoints extends {
-        [K in keyof Endpoints]: EndpointDefinition
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
     } = BaseApiEndpoints,
     URL extends keyof Endpoints = keyof Endpoints,
 >(
     endpoint: URL,
-    defaultOptions?: RequestOptions<URL, Endpoints>
+    defaultOptions?: Partial<RequestOptions<URL, Endpoints>>
 ): RagbitsCallResult<URL, Endpoints, Error> {
     const { client } = useRagbitsContext()
     const [data, setData] = useState<EndpointResponse<URL, Endpoints> | null>(
@@ -46,8 +52,10 @@ export function useRagbitsCall<
 
     const call = useCallback(
         async (
-            options: RequestOptions<URL, Endpoints> = {}
+            ...args: MakeRequestOptions<URL, Endpoints>
         ): Promise<EndpointResponse<URL, Endpoints>> => {
+            const options = args[0]
+
             // Abort any existing request only if there's one in progress
             if (abortControllerRef.current && isLoading) {
                 abortControllerRef.current.abort()
@@ -62,10 +70,10 @@ export function useRagbitsCall<
             try {
                 const mergedOptions = {
                     ...defaultOptions,
-                    ...options,
+                    ...(options || {}),
                     headers: {
                         ...defaultOptions?.headers,
-                        ...options.headers,
+                        ...(options?.headers || {}),
                     },
                 }
 
@@ -73,9 +81,9 @@ export function useRagbitsCall<
                 const requestOptions = {
                     ...mergedOptions,
                     signal: abortController.signal,
-                }
+                } as RequestOptions<URL, Endpoints>
 
-                // Now we can use the properly typed makeRequest without casting
+                // Now we can use the properly typed makeRequest
                 const result = await client.makeRequest<Endpoints>(
                     endpoint,
                     requestOptions
@@ -108,7 +116,7 @@ export function useRagbitsCall<
             }
         },
         [client, endpoint, defaultOptions, isLoading]
-    )
+    ) as CallFunction<URL, Endpoints>
 
     const reset = useCallback(() => {
         abort()
@@ -134,7 +142,8 @@ export function useRagbitsCall<
  */
 export function useRagbitsStream<
     Endpoints extends {
-        [K in keyof Endpoints]: EndpointDefinition
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
     } = BaseStreamingEndpoints,
     URL extends keyof Endpoints = keyof Endpoints,
 >(
