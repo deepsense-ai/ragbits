@@ -4,6 +4,7 @@
 
 - Fix bug causing conversation not to be selected when navigating to it from url(#872)
 - CI/CD for nightly npm builds, update ragbits-api-client-react deps to install latest version of the @ragbits/api-client (#873)
+- CI/CD for nightlty builds improvements (#874)
 
 ### Added
 
