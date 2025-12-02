@@ -2,8 +2,8 @@ name: Nightly Build
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # Daily at 2 AM UTC
-  workflow_dispatch:      # Manual trigger for testing
+    - cron: "0 2 * * *" # Daily at 2 AM UTC
+  workflow_dispatch: # Manual trigger for testing
 
 jobs:
   check-for-changes:
@@ -37,6 +37,9 @@ jobs:
     needs: check-for-changes
     if: needs.check-for-changes.outputs.should-build == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
     steps:
       - name: Checkout develop branch
         uses: actions/checkout@v4
@@ -55,9 +58,16 @@ jobs:
         with:
           python-version: "3.10"
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+          registry-url: "https://registry.npmjs.org"
+
       - name: Update package versions for nightly
         run: |
           uv run scripts/update_nightly_versions.py "${{ needs.check-for-changes.outputs.nightly-version }}"
+          uv run scripts/update_nightly_npm_versions.py "${{ needs.check-for-changes.outputs.nightly-version }}"
 
       - name: Install dependencies
         run: |
@@ -74,7 +84,7 @@ jobs:
         run: |
           git config user.name "ds-ragbits-robot"
           git config user.email "ds-ragbits-robot@users.noreply.github.com"
-          git add packages/*/pyproject.toml
+          git add packages/*/pyproject.toml typescript/@ragbits/*/package.json
 
           if git diff --cached --quiet; then
             echo "No changes to commit"
@@ -97,13 +107,31 @@ jobs:
           TWINE_REPOSITORY_URL: ${{ vars.PYPI_URL || 'https://test.pypi.org/legacy/' }}
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
 
+      - name: Install TypeScript dependencies
+        run: npm ci
+
+      - name: Build npm packages
+        run: npm run build:packages
+
+      - name: Publish @ragbits/api-client (dev)
+        run: npm publish --provenance --access public --tag dev
+        working-directory: typescript/@ragbits/api-client
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @ragbits/api-client-react (dev)
+        run: npm publish --provenance --access public --tag dev
+        working-directory: typescript/@ragbits/api-client-react
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
       - name: Deploy nightly documentation
         shell: bash
         run: |
-            git config user.name "ds-ragbits-robot"
-            git config user.email "ds-ragbits-robot@users.noreply.github.com"
-            git fetch origin gh-pages
-            uv run mike deploy --push --alias-type copy nightly
+          git config user.name "ds-ragbits-robot"
+          git config user.email "ds-ragbits-robot@users.noreply.github.com"
+          git fetch origin gh-pages
+          uv run mike deploy --push --alias-type copy nightly
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
