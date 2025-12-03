@@ -2,250 +2,250 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/agents/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/agents/mcp/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/chat/compressors/base/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/chat/compressors/llm/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/chat/interface/chat_interface/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/core/embeddings/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/core/hybrid/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/core/llms/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/core/prompt/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/core/sources/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/core/vector-stores/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/core/audit/metrics/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/core/audit/traces/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/document_search/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/document_search/documents/documents/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/document_search/documents/elements/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/document_search/ingest/enrichers/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/document_search/ingest/parsers/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/document_search/ingest/strategies/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/document_search/retrieval/rephrasers/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/document_search/retrieval/rerankers/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/evaluate/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/evaluate/dataloaders/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/evaluate/metrics/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/evaluate/pipelines/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/api_reference/guardrails/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/cli/main/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/agents/define_and_use_agents/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/agents/provide_mcp_tools/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/agents/serve_ragbits_agents/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/agents/stream_downstream_agents/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/agents/use_post_processors/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/audit/use_metrics/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/audit/use_tracing/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/chatbots/api/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/document_search/ingest-documents/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/document_search/search-documents/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/evaluate/custom_dataloader/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/evaluate/custom_evaluation_pipeline/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/evaluate/custom_metric/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/evaluate/evaluate/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/evaluate/generate_dataset/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/evaluate/optimize/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/guardrails/use_guardrails/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/llms/use_llms/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/llms/use_local_llms/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/llms/use_tools_with_llms/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/project/component_preferences/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/project/custom_components/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/prompts/promptfoo/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/prompts/use_attachments_in_prompts/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/prompts/use_prompting/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/sources/google-drive/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/sources/load-dataset/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/vector_stores/hybrid/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/vector_stores/sparse_vectors/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/how-to/vector_stores/use_pgVector_store/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/tutorials/agents/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/tutorials/chat/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/tutorials/intro/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
     <url>
          <loc>https://ragbits.deepsense.ai/nightly/tutorials/rag/</loc>
-         <lastmod>2025-12-02</lastmod>
+         <lastmod>2025-12-03</lastmod>
     </url>
 </urlset>
