@@ -57,7 +57,7 @@ from .types import (
 logger = logging.getLogger(__name__)
 
 
-def with_chat_metadata(
+def with_chat_metadata(  # noqa: PLR0915
     func: Callable[["ChatInterface", str, ChatFormat, ChatContext], AsyncGenerator[ChatResponseUnion, None]],
 ) -> Callable[["ChatInterface", str, ChatFormat | None, ChatContext | None], AsyncGenerator[ChatResponseUnion, None]]:
     """
@@ -67,7 +67,7 @@ def with_chat_metadata(
     """
 
     @functools.wraps(func)
-    async def wrapper(
+    async def wrapper(  # noqa: PLR0915
         self: "ChatInterface", message: str, history: ChatFormat | None = None, context: ChatContext | None = None
     ) -> AsyncGenerator[ChatResponseUnion, None]:
         start_time = time.time()

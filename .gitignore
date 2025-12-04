@@ -8,6 +8,7 @@ venv/
 .venv/
 __pycache__/
 **.egg-info/
+.deepeval/
 
 # Local cursor rules
 .cursor/rules/local/
@@ -109,3 +110,6 @@ node_modules/
 lazygit
 
 lazygit.tar.gz
+
+# chat conversation logs
+duet_conversation.log

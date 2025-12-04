@@ -5,6 +5,7 @@ from typing import Any, Generic, TypeVar, cast
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.tools.todo import Task
 from ragbits.chat.auth.types import User
 from ragbits.chat.interface.forms import UserSettings
@@ -246,6 +247,15 @@ class TodoItemContent(ResponseContent):
         return "todo_item"
 
 
+class ConfirmationRequestContent(ResponseContent):
+    """Confirmation request content wrapper."""
+
+    confirmation_request: ConfirmationRequest
+
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "confirmation_request"
+
+
 class ChatResponseType(str, Enum):
     """Types of responses that can be returned by the chat interface.
 
@@ -279,6 +289,7 @@ class ChatResponseType(str, Enum):
     CLEAR_MESSAGE = "clear_message"
     USAGE = "usage"
     TODO_ITEM = "todo_item"
+    CONFIRMATION_REQUEST = "confirmation_request"
 
 
 class ChatContext(BaseModel):
@@ -289,6 +300,10 @@ class ChatContext(BaseModel):
     state: dict[str, Any] = Field(default_factory=dict)
     user: User | None = None
     session_id: str | None = None
+    confirmed_tools: list[dict[str, Any]] | None = Field(
+        default=None,
+        description="List of confirmed/declined tools from the frontend",
+    )
     model_config = ConfigDict(extra="allow")
 
 
@@ -662,6 +677,28 @@ class ChatResponse(BaseModel, ABC, Generic[ChatResponseContentT]):
             return self.content.task
         return None
 
+    def as_confirmation_request(self) -> ConfirmationRequest | None:
+        """Return the content as ConfirmationRequest if this is a confirmation request, else None.
+
+        .. deprecated:: 1.4.0
+            Use isinstance() checks and typed access instead.
+            This method is kept for backward compatibility and will be removed in version 2.0.0.
+
+        Returns:
+            The ConfirmationRequest content if this is a ConfirmationRequestResponse, None otherwise.
+        """
+        warnings.warn(
+            "The 'as_confirmation_request()' method is deprecated. Use isinstance() checks instead "
+            "(e.g., if isinstance(response, ConfirmationRequestResponse): "
+            "req = response.content.confirmation_request). "
+            "This method will be removed in version 2.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if isinstance(self.content, ConfirmationRequestContent):
+            return self.content.confirmation_request
+        return None
+
     def as_conversation_summary(self) -> str | None:
         """Return the content as string if this is an conversation summary response, else None.
 
@@ -736,6 +773,10 @@ class TodoItemResponse(ChatResponse[TodoItemContent]):
     """Todo item response."""
 
 
+class ConfirmationRequestResponse(ChatResponse[ConfirmationRequestContent]):
+    """Confirmation request response."""
+
+
 # Union type for all built-in chat responses
 ChatResponseUnion = (
     TextResponse
@@ -751,6 +792,7 @@ ChatResponseUnion = (
     | ClearMessageResponse
     | UsageResponse
     | TodoItemResponse
+    | ConfirmationRequestResponse
 )
 
 
