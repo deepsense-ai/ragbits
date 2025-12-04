@@ -8,11 +8,14 @@ import ImageGallery from "./ImageGallery.tsx";
 import MessageReferences from "./MessageReferences.tsx";
 import MessageActions from "./MessageActions.tsx";
 import LoadingIndicator from "./LoadingIndicator.tsx";
+import ConfirmationDialogs from "./ConfirmationDialogs.tsx";
 import {
   useConversationProperty,
+  useHistoryActions,
   useMessage,
 } from "../../stores/HistoryStore/selectors.ts";
 import { MessageRole } from "@ragbits/api-client";
+import { useRagbitsContext } from "@ragbits/api-client-react";
 
 type ChatMessageProps = {
   classNames?: {
@@ -29,13 +32,24 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     const lastMessageId = useConversationProperty((s) => s.lastMessageId);
     const isHistoryLoading = useConversationProperty((s) => s.isLoading);
     const message = useMessage(messageId);
+    const { sendSilentConfirmation } = useHistoryActions();
+    const { client: ragbitsClient } = useRagbitsContext();
 
     if (!message) {
       throw new Error("Tried to render non-existent message");
     }
 
-    const { serverId, content, role, references, liveUpdates, images, error } =
-      message;
+    const {
+      serverId,
+      content,
+      role,
+      references,
+      liveUpdates,
+      images,
+      error,
+      confirmationRequests,
+      confirmationStates,
+    } = message;
     const rightAlign = role === MessageRole.User;
     const isLoading =
       isHistoryLoading &&
@@ -51,6 +65,80 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     const showMessageReferences =
       !isLoading && references && references.length > 0;
     const showLiveUpdates = liveUpdates;
+
+    const showConfirmations =
+      confirmationRequests && Object.keys(confirmationRequests).length > 0;
+
+    const handleSingleConfirmation = async (confirmationId: string) => {
+      try {
+        await sendSilentConfirmation(
+          messageId,
+          confirmationId,
+          true,
+          ragbitsClient,
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    const handleSingleSkip = async (confirmationId: string) => {
+      try {
+        await sendSilentConfirmation(
+          messageId,
+          confirmationId,
+          false,
+          ragbitsClient,
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    const handleBulkConfirm = async (confirmationIds: string[]) => {
+      // Build decisions for ALL confirmations (confirmed and declined)
+      // This ensures the backend knows about all decisions, not just confirmed ones
+      const allIds = confirmationRequests
+        ? Object.keys(confirmationRequests)
+        : [];
+      const decisions = allIds.reduce(
+        (acc, id) => ({ ...acc, [id]: confirmationIds.includes(id) }),
+        {} as Record<string, boolean>,
+      );
+
+      try {
+        await sendSilentConfirmation(
+          messageId,
+          allIds,
+          decisions,
+          ragbitsClient,
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    const handleBulkSkip = async (confirmationIds: string[]) => {
+      // Build decisions for ALL confirmations - mark all as skipped (false)
+      const allIds = confirmationRequests
+        ? Object.keys(confirmationRequests)
+        : [];
+      const decisions = allIds.reduce(
+        (acc, id) => ({ ...acc, [id]: false }),
+        {} as Record<string, boolean>,
+      );
+
+      try {
+        await sendSilentConfirmation(
+          messageId,
+          confirmationIds,
+          decisions,
+          ragbitsClient,
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    };
 
     return (
       <div
@@ -92,6 +180,20 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                     liveUpdates={liveUpdates}
                     classNames={{ liveUpdates: classNames?.liveUpdates }}
                   />
+                )}
+                {showConfirmations && confirmationStates && (
+                  <ConfirmationDialogs
+                    confirmationRequests={confirmationRequests}
+                    confirmationStates={confirmationStates}
+                    onConfirm={handleSingleConfirmation}
+                    onSkip={handleSingleSkip}
+                    onBulkConfirm={handleBulkConfirm}
+                    onBulkSkip={handleBulkSkip}
+                    isLoading={isLoading}
+                  />
+                )}
+                {message.hasConfirmationBreak && (
+                  <div className="border-divider my-2 border-t" />
                 )}
                 <MarkdownContent
                   content={content}

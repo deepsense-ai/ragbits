@@ -1,5 +1,6 @@
 import {
   ChatResponse,
+  ConfirmationRequest,
   LiveUpdate,
   MessageRole,
   Reference,
@@ -25,7 +26,13 @@ export interface ChatMessage {
   images?: Record<string, Image["url"]>;
   usage?: Record<string, MessageUsage>;
   extra?: Record<string, unknown>;
-  error?: string | null; // Error message to display in this message
+  error?: string | null;
+  confirmationRequests?: Record<string, ConfirmationRequest>;
+  confirmationStates?: Record<
+    string,
+    "pending" | "confirmed" | "declined" | "skipped"
+  >;
+  hasConfirmationBreak?: boolean; // Flag to show visual separator after confirmations
 }
 
 export interface Conversation {
@@ -53,7 +60,17 @@ export interface HistoryStore {
     newConversation: () => string;
     selectConversation: (conversationId: string) => void;
     deleteConversation: (conversationId: string) => void;
-    sendMessage: (text: string, ragbitsClient: RagbitsClient) => void;
+    sendMessage: (
+      text: string,
+      ragbitsClient: RagbitsClient,
+      additionalContext?: Record<string, unknown>,
+    ) => void;
+    sendSilentConfirmation: (
+      messageId: string,
+      confirmationIds: string | string[],
+      confirmed: boolean | Record<string, boolean>,
+      ragbitsClient: RagbitsClient,
+    ) => void;
     stopAnswering: () => void;
     /** Merge passed extensions with existing object for a given message. New values in the passed extensions
      * overwrite previous ones.

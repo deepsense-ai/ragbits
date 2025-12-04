@@ -64,6 +64,14 @@ export interface ChatContext {
      * User's timezone in IANA format (e.g., 'Europe/Warsaw', 'America/New_York')
      */
     timezone: string | null
+    /**
+     * List of confirmed/declined tool executions from the frontend. Each entry has 'confirmation_id' and 'confirmed' (bool)
+     */
+    tool_confirmations:
+        | {
+              [k: string]: unknown
+          }[]
+        | null
     [k: string]: unknown
 }
 
@@ -163,6 +171,18 @@ export interface MessageUsage {
 }
 
 /**
+ * Represents a tool confirmation request sent to the user.
+ */
+export interface ConfirmationRequest {
+    confirmation_id: string
+    tool_name: string
+    tool_description: string
+    arguments: {
+        [k: string]: unknown
+    }
+}
+
+/**
  * Text content wrapper.
  */
 export interface TextContent {
@@ -211,6 +231,13 @@ export interface UsageContent {
  */
 export interface ErrorContent {
     message: string
+}
+
+/**
+ * Confirmation request content wrapper.
+ */
+export interface ConfirmationRequestContent {
+    confirmation_request: ConfirmationRequest
 }
 
 /**
@@ -536,6 +563,11 @@ export interface ErrorChatResponse {
     content: ErrorContent
 }
 
+export interface ConfirmationRequestChatResponse {
+    type: 'confirmation_request'
+    content: ConfirmationRequestContent
+}
+
 export interface ChunkedChatResponse {
     type: 'chunked_content'
     content: ChunkedContent
@@ -557,3 +589,4 @@ export type ChatResponse =
     | ClearMessageChatResponse
     | ConversationSummaryResponse
     | ErrorChatResponse
+    | ConfirmationRequestChatResponse
