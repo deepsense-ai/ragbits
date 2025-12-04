@@ -1,4 +1,6 @@
 import asyncio
+import hashlib
+import json
 import types
 import uuid
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
@@ -18,6 +20,7 @@ from pydantic import (
 from typing_extensions import Self
 
 from ragbits import agents
+from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.exceptions import (
     AgentInvalidPostProcessorError,
     AgentInvalidPromptInputError,
@@ -62,6 +65,10 @@ with suppress(ImportError):
 
     from ragbits.core.llms import LiteLLM
 
+# Confirmation ID length: 16 hex chars provides sufficient uniqueness
+# while being compact for display and storage
+CONFIRMATION_ID_LENGTH = 16
+
 _Input = TypeVar("_Input", bound=BaseModel)
 _Output = TypeVar("_Output")
 
@@ -82,6 +89,7 @@ class DownstreamAgentResult:
         BasePrompt,
         Usage,
         SimpleNamespace,
+        ConfirmationRequest,
     ]
     """The streamed item from the downstream agent."""
 
@@ -204,6 +212,10 @@ class AgentRunContext(BaseModel, Generic[DepsT]):
     """Whether to stream events from downstream agents when tools execute other agents."""
     downstream_agents: dict[str, "Agent"] = Field(default_factory=dict)
     """Registry of all agents that participated in this run"""
+    confirmed_tools: list[dict[str, Any]] | None = Field(
+        default=None,
+        description="List of confirmed/declined tools from the frontend",
+    )
 
     def register_agent(self, agent: "Agent") -> None:
         """
@@ -228,7 +240,16 @@ class AgentRunContext(BaseModel, Generic[DepsT]):
 
 
 class AgentResultStreaming(
-    AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult]
+    AsyncIterator[
+        str
+        | ToolCall
+        | ToolCallResult
+        | BasePrompt
+        | Usage
+        | SimpleNamespace
+        | DownstreamAgentResult
+        | ConfirmationRequest
+    ]
 ):
     """
     An async iterator that will collect all yielded items by LLM.generate_streaming(). This object is returned
@@ -239,7 +260,15 @@ class AgentResultStreaming(
     def __init__(
         self,
         generator: AsyncGenerator[
-            str | ToolCall | ToolCallResult | DownstreamAgentResult | SimpleNamespace | BasePrompt | Usage
+            str
+            | ToolCall
+            | ToolCallResult
+            | DownstreamAgentResult
+            | SimpleNamespace
+            | BasePrompt
+            | Usage
+            | ConfirmationRequest,
+            None,
         ],
     ):
         self._generator = generator
@@ -252,12 +281,30 @@ class AgentResultStreaming(
 
     def __aiter__(
         self,
-    ) -> AsyncIterator[str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult]:
+    ) -> AsyncIterator[
+        str
+        | ToolCall
+        | ToolCallResult
+        | BasePrompt
+        | Usage
+        | SimpleNamespace
+        | DownstreamAgentResult
+        | ConfirmationRequest
+    ]:
         return self
 
-    async def __anext__(
+    async def __anext__(  # noqa: PLR0912
         self,
-    ) -> str | ToolCall | ToolCallResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult:
+    ) -> (
+        str
+        | ToolCall
+        | ToolCallResult
+        | BasePrompt
+        | Usage
+        | SimpleNamespace
+        | DownstreamAgentResult
+        | ConfirmationRequest
+    ):
         try:
             item = await self._generator.__anext__()
 
@@ -270,6 +317,9 @@ class AgentResultStreaming(
                     if self.tool_calls is None:
                         self.tool_calls = []
                     self.tool_calls.append(item)
+                case ConfirmationRequest():
+                    # Pass through confirmation requests to the frontend
+                    pass
                 case DownstreamAgentResult():
                     if item.agent_id not in self.downstream:
                         self.downstream[item.agent_id] = []
@@ -615,20 +665,30 @@ class Agent(
                 )
 
             generator = cast(
-                _AG[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage],
+                _AG[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage | ConfirmationRequest],
                 generator,
             )
             generator = stream_with_post_processing(generator, post_processors, self)
 
         return AgentResultStreaming(generator)
 
-    async def _stream_internal(  # noqa: PLR0912
+    async def _stream_internal(  # noqa: PLR0912, PLR0915
         self,
         input: str | PromptInputT | None = None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-    ) -> AsyncGenerator[str | ToolCall | ToolCallResult | DownstreamAgentResult | SimpleNamespace | BasePrompt | Usage]:
+    ) -> AsyncGenerator[
+        str
+        | ToolCall
+        | ToolCallResult
+        | DownstreamAgentResult
+        | SimpleNamespace
+        | BasePrompt
+        | Usage
+        | ConfirmationRequest,
+        None,
+    ]:
         if context is None:
             context = AgentRunContext()
 
@@ -646,14 +706,35 @@ class Agent(
         reasoning_traces: list[str] = []
 
         with trace(input=input, options=merged_options) as outputs:
+            # Track confirmation IDs that have been requested to detect loops
+            requested_confirmation_ids: set[str] = set()
+            # Track if we should generate text-only summary (no tools)
+            generate_text_only = False
+
             while not max_turns or turn_count < max_turns:
                 returned_tool_call = False
                 self._check_token_limits(merged_options, context.usage, prompt_with_history, self.llm)
 
+                # Determine tool choice for this turn
+                current_tool_choice: ToolChoice | None
+                current_tools: list[Callable[..., Any] | dict[Any, Any]]
+
+                if generate_text_only:
+                    # Force text-only generation (no tool calls)
+                    # Don't set tool_choice when tools is empty (causes OpenAI error)
+                    current_tool_choice = None
+                    current_tools = []
+                elif tool_choice and turn_count == 0:
+                    current_tool_choice = tool_choice
+                    current_tools = [tool.to_function_schema() for tool in tools_mapping.values()]
+                else:
+                    current_tool_choice = None
+                    current_tools = [tool.to_function_schema() for tool in tools_mapping.values()]
+
                 streaming_result = self.llm.generate_streaming(
                     prompt=prompt_with_history,
-                    tools=[tool.to_function_schema() for tool in tools_mapping.values()],
-                    tool_choice=tool_choice if tool_choice and turn_count == 0 else None,
+                    tools=current_tools,
+                    tool_choice=current_tool_choice,
                     options=self._get_llm_options(llm_options, merged_options, context.usage),
                 )
                 tool_chunks = []
@@ -665,18 +746,42 @@ class Agent(
                         tool_chunks.append(chunk)
 
                 if len(tool_chunks) > 0:
+                    has_pending_confirmation = False
+                    current_turn_confirmation_ids: set[str] = set()
+
                     async for result in self._execute_tool_calls(
                         tool_chunks, tools_mapping, context, merged_options.parallel_tool_calling
                     ):
                         yield result
-                        if isinstance(result, ToolCallResult):
+                        if isinstance(result, ConfirmationRequest):
+                            # Mark that we have a pending confirmation
+                            has_pending_confirmation = True
+                            current_turn_confirmation_ids.add(result.confirmation_id)
+                        elif isinstance(result, ToolCallResult):
+                            # Add ALL tool results to history (including pending confirmations)
+                            # This allows the agent to see them in the next turn
                             prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
-                        returned_tool_call = True
+                            returned_tool_call = True
+
+                    # If we have pending confirmations, prepare for text-only summary generation
+                    if has_pending_confirmation:
+                        # Check if we've already requested these confirmations (infinite loop detection)
+                        if current_turn_confirmation_ids & requested_confirmation_ids:
+                            break
+                        # Add to tracking set
+                        requested_confirmation_ids.update(current_turn_confirmation_ids)
+                        # Set flag to generate text-only summary in next turn
+                        generate_text_only = True
+
+                # If we just generated text-only summary, we're done
+                if generate_text_only and len(tool_chunks) == 0:
+                    break
 
                 turn_count += 1
                 if streaming_result.usage:
                     context.usage += streaming_result.usage
 
+                # Break if no tool was called
                 if not returned_tool_call:
                     break
             else:
@@ -698,7 +803,7 @@ class Agent(
         tools_mapping: dict[str, Tool],
         context: AgentRunContext,
         parallel_tool_calling: bool,
-    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult, None]:
+    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult | ConfirmationRequest, None]:
         """Execute tool calls either in parallel or sequentially based on `parallel_tool_calling` value."""
         if parallel_tool_calling:
             queue: asyncio.Queue = asyncio.Queue()
@@ -843,13 +948,62 @@ class Agent(
         tool_call: ToolCall,
         tools_mapping: dict[str, Tool],
         context: AgentRunContext,
-    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult, None]:
+    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult | ConfirmationRequest, None]:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
         if tool_call.name not in tools_mapping:
             raise AgentToolNotAvailableError(tool_call.name)
 
         tool = tools_mapping[tool_call.name]
+
+        # Check if tool requires confirmation
+        if tool.requires_confirmation:
+            # Check if this tool has been confirmed in the context
+            confirmed_tools = context.confirmed_tools or []
+
+            # Generate a stable confirmation ID based on tool name and arguments
+            confirmation_id = hashlib.sha256(
+                f"{tool_call.name}:{json.dumps(tool_call.arguments, sort_keys=True)}".encode()
+            ).hexdigest()[:CONFIRMATION_ID_LENGTH]
+
+            # Check if this specific tool call has been confirmed or declined
+            is_confirmed = any(
+                ct.get("confirmation_id") == confirmation_id and ct.get("confirmed") for ct in confirmed_tools
+            )
+            is_declined = any(
+                ct.get("confirmation_id") == confirmation_id and not ct.get("confirmed", True) for ct in confirmed_tools
+            )
+
+            if is_declined:
+                # Tool was explicitly declined - skip execution entirely
+                yield ToolCallResult(
+                    id=tool_call.id,
+                    name=tool_call.name,
+                    arguments=tool_call.arguments,
+                    result="❌ Action declined by user",
+                )
+                return
+
+            if not is_confirmed:
+                # Tool not confirmed yet - create and yield confirmation request
+                request = ConfirmationRequest(
+                    confirmation_id=confirmation_id,
+                    tool_name=tool_call.name,
+                    tool_description=tool.description or "",
+                    arguments=tool_call.arguments,
+                )
+
+                # Yield confirmation request (will be streamed to frontend)
+                yield request
+
+                # Yield a pending result and exit without executing
+                yield ToolCallResult(
+                    id=tool_call.id,
+                    name=tool_call.name,
+                    arguments=tool_call.arguments,
+                    result="⏳ Awaiting user confirmation",
+                )
+                return
 
         with trace(agent_id=self.id, tool_name=tool_call.name, tool_arguments=tool_call.arguments) as outputs:
             try:

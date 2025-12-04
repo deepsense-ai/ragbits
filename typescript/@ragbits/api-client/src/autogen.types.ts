@@ -40,11 +40,24 @@ export const MessageRole = {
 export type MessageRole = TypeFrom<typeof MessageRole>
 
 /**
+ * Represents the TaskStatus enum
+ */
+export const TaskStatus = {
+    Pending: 'pending',
+    InProgress: 'in_progress',
+    Completed: 'completed',
+    Failed: 'failed',
+    Cancelled: 'cancelled',
+    Retrying: 'retrying',
+} as const
+
+export type TaskStatus = TypeFrom<typeof TaskStatus>
+
+/**
  * Represents the AuthType enum
  */
 export const AuthType = {
     Credentials: 'credentials',
-    Oauth2: 'oauth2',
 } as const
 
 export type AuthType = TypeFrom<typeof AuthType>
@@ -61,9 +74,13 @@ export interface ChatContext {
     user: User | null
     session_id: string | null
     /**
-     * User's timezone in IANA format (e.g., 'Europe/Warsaw', 'America/New_York')
+     * List of confirmed/declined tools from the frontend
      */
-    timezone: string | null
+    confirmed_tools:
+        | {
+              [k: string]: unknown
+          }[]
+        | null
     [k: string]: unknown
 }
 
@@ -163,6 +180,41 @@ export interface MessageUsage {
 }
 
 /**
+ * Simple task representation.
+ */
+export interface Task {
+    id: string
+    description: string
+    /**
+     * Task status options.
+     */
+    status:
+        | 'pending'
+        | 'in_progress'
+        | 'completed'
+        | 'failed'
+        | 'cancelled'
+        | 'retrying'
+    order: number
+    summary: string | null
+    parent_id: string | null
+    full_response: string | null
+    dependencies: string[]
+}
+
+/**
+ * Represents a tool confirmation request sent to the user.
+ */
+export interface ConfirmationRequest {
+    confirmation_id: string
+    tool_name: string
+    tool_description: string
+    arguments: {
+        [k: string]: unknown
+    }
+}
+
+/**
  * Text content wrapper.
  */
 export interface TextContent {
@@ -207,10 +259,17 @@ export interface UsageContent {
 }
 
 /**
- * Error content wrapper for displaying error messages to users.
+ * Todo item content wrapper.
  */
-export interface ErrorContent {
-    message: string
+export interface TodoItemContent {
+    task: Task
+}
+
+/**
+ * Confirmation request content wrapper.
+ */
+export interface ConfirmationRequestContent {
+    confirmation_request: ConfirmationRequest
 }
 
 /**
@@ -292,10 +351,6 @@ export interface ConfigResponse {
     customization: UICustomization | null
     user_settings: UserSettings
     /**
-     * Flag indicating whether API supports file upload
-     */
-    supports_upload: boolean
-    /**
      * Debug mode flag
      */
     debug_mode: boolean
@@ -318,50 +373,6 @@ export interface FeedbackResponse {
      * Status of the feedback submission
      */
     status: string
-}
-
-/**
- * Response for OAuth2 authorization URL request
- */
-export interface OAuth2AuthorizeResponse {
-    /**
-     * URL to redirect user to for OAuth2 authorization
-     */
-    authorize_url: string
-    /**
-     * State parameter for CSRF protection
-     */
-    state: string
-}
-
-/**
- * Configuration for an OAuth2 provider including visual configuration.
- */
-export interface OAuth2ProviderConfig {
-    /**
-     * Provider name (e.g., 'discord')
-     */
-    name: string
-    /**
-     * Display name for the provider (e.g., 'Discord')
-     */
-    display_name: string | null
-    /**
-     * Brand color for the provider (e.g., '#5865F2')
-     */
-    color: string | null
-    /**
-     * Button background color (defaults to color)
-     */
-    button_color: string | null
-    /**
-     * Button text color (defaults to white)
-     */
-    text_color: string | null
-    /**
-     * SVG icon as string
-     */
-    icon_svg: string | null
 }
 
 /**
@@ -416,33 +427,49 @@ export interface AuthenticationConfig {
      * List of available authentication types
      */
     auth_types: AuthType[]
-    /**
-     * List of available OAuth2 providers
-     */
-    oauth2_providers: OAuth2ProviderConfig[]
 }
 
 /**
- * Represents user login credentials.
+ * Request body for user login
  */
-export interface UserCredentials {
+export interface CredentialsLoginRequest {
+    /**
+     * Username
+     */
     username: string
+    /**
+     * Password
+     */
     password: string
 }
 
 /**
- * Represents user login credentials.
+ * Represents a JWT authentication jwt_token.
+ */
+export interface JWTToken {
+    access_token: string
+    token_type: string
+    expires_in: number
+    refresh_token: string | null
+    user: User
+}
+
+/**
+ * Request body for user login
  */
 export interface LoginRequest {
+    /**
+     * Username
+     */
     username: string
+    /**
+     * Password
+     */
     password: string
 }
 
 /**
- * Response body for login with session-based authentication.
- *
- * The session ID is set as an HTTP-only cookie by the backend.
- * Frontend only receives user information.
+ * Response body for successful login
  */
 export interface LoginResponse {
     /**
@@ -457,6 +484,20 @@ export interface LoginResponse {
      * Error message if login failed
      */
     error_message: string | null
+    /**
+     * Access jwt_token
+     */
+    jwt_token: JWTToken | null
+}
+
+/**
+ * Request body for user logout
+ */
+export interface LogoutRequest {
+    /**
+     * Session ID to logout
+     */
+    token: string
 }
 
 /**
@@ -526,14 +567,19 @@ export interface ClearMessageChatResponse {
     content: unknown
 }
 
+export interface TodoItemChatResonse {
+    type: 'todo_item'
+    content: TodoItemContent
+}
+
 export interface ConversationSummaryResponse {
     type: 'conversation_summary'
     content: ConversationSummaryContent
 }
 
-export interface ErrorChatResponse {
-    type: 'error'
-    content: ErrorContent
+export interface ConfirmationRequestChatResponse {
+    type: 'confirmation_request'
+    content: ConfirmationRequestContent
 }
 
 export interface ChunkedChatResponse {
@@ -555,5 +601,6 @@ export type ChatResponse =
     | ImageChatResponse
     | MessageUsageChatResponse
     | ClearMessageChatResponse
+    | TodoItemChatResonse
     | ConversationSummaryResponse
-    | ErrorChatResponse
+    | ConfirmationRequestChatResponse

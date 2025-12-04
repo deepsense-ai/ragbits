@@ -11,6 +11,7 @@ from typing import Any
 
 from fastapi import UploadFile
 
+from ragbits.agents.tools.todo import Task
 from ragbits.chat.interface.summary import HeuristicSummaryGenerator, SummaryGenerator
 from ragbits.chat.interface.ui_customization import UICustomization
 from ragbits.core.audit.metrics import record_metric
@@ -49,6 +50,8 @@ from .types import (
     StateUpdateResponse,
     TextContent,
     TextResponse,
+    TodoItemContent,
+    TodoItemResponse,
     UsageContent,
     UsageResponse,
 )
@@ -56,7 +59,7 @@ from .types import (
 logger = logging.getLogger(__name__)
 
 
-def with_chat_metadata(
+def with_chat_metadata(  # noqa: PLR0915
     func: Callable[["ChatInterface", str, ChatFormat, ChatContext], AsyncGenerator[ChatResponseUnion, None]],
 ) -> Callable[["ChatInterface", str, ChatFormat | None, ChatContext | None], AsyncGenerator[ChatResponseUnion, None]]:
     """
@@ -66,7 +69,7 @@ def with_chat_metadata(
     """
 
     @functools.wraps(func)
-    async def wrapper(
+    async def wrapper(  # noqa: PLR0915
         self: "ChatInterface", message: str, history: ChatFormat | None = None, context: ChatContext | None = None
     ) -> AsyncGenerator[ChatResponseUnion, None]:
         start_time = time.time()
@@ -107,14 +110,16 @@ def with_chat_metadata(
             # Generate summary to serve as title for new conversations
             try:
                 summary = await self.generate_conversation_summary(message, history, context)
-                if summary:
-                    yield ConversationSummaryResponse(content=ConversationSummaryContent(summary=summary))
+                yield ConversationSummaryResponse(content=ConversationSummaryContent(summary=summary))
             except Exception:
                 logger.exception("Failed to generate conversation title")
 
-        responses, main_response, extra_responses = [], "", []
+        responses = []
+        main_response = ""
+        extra_responses: list[ChatResponseUnion] = []
         timestamp = time.time()
-        response_token_count, first_token_time = 0.0, None
+        response_token_count = 0.0
+        first_token_time = None
 
         try:
             async for response in func(self, message, history, context):
@@ -201,16 +206,6 @@ class ChatInterface(ABC):
     * Text: Regular text responses streamed chunk by chunk
     * References: Source documents used to generate the answer
     * State updates: Updates to the conversation state
-
-    Attributes:
-        upload_handler: Optional async callback for handling file uploads.
-            Should accept an UploadFile parameter.
-
-            Example::
-
-                async def upload_handler(self, file: UploadFile) -> None:
-                    content = await file.read()
-                    # process content
     """
 
     feedback_config: FeedbackConfig = FeedbackConfig()
@@ -281,6 +276,10 @@ class ChatInterface(ABC):
                 usage={model: MessageUsage.from_usage(usage) for model, usage in usage.model_breakdown.items()}
             )
         )
+
+    @staticmethod
+    def create_todo_item_response(task: Task) -> TodoItemResponse:
+        return TodoItemResponse(content=TodoItemContent(task=task))
 
     @staticmethod
     def _sign_state(state: dict[str, Any]) -> str:
@@ -399,5 +398,8 @@ class ChatInterface(ABC):
         logger.info(f"[{self.__class__.__name__}] Saving {feedback} for message {message_id} with payload {payload}")
 
     async def generate_conversation_summary(self, message: str, history: ChatFormat, context: ChatContext) -> str:
-        """Handles conversation summary generation using the configured summary_generator."""
+        """Delegate to the configured summary generator."""
+        if not self.summary_generator:
+            raise Exception("Tried to invoke `generate_conversation_summary`. No SummaryGenerator found.")
+
         return await self.summary_generator.generate(message, history, context)

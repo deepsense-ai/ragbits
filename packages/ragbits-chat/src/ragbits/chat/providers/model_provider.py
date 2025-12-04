@@ -10,7 +10,9 @@ from typing import cast
 
 from pydantic import BaseModel
 
-from ragbits.chat.interface.types import AuthType
+from ragbits.agents.confirmation import ConfirmationRequest
+from ragbits.agents.tools.todo import Task, TaskStatus
+from ragbits.chat.interface.types import AuthType, ConfirmationRequestContent
 
 
 class RagbitsChatModelProvider:
@@ -40,11 +42,12 @@ class RagbitsChatModelProvider:
 
         try:
             from ragbits.chat.auth.types import (
+                CredentialsLoginRequest,
+                JWTToken,
                 LoginRequest,
                 LoginResponse,
-                OAuth2AuthorizeResponse,
+                LogoutRequest,
                 User,
-                UserCredentials,
             )
             from ragbits.chat.interface.forms import UserSettings
             from ragbits.chat.interface.types import (
@@ -55,7 +58,6 @@ class RagbitsChatModelProvider:
                 ConfigResponse,
                 ConversationIdContent,
                 ConversationSummaryContent,
-                ErrorContent,
                 FeedbackConfig,
                 FeedbackItem,
                 FeedbackRequest,
@@ -70,10 +72,10 @@ class RagbitsChatModelProvider:
                 MessageIdContent,
                 MessageRole,
                 MessageUsage,
-                OAuth2ProviderConfig,
                 Reference,
                 StateUpdate,
                 TextContent,
+                TodoItemContent,
                 UsageContent,
             )
             from ragbits.chat.interface.ui_customization import (
@@ -87,6 +89,7 @@ class RagbitsChatModelProvider:
                 "FeedbackType": FeedbackType,
                 "LiveUpdateType": LiveUpdateType,
                 "MessageRole": MessageRole,
+                "TaskStatus": TaskStatus,
                 # Core data models
                 "ChatContext": ChatContext,
                 "ChunkedContent": ChunkedContent,
@@ -98,6 +101,8 @@ class RagbitsChatModelProvider:
                 "FeedbackItem": FeedbackItem,
                 "Image": Image,
                 "MessageUsage": MessageUsage,
+                "Task": Task,
+                "ConfirmationRequest": ConfirmationRequest,
                 # Response content wrappers (new way)
                 "TextContent": TextContent,
                 "MessageIdContent": MessageIdContent,
@@ -105,7 +110,8 @@ class RagbitsChatModelProvider:
                 "ConversationSummaryContent": ConversationSummaryContent,
                 "FollowupMessagesContent": FollowupMessagesContent,
                 "UsageContent": UsageContent,
-                "ErrorContent": ErrorContent,
+                "TodoItemContent": TodoItemContent,
+                "ConfirmationRequestContent": ConfirmationRequestContent,
                 # Configuration models
                 "HeaderCustomization": HeaderCustomization,
                 "UICustomization": UICustomization,
@@ -115,17 +121,17 @@ class RagbitsChatModelProvider:
                 # API response models
                 "ConfigResponse": ConfigResponse,
                 "FeedbackResponse": FeedbackResponse,
-                "OAuth2AuthorizeResponse": OAuth2AuthorizeResponse,
-                "OAuth2ProviderConfig": OAuth2ProviderConfig,
                 # API request models
                 "ChatRequest": ChatMessageRequest,
                 "FeedbackRequest": FeedbackRequest,
                 # Auth
                 "AuthType": AuthType,
                 "AuthenticationConfig": AuthenticationConfig,
-                "UserCredentials": UserCredentials,
+                "CredentialsLoginRequest": CredentialsLoginRequest,
+                "JWTToken": JWTToken,
                 "LoginRequest": LoginRequest,
                 "LoginResponse": LoginResponse,
+                "LogoutRequest": LogoutRequest,
                 "User": User,
             }
 
@@ -161,8 +167,11 @@ class RagbitsChatModelProvider:
                 "ServerState",
                 "FeedbackItem",
                 "Image",
+                "JWTToken",
                 "User",
                 "MessageUsage",
+                "Task",
+                "TaskStatus",
                 # Response content wrappers (new way)
                 "TextContent",
                 "MessageIdContent",
@@ -171,7 +180,8 @@ class RagbitsChatModelProvider:
                 "FollowupMessagesContent",
                 "UsageContent",
                 "ClearMessageContent",
-                "ErrorContent",
+                "TodoItemContent",
+                "ConfirmationRequestContent",
             ],
             "configuration": [
                 "HeaderCustomization",
@@ -179,19 +189,16 @@ class RagbitsChatModelProvider:
                 "UserSettings",
                 "FeedbackConfig",
                 "AuthenticationConfig",
-                "OAuth2ProviderConfig",
             ],
             "responses": [
                 "FeedbackResponse",
                 "ConfigResponse",
                 "LoginResponse",
-                "OAuth2AuthorizeResponse",
             ],
             "requests": [
                 "ChatRequest",
                 "FeedbackRequest",
-                "UserCredentials",
-                "OAuth2Credentials",
+                "CredentialsLoginRequest",
                 "LoginRequest",
                 "LogoutRequest",
             ],

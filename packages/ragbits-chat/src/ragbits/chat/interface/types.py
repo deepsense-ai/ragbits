@@ -2,10 +2,13 @@ import warnings
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Generic, TypeVar, cast
+
 from zoneinfo import available_timezones
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from ragbits.agents.confirmation import ConfirmationRequest
+from ragbits.agents.tools.todo import Task
 from ragbits.chat.auth.types import User
 from ragbits.chat.interface.forms import UserSettings
 from ragbits.chat.interface.ui_customization import UICustomization
@@ -246,6 +249,24 @@ class ErrorContent(ResponseContent):
         return "error"
 
 
+class TodoItemContent(ResponseContent):
+    """Todo item content wrapper."""
+
+    task: Task
+
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "todo_item"
+
+
+class ConfirmationRequestContent(ResponseContent):
+    """Confirmation request content wrapper."""
+
+    confirmation_request: ConfirmationRequest
+
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "confirmation_request"
+
+
 class ChatResponseType(str, Enum):
     """Types of responses that can be returned by the chat interface.
 
@@ -277,8 +298,10 @@ class ChatResponseType(str, Enum):
     IMAGE = "image"
     CHUNKED_CONTENT = "chunked_content"
     CLEAR_MESSAGE = "clear_message"
-    USAGE = "usage"
     ERROR = "error"
+    USAGE = "usage"
+    TODO_ITEM = "todo_item"
+    CONFIRMATION_REQUEST = "confirmation_request"
 
 
 class ChatContext(BaseModel):
@@ -292,6 +315,10 @@ class ChatContext(BaseModel):
     timezone: str | None = Field(
         default=None,
         description="User's timezone in IANA format (e.g., 'Europe/Warsaw', 'America/New_York')",
+    )
+    confirmed_tools: list[dict[str, Any]] | None = Field(
+        default=None,
+        description="List of confirmed/declined tools from the frontend",
     )
     model_config = ConfigDict(extra="allow")
 
@@ -653,6 +680,49 @@ class ChatResponse(BaseModel, ABC, Generic[ChatResponseContentT]):
             return self.content.usage
         return None
 
+    def as_task(self) -> Task | None:
+        """Return the content as Task if this is an todo_item response, else None.
+
+        .. deprecated:: 1.4.0
+            Use isinstance() checks and typed access instead.
+            This method is kept for backward compatibility and will be removed in version 2.0.0.
+
+        Returns:
+            The Task content if this is a TodoItemResponse, None otherwise.
+        """
+        warnings.warn(
+            "The 'as_task()' method is deprecated. Use isinstance() checks instead "
+            "(e.g., if isinstance(response, TodoItemResponse): task = response.content.task). "
+            "This method will be removed in version 2.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if isinstance(self.content, TodoItemContent):
+            return self.content.task
+        return None
+
+    def as_confirmation_request(self) -> ConfirmationRequest | None:
+        """Return the content as ConfirmationRequest if this is a confirmation request, else None.
+
+        .. deprecated:: 1.4.0
+            Use isinstance() checks and typed access instead.
+            This method is kept for backward compatibility and will be removed in version 2.0.0.
+
+        Returns:
+            The ConfirmationRequest content if this is a ConfirmationRequestResponse, None otherwise.
+        """
+        warnings.warn(
+            "The 'as_confirmation_request()' method is deprecated. Use isinstance() checks instead "
+            "(e.g., if isinstance(response, ConfirmationRequestResponse): "
+            "req = response.content.confirmation_request). "
+            "This method will be removed in version 2.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if isinstance(self.content, ConfirmationRequestContent):
+            return self.content.confirmation_request
+        return None
+
     def as_conversation_summary(self) -> str | None:
         """Return the content as string if this is an conversation summary response, else None.
 
@@ -727,6 +797,14 @@ class ErrorResponse(ChatResponse[ErrorContent]):
     """Error response for displaying error messages to users."""
 
 
+class TodoItemResponse(ChatResponse[TodoItemContent]):
+    """Todo item response."""
+
+
+class ConfirmationRequestResponse(ChatResponse[ConfirmationRequestContent]):
+    """Confirmation request response."""
+
+
 # Union type for all built-in chat responses
 ChatResponseUnion = (
     TextResponse
@@ -740,8 +818,10 @@ ChatResponseUnion = (
     | ImageResponse
     | ChunkedContentResponse
     | ClearMessageResponse
-    | UsageResponse
     | ErrorResponse
+    | UsageResponse
+    | TodoItemResponse
+    | ConfirmationRequestResponse
 )
 
 
@@ -822,7 +902,6 @@ class ConfigResponse(BaseModel):
     feedback: FeedbackConfig = Field(..., description="Feedback configuration")
     customization: UICustomization | None = Field(default=None, description="UI customization")
     user_settings: UserSettings = Field(default_factory=UserSettings, description="User settings")
-    supports_upload: bool = Field(default=False, description="Flag indicating whether API supports file upload")
     debug_mode: bool = Field(default=False, description="Debug mode flag")
     conversation_history: bool = Field(default=False, description="Flag to enable conversation history")
     show_usage: bool = Field(default=False, description="Flag to enable usage statistics")

@@ -1,6 +1,6 @@
 import {
   ClearMessageChatResponse,
-  ErrorChatResponse,
+  ConfirmationRequestChatResponse,
   ImageChatResponse,
   LiveUpdateChatResponse,
   LiveUpdateType,
@@ -8,6 +8,7 @@ import {
   MessageUsageChatResponse,
   ReferenceChatResponse,
   TextChatResponse,
+  TodoItemChatResonse,
 } from "@ragbits/api-client-react";
 import { PrimaryHandler } from "./eventHandlerRegistry";
 import { produce } from "immer";
@@ -18,7 +19,24 @@ export const handleText: PrimaryHandler<TextChatResponse> = (
   ctx,
 ) => {
   const message = draft.history[ctx.messageId];
+
+  // Check if this is the first text after confirmation break
+  // Clear flag immediately to prevent race conditions with rapid chunks
+  if (message.hasConfirmationBreak) {
+    message.hasConfirmationBreak = false;
+
+    // Add double newline separator if not already present
+    if (!message.content.endsWith("\n\n")) {
+      message.content += "\n\n";
+    }
+  }
+
+  // Add text content
   message.content += response.content.text;
+
+  // Don't auto-skip here - it's too aggressive and marks confirmations as skipped
+  // even during the initial agent response. Instead, confirmations stay "pending"
+  // until user clicks a button or they get marked as skipped by other means
 };
 
 export const handleReference: PrimaryHandler<ReferenceChatResponse> = (
@@ -99,11 +117,48 @@ export const handleUsage: PrimaryHandler<MessageUsageChatResponse> = (
   message.usage = response.content.usage;
 };
 
-export const handleError: PrimaryHandler<ErrorChatResponse> = (
-  response,
+export const handleTodoItem: PrimaryHandler<TodoItemChatResonse> = (
+  { content },
   draft,
   ctx,
 ) => {
   const message = draft.history[ctx.messageId];
-  message.error = response.content.message;
+  const tasks = message.tasks ?? [];
+  const task = content.task;
+  const newTasks = produce(tasks, (tasksDraft) => {
+    const taskIndex = tasksDraft.findIndex((t) => t.id === task.id);
+    if (taskIndex === -1) {
+      tasksDraft.push(task);
+    } else {
+      tasksDraft[taskIndex] = task;
+    }
+  });
+
+  message.tasks = newTasks;
+};
+
+export const handleConfirmationRequest: PrimaryHandler<
+  ConfirmationRequestChatResponse
+> = (response, draft, ctx) => {
+  const message = draft.history[ctx.messageId];
+
+  const confirmationId = response.content.confirmation_request.confirmation_id;
+
+  // Initialize Records if they don't exist
+  if (!message.confirmationRequests) {
+    message.confirmationRequests = {};
+  }
+  if (!message.confirmationStates) {
+    message.confirmationStates = {};
+  }
+
+  // Check if this confirmation already exists
+  if (confirmationId in message.confirmationRequests) {
+    return;
+  }
+
+  // Add to Record-based system (prevents duplicates by design)
+  message.confirmationRequests[confirmationId] =
+    response.content.confirmation_request;
+  message.confirmationStates[confirmationId] = "pending";
 };

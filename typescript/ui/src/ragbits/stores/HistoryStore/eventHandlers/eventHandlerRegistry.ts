@@ -1,5 +1,5 @@
 import { ChatResponse } from "@ragbits/api-client-react";
-import { Conversation, HistoryStore } from "../../../../core/types/history";
+import { Conversation, HistoryStore } from "../../../../types/history";
 import {
   handleAfterConversationId,
   handleConversationId,
@@ -9,12 +9,13 @@ import {
 } from "./nonMessageHandlers";
 import {
   handleClearMessage,
-  handleError,
+  handleConfirmationRequest,
   handleImage,
   handleLiveUpdate,
   handleMessageId,
   handleReference,
   handleText,
+  handleTodoItem,
   handleUsage,
 } from "./messageHandlers";
 
@@ -109,9 +110,12 @@ ChatHandlerRegistry.register("clear_message", {
 ChatHandlerRegistry.register("usage", {
   handle: handleUsage,
 });
+ChatHandlerRegistry.register("todo_item", {
+  handle: handleTodoItem,
+});
 ChatHandlerRegistry.register("conversation_summary", {
   handle: handleConversationSummary,
 });
-ChatHandlerRegistry.register("error", {
-  handle: handleError,
+ChatHandlerRegistry.register("confirmation_request", {
+  handle: handleConfirmationRequest,
 });

@@ -1,5 +1,6 @@
 import {
   ChatResponse,
+  ConfirmationRequest,
   LiveUpdate,
   MessageRole,
   Reference,
@@ -7,6 +8,7 @@ import {
   Image,
   MessageUsage,
   RagbitsClient,
+  Task,
 } from "@ragbits/api-client-react";
 
 export type UnsubscribeFn = (() => void) | null;
@@ -24,8 +26,14 @@ export interface ChatMessage {
   extensions?: Record<string, unknown>;
   images?: Record<string, Image["url"]>;
   usage?: Record<string, MessageUsage>;
+  tasks?: Task[];
   extra?: Record<string, unknown>;
-  error?: string | null; // Error message to display in this message
+  confirmationRequests?: Record<string, ConfirmationRequest>;
+  confirmationStates?: Record<
+    string,
+    "pending" | "confirmed" | "declined" | "skipped"
+  >;
+  hasConfirmationBreak?: boolean; // Flag to show visual separator after confirmations
 }
 
 export interface Conversation {
@@ -53,7 +61,17 @@ export interface HistoryStore {
     newConversation: () => string;
     selectConversation: (conversationId: string) => void;
     deleteConversation: (conversationId: string) => void;
-    sendMessage: (text: string, ragbitsClient: RagbitsClient) => void;
+    sendMessage: (
+      text: string,
+      ragbitsClient: RagbitsClient,
+      additionalContext?: Record<string, unknown>,
+    ) => void;
+    sendSilentConfirmation: (
+      messageId: string,
+      confirmationIds: string | string[],
+      confirmed: boolean | Record<string, boolean>,
+      ragbitsClient: RagbitsClient,
+    ) => void;
     stopAnswering: () => void;
     /** Merge passed extensions with existing object for a given message. New values in the passed extensions
      * overwrite previous ones.
@@ -81,7 +99,7 @@ export interface HistoryStore {
       chatOptions: Conversation["chatOptions"],
       serverState: Conversation["serverState"],
       conversationId: Conversation["conversationId"],
-    ) => string;
+    ) => void;
     getCurrentConversation: () => Conversation;
     stopAnswering: (conversationId: string) => void;
   };

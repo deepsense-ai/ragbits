@@ -201,8 +201,9 @@ def _generate_chat_response_union_type() -> str:
         ("ImageChatResponse", "image", "Image"),
         ("MessageUsageChatResponse", "usage", "UsageContent"),
         ("ClearMessageChatResponse", "clear_message", "unknown"),
+        ("TodoItemChatResonse", "todo_item", "TodoItemContent"),
         ("ConversationSummaryResponse", "conversation_summary", "ConversationSummaryContent"),
-        ("ErrorChatResponse", "error", "ErrorContent"),
+        ("ConfirmationRequestChatResponse", "confirmation_request", "ConfirmationRequestContent"),
     ]
 
     internal_response_interfaces = [

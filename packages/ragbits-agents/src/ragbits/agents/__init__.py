@@ -10,6 +10,7 @@ from ragbits.agents._main import (
     ToolCallResult,
 )
 from ragbits.agents.post_processors.base import PostProcessor, StreamingPostProcessor
+from ragbits.agents.tool import requires_confirmation
 from ragbits.agents.types import QuestionAnswerAgent, QuestionAnswerPromptInput, QuestionAnswerPromptOutput
 
 __all__ = [
@@ -27,4 +28,5 @@ __all__ = [
     "StreamingPostProcessor",
     "ToolCall",
     "ToolCallResult",
+    "requires_confirmation",
 ]

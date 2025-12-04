@@ -9,6 +9,7 @@
 - Add supervisor post-processor (#830)
 - Add parallel tool calling support to agents for concurrent tool execution (#836)
 - Add Support for Thinking in agents (#837)
+- Add support for confirmation requests in agents (#866)
 
 ## 1.4.1 (2026-02-08)
 
