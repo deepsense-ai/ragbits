@@ -6,6 +6,7 @@ from zoneinfo import available_timezones
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.chat.auth.types import User
 from ragbits.chat.interface.forms import UserSettings
 from ragbits.chat.interface.ui_customization import UICustomization
@@ -237,6 +238,15 @@ class ClearMessageContent(ResponseContent):
         return "clear_message"
 
 
+class ConfirmationRequestContent(ResponseContent):
+    """Confirmation request content wrapper."""
+
+    confirmation_request: ConfirmationRequest
+
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "confirmation_request"
+
+
 class ErrorContent(ResponseContent):
     """Error content wrapper for displaying error messages to users."""
 
@@ -278,6 +288,7 @@ class ChatResponseType(str, Enum):
     CHUNKED_CONTENT = "chunked_content"
     CLEAR_MESSAGE = "clear_message"
     USAGE = "usage"
+    CONFIRMATION_REQUEST = "confirmation_request"
     ERROR = "error"
 
 
@@ -289,6 +300,11 @@ class ChatContext(BaseModel):
     state: dict[str, Any] = Field(default_factory=dict)
     user: User | None = None
     session_id: str | None = None
+    tool_confirmations: list[dict[str, Any]] | None = Field(
+        default=None,
+        description="List of confirmed/declined tool executions from the frontend. Each entry has 'confirmation_id' "
+        "and 'confirmed' (bool)",
+    )
     timezone: str | None = Field(
         default=None,
         description="User's timezone in IANA format (e.g., 'Europe/Warsaw', 'America/New_York')",
@@ -653,6 +669,28 @@ class ChatResponse(BaseModel, ABC, Generic[ChatResponseContentT]):
             return self.content.usage
         return None
 
+    def as_confirmation_request(self) -> ConfirmationRequest | None:
+        """Return the content as ConfirmationRequest if this is a confirmation request, else None.
+
+        .. deprecated:: 1.4.0
+            Use isinstance() checks and typed access instead.
+            This method is kept for backward compatibility and will be removed in version 2.0.0.
+
+        Returns:
+            The ConfirmationRequest content if this is a ConfirmationRequestResponse, None otherwise.
+        """
+        warnings.warn(
+            "The 'as_confirmation_request()' method is deprecated. Use isinstance() checks instead "
+            "(e.g., if isinstance(response, ConfirmationRequestResponse): "
+            "req = response.content.confirmation_request). "
+            "This method will be removed in version 2.0.0.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if isinstance(self.content, ConfirmationRequestContent):
+            return self.content.confirmation_request
+        return None
+
     def as_conversation_summary(self) -> str | None:
         """Return the content as string if this is an conversation summary response, else None.
 
@@ -723,6 +761,10 @@ class UsageResponse(ChatResponse[UsageContent]):
     """Usage statistics response."""
 
 
+class ConfirmationRequestResponse(ChatResponse[ConfirmationRequestContent]):
+    """Confirmation request response."""
+
+
 class ErrorResponse(ChatResponse[ErrorContent]):
     """Error response for displaying error messages to users."""
 
@@ -741,6 +783,7 @@ ChatResponseUnion = (
     | ChunkedContentResponse
     | ClearMessageResponse
     | UsageResponse
+    | ConfirmationRequestResponse
     | ErrorResponse
 )
 

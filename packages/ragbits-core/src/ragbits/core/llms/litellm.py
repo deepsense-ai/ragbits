@@ -102,6 +102,7 @@ class LiteLLM(LLM[LiteLLMOptions], LazyLiteLLM):
         self.use_structured_output = use_structured_output
         self.router = router
         self.custom_model_cost_config = custom_model_cost_config
+        self._cached_router: Router | None = None  # Cache for auto-created router
         if custom_model_cost_config:
             self._litellm.register_model(custom_model_cost_config)
 
@@ -434,7 +435,14 @@ class LiteLLM(LLM[LiteLLMOptions], LazyLiteLLM):
         stream: bool = False,
         stream_options: dict | None = None,
     ) -> "ModelResponse | CustomStreamWrapper":
-        entrypoint = self.router or self._create_router_from_self_and_options(options)
+        # Use provided router, or create/reuse cached router
+        if self.router:
+            entrypoint = self.router
+        else:
+            # Create router only once and cache it to avoid callback leak
+            if self._cached_router is None:
+                self._cached_router = self._create_router_from_self_and_options(options)
+            entrypoint = self._cached_router
 
         # Preprocess messages for Claude with reasoning enabled
         processed_conversation = self._preprocess_messages_for_claude(conversation, options)

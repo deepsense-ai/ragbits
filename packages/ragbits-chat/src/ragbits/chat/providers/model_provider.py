@@ -10,7 +10,8 @@ from typing import cast
 
 from pydantic import BaseModel
 
-from ragbits.chat.interface.types import AuthType
+from ragbits.agents.confirmation import ConfirmationRequest
+from ragbits.chat.interface.types import AuthType, ConfirmationRequestContent
 
 
 class RagbitsChatModelProvider:
@@ -98,6 +99,7 @@ class RagbitsChatModelProvider:
                 "FeedbackItem": FeedbackItem,
                 "Image": Image,
                 "MessageUsage": MessageUsage,
+                "ConfirmationRequest": ConfirmationRequest,
                 # Response content wrappers (new way)
                 "TextContent": TextContent,
                 "MessageIdContent": MessageIdContent,
@@ -105,6 +107,7 @@ class RagbitsChatModelProvider:
                 "ConversationSummaryContent": ConversationSummaryContent,
                 "FollowupMessagesContent": FollowupMessagesContent,
                 "UsageContent": UsageContent,
+                "ConfirmationRequestContent": ConfirmationRequestContent,
                 "ErrorContent": ErrorContent,
                 # Configuration models
                 "HeaderCustomization": HeaderCustomization,
@@ -171,6 +174,7 @@ class RagbitsChatModelProvider:
                 "FollowupMessagesContent",
                 "UsageContent",
                 "ClearMessageContent",
+                "ConfirmationRequestContent",
                 "ErrorContent",
             ],
             "configuration": [
