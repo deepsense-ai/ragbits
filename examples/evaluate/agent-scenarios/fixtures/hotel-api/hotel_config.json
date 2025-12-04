@@ -1,0 +1,1123 @@
+{
+  "hotels": [
+    {
+      "name": "Grand Hotel Kraków",
+      "city": "Kraków",
+      "address": "ul. Sławkowska 5/7, 31-014 Kraków",
+      "rating": 4.8,
+      "amenities": ["swimming_pool", "spa", "gym", "restaurant", "parking", "wifi", "room_service"],
+      "rooms": [
+        {
+          "number": "101",
+          "room_type": "standard",
+          "price_per_night": 350,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-01-15", "end": "2025-01-31"},
+            {"start": "2025-03-01", "end": "2025-03-15"},
+            {"start": "2025-05-01", "end": "2025-05-31"}
+          ]
+        },
+        {
+          "number": "102",
+          "room_type": "standard",
+          "price_per_night": 350,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony"],
+          "availability": [
+            {"start": "2025-02-01", "end": "2025-02-28"},
+            {"start": "2025-04-01", "end": "2025-04-30"},
+            {"start": "2025-06-01", "end": "2025-06-30"}
+          ]
+        },
+        {
+          "number": "201",
+          "room_type": "deluxe",
+          "price_per_night": 500,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-01-10", "end": "2025-01-25"},
+            {"start": "2025-03-10", "end": "2025-03-31"},
+            {"start": "2025-07-01", "end": "2025-07-31"}
+          ]
+        },
+        {
+          "number": "202",
+          "room_type": "deluxe",
+          "price_per_night": 500,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-02-15", "end": "2025-03-15"},
+            {"start": "2025-05-15", "end": "2025-06-15"},
+            {"start": "2025-08-01", "end": "2025-08-31"}
+          ]
+        },
+        {
+          "number": "301",
+          "room_type": "suite",
+          "price_per_night": 750,
+          "capacity": 4,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar", "jacuzzi", "living_room"],
+          "availability": [
+            {"start": "2025-01-01", "end": "2025-01-20"},
+            {"start": "2025-04-01", "end": "2025-04-20"},
+            {"start": "2025-09-01", "end": "2025-09-30"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hotel Stary Kraków",
+      "city": "Kraków",
+      "address": "ul. Szczepańska 5, 31-011 Kraków",
+      "rating": 4.5,
+      "amenities": ["spa", "restaurant", "parking", "wifi", "bar"],
+      "rooms": [
+        {
+          "number": "11",
+          "room_type": "standard",
+          "price_per_night": 320,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-01-05", "end": "2025-02-05"},
+            {"start": "2025-03-05", "end": "2025-04-05"},
+            {"start": "2025-06-10", "end": "2025-07-10"}
+          ]
+        },
+        {
+          "number": "12",
+          "room_type": "standard",
+          "price_per_night": 320,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony"],
+          "availability": [
+            {"start": "2025-02-10", "end": "2025-03-10"},
+            {"start": "2025-05-05", "end": "2025-06-05"},
+            {"start": "2025-08-01", "end": "2025-08-20"}
+          ]
+        },
+        {
+          "number": "21",
+          "room_type": "deluxe",
+          "price_per_night": 480,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-01-15", "end": "2025-02-15"},
+            {"start": "2025-04-10", "end": "2025-05-10"},
+            {"start": "2025-07-15", "end": "2025-08-15"}
+          ]
+        },
+        {
+          "number": "22",
+          "room_type": "deluxe",
+          "price_per_night": 480,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "city_view", "minibar", "balcony"],
+          "availability": [
+            {"start": "2025-02-20", "end": "2025-03-20"},
+            {"start": "2025-05-20", "end": "2025-06-20"},
+            {"start": "2025-09-01", "end": "2025-09-30"}
+          ]
+        },
+        {
+          "number": "31",
+          "room_type": "suite",
+          "price_per_night": 700,
+          "capacity": 4,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar", "living_room"],
+          "availability": [
+            {"start": "2025-01-10", "end": "2025-02-10"},
+            {"start": "2025-04-15", "end": "2025-05-15"},
+            {"start": "2025-10-01", "end": "2025-10-31"}
+          ]
+        },
+        {
+          "number": "32",
+          "room_type": "suite",
+          "price_per_night": 700,
+          "capacity": 4,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar", "living_room"],
+          "availability": [
+            {"start": "2025-03-01", "end": "2025-03-31"},
+            {"start": "2025-06-01", "end": "2025-06-30"},
+            {"start": "2025-11-01", "end": "2025-11-30"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Radisson Blu Hotel Kraków",
+      "city": "Kraków",
+      "address": "ul. Straszewskiego 17, 31-101 Kraków",
+      "rating": 4.6,
+      "amenities": ["swimming_pool", "gym", "restaurant", "parking", "wifi", "business_center"],
+      "rooms": [
+        {
+          "number": "105",
+          "room_type": "standard",
+          "price_per_night": 380,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-01-20", "end": "2025-02-20"},
+            {"start": "2025-04-01", "end": "2025-05-01"},
+            {"start": "2025-07-10", "end": "2025-08-10"}
+          ]
+        },
+        {
+          "number": "106",
+          "room_type": "standard",
+          "price_per_night": "380",
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony"],
+          "availability": [
+            {"start": "2025-02-01", "end": "2025-03-01"},
+            {"start": "2025-05-10", "end": "2025-06-10"},
+            {"start": "2025-08-15", "end": "2025-09-15"}
+          ]
+        },
+        {
+          "number": "205",
+          "room_type": "deluxe",
+          "price_per_night": 520,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-01-01", "end": "2025-01-31"},
+            {"start": "2025-03-15", "end": "2025-04-15"},
+            {"start": "2025-06-15", "end": "2025-07-15"}
+          ]
+        },
+        {
+          "number": "206",
+          "room_type": "deluxe",
+          "price_per_night": 520,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-02-10", "end": "2025-03-10"},
+            {"start": "2025-05-01", "end": "2025-06-01"},
+            {"start": "2025-09-10", "end": "2025-10-10"}
+          ]
+        },
+        {
+          "number": "305",
+          "room_type": "suite",
+          "price_per_night": 800,
+          "capacity": 4,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar", "jacuzzi", "living_room"],
+          "availability": [
+            {"start": "2025-01-15", "end": "2025-02-15"},
+            {"start": "2025-04-20", "end": "2025-05-20"},
+            {"start": "2025-10-01", "end": "2025-11-01"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hotel Copernicus",
+      "city": "Kraków",
+      "address": "ul. Kanonicza 16, 31-002 Kraków",
+      "rating": 4.9,
+      "amenities": ["spa", "restaurant", "wifi", "room_service", "bar"],
+      "rooms": [
+        {
+          "number": "1",
+          "room_type": "standard",
+          "price_per_night": 400,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-01-10", "end": "2025-02-10"},
+            {"start": "2025-04-05", "end": "2025-05-05"},
+            {"start": "2025-07-01", "end": "2025-08-01"}
+          ]
+        },
+        {
+          "number": "2",
+          "room_type": "deluxe",
+          "price_per_night": 550,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-02-05", "end": "2025-03-05"},
+            {"start": "2025-05-10", "end": "2025-06-10"},
+            {"start": "2025-08-10", "end": "2025-09-10"}
+          ]
+        },
+        {
+          "number": "3",
+          "room_type": "deluxe",
+          "price_per_night": 550,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-03-01", "end": "2025-04-01"},
+            {"start": "2025-06-01", "end": "2025-07-01"},
+            {"start": "2025-09-15", "end": "2025-10-15"}
+          ]
+        },
+        {
+          "number": "4",
+          "room_type": "suite",
+          "price_per_night": 780,
+          "capacity": 4,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar", "jacuzzi", "living_room"],
+          "availability": [
+            {"start": "2025-01-20", "end": "2025-02-20"},
+            {"start": "2025-04-15", "end": "2025-05-15"},
+            {"start": "2025-10-10", "end": "2025-11-10"}
+          ]
+        },
+        {
+          "number": "5",
+          "room_type": "suite",
+          "price_per_night": 780,
+          "capacity": 4,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar", "jacuzzi", "living_room", "terrace"],
+          "availability": [
+            {"start": "2025-02-15", "end": "2025-03-15"},
+            {"start": "2025-05-20", "end": "2025-06-20"},
+            {"start": "2025-11-15", "end": "2025-12-15"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Qubus Hotel Kraków",
+      "city": "Kraków",
+      "address": "ul. Nadwiślańska 6, 30-527 Kraków",
+      "rating": 4.3,
+      "amenities": ["gym", "restaurant", "parking", "wifi", "bar"],
+      "rooms": [
+        {
+          "number": "110",
+          "room_type": "standard",
+          "price_per_night": 280,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-01-01", "end": "2025-02-01"},
+            {"start": "2025-03-10", "end": "2025-04-10"},
+            {"start": "2025-06-20", "end": "2025-07-20"}
+          ]
+        },
+        {
+          "number": "111",
+          "room_type": "standard",
+          "price_per_night": 280,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-02-05", "end": "2025-03-05"},
+            {"start": "2025-05-01", "end": "2025-06-01"},
+            {"start": "2025-08-01", "end": "2025-09-01"}
+          ]
+        },
+        {
+          "number": "210",
+          "room_type": "standard",
+          "price_per_night": 300,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony"],
+          "availability": [
+            {"start": "2025-01-15", "end": "2025-02-15"},
+            {"start": "2025-04-20", "end": "2025-05-20"},
+            {"start": "2025-07-25", "end": "2025-08-25"}
+          ]
+        },
+        {
+          "number": "211",
+          "room_type": "deluxe",
+          "price_per_night": 420,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "minibar"],
+          "availability": [
+            {"start": "2025-02-20", "end": "2025-03-20"},
+            {"start": "2025-05-25", "end": "2025-06-25"},
+            {"start": "2025-09-10", "end": "2025-10-10"}
+          ]
+        },
+        {
+          "number": "310",
+          "room_type": "deluxe",
+          "price_per_night": 420,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "minibar", "city_view"],
+          "availability": [
+            {"start": "2025-03-15", "end": "2025-04-15"},
+            {"start": "2025-06-15", "end": "2025-07-15"},
+            {"start": "2025-10-20", "end": "2025-11-20"}
+          ]
+        },
+        {
+          "number": "311",
+          "room_type": "suite",
+          "price_per_night": 650,
+          "capacity": 4,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar", "living_room"],
+          "availability": [
+            {"start": "2025-01-25", "end": "2025-02-25"},
+            {"start": "2025-04-25", "end": "2025-05-25"},
+            {"start": "2025-11-01", "end": "2025-12-01"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Sheraton Grand Warszawa",
+      "city": "Warszawa",
+      "address": "ul. Bolesława Prusa 2, 00-493 Warszawa",
+      "rating": 4.7,
+      "amenities": ["swimming_pool", "spa", "gym", "restaurant", "parking", "wifi", "business_center"],
+      "rooms": [
+        {
+          "number": "201",
+          "room_type": "standard",
+          "price_per_night": 420,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-01-10", "end": "2025-02-10"},
+            {"start": "2025-04-01", "end": "2025-05-01"},
+            {"start": "2025-07-10", "end": "2025-08-10"}
+          ]
+        },
+        {
+          "number": "202",
+          "room_type": "standard",
+          "price_per_night": 420,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "city_view"],
+          "availability": [
+            {"start": "2025-02-15", "end": "2025-03-15"},
+            {"start": "2025-05-10", "end": "2025-06-10"},
+            {"start": "2025-08-15", "end": "2025-09-15"}
+          ]
+        },
+        {
+          "number": "301",
+          "room_type": "deluxe",
+          "price_per_night": 580,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-01-05", "end": "2025-02-05"},
+            {"start": "2025-03-20", "end": "2025-04-20"},
+            {"start": "2025-06-15", "end": "2025-07-15"}
+          ]
+        },
+        {
+          "number": "302",
+          "room_type": "deluxe",
+          "price_per_night": 580,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-02-20", "end": "2025-03-20"},
+            {"start": "2025-05-15", "end": "2025-06-15"},
+            {"start": "2025-09-01", "end": "2025-10-01"}
+          ]
+        },
+        {
+          "number": "401",
+          "room_type": "suite",
+          "price_per_night": 800,
+          "capacity": 4,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar", "jacuzzi", "living_room"],
+          "availability": [
+            {"start": "2025-01-15", "end": "2025-02-15"},
+            {"start": "2025-04-10", "end": "2025-05-10"},
+            {"start": "2025-10-05", "end": "2025-11-05"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hotel Bristol Warszawa",
+      "city": "Warszawa",
+      "address": "Krakowskie Przedmieście 42/44, 00-325 Warszawa",
+      "rating": 4.9,
+      "amenities": ["spa", "restaurant", "parking", "wifi", "room_service", "bar", "concierge"],
+      "rooms": [
+        {
+          "number": "15",
+          "room_type": "standard",
+          "price_per_night": 480,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-01-20", "end": "2025-02-20"},
+            {"start": "2025-04-15", "end": "2025-05-15"},
+            {"start": "2025-07-20", "end": "2025-08-20"}
+          ]
+        },
+        {
+          "number": "16",
+          "room_type": "standard",
+          "price_per_night": 480,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony"],
+          "availability": [
+            {"start": "2025-02-01", "end": "2025-03-01"},
+            {"start": "2025-05-05", "end": "2025-06-05"},
+            {"start": "2025-08-10", "end": "2025-09-10"}
+          ]
+        },
+        {
+          "number": "25",
+          "room_type": "deluxe",
+          "price_per_night": 620,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-01-01", "end": "2025-01-31"},
+            {"start": "2025-03-15", "end": "2025-04-15"},
+            {"start": "2025-06-20", "end": "2025-07-20"}
+          ]
+        },
+        {
+          "number": "26",
+          "room_type": "deluxe",
+          "price_per_night": 620,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-02-10", "end": "2025-03-10"},
+            {"start": "2025-05-20", "end": "2025-06-20"},
+            {"start": "2025-09-15", "end": "2025-10-15"}
+          ]
+        },
+        {
+          "number": "35",
+          "room_type": "suite",
+          "price_per_night": 850,
+          "capacity": 4,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar", "jacuzzi", "living_room", "dining_room"],
+          "availability": [
+            {"start": "2025-01-10", "end": "2025-02-10"},
+            {"start": "2025-04-20", "end": "2025-05-20"},
+            {"start": "2025-10-10", "end": "2025-11-10"}
+          ]
+        },
+        {
+          "number": "36",
+          "room_type": "suite",
+          "price_per_night": 850,
+          "capacity": 4,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar", "jacuzzi", "living_room", "dining_room"],
+          "availability": [
+            {"start": "2025-03-01", "end": "2025-04-01"},
+            {"start": "2025-06-01", "end": "2025-07-01"},
+            {"start": "2025-11-15", "end": "2025-12-15"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "InterContinental Warszawa",
+      "city": "Warszawa",
+      "address": "ul. Emilii Plater 49, 00-125 Warszawa",
+      "rating": 4.6,
+      "amenities": ["swimming_pool", "gym", "restaurant", "parking", "wifi", "business_center", "bar"],
+      "rooms": [
+        {
+          "number": "501",
+          "room_type": "standard",
+          "price_per_night": 400,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-01-15", "end": "2025-02-15"},
+            {"start": "2025-04-10", "end": "2025-05-10"},
+            {"start": "2025-07-15", "end": "2025-08-15"}
+          ]
+        },
+        {
+          "number": "502",
+          "room_type": "standard",
+          "price_per_night": 400,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "city_view"],
+          "availability": [
+            {"start": "2025-02-05", "end": "2025-03-05"},
+            {"start": "2025-05-15", "end": "2025-06-15"},
+            {"start": "2025-08-20", "end": "2025-09-20"}
+          ]
+        },
+        {
+          "number": "601",
+          "room_type": "deluxe",
+          "price_per_night": 560,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-01-01", "end": "2025-01-31"},
+            {"start": "2025-03-20", "end": "2025-04-20"},
+            {"start": "2025-06-25", "end": "2025-07-25"}
+          ]
+        },
+        {
+          "number": "602",
+          "room_type": "deluxe",
+          "price_per_night": 560,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-02-15", "end": "2025-03-15"},
+            {"start": "2025-05-20", "end": "2025-06-20"},
+            {"start": "2025-09-10", "end": "2025-10-10"}
+          ]
+        },
+        {
+          "number": "701",
+          "room_type": "suite",
+          "price_per_night": 780,
+          "capacity": 4,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar", "jacuzzi", "living_room"],
+          "availability": [
+            {"start": "2025-01-20", "end": "2025-02-20"},
+            {"start": "2025-04-25", "end": "2025-05-25"},
+            {"start": "2025-10-15", "end": "2025-11-15"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Polonia Palace Hotel",
+      "city": "Warszawa",
+      "address": "Aleje Jerozolimskie 45, 00-692 Warszawa",
+      "rating": 4.4,
+      "amenities": ["gym", "restaurant", "parking", "wifi", "bar"],
+      "rooms": [
+        {
+          "number": "101",
+          "room_type": "standard",
+          "price_per_night": 320,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-01-05", "end": "2025-02-05"},
+            {"start": "2025-03-10", "end": "2025-04-10"},
+            {"start": "2025-06-15", "end": "2025-07-15"}
+          ]
+        },
+        {
+          "number": "102",
+          "room_type": "standard",
+          "price_per_night": 320,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-02-10", "end": "2025-03-10"},
+            {"start": "2025-05-05", "end": "2025-06-05"},
+            {"start": "2025-08-05", "end": "2025-09-05"}
+          ]
+        },
+        {
+          "number": "201",
+          "room_type": "standard",
+          "price_per_night": 340,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony"],
+          "availability": [
+            {"start": "2025-01-20", "end": "2025-02-20"},
+            {"start": "2025-04-15", "end": "2025-05-15"},
+            {"start": "2025-07-20", "end": "2025-08-20"}
+          ]
+        },
+        {
+          "number": "202",
+          "room_type": "deluxe",
+          "price_per_night": 480,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "minibar"],
+          "availability": [
+            {"start": "2025-02-25", "end": "2025-03-25"},
+            {"start": "2025-05-25", "end": "2025-06-25"},
+            {"start": "2025-09-15", "end": "2025-10-15"}
+          ]
+        },
+        {
+          "number": "301",
+          "room_type": "deluxe",
+          "price_per_night": 480,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-03-15", "end": "2025-04-15"},
+            {"start": "2025-06-20", "end": "2025-07-20"},
+            {"start": "2025-10-20", "end": "2025-11-20"}
+          ]
+        },
+        {
+          "number": "302",
+          "room_type": "suite",
+          "price_per_night": 700,
+          "capacity": 4,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar", "living_room"],
+          "availability": [
+            {"start": "2025-01-25", "end": "2025-02-25"},
+            {"start": "2025-04-30", "end": "2025-05-30"},
+            {"start": "2025-11-01", "end": "2025-12-01"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Novotel Warszawa Centrum",
+      "city": "Warszawa",
+      "address": "ul. Marszałkowska 94/98, 00-510 Warszawa",
+      "rating": 4.2,
+      "amenities": ["gym", "restaurant", "wifi", "parking", "bar"],
+      "rooms": [
+        {
+          "number": "410",
+          "room_type": "standard",
+          "price_per_night": 300,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-01-01", "end": "2025-02-01"},
+            {"start": "2025-03-15", "end": "2025-04-15"},
+            {"start": "2025-06-10", "end": "2025-07-10"}
+          ]
+        },
+        {
+          "number": "411",
+          "room_type": "standard",
+          "price_per_night": 300,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-02-10", "end": "2025-03-10"},
+            {"start": "2025-05-10", "end": "2025-06-10"},
+            {"start": "2025-08-10", "end": "2025-09-10"}
+          ]
+        },
+        {
+          "number": "510",
+          "room_type": "standard",
+          "price_per_night": 320,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "city_view"],
+          "availability": [
+            {"start": "2025-01-15", "end": "2025-02-15"},
+            {"start": "2025-04-20", "end": "2025-05-20"},
+            {"start": "2025-07-25", "end": "2025-08-25"}
+          ]
+        },
+        {
+          "number": "511",
+          "room_type": "deluxe",
+          "price_per_night": 450,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-02-20", "end": "2025-03-20"},
+            {"start": "2025-05-25", "end": "2025-06-25"},
+            {"start": "2025-09-15", "end": "2025-10-15"}
+          ]
+        },
+        {
+          "number": "610",
+          "room_type": "deluxe",
+          "price_per_night": 450,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-03-20", "end": "2025-04-20"},
+            {"start": "2025-06-25", "end": "2025-07-25"},
+            {"start": "2025-10-20", "end": "2025-11-20"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hilton Gdańsk",
+      "city": "Gdańsk",
+      "address": "ul. Targ Rybny 1, 80-838 Gdańsk",
+      "rating": 4.7,
+      "amenities": ["swimming_pool", "spa", "gym", "restaurant", "parking", "wifi", "business_center"],
+      "rooms": [
+        {
+          "number": "301",
+          "room_type": "standard",
+          "price_per_night": 380,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-01-10", "end": "2025-02-10"},
+            {"start": "2025-04-05", "end": "2025-05-05"},
+            {"start": "2025-07-10", "end": "2025-08-10"}
+          ]
+        },
+        {
+          "number": "302",
+          "room_type": "standard",
+          "price_per_night": 380,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "sea_view"],
+          "availability": [
+            {"start": "2025-02-15", "end": "2025-03-15"},
+            {"start": "2025-05-10", "end": "2025-06-10"},
+            {"start": "2025-08-15", "end": "2025-09-15"}
+          ]
+        },
+        {
+          "number": "401",
+          "room_type": "deluxe",
+          "price_per_night": 540,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "sea_view", "minibar"],
+          "availability": [
+            {"start": "2025-01-05", "end": "2025-02-05"},
+            {"start": "2025-03-20", "end": "2025-04-20"},
+            {"start": "2025-06-15", "end": "2025-07-15"}
+          ]
+        },
+        {
+          "number": "402",
+          "room_type": "deluxe",
+          "price_per_night": 540,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "sea_view", "minibar"],
+          "availability": [
+            {"start": "2025-02-20", "end": "2025-03-20"},
+            {"start": "2025-05-15", "end": "2025-06-15"},
+            {"start": "2025-09-01", "end": "2025-10-01"}
+          ]
+        },
+        {
+          "number": "501",
+          "room_type": "suite",
+          "price_per_night": 750,
+          "capacity": 4,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "sea_view", "minibar", "jacuzzi", "living_room"],
+          "availability": [
+            {"start": "2025-01-15", "end": "2025-02-15"},
+            {"start": "2025-04-10", "end": "2025-05-10"},
+            {"start": "2025-10-05", "end": "2025-11-05"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Radisson Blu Gdańsk",
+      "city": "Gdańsk",
+      "address": "ul. Długi Targ 19, 80-830 Gdańsk",
+      "rating": 4.5,
+      "amenities": ["spa", "restaurant", "parking", "wifi", "room_service", "bar"],
+      "rooms": [
+        {
+          "number": "205",
+          "room_type": "standard",
+          "price_per_night": 360,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-01-20", "end": "2025-02-20"},
+            {"start": "2025-04-15", "end": "2025-05-15"},
+            {"start": "2025-07-20", "end": "2025-08-20"}
+          ]
+        },
+        {
+          "number": "206",
+          "room_type": "standard",
+          "price_per_night": 360,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "city_view"],
+          "availability": [
+            {"start": "2025-02-01", "end": "2025-03-01"},
+            {"start": "2025-05-05", "end": "2025-06-05"},
+            {"start": "2025-08-10", "end": "2025-09-10"}
+          ]
+        },
+        {
+          "number": "305",
+          "room_type": "deluxe",
+          "price_per_night": 500,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-01-01", "end": "2025-01-31"},
+            {"start": "2025-03-15", "end": "2025-04-15"},
+            {"start": "2025-06-20", "end": "2025-07-20"}
+          ]
+        },
+        {
+          "number": "306",
+          "room_type": "deluxe",
+          "price_per_night": 500,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-02-10", "end": "2025-03-10"},
+            {"start": "2025-05-20", "end": "2025-06-20"},
+            {"start": "2025-09-15", "end": "2025-10-15"}
+          ]
+        },
+        {
+          "number": "405",
+          "room_type": "suite",
+          "price_per_night": 720,
+          "capacity": 4,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar", "jacuzzi", "living_room"],
+          "availability": [
+            {"start": "2025-01-10", "end": "2025-02-10"},
+            {"start": "2025-04-20", "end": "2025-05-20"},
+            {"start": "2025-10-10", "end": "2025-11-10"}
+          ]
+        },
+        {
+          "number": "406",
+          "room_type": "suite",
+          "price_per_night": 720,
+          "capacity": 4,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "sea_view", "minibar", "jacuzzi", "living_room"],
+          "availability": [
+            {"start": "2025-03-01", "end": "2025-04-01"},
+            {"start": "2025-06-01", "end": "2025-07-01"},
+            {"start": "2025-11-15", "end": "2025-12-15"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Hotel Gdańsk",
+      "city": "Gdańsk",
+      "address": "ul. Szafarnia 9, 80-755 Gdańsk",
+      "rating": 4.6,
+      "amenities": ["swimming_pool", "gym", "restaurant", "parking", "wifi", "bar"],
+      "rooms": [
+        {
+          "number": "101",
+          "room_type": "standard",
+          "price_per_night": 340,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-01-15", "end": "2025-02-15"},
+            {"start": "2025-04-10", "end": "2025-05-10"},
+            {"start": "2025-07-15", "end": "2025-08-15"}
+          ]
+        },
+        {
+          "number": "102",
+          "room_type": "standard",
+          "price_per_night": 340,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-02-05", "end": "2025-03-05"},
+            {"start": "2025-05-15", "end": "2025-06-15"},
+            {"start": "2025-08-20", "end": "2025-09-20"}
+          ]
+        },
+        {
+          "number": "201",
+          "room_type": "standard",
+          "price_per_night": 360,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony"],
+          "availability": [
+            {"start": "2025-01-01", "end": "2025-01-31"},
+            {"start": "2025-03-20", "end": "2025-04-20"},
+            {"start": "2025-06-25", "end": "2025-07-25"}
+          ]
+        },
+        {
+          "number": "202",
+          "room_type": "deluxe",
+          "price_per_night": 490,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "minibar"],
+          "availability": [
+            {"start": "2025-02-15", "end": "2025-03-15"},
+            {"start": "2025-05-20", "end": "2025-06-20"},
+            {"start": "2025-09-10", "end": "2025-10-10"}
+          ]
+        },
+        {
+          "number": "301",
+          "room_type": "deluxe",
+          "price_per_night": 490,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-01-20", "end": "2025-02-20"},
+            {"start": "2025-04-25", "end": "2025-05-25"},
+            {"start": "2025-10-15", "end": "2025-11-15"}
+          ]
+        },
+        {
+          "number": "302",
+          "room_type": "suite",
+          "price_per_night": 680,
+          "capacity": 4,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar", "living_room"],
+          "availability": [
+            {"start": "2025-03-10", "end": "2025-04-10"},
+            {"start": "2025-06-10", "end": "2025-07-10"},
+            {"start": "2025-11-20", "end": "2025-12-20"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Puro Hotel Gdańsk",
+      "city": "Gdańsk",
+      "address": "ul. Stara Stocznia 2, 80-863 Gdańsk",
+      "rating": 4.4,
+      "amenities": ["gym", "restaurant", "wifi", "bar", "parking"],
+      "rooms": [
+        {
+          "number": "10",
+          "room_type": "standard",
+          "price_per_night": 280,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-01-05", "end": "2025-02-05"},
+            {"start": "2025-03-10", "end": "2025-04-10"},
+            {"start": "2025-06-15", "end": "2025-07-15"}
+          ]
+        },
+        {
+          "number": "11",
+          "room_type": "standard",
+          "price_per_night": 280,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-02-10", "end": "2025-03-10"},
+            {"start": "2025-05-05", "end": "2025-06-05"},
+            {"start": "2025-08-05", "end": "2025-09-05"}
+          ]
+        },
+        {
+          "number": "20",
+          "room_type": "standard",
+          "price_per_night": 300,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "city_view"],
+          "availability": [
+            {"start": "2025-01-20", "end": "2025-02-20"},
+            {"start": "2025-04-15", "end": "2025-05-15"},
+            {"start": "2025-07-20", "end": "2025-08-20"}
+          ]
+        },
+        {
+          "number": "21",
+          "room_type": "deluxe",
+          "price_per_night": 420,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-02-25", "end": "2025-03-25"},
+            {"start": "2025-05-25", "end": "2025-06-25"},
+            {"start": "2025-09-15", "end": "2025-10-15"}
+          ]
+        },
+        {
+          "number": "30",
+          "room_type": "deluxe",
+          "price_per_night": 420,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "city_view", "minibar"],
+          "availability": [
+            {"start": "2025-03-15", "end": "2025-04-15"},
+            {"start": "2025-06-20", "end": "2025-07-20"},
+            {"start": "2025-10-20", "end": "2025-11-20"}
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Q Hotel Plus Gdańsk",
+      "city": "Gdańsk",
+      "address": "ul. Jelitkowska 20, 80-342 Gdańsk",
+      "rating": 4.3,
+      "amenities": ["swimming_pool", "spa", "gym", "restaurant", "parking", "wifi"],
+      "rooms": [
+        {
+          "number": "115",
+          "room_type": "standard",
+          "price_per_night": 320,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-01-01", "end": "2025-02-01"},
+            {"start": "2025-03-15", "end": "2025-04-15"},
+            {"start": "2025-06-10", "end": "2025-07-10"}
+          ]
+        },
+        {
+          "number": "116",
+          "room_type": "standard",
+          "price_per_night": 320,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning"],
+          "availability": [
+            {"start": "2025-02-10", "end": "2025-03-10"},
+            {"start": "2025-05-10", "end": "2025-06-10"},
+            {"start": "2025-08-10", "end": "2025-09-10"}
+          ]
+        },
+        {
+          "number": "215",
+          "room_type": "standard",
+          "price_per_night": 340,
+          "capacity": 2,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony"],
+          "availability": [
+            {"start": "2025-01-15", "end": "2025-02-15"},
+            {"start": "2025-04-20", "end": "2025-05-20"},
+            {"start": "2025-07-25", "end": "2025-08-25"}
+          ]
+        },
+        {
+          "number": "216",
+          "room_type": "deluxe",
+          "price_per_night": 470,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "sea_view", "minibar"],
+          "availability": [
+            {"start": "2025-02-20", "end": "2025-03-20"},
+            {"start": "2025-05-25", "end": "2025-06-25"},
+            {"start": "2025-09-15", "end": "2025-10-15"}
+          ]
+        },
+        {
+          "number": "315",
+          "room_type": "deluxe",
+          "price_per_night": 470,
+          "capacity": 3,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "sea_view", "minibar"],
+          "availability": [
+            {"start": "2025-03-20", "end": "2025-04-20"},
+            {"start": "2025-06-25", "end": "2025-07-25"},
+            {"start": "2025-10-20", "end": "2025-11-20"}
+          ]
+        },
+        {
+          "number": "316",
+          "room_type": "suite",
+          "price_per_night": 650,
+          "capacity": 4,
+          "amenities": ["wifi", "tv", "air_conditioning", "balcony", "sea_view", "minibar", "living_room"],
+          "availability": [
+            {"start": "2025-01-25", "end": "2025-02-25"},
+            {"start": "2025-04-25", "end": "2025-05-25"},
+            {"start": "2025-11-01", "end": "2025-12-01"}
+          ]
+        }
+      ]
+    }
+  ]
+}

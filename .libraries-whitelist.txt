@@ -13,3 +13,6 @@ python-bidi
 griffe
 types-requests
 sse-starlette
+google-genai
+ollama
+pytest-xdist
