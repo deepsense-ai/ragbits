@@ -3,6 +3,7 @@ from types import SimpleNamespace
 import pytest
 
 from ragbits.agents import Agent, AgentOptions, AgentResult, AgentRunContext, ToolCallResult
+from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.exceptions import AgentInvalidPostProcessorError
 from ragbits.agents.post_processors.base import PostProcessor, StreamingPostProcessor
 from ragbits.core.llms.base import BasePrompt, ToolCall, Usage
@@ -29,7 +30,9 @@ class MockStreamingPostProcessor(StreamingPostProcessor):
         self.append_content = append_content
 
     async def process_streaming(
-        self, chunk: str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage, agent: Agent
+        self,
+        chunk: str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage | ConfirmationRequest,
+        agent: Agent,
     ):
         if isinstance(chunk, str):
             return chunk + self.append_content
