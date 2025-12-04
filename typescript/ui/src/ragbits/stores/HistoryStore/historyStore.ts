@@ -275,7 +275,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       return newConversation.conversationId;
     },
 
-    sendMessage: (text, ragbitsClient) => {
+    sendMessage: (text, ragbitsClient, additionalContext) => {
       const {
         _internal: { handleResponse },
         primitives: { addMessage, getCurrentConversation, stopAnswering },
@@ -283,6 +283,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       } = get();
 
       const { history, conversationId } = getCurrentConversation();
+
       addMessage(conversationId, {
         role: MessageRole.User,
         content: text,
@@ -297,7 +298,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       const chatRequest: ChatRequest = {
         message: text,
         history: mapHistoryToMessages(history),
-        context: getContext(),
+        context: { ...getContext(), ...additionalContext },
       };
 
       // Add new entry for events
@@ -317,6 +318,114 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         }),
       );
 
+      ragbitsClient.makeStreamRequest(
+        "/api/chat",
+        chatRequest,
+        {
+          onMessage: (response: ChatResponse) =>
+            handleResponse(conversationIdRef, assistantResponseId, response),
+          onError: (error: Error) => {
+            handleResponse(conversationIdRef, assistantResponseId, {
+              type: "text",
+              content: { text: error.message },
+            });
+            stopAnswering(conversationIdRef.current);
+          },
+          onClose: () => {
+            stopAnswering(conversationIdRef.current);
+          },
+        },
+        abortController.signal,
+      );
+    },
+
+    sendSilentConfirmation: (
+      messageId: string,
+      confirmationIds: string | string[],
+      confirmed: boolean | Record<string, boolean>,
+      ragbitsClient,
+    ) => {
+      const {
+        _internal: { handleResponse },
+        primitives: { getCurrentConversation, stopAnswering },
+        computed: { getContext },
+      } = get();
+
+      const { history, conversationId } = getCurrentConversation();
+
+      // Normalize inputs to arrays
+      const idsArray = Array.isArray(confirmationIds)
+        ? confirmationIds
+        : [confirmationIds];
+      const decisionsMap =
+        typeof confirmed === "boolean"
+          ? idsArray.reduce(
+              (acc, id) => ({ ...acc, [id]: confirmed }),
+              {} as Record<string, boolean>,
+            )
+          : confirmed;
+
+      // Update confirmation states immediately in the UI
+      set(
+        updateConversation(conversationId, (draft) => {
+          const message = draft.history[messageId];
+          if (message && message.confirmationStates) {
+            idsArray.forEach((id) => {
+              if (id in message.confirmationStates!) {
+                message.confirmationStates![id] = decisionsMap[id]
+                  ? "confirmed"
+                  : "declined";
+              }
+            });
+
+            // Set flag to show visual separator after confirmations
+            message.hasConfirmationBreak = true;
+
+            // Clear the "⏳ Awaiting user confirmation" live update
+            // before the agent re-runs and sends new updates
+            message.liveUpdates = undefined;
+          }
+        }),
+      );
+
+      // Reuse the same message for the response instead of creating a new one
+      const assistantResponseId = messageId;
+
+      // Prepare the chat request with confirmed_tools context
+      // Build the confirmed_tools array from all decisions
+      const confirmed_tools = idsArray.map((id) => ({
+        confirmation_id: id,
+        confirmed: decisionsMap[id],
+      }));
+
+      // Use empty message since this is a silent confirmation
+      const chatRequest: ChatRequest = {
+        message: "",
+        history: mapHistoryToMessages(history),
+        context: {
+          ...getContext(),
+          confirmed_tools,
+        },
+      };
+
+      // Add new entry for events
+      set(
+        updateConversation(conversationId, (draft) => {
+          draft.eventsLog.push([]);
+        }),
+      );
+
+      const abortController = new AbortController();
+      const conversationIdRef = { current: conversationId };
+
+      set(
+        updateConversation(conversationId, (draft) => {
+          draft.abortController = abortController;
+          draft.isLoading = true;
+        }),
+      );
+
+      // Use the same assistant message for the response
       ragbitsClient.makeStreamRequest(
         "/api/chat",
         chatRequest,

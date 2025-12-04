@@ -9,6 +9,7 @@ import {
 } from "./nonMessageHandlers";
 import {
   handleClearMessage,
+  handleConfirmationRequest,
   handleError,
   handleImage,
   handleLiveUpdate,
@@ -111,6 +112,9 @@ ChatHandlerRegistry.register("usage", {
 });
 ChatHandlerRegistry.register("conversation_summary", {
   handle: handleConversationSummary,
+});
+ChatHandlerRegistry.register("confirmation_request", {
+  handle: handleConfirmationRequest,
 });
 ChatHandlerRegistry.register("error", {
   handle: handleError,
