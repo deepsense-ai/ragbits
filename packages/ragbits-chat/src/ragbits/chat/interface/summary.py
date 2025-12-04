@@ -18,6 +18,14 @@ class SummaryGenerator(ABC):
         ...
 
 
+class NoOpSummaryGenerator(SummaryGenerator):
+    """A no-op summary generator that produces no summary."""
+
+    async def generate(self, _: str, __: ChatFormat, ___: ChatContext) -> str:  # noqa: PLR6301
+        """Returns an empty string, indicating no summary."""
+        return ""
+
+
 class HeuristicSummaryGenerator(SummaryGenerator):
     """Simple title generator using heuristics (no LLM)."""
 
