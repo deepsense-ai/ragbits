@@ -1,21 +1,20 @@
 # CHANGELOG
 
 ## Unreleased
-- Add Support for Thinking in agents (#837)
 
+- Add Support for Thinking in agents (#837)
+- Add support for confirmation requests in chat (#853)
 - Add name parameter and slightly refactor HuggingFace dataloder (#829)
 
 ## 1.3.0 (2025-09-11)
 
 - feat: improve app startup speed with lazy LiteLLM loading
 
-
 - Feat: added support for IVFFlat indexing and Halfvec datatype
 
 - Added Lazy loading of dependencies in local.py and during importing of LiteLLM
 - Add tool_choice parameter to LLM interface (#738)
 - Fix Prompt consumes same iterator twice leading to no data added to chat (#768)
-
 
 ## 1.2.2 (2025-08-08)
 
@@ -97,6 +96,7 @@
 ## 0.16.0 (2025-04-29)
 
 ## 0.15.0 (2025-04-28)
+
 - Allow using sparse embeddings with Qdrant and local vector stores (#493)
 - Add support for sparse embeddings in the Pgvector Vector Store (#493)
 - Added secret key environment variable / generation for signatures across ragbits packages (#537)
@@ -112,6 +112,7 @@
 - modify LocalEmbedder to use sentence-transformers instead of torch (#508)
 
 ## 0.13.0 (2025-04-02)
+
 - Make the score in VectorStoreResult consistent (always bigger is better)
 - Add router option to LiteLLMEmbedder (#440)
 - Make LLM / Embedder APIs consistent (#463)
@@ -120,11 +121,13 @@
 - Cost and capabilities config for custom litellm models (#481)
 
 ## 0.12.0 (2025-03-25)
+
 - Allow Prompt class to accept the asynchronous response_parser. Change the signature of parse_response method.
 - Fix from_config for LiteLLM class (#441)
 - Fix Qdrant vector store serialization (#419)
 
 ## 0.11.0 (2025-03-25)
+
 - Add HybridSearchVectorStore which can aggregate results from multiple VectorStores (#412)
 
 ## 0.10.2 (2025-03-21)
@@ -204,7 +207,6 @@
 - Add support for Qdrant VectorStore (#163).
 - Add streaming interface to LLMs (#188).
 - Better images support in Prompt abstractions (#201).
-
 
 ## 0.3.0 (2024-11-06)
 
