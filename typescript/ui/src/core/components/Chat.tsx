@@ -8,6 +8,7 @@ import {
   useConversationProperty,
   useMessage,
   useHistoryActions,
+  useHasPendingConfirmations,
 } from "../stores/HistoryStore/selectors";
 import { ChatMessage } from "./ChatMessage";
 import QuickMessageInput from "./inputs/QuickMessageInput";
@@ -23,6 +24,7 @@ export default function Chat() {
   const lastMessage = useMessage(lastMessageId);
   const historyIsLoading = useConversationProperty((s) => s.isLoading);
   const followupMessages = useConversationProperty((s) => s.followupMessages);
+  const hasPendingConfirmations = useHasPendingConfirmations();
   const { sendMessage, stopAnswering } = useHistoryActions();
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
@@ -148,6 +150,7 @@ export default function Chat() {
           submit={authorizedSendMessage}
           stopAnswering={stopAnswering}
           followupMessages={followupMessages}
+          isDisabled={hasPendingConfirmations}
         />
       </div>
     </div>

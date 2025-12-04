@@ -32,6 +32,7 @@ interface PromptInputProps {
   sendButtonProps?: ButtonProps;
   customSendIcon?: ReactNode;
   customStopIcon?: ReactNode;
+  isDisabled?: boolean;
 }
 
 const PromptInput = ({
@@ -45,6 +46,7 @@ const PromptInput = ({
   customSendIcon,
   customStopIcon,
   history,
+  isDisabled = false,
 }: PromptInputProps) => {
   const [message, setMessage] = useState("");
   const [quickMessages, setQuickMessages] = useState<string[]>([]);
@@ -76,6 +78,7 @@ const PromptInput = ({
   const handleSubmit = useCallback(
     (text?: string) => {
       if (!message && !text) return;
+      if (isDisabled) return; // Prevent submission when disabled
       stopAnswering();
 
       submit(text ?? message);
@@ -87,7 +90,7 @@ const PromptInput = ({
       setMessage("");
       textAreaRef?.current?.focus();
     },
-    [message, stopAnswering, submit],
+    [message, stopAnswering, submit, isDisabled],
   );
 
   const onSubmit = useCallback(
@@ -192,7 +195,11 @@ const PromptInput = ({
               "!bg-transparent shadow-none group-data-[focus-visible=true]:ring-0 group-data-[focus-visible=true]:ring-offset-0 py-4",
           }}
           name="message"
-          placeholder="Enter a message here"
+          placeholder={
+            isDisabled
+              ? "Please respond to pending confirmation..."
+              : "Enter a message here"
+          }
           autoFocus
           maxRows={16}
           minRows={1}
@@ -201,6 +208,7 @@ const PromptInput = ({
           onValueChange={handleValueChange}
           data-testid="prompt-input-input"
           data-value={message}
+          isDisabled={isDisabled}
           {...inputProps}
         />
         <div className="flex items-center gap-2">
@@ -218,7 +226,7 @@ const PromptInput = ({
               isLoading ? "Stop answering" : "Send message to the chat"
             }
             color={!isLoading && !message ? "default" : "primary"}
-            isDisabled={!isLoading && !message}
+            isDisabled={!isLoading && (!message || isDisabled)}
             radius="full"
             size="sm"
             type={isLoading ? "button" : "submit"}
