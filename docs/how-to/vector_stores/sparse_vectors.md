@@ -45,7 +45,7 @@ Or using FastEmbedSparseEmbedder:
 from ragbits.core.embeddings.sparse.fastembed import FastEmbedSparseEmbedder, FastEmbedOptions
 
 # Create a sparse embedder using FastEmbed
-sparse_embedder = FastEmbedSparseEmbedder(model_name="BAAI/bge-small-en-v1.5")
+sparse_embedder = FastEmbedSparseEmbedder(model_name="prithivida/Splade_PP_en-distil-cocodenser-retriever")
 ```
 
 ## Using Sparse Embeddings with Vector Stores
@@ -78,7 +78,7 @@ from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.core.embeddings.sparse.fastembed import FastEmbedSparseEmbedder, FastEmbedOptions
 
 # Create a sparse embedder
-sparse_embedder = FastEmbedSparseEmbedder(model_name="BAAI/bge-small-en-v1.5")
+sparse_embedder = FastEmbedSparseEmbedder(model_name="prithivida/Splade_PP_en-distil-cocodenser-retriever")
 
 # Create a Qdrant vector store with the sparse embedder
 vector_store = QdrantVectorStore(
