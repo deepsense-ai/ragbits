@@ -1681,6 +1681,27 @@
   
   
     <li class="md-nav__item">
+      <a href="../../evaluate/agent_simulation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Agent simulation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../../evaluate/custom_evaluation_pipeline/" class="md-nav__link">
         
   
@@ -2766,6 +2787,27 @@
 
               
             
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api_reference/evaluate/agent_simulation/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Agent Simulation
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
           </ul>
         </nav>
       
@@ -3010,7 +3052,7 @@
 </span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
 </span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="c1"># Create a sparse vector store using sparse embeddings</span>
 </span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="n">vector_store_sparse</span> <span class="o">=</span> <span class="n">InMemoryVectorStore</span><span class="p">(</span>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">embedder</span><span class="o">=</span><span class="n">FastEmbedSparseEmbedder</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;BAAI/bge-small-en-v1.5&quot;</span><span class="p">)</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">embedder</span><span class="o">=</span><span class="n">FastEmbedSparseEmbedder</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;prithivida/Splade_PP_en-distil-cocodenser-retriever&quot;</span><span class="p">)</span>
 </span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="p">)</span>
 </span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
 </span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="c1"># Combine them into a hybrid search vector store</span>

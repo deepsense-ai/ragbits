@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://ragbits.deepsense.ai/nightly/how-to/agents/use_post_processors/">
+        <link rel="canonical" href="https://ragbits.deepsense.ai/nightly/how-to/evaluate/agent_simulation/">
       
       
-        <link rel="prev" href="../serve_ragbits_agents/">
+        <link rel="prev" href="../evaluate/">
       
       
-        <link rel="next" href="../stream_downstream_agents/">
+        <link rel="next" href="../custom_evaluation_pipeline/">
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Use post-processors - Ragbits docs</title>
+        <title>Agent simulation - Ragbits docs</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#how-to-use-post-processors-with-ragbits-agents" class="md-skip">
+        <a href="#how-to-agent-simulation-for-evaluation" class="md-skip">
           Skip to content
         </a>
       
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Use post-processors
+              Agent simulation
             
           </span>
         </div>
@@ -1265,8 +1265,6 @@
                 
   
   
-    
-  
   
   
     
@@ -1276,11 +1274,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" checked>
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" >
         
           
           <label class="md-nav__link" for="__nav_3_8" id="__nav_3_8_label" tabindex="0">
@@ -1294,7 +1292,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_3_8">
             <span class="md-nav__icon md-icon"></span>
             Agents
@@ -1308,7 +1306,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../define_and_use_agents/" class="md-nav__link">
+      <a href="../../agents/define_and_use_agents/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1329,7 +1327,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../provide_mcp_tools/" class="md-nav__link">
+      <a href="../../agents/provide_mcp_tools/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1350,7 +1348,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../serve_ragbits_agents/" class="md-nav__link">
+      <a href="../../agents/serve_ragbits_agents/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1368,30 +1366,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Use post-processors
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../agents/use_post_processors/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1400,140 +1378,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#post-processors-overview" class="md-nav__link">
-    <span class="md-ellipsis">
-      Post-Processors Overview
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Post-Processors Overview">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#implementing-a-custom-post-processor" class="md-nav__link">
-    <span class="md-ellipsis">
-      Implementing a custom Post-Processor
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Implementing a custom Post-Processor">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#post-processor-example" class="md-nav__link">
-    <span class="md-ellipsis">
-      Post-Processor Example
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#streaming-post-processor-example" class="md-nav__link">
-    <span class="md-ellipsis">
-      Streaming Post-Processor Example
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-post-processors" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using Post-Processors
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#built-in-post-processors" class="md-nav__link">
-    <span class="md-ellipsis">
-      Built-in Post-Processors
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Built-in Post-Processors">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#supervisor" class="md-nav__link">
-    <span class="md-ellipsis">
-      Supervisor
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Supervisor">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
-    <span class="md-ellipsis">
-      Quick start
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configuration
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-structured-validation-and-correction" class="md-nav__link">
-    <span class="md-ellipsis">
-      Custom structured validation and correction
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1546,7 +1390,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../stream_downstream_agents/" class="md-nav__link">
+      <a href="../../agents/stream_downstream_agents/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1706,6 +1550,8 @@
                 
   
   
+    
+  
   
   
     
@@ -1715,11 +1561,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" checked>
         
           
           <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
@@ -1733,7 +1579,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3_11">
             <span class="md-nav__icon md-icon"></span>
             Evaluate
@@ -1747,7 +1593,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../evaluate/evaluate/" class="md-nav__link">
+      <a href="../evaluate/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1765,10 +1611,30 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../evaluate/agent_simulation/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Agent simulation
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   <span class="md-ellipsis">
@@ -1777,6 +1643,176 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#overview" class="md-nav__link">
+    <span class="md-ellipsis">
+      Overview
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#creating-scenarios" class="md-nav__link">
+    <span class="md-ellipsis">
+      Creating Scenarios
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-personalities" class="md-nav__link">
+    <span class="md-ellipsis">
+      Using Personalities
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#running-simulations" class="md-nav__link">
+    <span class="md-ellipsis">
+      Running Simulations
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Running Simulations">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Basic Example
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#with-personality" class="md-nav__link">
+    <span class="md-ellipsis">
+      With Personality
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#configuration-options" class="md-nav__link">
+    <span class="md-ellipsis">
+      Configuration Options
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      How It Works
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#goal-checking" class="md-nav__link">
+    <span class="md-ellipsis">
+      Goal Checking
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#tool-usage-validation" class="md-nav__link">
+    <span class="md-ellipsis">
+      Tool Usage Validation
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#deepeval-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      DeepEval Integration
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#logging" class="md-nav__link">
+    <span class="md-ellipsis">
+      Logging
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#complete-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      Complete Example
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#command-line-usage" class="md-nav__link">
+    <span class="md-ellipsis">
+      Command-Line Usage
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#best-practices" class="md-nav__link">
+    <span class="md-ellipsis">
+      Best Practices
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#see-also" class="md-nav__link">
+    <span class="md-ellipsis">
+      See Also
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1789,7 +1825,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../evaluate/custom_evaluation_pipeline/" class="md-nav__link">
+      <a href="../custom_evaluation_pipeline/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1810,7 +1846,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../evaluate/custom_metric/" class="md-nav__link">
+      <a href="../custom_metric/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1831,7 +1867,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../evaluate/custom_dataloader/" class="md-nav__link">
+      <a href="../custom_dataloader/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1852,7 +1888,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../evaluate/generate_dataset/" class="md-nav__link">
+      <a href="../generate_dataset/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1873,7 +1909,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../evaluate/optimize/" class="md-nav__link">
+      <a href="../optimize/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3104,148 +3140,259 @@
   
 
 
-<h1 id="how-to-use-post-processors-with-ragbits-agents">How-To: Use Post-Processors with Ragbits Agents<a class="headerlink" href="#how-to-use-post-processors-with-ragbits-agents" title="Permanent link">#</a></h1>
-<p>Ragbits Agents can be enhanced with post-processors to intercept, validate, log, filter, and modify their outputs. In this guide you will learn how to:</p>
+<h1 id="how-to-agent-simulation-for-evaluation">How-To: Agent Simulation for Evaluation<a class="headerlink" href="#how-to-agent-simulation-for-evaluation" title="Permanent link">#</a></h1>
+<p>Agent simulation allows you to evaluate your agents by having them interact with a simulated user in realistic conversation scenarios. This is particularly useful for testing agent behavior, tool usage, and task completion in a controlled environment.</p>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">#</a></h2>
+<p>The agent simulation framework consists of several key components:</p>
 <ul>
-<li>Create custom post-processors (streaming and non-streaming)</li>
-<li>Attach post-processors to agents in run and streaming modes</li>
-<li>Use and configure the built-in Supervisor post-processor</li>
+<li><strong>Simulated User</strong>: An LLM-driven user that generates realistic messages based on tasks and conversation history</li>
+<li><strong>Goal Checker</strong>: An LLM-based judge that evaluates whether tasks have been completed successfully</li>
+<li><strong>Tool Usage Checker</strong>: Verifies that agents use the expected tools for each task</li>
+<li><strong>Conversation Logger</strong>: Records all conversation turns, tool calls, and evaluation results</li>
+<li><strong>DeepEval Integration</strong>: Automatic evaluation of conversation quality using DeepEval metrics</li>
 </ul>
-<h2 id="post-processors-overview">Post-Processors Overview<a class="headerlink" href="#post-processors-overview" title="Permanent link">#</a></h2>
-<p>Ragbits provides two types of post-processors:</p>
+<h2 id="creating-scenarios">Creating Scenarios<a class="headerlink" href="#creating-scenarios" title="Permanent link">#</a></h2>
+<p>Scenarios define the tasks your agent should complete. Each scenario contains a list of tasks that are completed sequentially.</p>
+<p>Create a <code>scenarios.json</code> file:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">[</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="p">{</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Hotel Booking Scenario&quot;</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">    </span><span class="nt">&quot;tasks&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">      </span><span class="p">{</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">        </span><span class="nt">&quot;task&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;find hotels in Warsaw&quot;</span><span class="p">,</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">        </span><span class="nt">&quot;expected_result&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;{list of hotels in Warsaw}&quot;</span><span class="p">,</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">        </span><span class="nt">&quot;expected_tools&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;list_hotels&quot;</span><span class="p">]</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">      </span><span class="p">},</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">      </span><span class="p">{</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">        </span><span class="nt">&quot;task&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;check availability for 3 nights from April 1, 2025&quot;</span><span class="p">,</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">        </span><span class="nt">&quot;expected_result&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;{available rooms for specified dates}&quot;</span><span class="p">,</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">        </span><span class="nt">&quot;expected_tools&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;search_available_rooms&quot;</span><span class="p">]</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="w">      </span><span class="p">},</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="w">      </span><span class="p">{</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="w">        </span><span class="nt">&quot;task&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;book a budget-friendly room&quot;</span><span class="p">,</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">        </span><span class="nt">&quot;expected_result&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;{booking confirmation}&quot;</span><span class="p">,</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">        </span><span class="nt">&quot;expected_tools&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;create_reservation&quot;</span><span class="p">]</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">      </span><span class="p">}</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">    </span><span class="p">]</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="p">]</span>
+</span></code></pre></div>
+<p>Each task has:
+- <strong>task</strong>: Description of what the user wants to accomplish
+- <strong>expected_result</strong>: What should happen when the task is completed
+- <strong>expected_tools</strong> (optional): List of tool names that should be used to complete this task</p>
+<p>When <code>expected_tools</code> is specified, the system will verify that all expected tools were called during the conversation turn.</p>
+<h2 id="using-personalities">Using Personalities<a class="headerlink" href="#using-personalities" title="Permanent link">#</a></h2>
+<p>Personalities allow you to customize the communication style of the simulated user. This helps test how your agent handles different types of users.</p>
+<p>Create a <code>personalities.json</code> file:</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="p">[</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="p">{</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Friendly Traveler&quot;</span><span class="p">,</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;You are a friendly and enthusiastic person. You use casual language and show excitement about your travel plans. You often use exclamation marks and express gratitude.&quot;</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span><span class="p">},</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="p">{</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Business Professional&quot;</span><span class="p">,</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;You are a business professional who is direct and efficient. You prefer concise communication and value your time. You use formal language and expect quick, accurate responses.&quot;</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">  </span><span class="p">},</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">  </span><span class="p">{</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span><span class="nt">&quot;name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Budget-Conscious Traveler&quot;</span><span class="p">,</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">    </span><span class="nt">&quot;description&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;You are a budget-conscious traveler who is very price-sensitive. You frequently ask about costs, discounts, and budget-friendly options. You are detail-oriented and want to make sure you get the best value.&quot;</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="p">]</span>
+</span></code></pre></div>
+<p>When a personality is selected, its description is included in the system prompt for the simulated user, influencing how they phrase their messages.</p>
+<h2 id="running-simulations">Running Simulations<a class="headerlink" href="#running-simulations" title="Permanent link">#</a></h2>
+<p>To run a simulation, you need to:</p>
+<ol>
+<li>Create a <a class="autorefs autorefs-internal" href="../../../api_reference/chat/interface/chat_interface/#ragbits.chat.interface.ChatInterface"><code>ChatInterface</code></a> for your agent</li>
+<li>Load scenarios and optionally personalities</li>
+<li>Call <a class="autorefs autorefs-internal" href="../../../api_reference/evaluate/agent_simulation/#ragbits.evaluate.agent_simulation.conversation.run_duet"><code>run_duet</code></a></li>
+</ol>
+<h3 id="basic-example">Basic Example<a class="headerlink" href="#basic-example" title="Permanent link">#</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span> <span class="nn">asyncio</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="kn">from</span> <span class="nn">ragbits.chat.interface</span> <span class="kn">import</span> <span class="n">ChatInterface</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="kn">from</span> <span class="nn">ragbits.evaluate.agent_simulation</span> <span class="kn">import</span> <span class="n">load_scenarios</span><span class="p">,</span> <span class="n">run_duet</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="c1"># Create your chat interface (this wraps your agent)</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="k">class</span> <span class="nc">MyChat</span><span class="p">(</span><span class="n">ChatInterface</span><span class="p">):</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>        <span class="c1"># Initialize your agent here</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        <span class="k">pass</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">chat</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">history</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>        <span class="c1"># Your agent&#39;s chat implementation</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>        <span class="k">async</span> <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">agent</span><span class="o">.</span><span class="n">run_streaming</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>                <span class="k">yield</span> <span class="n">chunk</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="c1"># Load scenario</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="n">scenarios</span> <span class="o">=</span> <span class="n">load_scenarios</span><span class="p">(</span><span class="s2">&quot;scenarios.json&quot;</span><span class="p">)</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="n">scenario</span> <span class="o">=</span> <span class="n">scenarios</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Use first scenario</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="c1"># Run simulation</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="n">chat</span> <span class="o">=</span> <span class="n">MyChat</span><span class="p">()</span>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="k">await</span> <span class="n">chat</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span>
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="k">await</span> <span class="n">run_duet</span><span class="p">(</span>
+</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>    <span class="n">scenario</span><span class="o">=</span><span class="n">scenario</span><span class="p">,</span>
+</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>    <span class="n">chat</span><span class="o">=</span><span class="n">chat</span><span class="p">,</span>
+</span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a>    <span class="n">max_turns_scenario</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a>    <span class="n">max_turns_task</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a>    <span class="n">log_file</span><span class="o">=</span><span class="s2">&quot;conversation.log&quot;</span><span class="p">,</span>
+</span><span id="__span-2-31"><a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a>    <span class="n">default_model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span>
+</span><span id="__span-2-32"><a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a>    <span class="n">api_key</span><span class="o">=</span><span class="s2">&quot;your-api-key&quot;</span><span class="p">,</span>
+</span><span id="__span-2-33"><a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="with-personality">With Personality<a class="headerlink" href="#with-personality" title="Permanent link">#</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span> <span class="nn">ragbits.evaluate.agent_simulation</span> <span class="kn">import</span> <span class="n">load_personalities</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="c1"># Load personality</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="n">personalities</span> <span class="o">=</span> <span class="n">load_personalities</span><span class="p">(</span><span class="s2">&quot;personalities.json&quot;</span><span class="p">)</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="n">personality</span> <span class="o">=</span> <span class="n">personalities</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Use first personality</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="k">await</span> <span class="n">run_duet</span><span class="p">(</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">scenario</span><span class="o">=</span><span class="n">scenario</span><span class="p">,</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="n">chat</span><span class="o">=</span><span class="n">chat</span><span class="p">,</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="n">personality</span><span class="o">=</span><span class="n">personality</span><span class="p">,</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">max_turns_scenario</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="n">max_turns_task</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    <span class="n">log_file</span><span class="o">=</span><span class="s2">&quot;conversation.log&quot;</span><span class="p">,</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="n">default_model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>    <span class="n">api_key</span><span class="o">=</span><span class="s2">&quot;your-api-key&quot;</span><span class="p">,</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="configuration-options">Configuration Options<a class="headerlink" href="#configuration-options" title="Permanent link">#</a></h3>
+<p><a class="autorefs autorefs-internal" href="../../../api_reference/evaluate/agent_simulation/#ragbits.evaluate.agent_simulation.conversation.run_duet"><code>run_duet</code></a> accepts several configuration options:</p>
 <ul>
-<li><strong>PostProcessor</strong>: Processes the final output after generation, ideal for end-of-run processing.</li>
-<li><strong>StreamingPostProcessor</strong>: Processes outputs as they are generated, suitable for real-time applications.</li>
+<li><strong>scenario</strong>: The scenario containing tasks to complete (required)</li>
+<li><strong>chat</strong>: Your ChatInterface instance (required)</li>
+<li><strong>max_turns_scenario</strong>: Maximum number of conversation turns for the entire scenario (default: 15)</li>
+<li><strong>max_turns_task</strong>: Maximum number of conversation turns per task (default: 4, None for no limit)</li>
+<li><strong>log_file</strong>: Optional path to log file for conversation history</li>
+<li><strong>agent_model_name</strong>: Optional override for agent LLM model name</li>
+<li><strong>sim_user_model_name</strong>: Optional override for simulated user LLM model name</li>
+<li><strong>checker_model_name</strong>: Optional override for goal checker LLM model name</li>
+<li><strong>default_model</strong>: Default LLM model name (default: "gpt-4o-mini")</li>
+<li><strong>api_key</strong>: API key for LLM</li>
+<li><strong>user_message_prefix</strong>: Optional prefix to add to user messages before sending to agent</li>
+<li><strong>personality</strong>: Optional personality to use for the simulated user</li>
 </ul>
-<h3 id="implementing-a-custom-post-processor">Implementing a custom Post-Processor<a class="headerlink" href="#implementing-a-custom-post-processor" title="Permanent link">#</a></h3>
-<p>To create a custom post-processor, inherit from the appropriate base class (<a class="autorefs autorefs-internal" href="../../../api_reference/agents/#ragbits.agents.post_processors.base.PostProcessor"><code>PostProcessor</code></a> or <a class="autorefs autorefs-internal" href="../../../api_reference/agents/#ragbits.agents.post_processors.base.StreamingPostProcessor"><code>StreamingPostProcessor</code></a>) and implement the required method.</p>
-<h4 id="post-processor-example">Post-Processor Example<a class="headerlink" href="#post-processor-example" title="Permanent link">#</a></h4>
-<p>A non-streaming post-processor applies transformations after the entire content is generated.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span> <span class="nc">TruncateProcessor</span><span class="p">(</span><span class="n">PostProcessor</span><span class="p">):</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">=</span> <span class="n">max_length</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">agent</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="n">content</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">content</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">content</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span><span class="p">:</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>            <span class="n">content</span> <span class="o">=</span> <span class="n">content</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">max_length</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;... [TRUNCATED]&quot;</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        <span class="n">result</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="n">content</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        <span class="k">return</span> <span class="n">result</span>
-</span></code></pre></div>
-<h4 id="streaming-post-processor-example">Streaming Post-Processor Example<a class="headerlink" href="#streaming-post-processor-example" title="Permanent link">#</a></h4>
-<p>A streaming post-processor can manipulate all information returned during generation, including text, tool calls, etc.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">class</span> <span class="nc">UpperCaseStreamingProcessor</span><span class="p">(</span><span class="n">StreamingPostProcessor</span><span class="p">):</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">process_streaming</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">agent</span><span class="p">):</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>            <span class="k">return</span> <span class="n">chunk</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        <span class="k">return</span> <span class="n">chunk</span>
-</span></code></pre></div>
-<h2 id="using-post-processors">Using Post-Processors<a class="headerlink" href="#using-post-processors" title="Permanent link">#</a></h2>
-<p>To use post-processors, pass them to the <code>run</code> or <code>run_streaming</code> methods of the <code>Agent</code> class. If you pass a non-streaming processor to <code>run_streaming</code>, set <code>allow_non_streaming=True</code>. This allows streaming processors to handle content piece by piece during generation, while non-streaming processors apply transformations after the entire output is generated.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">llm</span> <span class="o">=</span> <span class="n">LiteLLM</span><span class="p">(</span><span class="s2">&quot;gpt-4.1-mini&quot;</span><span class="p">)</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span><span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;You are a helpful assistant.&quot;</span><span class="p">)</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">post_processors</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>        <span class="n">UpperCaseStreamingProcessor</span><span class="p">(),</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>        <span class="n">TruncateProcessor</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">50</span><span class="p">),</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="p">]</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">stream_result</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">run_streaming</span><span class="p">(</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        <span class="s2">&quot;Tell me about the history of AI.&quot;</span><span class="p">,</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>        <span class="n">post_processors</span><span class="o">=</span><span class="n">post_processors</span><span class="p">,</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>        <span class="n">allow_non_streaming</span><span class="o">=</span><span class="kc">True</span>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="p">)</span>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    <span class="k">async</span> <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">stream_result</span><span class="p">:</span>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>            <span class="nb">print</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
-</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Final answer:</span><span class="se">\n</span><span class="si">{</span><span class="n">stream_result</span><span class="o">.</span><span class="n">content</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span></code></pre></div>
-<p>Post-processors offer a flexible way to tailor agent outputs, whether filtering content in real-time or transforming final outputs.</p>
-<h2 id="built-in-post-processors">Built-in Post-Processors<a class="headerlink" href="#built-in-post-processors" title="Permanent link">#</a></h2>
-<h3 id="supervisor">Supervisor<a class="headerlink" href="#supervisor" title="Permanent link">#</a></h3>
-<p>The <a class="autorefs autorefs-internal" href="../../../api_reference/agents/#ragbits.agents.post_processors.supervisor.SupervisorPostProcessor"><code>SupervisorPostProcessor</code></a> validates the agent’s final response against the executed tool calls and, if needed, triggers an automatic rerun with a correction prompt. It helps catch inconsistencies (e.g., when the response contradicts tool output) and guide the agent to refine its answer. The Supervisor is a non-streaming post-processor: it runs after generation has completed, validating the final output before optionally issuing a correction rerun.</p>
-<p>Key capabilities:</p>
+<h2 id="how-it-works">How It Works<a class="headerlink" href="#how-it-works" title="Permanent link">#</a></h2>
+<p>The simulation follows this flow:</p>
+<ol>
+<li><strong>Initialization</strong>: The simulated user, goal checker, and tool usage checker are created</li>
+<li><strong>Task Selection</strong>: The simulated user selects the first task from the scenario</li>
+<li><strong>Conversation Loop</strong>:</li>
+<li>Simulated user generates a message based on the current task (and personality, if specified)</li>
+<li>Your agent processes the message and may call tools</li>
+<li>Tool usage checker verifies expected tools were used (if <code>expected_tools</code> is specified)</li>
+<li>Goal checker evaluates if the task is complete</li>
+<li>If complete, move to the next task; otherwise, continue the conversation</li>
+<li>The conversation stops when all tasks are completed, the per-task turn limit (<code>max_turns_task</code>) is exceeded, or the scenario turn limit (<code>max_turns_scenario</code>) is reached</li>
+<li><strong>Logging</strong>: All turns, tool calls, tool usage checks, task completions, and the selected personality (if any) are logged to a file</li>
+<li><strong>Evaluation</strong>: DeepEval metrics are automatically computed at the end</li>
+</ol>
+<h2 id="goal-checking">Goal Checking<a class="headerlink" href="#goal-checking" title="Permanent link">#</a></h2>
+<p>The <a class="autorefs autorefs-internal" href="../../../api_reference/evaluate/agent_simulation/#ragbits.evaluate.agent_simulation.simulation.GoalChecker"><code>GoalChecker</code></a> uses an LLM to determine if a task has been completed. It inspects the conversation history and checks if the task matches the expected result.</p>
+<p>The goal checker:
+- Analyzes the conversation history
+- Compares the assistant's responses against the expected result
+- Returns a boolean indicating completion and a reason</p>
+<h2 id="tool-usage-validation">Tool Usage Validation<a class="headerlink" href="#tool-usage-validation" title="Permanent link">#</a></h2>
+<p>The <a class="autorefs autorefs-internal" href="../../../api_reference/evaluate/agent_simulation/#ragbits.evaluate.agent_simulation.simulation.ToolUsageChecker"><code>ToolUsageChecker</code></a> verifies that your agent used the expected tools for each task.</p>
+<p>When <code>expected_tools</code> is specified in a task:
+- The system tracks all tool calls made during the conversation turn
+- Verifies that all expected tools were used
+- Logs the results and displays feedback in the console</p>
+<h2 id="deepeval-integration">DeepEval Integration<a class="headerlink" href="#deepeval-integration" title="Permanent link">#</a></h2>
+<p>The simulation automatically evaluates conversations using DeepEval metrics:</p>
 <ul>
-<li>Validates the last assistant response using an LLM-powered validation prompt</li>
-<li>Optionally reruns the agent with a formatted correction prompt derived from validation feedback</li>
-<li>Supports preserving or pruning intermediate history</li>
-<li>Attaches validation metadata to the final <code>AgentResult</code></li>
+<li><strong>ConversationCompletenessMetric</strong>: Measures how complete the conversation is</li>
+<li><strong>KnowledgeRetentionMetric</strong>: Evaluates how well the agent retains information across turns</li>
+<li><strong>ConversationRelevancyMetric</strong>: Assesses the relevance of responses to the conversation</li>
 </ul>
-<h4 id="quick-start">Quick start<a class="headerlink" href="#quick-start" title="Permanent link">#</a></h4>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span> <span class="nn">ragbits.agents</span> <span class="kn">import</span> <span class="n">Agent</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span> <span class="nn">ragbits.agents.post_processors</span> <span class="kn">import</span> <span class="n">SupervisorPostProcessor</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="kn">from</span> <span class="nn">ragbits.agents.post_processors.supervisor</span> <span class="kn">import</span> <span class="n">HistoryStrategy</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="kn">from</span> <span class="nn">ragbits.core.llms.litellm</span> <span class="kn">import</span> <span class="n">LiteLLM</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">llm</span> <span class="o">=</span> <span class="n">LiteLLM</span><span class="p">(</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span> <span class="n">use_structured_output</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">supervisor</span> <span class="o">=</span> <span class="n">SupervisorPostProcessor</span><span class="p">(</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="n">max_retries</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="n">fail_on_exceed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">history_strategy</span><span class="o">=</span><span class="n">HistoryStrategy</span><span class="o">.</span><span class="n">PRESERVE</span><span class="p">,</span>  <span class="c1"># Default HistoryStrategy is REMOVE</span>
-</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="p">)</span>
-</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>
-</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="n">agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span>
-</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>    <span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
-</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>    <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;You are a helpful assistant.&quot;</span><span class="p">,</span>
-</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="p">)</span>
-</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>
-</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>    <span class="s2">&quot;What is the weather in Tokyo?&quot;</span><span class="p">,</span>
-</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>    <span class="n">post_processors</span><span class="o">=</span><span class="p">[</span><span class="n">supervisor</span><span class="p">],</span>
-</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="p">)</span>
-</span></code></pre></div>
-<h4 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">#</a></h4>
+<p>These metrics are computed at the end of the simulation and logged to the log file.</p>
+<h2 id="logging">Logging<a class="headerlink" href="#logging" title="Permanent link">#</a></h2>
+<p>The <a class="autorefs autorefs-internal" href="../../../api_reference/evaluate/agent_simulation/#ragbits.evaluate.agent_simulation.logger.ConversationLogger"><code>ConversationLogger</code></a> records:</p>
 <ul>
-<li><strong>llm</strong>: LLM used for validation and formatting structured outputs</li>
-<li><strong>validation_prompt</strong>: Optional custom prompt class describing the validation output schema</li>
-<li><strong>correction_prompt</strong>: Optional format string used to create a correction message from validation output</li>
-<li><strong>max_retries</strong>: How many times to attempt correction-driven reruns</li>
-<li><strong>fail_on_exceed</strong>: If <code>True</code>, raises when retries are exhausted; otherwise returns last result with metadata</li>
-<li><strong>history_strategy</strong>:<ul>
-<li><code>PRESERVE</code>: keep all messages, including the correction user message and rerun assistant message</li>
-<li><code>REMOVE</code>: prune the invalid assistant message and the correction user message, keeping the final assistant response succinctly</li>
+<li>Session metadata (scenario, models used, personality)</li>
+<li>Each conversation turn (user message, assistant response, tool calls)</li>
+<li>Task completion checks</li>
+<li>Tool usage verification</li>
+<li>Token usage and estimated costs</li>
+<li>DeepEval evaluation metrics</li>
 </ul>
-</li>
-</ul>
-<h4 id="custom-structured-validation-and-correction">Custom structured validation and correction<a class="headerlink" href="#custom-structured-validation-and-correction" title="Permanent link">#</a></h4>
-<p>You can define a custom validation output model and prompt to shape the supervisor feedback and correction message:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span> <span class="nn">ragbits.core.prompt.prompt</span> <span class="kn">import</span> <span class="n">Prompt</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="kn">from</span> <span class="nn">ragbits.agents.post_processors.supervisor</span> <span class="kn">import</span> <span class="n">ValidationInput</span>
+<p>Log files are written in a structured format that can be analyzed later.</p>
+<h2 id="complete-example">Complete Example<a class="headerlink" href="#complete-example" title="Permanent link">#</a></h2>
+<p>Here's a complete example using the hotel booking scenario:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">import</span> <span class="nn">asyncio</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span> <span class="nn">ragbits.chat.interface</span> <span class="kn">import</span> <span class="n">ChatInterface</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="kn">from</span> <span class="nn">ragbits.evaluate.agent_simulation</span> <span class="kn">import</span> <span class="n">load_personalities</span><span class="p">,</span> <span class="n">load_scenarios</span><span class="p">,</span> <span class="n">run_duet</span>
 </span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="k">class</span> <span class="nc">MyValidationOutput</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">is_valid</span><span class="p">:</span> <span class="nb">bool</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="n">errors</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="n">fixes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="k">class</span> <span class="nc">MyValidationPrompt</span><span class="p">(</span><span class="n">Prompt</span><span class="p">[</span><span class="n">ValidationInput</span><span class="p">,</span> <span class="n">MyValidationOutput</span><span class="p">]):</span>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    <span class="n">system_prompt</span> <span class="o">=</span> <span class="s2">&quot;You are an expert validator. Provide clear, actionable feedback.&quot;</span>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>    <span class="n">user_prompt</span> <span class="o">=</span> <span class="p">(</span>
-</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>        <span class="s2">&quot;Chat History:</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>        <span class="s2">&quot;{</span><span class="si">% f</span><span class="s2">or message in chat_history %}&quot;</span>
-</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>        <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">{{ message.role | title }}: {{ message.content }} (if None it means it&#39;s a tool call)&quot;</span>
-</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>        <span class="s2">&quot;{</span><span class="si">% e</span><span class="s2">ndfor %}&quot;</span>
-</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>        <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">List all errors, possible fixes, and provide a confidence score (0.0-1.0) for your assessment.</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>    <span class="p">)</span>
-</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>
-</span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="n">correction_prompt</span> <span class="o">=</span> <span class="p">(</span>
-</span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>    <span class="s2">&quot;Previous answer had issues:</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="__span-4-23"><a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>    <span class="s2">&quot;Errors: </span><span class="si">{errors}</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="__span-4-24"><a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a>    <span class="s2">&quot;Fixes: </span><span class="si">{fixes}</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="__span-4-25"><a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a>    <span class="s2">&quot;Confidence: </span><span class="si">{confidence}</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="__span-4-26"><a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a>    <span class="s2">&quot;Please answer again using the fixes.&quot;</span>
-</span><span id="__span-4-27"><a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a><span class="p">)</span>
-</span><span id="__span-4-28"><a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a>
-</span><span id="__span-4-29"><a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a><span class="n">supervisor</span> <span class="o">=</span> <span class="n">SupervisorPostProcessor</span><span class="p">(</span>
-</span><span id="__span-4-30"><a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a>    <span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
-</span><span id="__span-4-31"><a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a>    <span class="n">validation_prompt</span><span class="o">=</span><span class="n">MyValidationPrompt</span><span class="p">,</span>
-</span><span id="__span-4-32"><a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a>    <span class="n">correction_prompt</span><span class="o">=</span><span class="n">correction_prompt</span><span class="p">,</span>
-</span><span id="__span-4-33"><a id="__codelineno-4-33" name="__codelineno-4-33" href="#__codelineno-4-33"></a>    <span class="n">max_retries</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-</span><span id="__span-4-34"><a id="__codelineno-4-34" name="__codelineno-4-34" href="#__codelineno-4-34"></a>    <span class="n">history_strategy</span><span class="o">=</span><span class="n">HistoryStrategy</span><span class="o">.</span><span class="n">PRESERVE</span><span class="p">,</span>
-</span><span id="__span-4-35"><a id="__codelineno-4-35" name="__codelineno-4-35" href="#__codelineno-4-35"></a><span class="p">)</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="c1"># Assuming you have a HotelChat class that implements ChatInterface</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a><span class="kn">from</span> <span class="nn">fixtures.hotel.hotel_chat</span> <span class="kn">import</span> <span class="n">HotelChat</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="c1"># Load scenario and personality</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>    <span class="n">scenarios</span> <span class="o">=</span> <span class="n">load_scenarios</span><span class="p">(</span><span class="s2">&quot;scenarios.json&quot;</span><span class="p">)</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    <span class="n">scenario</span> <span class="o">=</span> <span class="n">scenarios</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>    <span class="n">personalities</span> <span class="o">=</span> <span class="n">load_personalities</span><span class="p">(</span><span class="s2">&quot;personalities.json&quot;</span><span class="p">)</span>
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>    <span class="n">personality</span> <span class="o">=</span> <span class="n">personalities</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Optional</span>
+</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>
+</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>    <span class="c1"># Create chat interface</span>
+</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>    <span class="n">hotel_chat</span> <span class="o">=</span> <span class="n">HotelChat</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span> <span class="n">api_key</span><span class="o">=</span><span class="s2">&quot;your-api-key&quot;</span><span class="p">)</span>
+</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>    <span class="k">await</span> <span class="n">hotel_chat</span><span class="o">.</span><span class="n">setup</span><span class="p">()</span>
+</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>
+</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>    <span class="c1"># Run simulation</span>
+</span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a>    <span class="k">await</span> <span class="n">run_duet</span><span class="p">(</span>
+</span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>        <span class="n">scenario</span><span class="o">=</span><span class="n">scenario</span><span class="p">,</span>
+</span><span id="__span-4-23"><a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>        <span class="n">chat</span><span class="o">=</span><span class="n">hotel_chat</span><span class="p">,</span>
+</span><span id="__span-4-24"><a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a>        <span class="n">max_turns_scenario</span><span class="o">=</span><span class="mi">15</span><span class="p">,</span>
+</span><span id="__span-4-25"><a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a>        <span class="n">max_turns_task</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+</span><span id="__span-4-26"><a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a>        <span class="n">log_file</span><span class="o">=</span><span class="s2">&quot;hotel_booking_conversation.log&quot;</span><span class="p">,</span>
+</span><span id="__span-4-27"><a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a>        <span class="n">personality</span><span class="o">=</span><span class="n">personality</span><span class="p">,</span>
+</span><span id="__span-4-28"><a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a>        <span class="n">default_model</span><span class="o">=</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span>
+</span><span id="__span-4-29"><a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a>        <span class="n">api_key</span><span class="o">=</span><span class="s2">&quot;your-api-key&quot;</span><span class="p">,</span>
+</span><span id="__span-4-30"><a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a>        <span class="n">user_message_prefix</span><span class="o">=</span><span class="p">(</span>
+</span><span id="__span-4-31"><a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a>            <span class="s2">&quot;[STYLE]</span><span class="se">\n</span><span class="s2">Answer helpfully and clearly. &quot;</span>
+</span><span id="__span-4-32"><a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a>            <span class="s2">&quot;Provide specific details when available (hotel names, room types, prices, dates). &quot;</span>
+</span><span id="__span-4-33"><a id="__codelineno-4-33" name="__codelineno-4-33" href="#__codelineno-4-33"></a>            <span class="s2">&quot;If information is unavailable, explain why briefly.</span><span class="se">\n\n</span><span class="s2">&quot;</span>
+</span><span id="__span-4-34"><a id="__codelineno-4-34" name="__codelineno-4-34" href="#__codelineno-4-34"></a>        <span class="p">),</span>
+</span><span id="__span-4-35"><a id="__codelineno-4-35" name="__codelineno-4-35" href="#__codelineno-4-35"></a>    <span class="p">)</span>
+</span><span id="__span-4-36"><a id="__codelineno-4-36" name="__codelineno-4-36" href="#__codelineno-4-36"></a>
+</span><span id="__span-4-37"><a id="__codelineno-4-37" name="__codelineno-4-37" href="#__codelineno-4-37"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+</span><span id="__span-4-38"><a id="__codelineno-4-38" name="__codelineno-4-38" href="#__codelineno-4-38"></a>    <span class="n">asyncio</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
 </span></code></pre></div>
-<p>The Supervisor appends validation records to <code>result.metadata</code> under the <code>post_processors.supervisor</code> key as a list of dicts; each entry corresponds to a validation step.</p>
+<h2 id="command-line-usage">Command-Line Usage<a class="headerlink" href="#command-line-usage" title="Permanent link">#</a></h2>
+<p>You can also run simulations from the command line using the example CLI:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>uv<span class="w"> </span>run<span class="w"> </span>python<span class="w"> </span>examples/evaluate/agent-scenarios/duet_cli.py<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span>--scenario-id<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span>--max-turns-scenario<span class="w"> </span><span class="m">15</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span>--max-turns-task<span class="w"> </span><span class="m">4</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span>--agent-model-name<span class="w"> </span>gpt-4o-mini<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="w">  </span>--sim-user-model-name<span class="w"> </span>gpt-4o-mini<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="w">  </span>--checker-model-name<span class="w"> </span>gpt-4o-mini<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="w">  </span>--log-file<span class="w"> </span>conversation.log<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="w">  </span>--scenarios-file<span class="w"> </span>scenarios.json<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="w">  </span>--personality-id<span class="w"> </span><span class="m">1</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="w">  </span>--personalities-file<span class="w"> </span>personalities.json
+</span></code></pre></div>
+<h2 id="best-practices">Best Practices<a class="headerlink" href="#best-practices" title="Permanent link">#</a></h2>
+<ol>
+<li><strong>Start Simple</strong>: Begin with simple scenarios and gradually add complexity</li>
+<li><strong>Use Expected Tools</strong>: Specify <code>expected_tools</code> to verify your agent uses the correct tools</li>
+<li><strong>Test Different Personalities</strong>: Use different personalities to test how your agent handles various user types</li>
+<li><strong>Monitor Logs</strong>: Review log files to understand agent behavior and identify issues</li>
+<li><strong>Iterate on Scenarios</strong>: Refine scenarios based on evaluation results</li>
+<li><strong>Set Appropriate Limits</strong>: Use <code>max_turns_task</code> and <code>max_turns_scenario</code> to prevent infinite loops</li>
+</ol>
+<h2 id="see-also">See Also<a class="headerlink" href="#see-also" title="Permanent link">#</a></h2>
+<ul>
+<li><a href="../evaluate/">Evaluate pipelines</a> - General evaluation framework</li>
+<li><a href="../custom_evaluation_pipeline/">Create custom evaluation pipeline</a> - Building custom evaluation pipelines</li>
+<li>Example implementation: <code>examples/evaluate/agent-scenarios/</code></li>
+</ul>
 
 
 
@@ -3281,7 +3428,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../serve_ragbits_agents/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Serve agents with A2A">
+          <a href="../evaluate/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Evaluate pipelines">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3291,20 +3438,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Serve agents with A2A
+                Evaluate pipelines
               </div>
             </div>
           </a>
         
         
           
-          <a href="../stream_downstream_agents/" class="md-footer__link md-footer__link--next" aria-label="Next: Stream downstream agents">
+          <a href="../custom_evaluation_pipeline/" class="md-footer__link md-footer__link--next" aria-label="Next: Create custom evaluation pipeline">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Stream downstream agents
+                Create custom evaluation pipeline
               </div>
             </div>
             <div class="md-footer__button md-icon">
