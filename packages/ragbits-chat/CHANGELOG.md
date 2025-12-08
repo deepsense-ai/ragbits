@@ -10,6 +10,7 @@
 - Add todo list component to the UI, add support for todo events in API (#827)
 - Add support for confirmation requests in chat (#853)
 - customizable HeroUI theme (#841)
+- Add error response type to the chat interface with ability to display error messages to the user (#878)
 
 ### Added
 

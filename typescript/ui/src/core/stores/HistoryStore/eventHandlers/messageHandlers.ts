@@ -1,6 +1,7 @@
 import {
   ClearMessageChatResponse,
   ConfirmationRequestChatResponse,
+  ErrorChatResponse,
   ImageChatResponse,
   LiveUpdateChatResponse,
   LiveUpdateType,
@@ -161,4 +162,13 @@ export const handleConfirmationRequest: PrimaryHandler<
   message.confirmationRequests[confirmationId] =
     response.content.confirmation_request;
   message.confirmationStates[confirmationId] = "pending";
+};
+
+export const handleError: PrimaryHandler<ErrorChatResponse> = (
+  response,
+  draft,
+  ctx,
+) => {
+  const message = draft.history[ctx.messageId];
+  message.error = response.content.message;
 };

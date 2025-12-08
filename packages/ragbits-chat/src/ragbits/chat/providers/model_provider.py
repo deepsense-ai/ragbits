@@ -58,6 +58,7 @@ class RagbitsChatModelProvider:
                 ConfigResponse,
                 ConversationIdContent,
                 ConversationSummaryContent,
+                ErrorContent,
                 FeedbackConfig,
                 FeedbackItem,
                 FeedbackRequest,
@@ -112,6 +113,7 @@ class RagbitsChatModelProvider:
                 "UsageContent": UsageContent,
                 "TodoItemContent": TodoItemContent,
                 "ConfirmationRequestContent": ConfirmationRequestContent,
+                "ErrorContent": ErrorContent,
                 # Configuration models
                 "HeaderCustomization": HeaderCustomization,
                 "UICustomization": UICustomization,
@@ -182,6 +184,7 @@ class RagbitsChatModelProvider:
                 "ClearMessageContent",
                 "TodoItemContent",
                 "ConfirmationRequestContent",
+                "ErrorContent",
             ],
             "configuration": [
                 "HeaderCustomization",
