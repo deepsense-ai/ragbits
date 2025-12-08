@@ -34,9 +34,8 @@ class TestErrorContent:
 
     def test_error_content_message_must_be_string(self):
         """Test that message must be a string."""
-        # Pydantic will coerce int to string
-        content = ErrorContent(message=123)  # type: ignore
-        assert content.message == "123"
+        with pytest.raises(ValidationError):
+            ErrorContent(message=123)  # type: ignore
 
     def test_error_content_empty_message(self):
         """Test that empty message is allowed."""
