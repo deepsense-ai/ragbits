@@ -1,5 +1,7 @@
 import {
   ClearMessageChatResponse,
+  ConfirmationRequestChatResponse,
+  ErrorChatResponse,
   ImageChatResponse,
   LiveUpdateChatResponse,
   LiveUpdateType,
@@ -96,4 +98,59 @@ export const handleUsage: PrimaryHandler<MessageUsageChatResponse> = (
 ) => {
   const message = draft.history[ctx.messageId];
   message.usage = response.content.usage;
+};
+
+export const handleTodoItem: PrimaryHandler<TodoItemChatResonse> = (
+  { content },
+  draft,
+  ctx,
+) => {
+  const message = draft.history[ctx.messageId];
+  const tasks = message.tasks ?? [];
+  const task = content.task;
+  const newTasks = produce(tasks, (tasksDraft) => {
+    const taskIndex = tasksDraft.findIndex((t) => t.id === task.id);
+    if (taskIndex === -1) {
+      tasksDraft.push(task);
+    } else {
+      tasksDraft[taskIndex] = task;
+    }
+  });
+
+  message.tasks = newTasks;
+};
+
+export const handleConfirmationRequest: PrimaryHandler<
+  ConfirmationRequestChatResponse
+> = (response, draft, ctx) => {
+  const message = draft.history[ctx.messageId];
+
+  const confirmationId = response.content.confirmation_request.confirmation_id;
+
+  // Initialize Records if they don't exist
+  if (!message.confirmationRequests) {
+    message.confirmationRequests = {};
+  }
+  if (!message.confirmationStates) {
+    message.confirmationStates = {};
+  }
+
+  // Check if this confirmation already exists
+  if (confirmationId in message.confirmationRequests) {
+    return;
+  }
+
+  // Add to Record-based system (prevents duplicates by design)
+  message.confirmationRequests[confirmationId] =
+    response.content.confirmation_request;
+  message.confirmationStates[confirmationId] = "pending";
+};
+
+export const handleError: PrimaryHandler<ErrorChatResponse> = (
+  response,
+  draft,
+  ctx,
+) => {
+  const message = draft.history[ctx.messageId];
+  message.error = response.content.message;
 };

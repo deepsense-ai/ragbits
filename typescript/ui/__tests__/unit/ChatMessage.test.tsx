@@ -30,6 +30,7 @@ function mockStore(
   role: MessageRole,
   isLoading: boolean = false,
   content?: string,
+  error?: string,
 ) {
   (useConversationProperty as unknown as Mock).mockImplementation((selector) =>
     selector({
@@ -61,6 +62,7 @@ function mockStore(
               },
             ]
           : [],
+      error: error ?? null,
       usage: {
         "litellm:gpt4-mini": {
           n_requests: 0,
@@ -183,6 +185,12 @@ describe("ChatMessage", () => {
         },
         { timeout: 5000 },
       );
+    });
+
+    it("displays error banner when error is present", () => {
+      mockStore(MessageRole.Assistant, false, undefined, "An error occurred");
+      render(<ChatMessage messageId={MessageRole.Assistant} />);
+      expect(screen.getByText("An error occurred")).toBeInTheDocument();
     });
   });
 
