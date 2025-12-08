@@ -256,6 +256,15 @@ class ConfirmationRequestContent(ResponseContent):
         return "confirmation_request"
 
 
+class ErrorContent(ResponseContent):
+    """Error content wrapper for displaying error messages to users."""
+
+    message: str
+
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "error"
+
+
 class ChatResponseType(str, Enum):
     """Types of responses that can be returned by the chat interface.
 
@@ -290,6 +299,7 @@ class ChatResponseType(str, Enum):
     USAGE = "usage"
     TODO_ITEM = "todo_item"
     CONFIRMATION_REQUEST = "confirmation_request"
+    ERROR = "error"
 
 
 class ChatContext(BaseModel):
@@ -777,6 +787,10 @@ class ConfirmationRequestResponse(ChatResponse[ConfirmationRequestContent]):
     """Confirmation request response."""
 
 
+class ErrorResponse(ChatResponse[ErrorContent]):
+    """Error response for displaying error messages to users."""
+
+
 # Union type for all built-in chat responses
 ChatResponseUnion = (
     TextResponse
@@ -793,6 +807,7 @@ ChatResponseUnion = (
     | UsageResponse
     | TodoItemResponse
     | ConfirmationRequestResponse
+    | ErrorResponse
 )
 
 

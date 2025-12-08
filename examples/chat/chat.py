@@ -20,6 +20,7 @@ To run the script, execute the following command:
 #
 
 import asyncio
+import random
 import uuid
 from collections.abc import AsyncGenerator
 from typing import Literal
@@ -34,6 +35,8 @@ from ragbits.chat.interface.types import (
     ChatResponse,
     LiveUpdateType,
     ResponseContent,
+    ErrorContent,
+    ErrorResponse,
 )
 from ragbits.chat.interface.ui_customization import HeaderCustomization, PageMetaCustomization, UICustomization
 from ragbits.core.llms import LiteLLM
@@ -189,6 +192,8 @@ class MyChat(ChatInterface):
             chart_type="line",
         )
         yield ChartDataResponse(content=chart_data)
+
+        yield ErrorResponse(content=ErrorContent(message="This is an error message that will be displayed to the user"))
 
         example_live_updates = [
             self.create_live_update("0", LiveUpdateType.START, "[EXAMPLE] Searching for examples in the web..."),

@@ -10,6 +10,7 @@ import {
 import {
   handleClearMessage,
   handleConfirmationRequest,
+  handleError,
   handleImage,
   handleLiveUpdate,
   handleMessageId,
@@ -118,4 +119,7 @@ ChatHandlerRegistry.register("conversation_summary", {
 });
 ChatHandlerRegistry.register("confirmation_request", {
   handle: handleConfirmationRequest,
+});
+ChatHandlerRegistry.register("error", {
+  handle: handleError,
 });
