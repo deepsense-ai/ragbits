@@ -56,6 +56,7 @@ class RagbitsChatModelProvider:
                 ConfigResponse,
                 ConversationIdContent,
                 ConversationSummaryContent,
+                ErrorContent,
                 FeedbackConfig,
                 FeedbackItem,
                 FeedbackRequest,
@@ -104,6 +105,7 @@ class RagbitsChatModelProvider:
                 "ConversationSummaryContent": ConversationSummaryContent,
                 "FollowupMessagesContent": FollowupMessagesContent,
                 "UsageContent": UsageContent,
+                "ErrorContent": ErrorContent,
                 # Configuration models
                 "HeaderCustomization": HeaderCustomization,
                 "UICustomization": UICustomization,
@@ -170,6 +172,7 @@ class RagbitsChatModelProvider:
                 "FollowupMessagesContent",
                 "UsageContent",
                 "ClearMessageContent",
+                "ErrorContent",
             ],
             "configuration": [
                 "HeaderCustomization",

@@ -32,6 +32,8 @@ from ragbits.chat.interface.summary import HybridSummaryGenerator
 from ragbits.chat.interface.types import (
     ChatContext,
     ChatResponse,
+    ErrorContent,
+    ErrorResponse,
     LiveUpdateType,
     ResponseContent,
 )
@@ -189,6 +191,8 @@ class MyChat(ChatInterface):
             chart_type="line",
         )
         yield ChartDataResponse(content=chart_data)
+
+        yield ErrorResponse(content=ErrorContent(message="This is an error message that will be displayed to the user"))
 
         example_live_updates = [
             self.create_live_update("0", LiveUpdateType.START, "[EXAMPLE] Searching for examples in the web..."),

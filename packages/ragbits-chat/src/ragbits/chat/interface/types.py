@@ -236,6 +236,15 @@ class ClearMessageContent(ResponseContent):
         return "clear_message"
 
 
+class ErrorContent(ResponseContent):
+    """Error content wrapper for displaying error messages to users."""
+
+    message: str
+
+    def get_type(self) -> str:  # noqa: D102, PLR6301
+        return "error"
+
+
 class ChatResponseType(str, Enum):
     """Types of responses that can be returned by the chat interface.
 
@@ -268,6 +277,7 @@ class ChatResponseType(str, Enum):
     CHUNKED_CONTENT = "chunked_content"
     CLEAR_MESSAGE = "clear_message"
     USAGE = "usage"
+    ERROR = "error"
 
 
 class ChatContext(BaseModel):
@@ -700,6 +710,10 @@ class UsageResponse(ChatResponse[UsageContent]):
     """Usage statistics response."""
 
 
+class ErrorResponse(ChatResponse[ErrorContent]):
+    """Error response for displaying error messages to users."""
+
+
 # Union type for all built-in chat responses
 ChatResponseUnion = (
     TextResponse
@@ -714,6 +728,7 @@ ChatResponseUnion = (
     | ChunkedContentResponse
     | ClearMessageResponse
     | UsageResponse
+    | ErrorResponse
 )
 
 

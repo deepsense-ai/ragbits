@@ -246,6 +246,20 @@ export interface TodoItemContent {
 }
 
 /**
+ * Confirmation request content wrapper.
+ */
+export interface ConfirmationRequestContent {
+    confirmation_request: ConfirmationRequest
+}
+
+/**
+ * Error content wrapper for displaying error messages to users.
+ */
+export interface ErrorContent {
+    message: string
+}
+
+/**
  * Customization for the header section of the UI.
  */
 export interface HeaderCustomization {
@@ -550,6 +564,16 @@ export interface ConversationSummaryResponse {
     content: ConversationSummaryContent
 }
 
+export interface ConfirmationRequestChatResponse {
+    type: 'confirmation_request'
+    content: ConfirmationRequestContent
+}
+
+export interface ErrorChatResponse {
+    type: 'error'
+    content: ErrorContent
+}
+
 export interface ChunkedChatResponse {
     type: 'chunked_content'
     content: ChunkedContent
@@ -571,3 +595,5 @@ export type ChatResponse =
     | ClearMessageChatResponse
     | TodoItemChatResonse
     | ConversationSummaryResponse
+    | ConfirmationRequestChatResponse
+    | ErrorChatResponse

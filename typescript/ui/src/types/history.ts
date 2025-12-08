@@ -25,6 +25,13 @@ export interface ChatMessage {
   images?: Record<string, Image["url"]>;
   usage?: Record<string, MessageUsage>;
   extra?: Record<string, unknown>;
+  confirmationRequests?: Record<string, ConfirmationRequest>;
+  confirmationStates?: Record<
+    string,
+    "pending" | "confirmed" | "declined" | "skipped"
+  >;
+  hasConfirmationBreak?: boolean; // Flag to show visual separator after confirmations
+  error?: string | null; // Error message to display in this message
 }
 
 export interface Conversation {
