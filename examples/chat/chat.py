@@ -20,7 +20,6 @@ To run the script, execute the following command:
 #
 
 import asyncio
-import random
 import uuid
 from collections.abc import AsyncGenerator
 from typing import Literal
@@ -33,10 +32,10 @@ from ragbits.chat.interface.summary import HybridSummaryGenerator
 from ragbits.chat.interface.types import (
     ChatContext,
     ChatResponse,
-    LiveUpdateType,
-    ResponseContent,
     ErrorContent,
     ErrorResponse,
+    LiveUpdateType,
+    ResponseContent,
 )
 from ragbits.chat.interface.ui_customization import HeaderCustomization, PageMetaCustomization, UICustomization
 from ragbits.core.llms import LiteLLM
