@@ -1,6 +1,6 @@
 {
     "name": "@ragbits/api-client",
-    "version": "1.4.0-dev.202512021005",
+    "version": "1.4.0-dev.202512090236",
     "description": "JavaScript client for the Ragbits API",
     "repository": {
         "type": "git",

@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Make `SummaryGenerator` optional in `ChatInterface` by providing a default no-op implementation.
+- Refactor ragbits-client types to remove excessive use of any (#881)
 - Split params into path params, query params in API client (#871)
 - Fix bug causing conversation not to be selected when navigating to it from url(#872)
 - CI/CD for nightly npm builds, update ragbits-api-client-react deps to install latest version of the @ragbits/api-client (#873)
@@ -11,6 +12,7 @@
 - Add todo list component to the UI, add support for todo events in API (#827)
 - Add support for confirmation requests in chat (#853)
 - customizable HeroUI theme (#841)
+- Add error response type to the chat interface with ability to display error messages to the user (#878)
 
 ### Added
 
