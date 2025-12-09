@@ -9,6 +9,7 @@ from ragbits.core.llms import Usage
 from ragbits.evaluate.agent_simulation.context import DataSnapshot, DomainContext
 from ragbits.evaluate.agent_simulation.deepeval_evaluator import DeepEvalEvaluator
 from ragbits.evaluate.agent_simulation.logger import ConversationLogger
+from ragbits.evaluate.agent_simulation.metrics.collectors import CompositeMetricCollector, MetricCollector
 from ragbits.evaluate.agent_simulation.models import Personality, Scenario, Turn
 from ragbits.evaluate.agent_simulation.results import (
     ConversationMetrics,
@@ -69,6 +70,7 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
     personality: Personality | None = None,
     domain_context: DomainContext | None = None,
     data_snapshot: DataSnapshot | None = None,
+    metric_collectors: list[MetricCollector] | None = None,
 ) -> SimulationResult:
     """Run a conversation between an agent and a simulated user.
 
@@ -90,11 +92,15 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
         personality: Optional personality to use for the simulated user
         domain_context: Optional domain context for goal checking (currency, locale, business rules)
         data_snapshot: Optional data snapshot to ground simulated user requests to available data
+        metric_collectors: Optional list of custom metric collectors for per-turn metrics
 
     Returns:
         SimulationResult containing all turns, task results, and metrics
     """
     start_time = datetime.now(timezone.utc)
+
+    # Initialize metric collectors
+    collectors = CompositeMetricCollector(metric_collectors)
 
     # Initialize result tracking
     turn_results: list[TurnResult] = []
@@ -156,6 +162,9 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
             print(f"\n=== Turn {turn_idx} (Task turn: {turns_for_current_task}) ===")
             print(f"Current Task: {current_task.task}")
             print(f"User: {user_message}")
+
+            # Notify metric collectors of turn start
+            collectors.on_turn_start(turn_idx, current_task_index, user_message)
 
             # Add optional prefix to user message
             full_user_message = user_message_prefix + user_message if user_message_prefix else user_message
@@ -228,6 +237,9 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
             )
             turn_results.append(turn_result)
 
+            # Notify metric collectors of turn end
+            collectors.on_turn_end(turn_result)
+
             if task_done:
                 print(f"Task completed: {reason}")
                 task_final_reasons[current_task_index] = reason
@@ -286,6 +298,9 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
     # Evaluate conversation with DeepEval metrics
     deepeval_scores = _evaluate_with_deepeval(history, logger)
 
+    # Collect custom metrics from collectors
+    custom_metrics = collectors.on_conversation_end(turn_results)
+
     logger.finalize_session()
 
     # Build metrics
@@ -299,6 +314,7 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
         completion_tokens=total_usage.completion_tokens,
         total_cost_usd=total_usage.estimated_cost,
         deepeval_scores=deepeval_scores,
+        custom=custom_metrics,
     )
 
     return SimulationResult(

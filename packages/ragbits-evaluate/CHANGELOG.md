@@ -12,6 +12,8 @@
 
 - Feat: add `DataSnapshot` for data-grounded simulated user requests (prevents unrealistic requests for non-existent items) (#883)
 
+- Feat: add metrics collection system for agent simulation (`MetricCollector` protocol, `LatencyMetricCollector`, `TokenUsageMetricCollector`, `ToolUsageMetricCollector`) (#882)
+
 ## 1.3.0 (2025-09-11)
 
 ### Changed
