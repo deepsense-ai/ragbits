@@ -24,7 +24,11 @@ from ragbits.evaluate.agent_simulation.results import (
 )
 
 if TYPE_CHECKING:
-    from ragbits.evaluate.agent_simulation.conversation import run_simulation
+    from ragbits.evaluate.agent_simulation.conversation import (
+        run_scenario_matrix,
+        run_simulation,
+        run_simulations_concurrent,
+    )
     from ragbits.evaluate.agent_simulation.deepeval_evaluator import DeepEvalEvaluator
     from ragbits.evaluate.agent_simulation.logger import ConversationLogger
     from ragbits.evaluate.agent_simulation.models import Personality, Scenario, Task, Turn
@@ -54,16 +58,18 @@ __all__ = [
     "TurnResult",
     "load_personalities",
     "load_scenarios",
+    "run_scenario_matrix",
     "run_simulation",
+    "run_simulations_concurrent",
 ]
 
 
 def __getattr__(name: str) -> object:
     """Lazy import for components with optional dependencies."""
-    if name == "run_simulation":
-        from ragbits.evaluate.agent_simulation.conversation import run_simulation
+    if name in ("run_simulation", "run_simulations_concurrent", "run_scenario_matrix"):
+        from ragbits.evaluate.agent_simulation import conversation
 
-        return run_simulation
+        return getattr(conversation, name)
     if name == "DeepEvalEvaluator":
         from ragbits.evaluate.agent_simulation.deepeval_evaluator import DeepEvalEvaluator
 

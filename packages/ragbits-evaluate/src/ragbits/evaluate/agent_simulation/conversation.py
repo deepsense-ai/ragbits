@@ -1,6 +1,9 @@
 """Conversation orchestration for agent simulation scenarios."""
 
+import asyncio
+from collections.abc import Callable
 from datetime import datetime, timezone
+from typing import Any
 
 from ragbits.agents.tool import ToolCallResult
 from ragbits.chat.interface import ChatInterface
@@ -330,4 +333,149 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
         turns=turn_results,
         tasks=task_results,
         metrics=metrics,
+    )
+
+
+async def run_simulations_concurrent(
+    simulations: list[dict],
+    max_concurrency: int | None = None,
+    chat_factory: Callable[[], ChatInterface] | None = None,
+) -> list[SimulationResult]:
+    """Run multiple simulations concurrently with optional concurrency limit.
+
+    This function allows running multiple simulation configurations in parallel,
+    which is useful for evaluating agents across different scenarios, personalities,
+    or parameter variations.
+
+    Args:
+        simulations: List of dictionaries containing simulation parameters.
+            Each dictionary should contain kwargs for run_simulation().
+            If 'chat' is not provided but chat_factory is, a new chat instance
+            will be created for each simulation.
+        max_concurrency: Maximum number of simulations to run concurrently.
+            If None, all simulations run in parallel (limited by system resources).
+            Use this to avoid overwhelming API rate limits.
+        chat_factory: Optional factory function that creates a new ChatInterface
+            instance for each simulation. Required if 'chat' is not provided
+            in simulation configs.
+
+    Returns:
+        List of SimulationResult objects in the same order as input simulations.
+
+    Example:
+        >>> async def run_evaluation():
+        ...     scenarios = load_scenarios("scenarios.json")
+        ...     personalities = load_personalities("personalities.json")
+        ...
+        ...     # Create simulation configs for all scenario-personality combinations
+        ...     simulations = [
+        ...         {
+        ...             "scenario": scenario,
+        ...             "personality": personality,
+        ...             "max_turns_scenario": 15,
+        ...             "default_model": "gpt-4o-mini",
+        ...             "api_key": "your-api-key",
+        ...         }
+        ...         for scenario in scenarios
+        ...         for personality in personalities
+        ...     ]
+        ...
+        ...     # Run with max 5 concurrent simulations to respect rate limits
+        ...     results = await run_simulations_concurrent(
+        ...         simulations,
+        ...         max_concurrency=5,
+        ...         chat_factory=lambda: MyChat(),
+        ...     )
+        ...
+        ...     for result in results:
+        ...         print(f"{result.scenario_name}: {result.metrics.success_rate:.1%}")
+    """
+    if not simulations:
+        return []
+
+    semaphore = asyncio.Semaphore(max_concurrency) if max_concurrency else None
+
+    async def run_single(config: dict) -> SimulationResult:
+        # Create chat instance if not provided
+        if "chat" not in config:
+            if chat_factory is None:
+                raise ValueError(
+                    "Either 'chat' must be provided in simulation config "
+                    "or chat_factory must be provided to run_simulations_concurrent"
+                )
+            config = {**config, "chat": chat_factory()}
+
+        # Setup chat if needed
+        chat = config["chat"]
+        await chat.setup()
+
+        if semaphore:
+            async with semaphore:
+                return await run_simulation(**config)
+        return await run_simulation(**config)
+
+    tasks = [run_single(config) for config in simulations]
+    return await asyncio.gather(*tasks)
+
+
+async def run_scenario_matrix(
+    scenarios: list[Scenario],
+    personalities: list[Personality] | None = None,
+    chat_factory: Callable[[], ChatInterface] | None = None,
+    max_concurrency: int | None = None,
+    **common_kwargs: Any,
+) -> list[SimulationResult]:
+    """Run simulations for all combinations of scenarios and personalities.
+
+    Convenience function that creates a matrix of simulations from scenarios
+    and personalities, then runs them concurrently.
+
+    Args:
+        scenarios: List of scenarios to evaluate.
+        personalities: Optional list of personalities. If None, runs each scenario
+            once without a personality.
+        chat_factory: Factory function to create ChatInterface instances.
+        max_concurrency: Maximum concurrent simulations.
+        **common_kwargs: Additional kwargs passed to all run_simulation calls
+            (e.g., max_turns_scenario, default_model, api_key).
+
+    Returns:
+        List of SimulationResult objects for all scenario-personality combinations.
+
+    Example:
+        >>> results = await run_scenario_matrix(
+        ...     scenarios=load_scenarios("scenarios.json"),
+        ...     personalities=load_personalities("personalities.json"),
+        ...     chat_factory=lambda: MyChat(),
+        ...     max_concurrency=3,
+        ...     max_turns_scenario=15,
+        ...     default_model="gpt-4o-mini",
+        ...     api_key="your-api-key",
+        ... )
+    """
+    simulations: list[dict] = []
+
+    if personalities:
+        for scenario in scenarios:
+            for personality in personalities:
+                simulations.append(
+                    {
+                        "scenario": scenario,
+                        "personality": personality,
+                        **common_kwargs,
+                    }
+                )
+    else:
+        for scenario in scenarios:
+            simulations.append(
+                {
+                    "scenario": scenario,
+                    **common_kwargs,
+                }
+            )
+
+    return await run_simulations_concurrent(
+        simulations,
+        max_concurrency=max_concurrency,
+        chat_factory=chat_factory,
     )
