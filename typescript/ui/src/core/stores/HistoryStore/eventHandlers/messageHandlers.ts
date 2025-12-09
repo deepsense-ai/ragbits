@@ -137,7 +137,6 @@ export const handleTodoItem: PrimaryHandler<TodoItemChatResonse> = (
 
   message.tasks = newTasks;
 };
-<<<<<<< HEAD
 
 export const handleConfirmationRequest: PrimaryHandler<
   ConfirmationRequestChatResponse
@@ -173,5 +172,3 @@ export const handleError: PrimaryHandler<ErrorChatResponse> = (
   const message = draft.history[ctx.messageId];
   message.error = response.content.message;
 };
-=======
->>>>>>> 5f25ceb44 (resolve conflicts)

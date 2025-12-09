@@ -135,7 +135,6 @@ class RagbitsChatModelProvider:
                 "LoginRequest": LoginRequest,
                 "LoginResponse": LoginResponse,
                 "User": User,
-                "OAuth2AuthorizeResponse": OAuth2AuthorizeResponse,
             }
 
             return self._models_cache

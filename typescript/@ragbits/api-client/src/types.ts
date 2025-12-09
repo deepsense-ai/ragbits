@@ -58,7 +58,11 @@ export interface BaseApiEndpoints {
     '/api/feedback': EndpointDefinition<FeedbackRequest, FeedbackResponse>
     '/api/auth/login': EndpointDefinition<LoginRequest, LoginResponse>
     '/api/auth/logout': EndpointDefinition<never, GenericResponse>
-    '/api/auth/authorize/:provider': EndpointDefinition<never, OAuth2AuthorizeResponse, { provider: string }>
+    '/api/auth/authorize/:provider': EndpointDefinition<
+        never,
+        OAuth2AuthorizeResponse,
+        { provider: string }
+    >
     '/api/user': EndpointDefinition<never, User>
     '/api/theme': EndpointDefinition<never, string>
 }

@@ -15,11 +15,15 @@ export default function AuthGuard({ children }: PropsWithChildren) {
   const onUnauthorized = useStore(authStore, (s) => s.logout);
 
   if (!hasHydrated) {
+    // Wrap the AuthWatcher and InitializationScreen with RagbitsContextProvider to enable cookie credentials
     return (
-      <>
+      <RagbitsContextProvider
+        baseUrl={API_URL}
+        auth={{ credentials: "include" }}
+      >
         <AuthWatcher />
         <InitializationScreen />
-      </>
+      </RagbitsContextProvider>
     );
   }
 

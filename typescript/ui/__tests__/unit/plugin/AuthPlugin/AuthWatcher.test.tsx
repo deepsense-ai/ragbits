@@ -2,7 +2,7 @@ import { describe, it, vi, beforeEach, afterEach, expect, Mock } from "vitest";
 import { useStore } from "zustand";
 import { AuthWatcher } from "../../../../src/plugins/AuthPlugin/components/AuthWatcher";
 import { render, waitFor } from "@testing-library/react";
-import { useRagbitsContext } from "@ragbits/api-client-react";
+import { useRagbitsCall } from "@ragbits/api-client-react";
 
 vi.mock("zustand", async (importOriginal) => ({
   ...(await importOriginal()),
@@ -17,7 +17,12 @@ vi.mock(
 );
 
 vi.mock("@ragbits/api-client-react", () => ({
-  useRagbitsContext: vi.fn(),
+  useRagbitsCall: vi.fn(),
+}));
+
+vi.mock("react-router", () => ({
+  useNavigate: vi.fn(() => vi.fn()),
+  useLocation: vi.fn(() => ({ pathname: "/" })),
 }));
 
 describe("AuthWatcher", () => {
@@ -25,13 +30,13 @@ describe("AuthWatcher", () => {
   let logoutMock: Mock;
   let setHydratedMock: Mock;
   let useStoreMock: Mock;
-  let mockMakeRequest: Mock;
+  let mockCall: Mock;
 
   beforeEach(() => {
     loginMock = vi.fn();
     logoutMock = vi.fn();
     setHydratedMock = vi.fn();
-    mockMakeRequest = vi.fn();
+    mockCall = vi.fn();
     useStoreMock = useStore as Mock;
 
     useStoreMock.mockReturnValue({
@@ -40,10 +45,8 @@ describe("AuthWatcher", () => {
       setHydrated: setHydratedMock,
     });
 
-    (useRagbitsContext as Mock).mockReturnValue({
-      client: {
-        makeRequest: mockMakeRequest,
-      },
+    (useRagbitsCall as Mock).mockReturnValue({
+      call: mockCall,
     });
   });
 
@@ -58,12 +61,12 @@ describe("AuthWatcher", () => {
       username: "testuser",
       email: "test@example.com",
     };
-    mockMakeRequest.mockResolvedValue(mockUser);
+    mockCall.mockResolvedValue(mockUser);
 
     render(<AuthWatcher />);
 
     await waitFor(() => {
-      expect(mockMakeRequest).toHaveBeenCalledWith("/api/user");
+      expect(mockCall).toHaveBeenCalled();
       expect(loginMock).toHaveBeenCalledWith(mockUser);
       expect(logoutMock).not.toHaveBeenCalled();
       expect(setHydratedMock).toHaveBeenCalled();
@@ -71,12 +74,12 @@ describe("AuthWatcher", () => {
   });
 
   it("logs out user when /api/user returns null", async () => {
-    mockMakeRequest.mockResolvedValue(null);
+    mockCall.mockResolvedValue(null);
 
     render(<AuthWatcher />);
 
     await waitFor(() => {
-      expect(mockMakeRequest).toHaveBeenCalledWith("/api/user");
+      expect(mockCall).toHaveBeenCalled();
       expect(logoutMock).toHaveBeenCalled();
       expect(loginMock).not.toHaveBeenCalled();
       expect(setHydratedMock).toHaveBeenCalled();
@@ -84,12 +87,12 @@ describe("AuthWatcher", () => {
   });
 
   it("logs out user when /api/user throws error", async () => {
-    mockMakeRequest.mockRejectedValue(new Error("Unauthorized"));
+    mockCall.mockRejectedValue(new Error("Unauthorized"));
 
     render(<AuthWatcher />);
 
     await waitFor(() => {
-      expect(mockMakeRequest).toHaveBeenCalledWith("/api/user");
+      expect(mockCall).toHaveBeenCalled();
       expect(logoutMock).toHaveBeenCalled();
       expect(loginMock).not.toHaveBeenCalled();
       expect(setHydratedMock).toHaveBeenCalled();
@@ -97,7 +100,7 @@ describe("AuthWatcher", () => {
   });
 
   it("renders nothing (returns null)", () => {
-    mockMakeRequest.mockResolvedValue(null);
+    mockCall.mockResolvedValue(null);
 
     const { container } = render(<AuthWatcher />);
 
