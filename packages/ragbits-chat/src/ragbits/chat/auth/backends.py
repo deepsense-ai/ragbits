@@ -1,3 +1,4 @@
+import logging
 import secrets
 import uuid
 from abc import ABC, abstractmethod
@@ -10,6 +11,11 @@ import httpx
 
 from ragbits.chat.auth.base import AuthenticationBackend, AuthenticationResponse, AuthOptions
 from ragbits.chat.auth.types import OAuth2Credentials, Session, SessionStore, User, UserCredentials
+
+logger = logging.getLogger(__name__)
+
+# Minimum length for session ID truncation in logs (for readability while maintaining some privacy)
+SESSION_ID_LOG_LENGTH = 8
 
 
 class ListAuthenticationBackend(AuthenticationBackend):
@@ -62,13 +68,17 @@ class ListAuthenticationBackend(AuthenticationBackend):
         Returns:
             AuthenticationResponse: Result of authentication
         """
+        logger.debug("Attempting credential authentication for user: %s", credentials.username)
+
         user_data = self.users.get(credentials.username)
         if not user_data:
+            logger.warning("Authentication failed: user '%s' not found", credentials.username)
             return AuthenticationResponse(success=False, error_message="User not found")
 
         # Verify password with bcrypt
         password_hash = str(user_data["password_hash"])
         if not bcrypt.checkpw(credentials.password.encode("utf-8"), password_hash.encode("utf-8")):
+            logger.warning("Authentication failed: invalid password for user '%s'", credentials.username)
             return AuthenticationResponse(success=False, error_message="Invalid password")
 
         user = cast(User, user_data["user"])
@@ -85,6 +95,7 @@ class ListAuthenticationBackend(AuthenticationBackend):
             expires_at=now + timedelta(hours=self.session_expiry_hours),
         )
         session_id = await self.session_store.create_session(session)
+        logger.info("User '%s' authenticated successfully, session created", credentials.username)
         return AuthenticationResponse(success=True, user=user, session_id=session_id)
 
     async def validate_session(self, session_id: str) -> AuthenticationResponse:
@@ -97,11 +108,17 @@ class ListAuthenticationBackend(AuthenticationBackend):
         Returns:
             AuthenticationResponse with user if valid
         """
+        logger.debug(
+            "Validating session: %s...",
+            session_id[:SESSION_ID_LOG_LENGTH] if len(session_id) >= SESSION_ID_LOG_LENGTH else session_id,
+        )
         session = await self.session_store.get_session(session_id)
 
         if not session:
+            logger.debug("Session validation failed: session not found or expired")
             return AuthenticationResponse(success=False, error_message="Invalid or expired session")
 
+        logger.debug("Session validated successfully for user: %s", session.user.username)
         return AuthenticationResponse(success=True, user=session.user)
 
     async def authenticate_with_oauth2(  # noqa: PLR6301
@@ -128,7 +145,16 @@ class ListAuthenticationBackend(AuthenticationBackend):
         Returns:
             True if session was revoked
         """
-        return await self.session_store.delete_session(session_id)
+        logger.debug(
+            "Revoking session: %s...",
+            session_id[:SESSION_ID_LOG_LENGTH] if len(session_id) >= SESSION_ID_LOG_LENGTH else session_id,
+        )
+        success = await self.session_store.delete_session(session_id)
+        if success:
+            logger.info("Session revoked successfully")
+        else:
+            logger.debug("Session revocation failed: session not found")
+        return success
 
 
 class OAuth2Provider(ABC):
@@ -320,6 +346,7 @@ class OAuth2AuthenticationBackend(AuthenticationBackend):
         }
 
         authorize_url = f"{self.provider.authorize_url}?{urlencode(params)}"
+        logger.debug("Generated OAuth2 authorization URL for provider '%s'", self.provider.name)
         return authorize_url, state
 
     def verify_state(self, state: str) -> bool:
@@ -333,16 +360,19 @@ class OAuth2AuthenticationBackend(AuthenticationBackend):
             True if state is valid, False otherwise
         """
         if state not in self.pending_states:
+            logger.warning("OAuth2 state verification failed: state not found (possible CSRF attempt)")
             return False
 
         # Check if state is not expired (valid for 10 minutes)
         created_at = self.pending_states[state]
         if datetime.now(timezone.utc) - created_at > timedelta(minutes=10):
             del self.pending_states[state]
+            logger.warning("OAuth2 state verification failed: state expired")
             return False
 
         # Remove state after verification (one-time use)
         del self.pending_states[state]
+        logger.debug("OAuth2 state verified successfully")
         return True
 
     async def exchange_code_for_token(self, code: str) -> str | None:
@@ -355,6 +385,7 @@ class OAuth2AuthenticationBackend(AuthenticationBackend):
         Returns:
             Access token if successful, None otherwise
         """
+        logger.debug("Exchanging authorization code for token with provider '%s'", self.provider.name)
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
@@ -370,12 +401,19 @@ class OAuth2AuthenticationBackend(AuthenticationBackend):
                 )
 
                 if response.status_code != 200:  # noqa: PLR2004
+                    logger.error(
+                        "Token exchange failed with provider '%s': HTTP %d",
+                        self.provider.name,
+                        response.status_code,
+                    )
                     return None
 
                 token_data = response.json()
+                logger.debug("Token exchange successful with provider '%s'", self.provider.name)
                 return token_data.get("access_token")
 
-        except Exception:
+        except Exception as e:
+            logger.exception("Token exchange error with provider '%s': %s", self.provider.name, str(e))
             return None
 
     async def authenticate_with_oauth2(self, oauth_credentials: OAuth2Credentials) -> AuthenticationResponse:
@@ -388,6 +426,7 @@ class OAuth2AuthenticationBackend(AuthenticationBackend):
         Returns:
             AuthenticationResponse with user and session ID
         """
+        logger.debug("Authenticating user with OAuth2 provider '%s'", self.provider.name)
         try:
             # Fetch user info from provider
             async with httpx.AsyncClient() as client:
@@ -397,6 +436,11 @@ class OAuth2AuthenticationBackend(AuthenticationBackend):
                 )
 
                 if response.status_code != 200:  # noqa: PLR2004
+                    logger.error(
+                        "Failed to fetch user info from '%s': HTTP %d",
+                        self.provider.name,
+                        response.status_code,
+                    )
                     return AuthenticationResponse(
                         success=False,
                         error_message=f"Failed to fetch user info from {self.provider.name}: {response.status_code}",
@@ -406,6 +450,7 @@ class OAuth2AuthenticationBackend(AuthenticationBackend):
 
             # Create User object from provider data
             user = self.provider.create_user_from_data(user_data)
+            logger.debug("User info fetched successfully from '%s' for user: %s", self.provider.name, user.username)
 
             # Create session
             now = datetime.now(timezone.utc)
@@ -420,10 +465,16 @@ class OAuth2AuthenticationBackend(AuthenticationBackend):
             )
 
             session_id = await self.session_store.create_session(session)
+            logger.info(
+                "User '%s' authenticated successfully via OAuth2 provider '%s'",
+                user.username,
+                self.provider.name,
+            )
 
             return AuthenticationResponse(success=True, user=user, session_id=session_id)
 
         except Exception as e:
+            logger.exception("OAuth2 authentication failed with provider '%s': %s", self.provider.name, str(e))
             return AuthenticationResponse(
                 success=False,
                 error_message=f"OAuth2 authentication failed: {str(e)}",
@@ -454,11 +505,17 @@ class OAuth2AuthenticationBackend(AuthenticationBackend):
         Returns:
             AuthenticationResponse with user if valid
         """
+        logger.debug(
+            "Validating OAuth2 session: %s...",
+            session_id[:SESSION_ID_LOG_LENGTH] if len(session_id) >= SESSION_ID_LOG_LENGTH else session_id,
+        )
         session = await self.session_store.get_session(session_id)
 
         if not session:
+            logger.debug("OAuth2 session validation failed: session not found or expired")
             return AuthenticationResponse(success=False, error_message="Invalid or expired session")
 
+        logger.debug("OAuth2 session validated successfully for user: %s", session.user.username)
         return AuthenticationResponse(success=True, user=session.user)
 
     async def revoke_session(self, session_id: str) -> bool:
@@ -471,7 +528,16 @@ class OAuth2AuthenticationBackend(AuthenticationBackend):
         Returns:
             True if session was revoked
         """
-        return await self.session_store.delete_session(session_id)
+        logger.debug(
+            "Revoking OAuth2 session: %s...",
+            session_id[:SESSION_ID_LOG_LENGTH] if len(session_id) >= SESSION_ID_LOG_LENGTH else session_id,
+        )
+        success = await self.session_store.delete_session(session_id)
+        if success:
+            logger.info("OAuth2 session revoked successfully")
+        else:
+            logger.debug("OAuth2 session revocation failed: session not found")
+        return success
 
 
 class MultiAuthenticationBackend(AuthenticationBackend):
@@ -521,17 +587,24 @@ class MultiAuthenticationBackend(AuthenticationBackend):
         Returns:
             AuthenticationResponse from the first successful backend
         """
+        logger.debug(
+            "Multi-backend credential authentication for user '%s' with %d backends",
+            credentials.username,
+            len(self.get_credentials_backends()),
+        )
         errors = []
 
         for backend in self.get_credentials_backends():
             result = await backend.authenticate_with_credentials(credentials)
             if result.success:
+                logger.debug("Credential authentication succeeded with backend: %s", type(backend).__name__)
                 return result
             if result.error_message:
                 errors.append(result.error_message)
 
         # All backends failed
         error_msg = "; ".join(errors) if errors else "Authentication failed"
+        logger.warning("All credential backends failed for user '%s': %s", credentials.username, error_msg)
         return AuthenticationResponse(success=False, error_message=error_msg)
 
     async def authenticate_with_oauth2(self, oauth_credentials: OAuth2Credentials) -> AuthenticationResponse:
@@ -544,17 +617,20 @@ class MultiAuthenticationBackend(AuthenticationBackend):
         Returns:
             AuthenticationResponse from the first successful backend
         """
+        logger.debug("Multi-backend OAuth2 authentication with %d backends", len(self.get_oauth2_backends()))
         errors = []
 
         for backend in self.get_oauth2_backends():
             result = await backend.authenticate_with_oauth2(oauth_credentials)
             if result.success:
+                logger.debug("OAuth2 authentication succeeded with backend: %s", type(backend).__name__)
                 return result
             if result.error_message:
                 errors.append(result.error_message)
 
         # All backends failed
         error_msg = "; ".join(errors) if errors else "OAuth2 authentication failed"
+        logger.warning("All OAuth2 backends failed: %s", error_msg)
         return AuthenticationResponse(success=False, error_message=error_msg)
 
     async def validate_session(self, session_id: str) -> AuthenticationResponse:

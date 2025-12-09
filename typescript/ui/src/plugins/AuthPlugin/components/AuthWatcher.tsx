@@ -29,6 +29,7 @@ export function AuthWatcher() {
         logout();
       } finally {
         setHydrated();
+        navigate("/login");
       }
     };
 

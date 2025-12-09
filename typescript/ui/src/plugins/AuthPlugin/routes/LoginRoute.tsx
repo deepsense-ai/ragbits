@@ -3,7 +3,10 @@ import PluginWrapper from "../../../core/utils/plugins/PluginWrapper";
 import { CredentialsLoginPlugin } from "../plugins/CredentialsLoginPlugin";
 import { usePlugin } from "../../../core/utils/plugins/usePlugin";
 import { CredentialsLoginPluginName } from "../plugins/CredentialsLoginPlugin";
-import { OAuth2LoginPluginName } from "../plugins/OAuth2LoginPlugin";
+import {
+  OAuth2LoginPluginName,
+  OAuth2VisualConfig,
+} from "../plugins/OAuth2LoginPlugin";
 import { pluginManager } from "../../../core/utils/plugins/PluginManager";
 
 const LazyLogin = lazy(() => import("../components/Login"));
@@ -41,6 +44,9 @@ export default function LoginRoute() {
         {oauth2Plugins.map((plugin, index) => {
           const provider = plugin.metadata?.provider as string;
           const displayName = plugin.metadata?.displayName as string;
+          const visualConfig = plugin.metadata?.visualConfig as
+            | OAuth2VisualConfig
+            | undefined;
 
           return (
             <div key={plugin.name}>
@@ -48,7 +54,7 @@ export default function LoginRoute() {
               <PluginWrapper
                 plugin={plugin}
                 component="OAuth2Login"
-                componentProps={{ provider, displayName }}
+                componentProps={{ provider, displayName, visualConfig }}
                 disableSkeleton
               />
             </div>

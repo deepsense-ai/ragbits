@@ -862,10 +862,14 @@ class AuthType(str, Enum):
 
 
 class OAuth2ProviderConfig(BaseModel):
-    """Configuration for an OAuth2 provider."""
+    """Configuration for an OAuth2 provider including visual configuration."""
 
     name: str = Field(..., description="Provider name (e.g., 'discord')")
     display_name: str | None = Field(None, description="Display name for the provider (e.g., 'Discord')")
+    color: str | None = Field(None, description="Brand color for the provider (e.g., '#5865F2')")
+    button_color: str | None = Field(None, description="Button background color (defaults to color)")
+    text_color: str | None = Field(None, description="Button text color (defaults to white)")
+    icon_svg: str | None = Field(None, description="SVG icon as string")
 
 
 class AuthenticationConfig(BaseModel):

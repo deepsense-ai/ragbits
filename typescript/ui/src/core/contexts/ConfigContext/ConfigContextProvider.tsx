@@ -67,6 +67,12 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
           const oauth2Plugin = createOAuth2LoginPlugin(
             provider.name,
             provider.display_name || provider.name,
+            {
+              color: provider.color,
+              buttonColor: provider.button_color,
+              textColor: provider.text_color,
+              iconSvg: provider.icon_svg,
+            },
           );
           pluginManager.register(oauth2Plugin);
           pluginManager.activate(oauth2Plugin.name);

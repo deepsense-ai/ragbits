@@ -19,6 +19,7 @@ from pydantic import BaseModel
 
 from ragbits.chat.auth import AuthenticationBackend, User
 from ragbits.chat.auth.backends import MultiAuthenticationBackend, OAuth2AuthenticationBackend
+from ragbits.chat.auth.provider_config import get_provider_visual_config
 from ragbits.chat.auth.types import LoginRequest, LoginResponse, OAuth2Credentials
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import (
@@ -46,6 +47,9 @@ logger = logging.getLogger(__name__)
 
 # Environment-aware cookie security: only require HTTPS in production
 IS_PRODUCTION = os.getenv("ENVIRONMENT", "").lower() == "production"
+
+# Session cookie name - used for storing session ID in HTTP-only cookie
+SESSION_COOKIE_NAME = "ragbits_session"
 
 # Chunk size for large base64 images to prevent SSE message size issues
 # Keep chunks extremely small to avoid JSON string length limits in browsers and SSE parsing issues
@@ -225,19 +229,29 @@ class RagbitsAPI:
                     if oauth2_backends:
                         auth_types.append(AuthType.OAUTH2)
                         for backend in oauth2_backends:
+                            visual_config = get_provider_visual_config(backend.provider.name)
                             oauth2_providers.append(
                                 OAuth2ProviderConfig(
                                     name=backend.provider.name,
                                     display_name=backend.provider.display_name,
+                                    color=visual_config.color,
+                                    button_color=visual_config.button_color,
+                                    text_color=visual_config.text_color,
+                                    icon_svg=visual_config.icon_svg,
                                 )
                             )
                 elif isinstance(self.auth_backend, OAuth2AuthenticationBackend):
                     # Single OAuth2 backend
                     auth_types = [AuthType.OAUTH2]
+                    visual_config = get_provider_visual_config(self.auth_backend.provider.name)
                     oauth2_providers = [
                         OAuth2ProviderConfig(
                             name=self.auth_backend.provider.name,
                             display_name=self.auth_backend.provider.display_name,
+                            color=visual_config.color,
+                            button_color=visual_config.button_color,
+                            text_color=visual_config.text_color,
+                            icon_svg=visual_config.icon_svg,
                         )
                     ]
                 else:
@@ -349,12 +363,7 @@ class RagbitsAPI:
 
         try:
             # Validate authentication if required using cookies
-            authenticated_user = await self.get_current_user_from_cookie(request)
-            if self.auth_backend and not authenticated_user:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Authentication required",
-                )
+            authenticated_user = await self.require_authenticated_user(request)
 
             if not self.chat_interface:
                 record_metric(
@@ -368,7 +377,7 @@ class RagbitsAPI:
                 raise HTTPException(status_code=500, detail="Chat implementation is not initialized")
 
             # Prepare chat context
-            session_id = request.cookies.get("ragbits_session")
+            session_id = request.cookies.get(SESSION_COOKIE_NAME)
             chat_context = RagbitsAPI._prepare_chat_context(chat_request, authenticated_user, session_id)
 
             # Get the response generator from the chat interface
@@ -488,12 +497,7 @@ class RagbitsAPI:
 
         try:
             # Validate authentication if required using cookies
-            authenticated_user = await self.get_current_user_from_cookie(request)
-            if self.auth_backend and not authenticated_user:
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail="Authentication required",
-                )
+            await self.require_authenticated_user(request)
 
             if not self.chat_interface:
                 record_metric(
@@ -579,7 +583,7 @@ class RagbitsAPI:
         if not self.auth_backend:
             return None
 
-        session_id = request.cookies.get("ragbits_session")
+        session_id = request.cookies.get(SESSION_COOKIE_NAME)
         if not session_id:
             return None
 
@@ -588,6 +592,55 @@ class RagbitsAPI:
             return result.user
 
         return None
+
+    async def require_authenticated_user(self, request: Request) -> User | None:
+        """
+        Get current user from session cookie and raise HTTPException if authentication
+        is required but user is not authenticated.
+
+        This is a reusable dependency for handlers that require authentication.
+
+        Args:
+            request: FastAPI request object
+
+        Returns:
+            User object if authenticated (or if no auth is required), None if no auth backend
+
+        Raises:
+            HTTPException: 401 Unauthorized if authentication is required but user is not authenticated
+        """
+        authenticated_user = await self.get_current_user_from_cookie(request)
+        if self.auth_backend and not authenticated_user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required",
+            )
+        return authenticated_user
+
+    def get_session_expiry_seconds(self) -> int:
+        """
+        Get session expiry time in seconds from the auth backend configuration.
+
+        Returns:
+            Session expiry time in seconds (default: 24 hours if not configured)
+        """
+        # Default to 24 hours
+        default_expiry_hours = 24
+
+        if not self.auth_backend:
+            return default_expiry_hours * 3600
+
+        # Check if the backend has session_expiry_hours attribute
+        if hasattr(self.auth_backend, "session_expiry_hours"):
+            return self.auth_backend.session_expiry_hours * 3600
+
+        # For MultiAuthenticationBackend, try to get from first backend that has it
+        if isinstance(self.auth_backend, MultiAuthenticationBackend):
+            for backend in self.auth_backend.backends:
+                if hasattr(backend, "session_expiry_hours"):
+                    return backend.session_expiry_hours * 3600
+
+        return default_expiry_hours * 3600
 
     async def _handle_login(self, request: LoginRequest) -> JSONResponse:
         """Handle user login requests with credentials."""
@@ -607,10 +660,10 @@ class RagbitsAPI:
                     ).model_dump()
                 )
 
-                # Set secure HTTP-only cookie (24 hours default)
-                session_expiry_seconds = 24 * 3600
+                # Set secure HTTP-only cookie using backend's session expiry configuration
+                session_expiry_seconds = self.get_session_expiry_seconds()
                 response.set_cookie(
-                    key="ragbits_session",
+                    key=SESSION_COOKIE_NAME,
                     value=auth_result.session_id,
                     httponly=True,
                     secure=IS_PRODUCTION,  # Only require HTTPS in production
@@ -647,12 +700,12 @@ class RagbitsAPI:
 
         try:
             # Get session ID from cookie
-            session_id = request.cookies.get("ragbits_session")
+            session_id = request.cookies.get(SESSION_COOKIE_NAME)
 
             if not session_id:
                 # No session cookie, just return success
                 response = JSONResponse(content={"success": True})
-                response.delete_cookie(key="ragbits_session", path="/")
+                response.delete_cookie(key=SESSION_COOKIE_NAME, path="/")
                 return response
 
             # Delete the session from store
@@ -660,7 +713,7 @@ class RagbitsAPI:
 
             response = JSONResponse(content={"success": success})
             # Clear the session cookie
-            response.delete_cookie(key="ragbits_session", path="/")
+            response.delete_cookie(key=SESSION_COOKIE_NAME, path="/")
             return response
 
         except Exception as e:
@@ -716,7 +769,7 @@ class RagbitsAPI:
             # Set secure HTTP-only cookie
             session_expiry_seconds = backend.session_expiry_hours * 3600
             response.set_cookie(
-                key="ragbits_session",
+                key=SESSION_COOKIE_NAME,
                 value=auth_result.session_id,
                 httponly=True,
                 secure=IS_PRODUCTION,  # Only require HTTPS in production
