@@ -1,16 +1,8 @@
 import { Button } from "@heroui/react";
-import { useRagbitsContext } from "@ragbits/api-client-react";
+import { useRagbitsCall } from "@ragbits/api-client-react";
 import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { OAuth2VisualConfig } from "../plugins/OAuth2LoginPlugin";
-
-/**
- * Response type for OAuth2 authorization endpoint.
- */
-interface OAuth2AuthorizeResponse {
-  authorize_url: string;
-  state: string;
-}
 
 interface OAuth2LoginProps {
   provider: string;
@@ -26,7 +18,7 @@ export default function OAuth2Login({
   const [isError, setError] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { client } = useRagbitsContext();
+  const authorizeLoginFactory = useRagbitsCall("/api/auth/authorize/:provider");
 
   const handleOAuth2Login = useCallback(async () => {
     setError(false);
@@ -34,39 +26,23 @@ export default function OAuth2Login({
     try {
       // Call provider-specific authorize endpoint
       // Using fetch with client.getBaseUrl() for dynamic path parameter support
-      const response = await fetch(
-        `${client.getBaseUrl()}/api/auth/authorize/${provider}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        },
-      );
+      const response = await authorizeLoginFactory.call({
+        pathParams: { provider },
+      });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+      if (!response.authorize_url) {
+        throw new Error(`Failed to get ${displayName} authorization URL`);
       }
 
-      const data = (await response.json()) as OAuth2AuthorizeResponse;
-
-      if (!data.authorize_url) {
-        setError(true);
-        setErrorMessage(`Failed to get ${displayName} authorization URL`);
-        return;
-      }
-
-      // Redirect to OAuth2 provider authorization page
-      // The backend will handle the callback and redirect back to frontend
-      window.location.href = data.authorize_url;
+      window.location.href = response.authorize_url;
     } catch (e) {
       setError(true);
-      setErrorMessage(`Failed to initiate ${displayName} login`);
+      setErrorMessage(`Failed to initiate ${displayName} login: ${e}`);
       console.error(`Failed to start ${displayName} login`, e);
+    } finally {
       setIsLoading(false);
     }
-  }, [client, provider, displayName]);
+  }, [authorizeLoginFactory, displayName, provider]);
 
   // Compute button style from visual config
   const buttonStyle = useMemo(() => {

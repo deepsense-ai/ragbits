@@ -204,57 +204,6 @@ export interface Task {
 }
 
 /**
- * Text content wrapper.
- */
-export interface TextContent {
-    text: string
-}
-
-/**
- * Message ID content wrapper.
- */
-export interface MessageIdContent {
-    message_id: string
-}
-
-/**
- * Conversation ID content wrapper.
- */
-export interface ConversationIdContent {
-    conversation_id: string
-}
-
-/**
- * Conversation summary content wrapper.
- */
-export interface ConversationSummaryContent {
-    summary: string
-}
-
-/**
- * Followup messages content wrapper.
- */
-export interface FollowupMessagesContent {
-    messages: string[]
-}
-
-/**
- * Usage statistics content wrapper.
- */
-export interface UsageContent {
-    usage: {
-        [k: string]: MessageUsage
-    }
-}
-
-/**
- * Todo item content wrapper.
- */
-export interface TodoItemContent {
-    task: Task
-}
-
-/**
  * Represents a tool confirmation request sent to the user.
  */
 export interface ConfirmationRequest {
@@ -449,7 +398,7 @@ export interface OAuth2AuthorizeResponse {
 }
 
 /**
- * Configuration for an OAuth2 provider.
+ * Configuration for an OAuth2 provider including visual configuration.
  */
 export interface OAuth2ProviderConfig {
     /**
@@ -460,6 +409,22 @@ export interface OAuth2ProviderConfig {
      * Display name for the provider (e.g., 'Discord')
      */
     display_name: string | null
+    /**
+     * Brand color for the provider (e.g., '#5865F2')
+     */
+    color: string | null
+    /**
+     * Button background color (defaults to color)
+     */
+    button_color: string | null
+    /**
+     * Button text color (defaults to white)
+     */
+    text_color: string | null
+    /**
+     * SVG icon as string
+     */
+    icon_svg: string | null
 }
 
 /**
