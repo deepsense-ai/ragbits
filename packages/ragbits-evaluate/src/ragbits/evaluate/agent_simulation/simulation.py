@@ -11,7 +11,7 @@ from ragbits.core.llms import LiteLLM
 from ragbits.evaluate.agent_simulation.models import Personality, Scenario, Task, Turn
 
 if TYPE_CHECKING:
-    from ragbits.evaluate.agent_simulation.context import DomainContext
+    from ragbits.evaluate.agent_simulation.context import DataSnapshot, DomainContext
 
 
 class SimulatedUser:
@@ -19,12 +19,30 @@ class SimulatedUser:
 
     It generates the next user utterance based on the conversation so far
     and the current task. It only moves to the next task when the current one is completed.
+
+    Supports optional data grounding via DataSnapshot to ensure the simulated user
+    only requests items that actually exist in the available data.
     """
 
-    def __init__(self, llm: LiteLLM, scenario: Scenario, personality: Personality | None = None) -> None:
+    def __init__(
+        self,
+        llm: LiteLLM,
+        scenario: Scenario,
+        personality: Personality | None = None,
+        data_snapshot: DataSnapshot | None = None,
+    ) -> None:
+        """Initialize the simulated user.
+
+        Args:
+            llm: The LLM to use for generating messages.
+            scenario: The scenario containing tasks to work through.
+            personality: Optional personality to influence communication style.
+            data_snapshot: Optional data snapshot for grounding requests to available data.
+        """
         self.llm = llm
         self.scenario = scenario
         self.personality = personality
+        self.data_snapshot = data_snapshot
         self.current_task_idx = 0
 
     def get_current_task(self) -> Task | None:
@@ -60,11 +78,21 @@ class SimulatedUser:
         if self.personality:
             personality_instruction = f"\n\nPersonality: {self.personality.description}"
 
+        # Build data grounding block if snapshot is provided
+        grounding_block = ""
+        if self.data_snapshot:
+            grounding_block = (
+                "\n\n[AVAILABLE DATA]\n"
+                f"{self.data_snapshot.format_for_prompt()}\n\n"
+                "IMPORTANT: Only request products, merchants, or categories that exist in the AVAILABLE DATA above. "
+                "Do not ask for items that are not listed."
+            )
+
         prompt = (
             "[SYSTEM]\n"
             "You are simulating a concise human user in a terminal chat. "
             f"Scenario: {self.scenario.name}\n"
-            f"{task_context}{personality_instruction}\n"
+            f"{task_context}{personality_instruction}{grounding_block}\n"
             "Given the assistant's last reply and the conversation so far, "
             "write ONLY the next user message to work on the current task. Be specific and brief.\n\n"
             "[CONVERSATION]\n"

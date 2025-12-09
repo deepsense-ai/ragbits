@@ -6,7 +6,7 @@ from ragbits.agents.tool import ToolCallResult
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext
 from ragbits.core.llms import Usage
-from ragbits.evaluate.agent_simulation.context import DomainContext
+from ragbits.evaluate.agent_simulation.context import DataSnapshot, DomainContext
 from ragbits.evaluate.agent_simulation.deepeval_evaluator import DeepEvalEvaluator
 from ragbits.evaluate.agent_simulation.logger import ConversationLogger
 from ragbits.evaluate.agent_simulation.models import Personality, Scenario, Turn
@@ -68,6 +68,7 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
     user_message_prefix: str = "",
     personality: Personality | None = None,
     domain_context: DomainContext | None = None,
+    data_snapshot: DataSnapshot | None = None,
 ) -> SimulationResult:
     """Run a conversation between an agent and a simulated user.
 
@@ -88,6 +89,7 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
         user_message_prefix: Optional prefix to add to user messages before sending to agent
         personality: Optional personality to use for the simulated user
         domain_context: Optional domain context for goal checking (currency, locale, business rules)
+        data_snapshot: Optional data snapshot to ground simulated user requests to available data
 
     Returns:
         SimulationResult containing all turns, task results, and metrics
@@ -102,7 +104,10 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
 
     # Simulated user uses an independent llm (can share the same provider)
     sim_user = SimulatedUser(
-        llm=build_llm(sim_user_model_name, default_model, api_key), scenario=scenario, personality=personality
+        llm=build_llm(sim_user_model_name, default_model, api_key),
+        scenario=scenario,
+        personality=personality,
+        data_snapshot=data_snapshot,
     )
     # Independent goal checker model
     goal_checker = GoalChecker(llm=build_llm(checker_model_name, default_model, api_key), scenario=scenario)

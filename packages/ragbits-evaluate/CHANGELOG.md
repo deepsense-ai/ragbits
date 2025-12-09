@@ -10,6 +10,8 @@
 
 - Feat: add `DomainContext` for domain-specific goal checking in agent simulation (currency, locale, business rules) (#884)
 
+- Feat: add `DataSnapshot` for data-grounded simulated user requests (prevents unrealistic requests for non-existent items) (#883)
+
 ## 1.3.0 (2025-09-11)
 
 ### Changed
