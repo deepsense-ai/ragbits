@@ -38,3 +38,14 @@
 
 ::: ragbits.evaluate.agent_simulation.models.Turn
 
+## Metrics
+
+::: ragbits.evaluate.agent_simulation.metrics.MetricCollector
+
+::: ragbits.evaluate.agent_simulation.metrics.CompositeMetricCollector
+
+::: ragbits.evaluate.agent_simulation.metrics.LatencyMetricCollector
+
+::: ragbits.evaluate.agent_simulation.metrics.TokenUsageMetricCollector
+
+::: ragbits.evaluate.agent_simulation.metrics.ToolUsageMetricCollector
