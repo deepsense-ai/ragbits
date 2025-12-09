@@ -1,8 +1,10 @@
 """Conversation orchestration for agent simulation scenarios."""
 
 from datetime import datetime, timezone
+from typing import TYPE_CHECKING, Any
 
 from ragbits.agents.tool import ToolCallResult
+from ragbits.chat.adapters import AdapterContext, AdapterPipeline, ResponseAdapter
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext
 from ragbits.core.llms import Usage
@@ -19,6 +21,9 @@ from ragbits.evaluate.agent_simulation.results import (
     TurnResult,
 )
 from ragbits.evaluate.agent_simulation.simulation import GoalChecker, SimulatedUser, ToolUsageChecker, build_llm
+
+if TYPE_CHECKING:
+    pass
 
 
 def _evaluate_with_deepeval(history: list[Turn], logger: ConversationLogger) -> dict[str, float]:
@@ -71,6 +76,7 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
     domain_context: DomainContext | None = None,
     data_snapshot: DataSnapshot | None = None,
     metric_collectors: list[MetricCollector] | None = None,
+    response_adapters: list[ResponseAdapter] | None = None,
 ) -> SimulationResult:
     """Run a conversation between an agent and a simulated user.
 
@@ -93,6 +99,22 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
         domain_context: Optional domain context for goal checking (currency, locale, business rules)
         data_snapshot: Optional data snapshot to ground simulated user requests to available data
         metric_collectors: Optional list of custom metric collectors for per-turn metrics
+        response_adapters: Optional list of adapters to transform chat responses.
+            If None, expects chat to yield str/ToolCallResult/Usage directly.
+            Use adapters when your ChatInterface yields ChatResponse objects or
+            other types that need transformation.
+
+            Common setup for ChatResponse-yielding interfaces::
+
+                from ragbits.evaluate.agent_simulation.adapters import (
+                    ChatResponseAdapter,
+                    ToolResultTextAdapter,
+                )
+
+                response_adapters=[
+                    ChatResponseAdapter(),
+                    ToolResultTextAdapter(renderers={...}),
+                ]
 
     Returns:
         SimulationResult containing all turns, task results, and metrics
@@ -101,6 +123,9 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
 
     # Initialize metric collectors
     collectors = CompositeMetricCollector(metric_collectors)
+
+    # Build adapter pipeline if adapters provided
+    adapter_pipeline = AdapterPipeline(response_adapters) if response_adapters else None
 
     # Initialize result tracking
     turn_results: list[TurnResult] = []
@@ -183,6 +208,16 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
                 ],
                 context=dummy_chat_context,
             )
+
+            # Apply adapter pipeline if configured
+            if adapter_pipeline:
+                adapter_context = AdapterContext(
+                    turn_index=turn_idx,
+                    task_index=current_task_index,
+                    user_message=user_message,
+                    history=history,
+                )
+                stream = adapter_pipeline.process(stream, adapter_context)
 
             async for chunk in stream:
                 if isinstance(chunk, str):

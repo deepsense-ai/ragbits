@@ -12,6 +12,8 @@
 
 - Feat: add metrics collection system for agent simulation (`MetricCollector` protocol, `LatencyMetricCollector`, `TokenUsageMetricCollector`, `ToolUsageMetricCollector`) (#882)
 
+- Feat: add support for response adapters from `ragbits.chat.adapters` in agent simulation, enabling production chat interfaces to be used directly without wrapper classes
+
 ## 1.3.0 (2025-09-11)
 
 ### Changed
