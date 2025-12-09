@@ -1,11 +1,17 @@
 """Simulation components for agent evaluation scenarios."""
 
+from __future__ import annotations
+
 import json
 import re
+from typing import TYPE_CHECKING
 
 from ragbits.agents.tool import ToolCallResult
 from ragbits.core.llms import LiteLLM
 from ragbits.evaluate.agent_simulation.models import Personality, Scenario, Task, Turn
+
+if TYPE_CHECKING:
+    from ragbits.evaluate.agent_simulation.context import DomainContext
 
 
 class SimulatedUser:
@@ -74,25 +80,53 @@ class GoalChecker:
     """A lightweight judge model that decides whether the current task has been achieved.
 
     It inspects the conversation so far and checks if the task matches the expected result.
+    Supports optional domain context for accurate evaluation in specific domains.
     """
 
     def __init__(self, llm: LiteLLM, scenario: Scenario) -> None:
         self.llm = llm
         self.scenario = scenario
 
-    async def is_task_achieved(self, current_task: Task, history: list[Turn]) -> tuple[bool, str]:
-        """Check if the current task has been completed based on the conversation history."""
+    async def is_task_achieved(
+        self,
+        current_task: Task,
+        history: list[Turn],
+        context: DomainContext | None = None,
+    ) -> tuple[bool, str]:
+        """Check if the current task has been completed based on the conversation history.
+
+        Args:
+            current_task: The task to check completion for.
+            history: List of conversation turns so far.
+            context: Optional domain context for accurate evaluation (e.g., currency, locale).
+
+        Returns:
+            Tuple of (is_completed, reason).
+        """
         history_text = []
         for t in history:
             history_text.append(f"User: {t.user}\nAssistant: {t.assistant}")
         history_block = "\n\n".join(history_text) if history_text else "(no prior messages)"
+
+        # Build context block if provided
+        context_block = ""
+        if context:
+            context_block = (
+                "\n[IMPORTANT CONTEXT]\n"
+                f"{context.format_for_prompt()}\n\n"
+                "When evaluating task completion, consider:\n"
+                f"- All prices and amounts are in {context.currency}, NOT USD\n"
+                f"- Use {context.locale} locale conventions\n"
+                "- Apply the business rules listed above\n\n"
+            )
 
         prompt = (
             "[SYSTEM]\n"
             "You are a strict task-completion judge for a user-assistant conversation. "
             "Decide if the assistant has fulfilled the current task.\n"
             f"Current task: {current_task.task}\n"
-            f"Expected result: {current_task.expected_result}\n\n"
+            f"Expected result: {current_task.expected_result}\n"
+            f"{context_block}"
             "Respond with a concise JSON object ONLY, no extra text, with fields:\n"
             '{"done": true|false, "reason": "short reason"}\n\n'
             "[CONVERSATION]\n"

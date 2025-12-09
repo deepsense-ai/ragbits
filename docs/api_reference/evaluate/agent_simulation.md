@@ -2,6 +2,8 @@
 
 ::: ragbits.evaluate.agent_simulation.conversation.run_simulation
 
+::: ragbits.evaluate.agent_simulation.context.DomainContext
+
 ::: ragbits.evaluate.agent_simulation.results.SimulationResult
 
 ::: ragbits.evaluate.agent_simulation.results.TurnResult
