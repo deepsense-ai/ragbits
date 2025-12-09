@@ -6,7 +6,8 @@ from ragbits.evaluate.agent_simulation.context import DomainContext
 class TestDomainContext:
     """Tests for DomainContext dataclass."""
 
-    def test_domain_context_creation(self) -> None:
+    @staticmethod
+    def test_domain_context_creation() -> None:
         """Test creating a DomainContext with all fields."""
         context = DomainContext(
             domain_type="retail",
@@ -24,7 +25,8 @@ class TestDomainContext:
         assert len(context.available_products) == 2
         assert context.business_rules["min_order"] == 50
 
-    def test_domain_context_defaults(self) -> None:
+    @staticmethod
+    def test_domain_context_defaults() -> None:
         """Test DomainContext with default values."""
         context = DomainContext(domain_type="food")
 
@@ -35,7 +37,8 @@ class TestDomainContext:
         assert context.available_products == []
         assert context.business_rules == {}
 
-    def test_format_for_prompt_minimal(self) -> None:
+    @staticmethod
+    def test_format_for_prompt_minimal() -> None:
         """Test format_for_prompt with minimal data."""
         context = DomainContext(domain_type="travel")
 
@@ -48,7 +51,8 @@ class TestDomainContext:
         assert "Available Merchants" not in output
         assert "Sample Products" not in output
 
-    def test_format_for_prompt_with_business_rules(self) -> None:
+    @staticmethod
+    def test_format_for_prompt_with_business_rules() -> None:
         """Test format_for_prompt includes business rules."""
         context = DomainContext(
             domain_type="retail",
@@ -64,7 +68,8 @@ class TestDomainContext:
         assert "prices_include_vat=True" in output
         assert "free_shipping_above=100" in output
 
-    def test_format_for_prompt_with_merchants(self) -> None:
+    @staticmethod
+    def test_format_for_prompt_with_merchants() -> None:
         """Test format_for_prompt includes merchants."""
         context = DomainContext(
             domain_type="food",
@@ -82,7 +87,8 @@ class TestDomainContext:
         assert "Restaurant B" in output
         assert "Restaurant C" in output
 
-    def test_format_for_prompt_truncates_merchants(self) -> None:
+    @staticmethod
+    def test_format_for_prompt_truncates_merchants() -> None:
         """Test format_for_prompt truncates long merchant lists."""
         merchants = [{"name": f"Store {i}"} for i in range(10)]
         context = DomainContext(
@@ -100,7 +106,8 @@ class TestDomainContext:
         # Should not show Store 5-9
         assert "Store 5" not in output
 
-    def test_format_for_prompt_with_products(self) -> None:
+    @staticmethod
+    def test_format_for_prompt_with_products() -> None:
         """Test format_for_prompt includes products."""
         context = DomainContext(
             domain_type="groceries",
@@ -118,7 +125,8 @@ class TestDomainContext:
         assert "Bread" in output
         assert "Eggs" in output
 
-    def test_format_for_prompt_truncates_products(self) -> None:
+    @staticmethod
+    def test_format_for_prompt_truncates_products() -> None:
         """Test format_for_prompt truncates long product lists."""
         products = [{"name": f"Product {i}"} for i in range(15)]
         context = DomainContext(
@@ -136,7 +144,8 @@ class TestDomainContext:
         # Should not show Product 10-14
         assert "Product 10" not in output
 
-    def test_format_for_prompt_complete(self) -> None:
+    @staticmethod
+    def test_format_for_prompt_complete() -> None:
         """Test format_for_prompt with all fields populated."""
         context = DomainContext(
             domain_type="retail",
@@ -156,7 +165,8 @@ class TestDomainContext:
         assert "Headphones" in output
         assert "prices_in_local_currency=True" in output
 
-    def test_format_for_prompt_handles_dict_without_name(self) -> None:
+    @staticmethod
+    def test_format_for_prompt_handles_dict_without_name() -> None:
         """Test format_for_prompt handles dicts without 'name' key."""
         context = DomainContext(
             domain_type="custom",

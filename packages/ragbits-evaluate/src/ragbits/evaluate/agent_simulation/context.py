@@ -16,10 +16,7 @@ class DomainContext:
 
     Example:
         >>> context = DomainContext(
-        ...     domain_type="retail",
-        ...     currency="SAR",
-        ...     locale="ar_SA",
-        ...     business_rules={"prices_include_vat": True}
+        ...     domain_type="retail", currency="SAR", locale="ar_SA", business_rules={"prices_include_vat": True}
         ... )
         >>> result = await goal_checker.is_task_achieved(task, history, context=context)
     """

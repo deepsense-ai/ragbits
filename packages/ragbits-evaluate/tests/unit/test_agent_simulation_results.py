@@ -16,7 +16,8 @@ from ragbits.evaluate.agent_simulation.results import (
 class TestTurnResult:
     """Tests for TurnResult dataclass."""
 
-    def test_turn_result_creation(self) -> None:
+    @staticmethod
+    def test_turn_result_creation() -> None:
         """Test creating a TurnResult with all fields."""
         turn = TurnResult(
             turn_index=1,
@@ -42,7 +43,8 @@ class TestTurnResult:
         assert turn.token_usage["total"] == 100
         assert turn.latency_ms == 150.5
 
-    def test_turn_result_defaults(self) -> None:
+    @staticmethod
+    def test_turn_result_defaults() -> None:
         """Test TurnResult with default values."""
         turn = TurnResult(
             turn_index=1,
@@ -61,7 +63,8 @@ class TestTurnResult:
 class TestTaskResult:
     """Tests for TaskResult dataclass."""
 
-    def test_task_result_creation(self) -> None:
+    @staticmethod
+    def test_task_result_creation() -> None:
         """Test creating a TaskResult."""
         task = TaskResult(
             task_index=0,
@@ -79,7 +82,8 @@ class TestTaskResult:
         assert task.turns_taken == 3
         assert task.final_reason == "Hotels found"
 
-    def test_task_result_with_none_expected(self) -> None:
+    @staticmethod
+    def test_task_result_with_none_expected() -> None:
         """Test TaskResult with None expected_result."""
         task = TaskResult(
             task_index=0,
@@ -96,7 +100,8 @@ class TestTaskResult:
 class TestConversationMetrics:
     """Tests for ConversationMetrics dataclass."""
 
-    def test_conversation_metrics_creation(self) -> None:
+    @staticmethod
+    def test_conversation_metrics_creation() -> None:
         """Test creating ConversationMetrics with all fields."""
         metrics = ConversationMetrics(
             total_turns=10,
@@ -120,7 +125,8 @@ class TestConversationMetrics:
         assert metrics.deepeval_scores["completeness"] == 0.85
         assert metrics.custom["latency_avg"] == 200.0
 
-    def test_success_rate_calculation(self) -> None:
+    @staticmethod
+    def test_success_rate_calculation() -> None:
         """Test success_rate property calculation."""
         metrics = ConversationMetrics(
             total_turns=10,
@@ -129,7 +135,8 @@ class TestConversationMetrics:
         )
         assert metrics.success_rate == 0.75
 
-    def test_success_rate_zero_tasks(self) -> None:
+    @staticmethod
+    def test_success_rate_zero_tasks() -> None:
         """Test success_rate with zero tasks."""
         metrics = ConversationMetrics(
             total_turns=0,
@@ -138,7 +145,8 @@ class TestConversationMetrics:
         )
         assert metrics.success_rate == 0.0
 
-    def test_success_rate_all_completed(self) -> None:
+    @staticmethod
+    def test_success_rate_all_completed() -> None:
         """Test success_rate when all tasks completed."""
         metrics = ConversationMetrics(
             total_turns=5,
@@ -147,7 +155,8 @@ class TestConversationMetrics:
         )
         assert metrics.success_rate == 1.0
 
-    def test_conversation_metrics_defaults(self) -> None:
+    @staticmethod
+    def test_conversation_metrics_defaults() -> None:
         """Test ConversationMetrics with default values."""
         metrics = ConversationMetrics(
             total_turns=5,
@@ -166,14 +175,16 @@ class TestConversationMetrics:
 class TestSimulationStatus:
     """Tests for SimulationStatus enum."""
 
-    def test_status_values(self) -> None:
+    @staticmethod
+    def test_status_values() -> None:
         """Test SimulationStatus enum values."""
         assert SimulationStatus.RUNNING.value == "running"
         assert SimulationStatus.COMPLETED.value == "completed"
         assert SimulationStatus.FAILED.value == "failed"
         assert SimulationStatus.TIMEOUT.value == "timeout"
 
-    def test_status_from_string(self) -> None:
+    @staticmethod
+    def test_status_from_string() -> None:
         """Test creating SimulationStatus from string."""
         assert SimulationStatus("completed") == SimulationStatus.COMPLETED
         assert SimulationStatus("failed") == SimulationStatus.FAILED
@@ -182,8 +193,9 @@ class TestSimulationStatus:
 class TestSimulationResult:
     """Tests for SimulationResult dataclass."""
 
+    @staticmethod
     @pytest.fixture
-    def sample_turn_results(self) -> list[TurnResult]:
+    def sample_turn_results() -> list[TurnResult]:
         """Create sample turn results."""
         return [
             TurnResult(
@@ -208,8 +220,9 @@ class TestSimulationResult:
             ),
         ]
 
+    @staticmethod
     @pytest.fixture
-    def sample_task_results(self) -> list[TaskResult]:
+    def sample_task_results() -> list[TaskResult]:
         """Create sample task results."""
         return [
             TaskResult(
@@ -230,8 +243,9 @@ class TestSimulationResult:
             ),
         ]
 
+    @staticmethod
     @pytest.fixture
-    def sample_metrics(self) -> ConversationMetrics:
+    def sample_metrics() -> ConversationMetrics:
         """Create sample metrics."""
         return ConversationMetrics(
             total_turns=2,
@@ -244,9 +258,9 @@ class TestSimulationResult:
             deepeval_scores={"completeness": 0.95},
         )
 
+    @staticmethod
     @pytest.fixture
     def sample_result(
-        self,
         sample_turn_results: list[TurnResult],
         sample_task_results: list[TaskResult],
         sample_metrics: ConversationMetrics,
@@ -266,7 +280,8 @@ class TestSimulationResult:
             metrics=sample_metrics,
         )
 
-    def test_simulation_result_creation(self, sample_result: SimulationResult) -> None:
+    @staticmethod
+    def test_simulation_result_creation(sample_result: SimulationResult) -> None:
         """Test creating a SimulationResult."""
         assert sample_result.scenario_name == "Hotel Booking"
         assert sample_result.status == SimulationStatus.COMPLETED
@@ -278,7 +293,8 @@ class TestSimulationResult:
         assert sample_result.metrics.success_rate == 1.0
         assert sample_result.error is None
 
-    def test_simulation_result_with_error(self) -> None:
+    @staticmethod
+    def test_simulation_result_with_error() -> None:
         """Test SimulationResult with error."""
         result = SimulationResult(
             scenario_name="Test",
@@ -293,7 +309,8 @@ class TestSimulationResult:
         assert result.tasks == []
         assert result.metrics is None
 
-    def test_to_dict(self, sample_result: SimulationResult) -> None:
+    @staticmethod
+    def test_to_dict(sample_result: SimulationResult) -> None:
         """Test to_dict serialization."""
         data = sample_result.to_dict()
 
@@ -308,7 +325,8 @@ class TestSimulationResult:
         assert data["metrics"]["total_turns"] == 2
         assert data["metrics"]["success_rate"] == 1.0
 
-    def test_to_dict_with_none_end_time(self) -> None:
+    @staticmethod
+    def test_to_dict_with_none_end_time() -> None:
         """Test to_dict with None end_time."""
         result = SimulationResult(
             scenario_name="Test",
@@ -319,7 +337,8 @@ class TestSimulationResult:
         data = result.to_dict()
         assert data["end_time"] is None
 
-    def test_from_dict(self, sample_result: SimulationResult) -> None:
+    @staticmethod
+    def test_from_dict(sample_result: SimulationResult) -> None:
         """Test from_dict deserialization."""
         data = sample_result.to_dict()
         loaded = SimulationResult.from_dict(data)
@@ -335,7 +354,8 @@ class TestSimulationResult:
         assert loaded.metrics.total_turns == sample_result.metrics.total_turns
         assert loaded.metrics.success_rate == sample_result.metrics.success_rate
 
-    def test_from_dict_roundtrip(self, sample_result: SimulationResult) -> None:
+    @staticmethod
+    def test_from_dict_roundtrip(sample_result: SimulationResult) -> None:
         """Test that to_dict -> from_dict preserves data."""
         data = sample_result.to_dict()
         loaded = SimulationResult.from_dict(data)
@@ -343,7 +363,8 @@ class TestSimulationResult:
 
         assert data == data_again
 
-    def test_from_dict_minimal(self) -> None:
+    @staticmethod
+    def test_from_dict_minimal() -> None:
         """Test from_dict with minimal data."""
         data = {
             "scenario_name": "Test",
@@ -358,7 +379,8 @@ class TestSimulationResult:
         assert result.tasks == []
         assert result.metrics is None
 
-    def test_from_dict_with_metrics(self) -> None:
+    @staticmethod
+    def test_from_dict_with_metrics() -> None:
         """Test from_dict with metrics."""
         data = {
             "scenario_name": "Test",
