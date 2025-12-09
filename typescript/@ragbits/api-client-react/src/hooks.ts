@@ -3,11 +3,11 @@ import type {
     StreamCallbacks,
     EndpointResponse,
     RequestOptions,
-    EndpointDefinition,
     BaseApiEndpoints,
     EndpointRequest,
     BaseStreamingEndpoints,
     MakeRequestOptions,
+    AnyEndpoints,
 } from '@ragbits/api-client'
 import type {
     RagbitsCallResult,
@@ -23,10 +23,7 @@ import { useRagbitsContext } from './RagbitsContextProvider'
  * @param defaultOptions - Default options for the API call
  */
 export function useRagbitsCall<
-    Endpoints extends {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
-    } = BaseApiEndpoints,
+    Endpoints extends AnyEndpoints<Endpoints> = BaseApiEndpoints,
     URL extends keyof Endpoints = keyof Endpoints,
 >(
     endpoint: URL,
@@ -141,10 +138,7 @@ export function useRagbitsCall<
  * @param endpoint - The predefined streaming endpoint
  */
 export function useRagbitsStream<
-    Endpoints extends {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
-    } = BaseStreamingEndpoints,
+    Endpoints extends AnyEndpoints<Endpoints> = BaseStreamingEndpoints,
     URL extends keyof Endpoints = keyof Endpoints,
 >(
     endpoint: URL,
