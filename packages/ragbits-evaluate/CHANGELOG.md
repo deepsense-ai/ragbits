@@ -8,6 +8,8 @@
 
 - Feat: add structured results to agent simulation with `SimulationResult`, `TurnResult`, `TaskResult`, and `ConversationMetrics` models (#885)
 
+- Feat: add `DomainContext` for domain-specific goal checking in agent simulation (currency, locale, business rules) (#884)
+
 ## 1.3.0 (2025-09-11)
 
 ### Changed
