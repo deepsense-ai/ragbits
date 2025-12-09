@@ -11,6 +11,7 @@ The agent simulation framework consists of several key components:
 - **Tool Usage Checker**: Verifies that agents use the expected tools for each task
 - **Conversation Logger**: Records all conversation turns, tool calls, and evaluation results
 - **DeepEval Integration**: Automatic evaluation of conversation quality using DeepEval metrics
+- **Structured Results**: Programmatic access to simulation results via `SimulationResult`
 
 ## Creating Scenarios
 
@@ -81,14 +82,14 @@ To run a simulation, you need to:
 
 1. Create a [`ChatInterface`][ragbits.chat.interface.ChatInterface] for your agent
 2. Load scenarios and optionally personalities
-3. Call [`run_duet`][ragbits.evaluate.agent_simulation.conversation.run_duet]
+3. Call [`run_simulation`][ragbits.evaluate.agent_simulation.conversation.run_simulation]
 
 ### Basic Example
 
 ```python
 import asyncio
 from ragbits.chat.interface import ChatInterface
-from ragbits.evaluate.agent_simulation import load_scenarios, run_duet
+from ragbits.evaluate.agent_simulation import load_scenarios, run_simulation
 
 # Create your chat interface (this wraps your agent)
 class MyChat(ChatInterface):
@@ -110,7 +111,7 @@ scenario = scenarios[0]  # Use first scenario
 chat = MyChat()
 await chat.setup()
 
-await run_duet(
+result = await run_simulation(
     scenario=scenario,
     chat=chat,
     max_turns_scenario=15,
@@ -119,6 +120,11 @@ await run_duet(
     default_model="gpt-4o-mini",
     api_key="your-api-key",
 )
+
+# Access structured results
+print(f"Status: {result.status.value}")
+print(f"Success rate: {result.metrics.success_rate:.1%}")
+print(f"Tasks completed: {result.metrics.tasks_completed}/{result.metrics.total_tasks}")
 ```
 
 ### With Personality
@@ -130,7 +136,7 @@ from ragbits.evaluate.agent_simulation import load_personalities
 personalities = load_personalities("personalities.json")
 personality = personalities[0]  # Use first personality
 
-await run_duet(
+result = await run_simulation(
     scenario=scenario,
     chat=chat,
     personality=personality,
@@ -144,7 +150,7 @@ await run_duet(
 
 ### Configuration Options
 
-[`run_duet`][ragbits.evaluate.agent_simulation.conversation.run_duet] accepts several configuration options:
+[`run_simulation`][ragbits.evaluate.agent_simulation.conversation.run_simulation] accepts several configuration options:
 
 - **scenario**: The scenario containing tasks to complete (required)
 - **chat**: Your ChatInterface instance (required)
@@ -158,6 +164,64 @@ await run_duet(
 - **api_key**: API key for LLM
 - **user_message_prefix**: Optional prefix to add to user messages before sending to agent
 - **personality**: Optional personality to use for the simulated user
+
+## Structured Results
+
+`run_simulation` returns a [`SimulationResult`][ragbits.evaluate.agent_simulation.results.SimulationResult] object containing:
+
+### SimulationResult
+
+- **scenario_name**: Name of the scenario
+- **start_time** / **end_time**: Timestamps
+- **status**: One of `completed`, `failed`, `timeout`
+- **turns**: List of `TurnResult` objects
+- **tasks**: List of `TaskResult` objects
+- **metrics**: `ConversationMetrics` with aggregated data
+- **error**: Error message if simulation failed
+
+### Working with Results
+
+```python
+result = await run_simulation(scenario=scenario, chat=chat)
+
+# Check status
+if result.status == SimulationStatus.COMPLETED:
+    print("All tasks completed successfully!")
+
+# Access metrics
+print(f"Total turns: {result.metrics.total_turns}")
+print(f"Total tokens: {result.metrics.total_tokens}")
+print(f"Total cost: ${result.metrics.total_cost_usd:.4f}")
+print(f"Success rate: {result.metrics.success_rate:.1%}")
+
+# Iterate over tasks
+for task in result.tasks:
+    status = "✓" if task.completed else "✗"
+    print(f"{status} Task {task.task_index}: {task.description}")
+    print(f"  Turns taken: {task.turns_taken}")
+    print(f"  Reason: {task.final_reason}")
+
+# Iterate over turns
+for turn in result.turns:
+    print(f"Turn {turn.turn_index} (Task {turn.task_index})")
+    print(f"  User: {turn.user_message}")
+    print(f"  Assistant: {turn.assistant_message}")
+    if turn.tool_calls:
+        print(f"  Tools: {[tc['name'] for tc in turn.tool_calls]}")
+
+# Access DeepEval scores
+for metric, score in result.metrics.deepeval_scores.items():
+    print(f"{metric}: {score:.4f}")
+
+# Serialize to JSON
+import json
+with open("results.json", "w") as f:
+    json.dump(result.to_dict(), f, indent=2)
+
+# Load from JSON
+with open("results.json") as f:
+    loaded_result = SimulationResult.from_dict(json.load(f))
+```
 
 ## How It Works
 
@@ -174,6 +238,7 @@ The simulation follows this flow:
    - The conversation stops when all tasks are completed, the per-task turn limit (`max_turns_task`) is exceeded, or the scenario turn limit (`max_turns_scenario`) is reached
 4. **Logging**: All turns, tool calls, tool usage checks, task completions, and the selected personality (if any) are logged to a file
 5. **Evaluation**: DeepEval metrics are automatically computed at the end
+6. **Results**: Structured `SimulationResult` is returned for programmatic access
 
 ## Goal Checking
 
@@ -201,7 +266,7 @@ The simulation automatically evaluates conversations using DeepEval metrics:
 - **KnowledgeRetentionMetric**: Evaluates how well the agent retains information across turns
 - **ConversationRelevancyMetric**: Assesses the relevance of responses to the conversation
 
-These metrics are computed at the end of the simulation and logged to the log file.
+These metrics are computed at the end of the simulation and included in `result.metrics.deepeval_scores`.
 
 ## Logging
 
@@ -222,8 +287,14 @@ Here's a complete example using the hotel booking scenario:
 
 ```python
 import asyncio
+import json
 from ragbits.chat.interface import ChatInterface
-from ragbits.evaluate.agent_simulation import load_personalities, load_scenarios, run_duet
+from ragbits.evaluate.agent_simulation import (
+    load_personalities,
+    load_scenarios,
+    run_simulation,
+    SimulationStatus,
+)
 
 # Assuming you have a HotelChat class that implements ChatInterface
 from fixtures.hotel.hotel_chat import HotelChat
@@ -241,7 +312,7 @@ async def main() -> None:
     await hotel_chat.setup()
 
     # Run simulation
-    await run_duet(
+    result = await run_simulation(
         scenario=scenario,
         chat=hotel_chat,
         max_turns_scenario=15,
@@ -256,6 +327,15 @@ async def main() -> None:
             "If information is unavailable, explain why briefly.\n\n"
         ),
     )
+
+    # Print summary
+    print(f"\nSimulation completed with status: {result.status.value}")
+    print(f"Tasks completed: {result.metrics.tasks_completed}/{result.metrics.total_tasks}")
+    print(f"Success rate: {result.metrics.success_rate:.1%}")
+
+    # Save results
+    with open("simulation_results.json", "w") as f:
+        json.dump(result.to_dict(), f, indent=2)
 
 if __name__ == "__main__":
     asyncio.run(main())
@@ -276,7 +356,8 @@ uv run python examples/evaluate/agent-scenarios/duet_cli.py \
   --log-file conversation.log \
   --scenarios-file scenarios.json \
   --personality-id 1 \
-  --personalities-file personalities.json
+  --personalities-file personalities.json \
+  --output-json results.json
 ```
 
 ## Best Practices
@@ -287,6 +368,7 @@ uv run python examples/evaluate/agent-scenarios/duet_cli.py \
 4. **Monitor Logs**: Review log files to understand agent behavior and identify issues
 5. **Iterate on Scenarios**: Refine scenarios based on evaluation results
 6. **Set Appropriate Limits**: Use `max_turns_task` and `max_turns_scenario` to prevent infinite loops
+7. **Use Structured Results**: Leverage `SimulationResult` for programmatic analysis and aggregation
 
 ## See Also
 
