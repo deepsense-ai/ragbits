@@ -1,13 +1,13 @@
-import { ChunkedChatResponse, Image } from './autogen.types'
+import { ChatResponse, ChunkedChatResponse, Image } from './autogen.types'
 import type {
     ClientConfig,
     StreamCallbacks,
     BaseApiEndpoints,
-    EndpointDefinition,
     EndpointResponse,
     BaseStreamingEndpoints,
     EndpointRequest,
     MakeRequestOptions,
+    AnyEndpoints,
 } from './types'
 
 /**
@@ -104,10 +104,7 @@ export class RagbitsClient {
      * @param options - Typed request options for the specific endpoint
      */
     async makeRequest<
-        Endpoints extends {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
-        } = BaseApiEndpoints,
+        Endpoints extends AnyEndpoints<Endpoints> = BaseApiEndpoints,
         URL extends keyof Endpoints = keyof Endpoints,
     >(
         endpoint: URL,
@@ -139,7 +136,7 @@ export class RagbitsClient {
         let url = endpoint.toString()
 
         // Replace path parameters (e.g., :id, :userId)
-        if (pathParams) {
+        if (pathParams && typeof pathParams === 'object') {
             url = url.replace(/:([^/]+)/g, (_, paramName) => {
                 if (paramName in pathParams) {
                     const value = (pathParams as Record<string, unknown>)[
@@ -177,10 +174,7 @@ export class RagbitsClient {
      * @param signal - Optional AbortSignal for cancelling the request
      */
     makeStreamRequest<
-        Endpoints extends {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
-        } = BaseStreamingEndpoints,
+        Endpoints extends AnyEndpoints<Endpoints> = BaseStreamingEndpoints,
         URL extends keyof Endpoints = keyof Endpoints,
     >(
         endpoint: URL,
@@ -220,9 +214,14 @@ export class RagbitsClient {
                         try {
                             const jsonString = line.replace('data: ', '').trim()
 
-                            const parsedData = JSON.parse(
-                                jsonString
-                            ) as EndpointResponse<URL, Endpoints>
+                            const parsedData = JSON.parse(jsonString)
+                            if (!this.isChatResponse(parsedData)) {
+                                console.warn(
+                                    "Received response that isn't ChatResponse, skipping.",
+                                    parsedData
+                                )
+                                continue
+                            }
 
                             if (parsedData.type === 'chunked_content') {
                                 this.handleChunkedContent(parsedData, callbacks)
@@ -315,6 +314,17 @@ export class RagbitsClient {
         return () => {
             isCancelled = true
         }
+    }
+
+    private isChatResponse(
+        response: unknown
+    ): response is ChatResponse | ChunkedChatResponse {
+        return (
+            response !== null &&
+            typeof response === 'object' &&
+            'type' in response &&
+            'content' in response
+        )
     }
 
     private normalizeHeaders(init?: HeadersInit): Record<string, string> {
