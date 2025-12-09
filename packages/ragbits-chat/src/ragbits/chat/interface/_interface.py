@@ -10,7 +10,7 @@ from collections.abc import AsyncGenerator, Callable
 from typing import Any
 
 from ragbits.agents.tools.todo import Task
-from ragbits.chat.interface.summary import NoOpSummaryGenerator, SummaryGenerator
+from ragbits.chat.interface.summary import HeuristicSummaryGenerator, SummaryGenerator
 from ragbits.chat.interface.ui_customization import UICustomization
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
@@ -210,7 +210,7 @@ class ChatInterface(ABC):
     show_usage: bool = False
     ui_customization: UICustomization | None = None
     history_persistence: HistoryPersistenceStrategy | None = None
-    summary_generator: SummaryGenerator = NoOpSummaryGenerator()
+    summary_generator: SummaryGenerator = HeuristicSummaryGenerator()
 
     def __init_subclass__(cls, **kwargs: dict) -> None:
         """Automatically apply the with_chat_metadata decorator to the chat method in subclasses."""
