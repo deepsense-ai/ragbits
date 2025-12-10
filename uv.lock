@@ -6343,7 +6343,7 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
-openai = [
+openai = [i
     { name = "openai" },
 ]
 
