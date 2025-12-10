@@ -10,6 +10,8 @@
 
 - Feat: add generic `DomainContext` and `DataSnapshot` for flexible agent simulation context (#884)
 
+- Feat: add metrics collection system for agent simulation (`MetricCollector` protocol, `LatencyMetricCollector`, `TokenUsageMetricCollector`, `ToolUsageMetricCollector`) (#882)
+
 ## 1.6.2 (2026-03-26)
 
 - ragbits-document-search updated to version v1.6.2
