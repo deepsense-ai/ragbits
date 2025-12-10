@@ -1,11 +1,17 @@
 """Simulation components for agent evaluation scenarios."""
 
+from __future__ import annotations
+
 import json
 import re
+from typing import TYPE_CHECKING
 
 from ragbits.agents.tool import ToolCallResult
 from ragbits.core.llms import LiteLLM
 from ragbits.evaluate.agent_simulation.models import Personality, Scenario, Task, Turn
+
+if TYPE_CHECKING:
+    from ragbits.evaluate.agent_simulation.context import DataSnapshot, DomainContext
 
 
 class SimulatedUser:
@@ -13,12 +19,30 @@ class SimulatedUser:
 
     It generates the next user utterance based on the conversation so far
     and the current task. It only moves to the next task when the current one is completed.
+
+    Supports optional data grounding via DataSnapshot to ensure the simulated user
+    only requests items that actually exist in the available data.
     """
 
-    def __init__(self, llm: LiteLLM, scenario: Scenario, personality: Personality | None = None) -> None:
+    def __init__(
+        self,
+        llm: LiteLLM,
+        scenario: Scenario,
+        personality: Personality | None = None,
+        data_snapshot: DataSnapshot | None = None,
+    ) -> None:
+        """Initialize the simulated user.
+
+        Args:
+            llm: The LLM to use for generating messages.
+            scenario: The scenario containing tasks to work through.
+            personality: Optional personality to influence communication style.
+            data_snapshot: Optional data snapshot for grounding requests to available data.
+        """
         self.llm = llm
         self.scenario = scenario
         self.personality = personality
+        self.data_snapshot = data_snapshot
         self.current_task_idx = 0
 
     def get_current_task(self) -> Task | None:
@@ -54,11 +78,21 @@ class SimulatedUser:
         if self.personality:
             personality_instruction = f"\n\nPersonality: {self.personality.description}"
 
+        # Build data grounding block if snapshot is provided
+        grounding_block = ""
+        if self.data_snapshot:
+            grounding_block = (
+                "\n\n[AVAILABLE DATA]\n"
+                f"{self.data_snapshot.format_for_prompt()}\n\n"
+                "IMPORTANT: Only reference items that exist in the AVAILABLE DATA above. "
+                "Do not ask for entities that are not listed."
+            )
+
         prompt = (
             "[SYSTEM]\n"
             "You are simulating a concise human user in a terminal chat. "
             f"Scenario: {self.scenario.name}\n"
-            f"{task_context}{personality_instruction}\n"
+            f"{task_context}{personality_instruction}{grounding_block}\n"
             "Given the assistant's last reply and the conversation so far, "
             "write ONLY the next user message to work on the current task. Be specific and brief.\n\n"
             "[CONVERSATION]\n"
@@ -74,25 +108,51 @@ class GoalChecker:
     """A lightweight judge model that decides whether the current task has been achieved.
 
     It inspects the conversation so far and checks if the task matches the expected result.
+    Supports optional domain context for accurate evaluation in specific domains.
     """
 
     def __init__(self, llm: LiteLLM, scenario: Scenario) -> None:
         self.llm = llm
         self.scenario = scenario
 
-    async def is_task_achieved(self, current_task: Task, history: list[Turn]) -> tuple[bool, str]:
-        """Check if the current task has been completed based on the conversation history."""
+    async def is_task_achieved(
+        self,
+        current_task: Task,
+        history: list[Turn],
+        context: DomainContext | None = None,
+    ) -> tuple[bool, str]:
+        """Check if the current task has been completed based on the conversation history.
+
+        Args:
+            current_task: The task to check completion for.
+            history: List of conversation turns so far.
+            context: Optional domain context for accurate evaluation (e.g., currency, locale).
+
+        Returns:
+            Tuple of (is_completed, reason).
+        """
         history_text = []
         for t in history:
             history_text.append(f"User: {t.user}\nAssistant: {t.assistant}")
         history_block = "\n\n".join(history_text) if history_text else "(no prior messages)"
+
+        # Build context block if provided
+        context_block = ""
+        if context:
+            context_block = (
+                "\n[IMPORTANT CONTEXT]\n"
+                f"{context.format_for_prompt()}\n\n"
+                "When evaluating task completion, consider the domain context above "
+                f"and use {context.locale} locale conventions.\n\n"
+            )
 
         prompt = (
             "[SYSTEM]\n"
             "You are a strict task-completion judge for a user-assistant conversation. "
             "Decide if the assistant has fulfilled the current task.\n"
             f"Current task: {current_task.task}\n"
-            f"Expected result: {current_task.expected_result}\n\n"
+            f"Expected result: {current_task.expected_result}\n"
+            f"{context_block}"
             "Respond with a concise JSON object ONLY, no extra text, with fields:\n"
             '{"done": true|false, "reason": "short reason"}\n\n'
             "[CONVERSATION]\n"

@@ -6,6 +6,10 @@
 
 - Feat: introduce agent simulation module with utilities for agent-to-agent conversation and evaluation scenarios (#857)
 
+- Feat: add structured results to agent simulation with `SimulationResult`, `TurnResult`, `TaskResult`, and `ConversationMetrics` models (#885)
+
+- Feat: add generic `DomainContext` and `DataSnapshot` for flexible agent simulation context (#884)
+
 ## 1.3.0 (2025-09-11)
 
 ### Changed
