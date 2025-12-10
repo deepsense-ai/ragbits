@@ -8,6 +8,8 @@
 
 - Feat: add structured results to agent simulation with `SimulationResult`, `TurnResult`, `TaskResult`, and `ConversationMetrics` models (#885)
 
+- Feat: add generic `DomainContext` and `DataSnapshot` for flexible agent simulation context (#884)
+
 ## 1.6.2 (2026-03-26)
 
 - ragbits-document-search updated to version v1.6.2

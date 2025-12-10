@@ -6,6 +6,7 @@ from ragbits.agents.tool import ToolCallResult
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext
 from ragbits.core.llms import Usage
+from ragbits.evaluate.agent_simulation.context import DomainContext
 from ragbits.evaluate.agent_simulation.deepeval_evaluator import DeepEvalEvaluator
 from ragbits.evaluate.agent_simulation.logger import ConversationLogger
 from ragbits.evaluate.agent_simulation.models import Personality, Scenario, Turn
@@ -66,6 +67,7 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
     api_key: str = "",
     user_message_prefix: str = "",
     personality: Personality | None = None,
+    domain_context: DomainContext | None = None,
 ) -> SimulationResult:
     """Run a conversation between an agent and a simulated user.
 
@@ -85,6 +87,7 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
         api_key: API key for LLM
         user_message_prefix: Optional prefix to add to user messages before sending to agent
         personality: Optional personality to use for the simulated user
+        domain_context: Optional domain context for goal checking (currency, locale, business rules)
 
     Returns:
         SimulationResult containing all turns, task results, and metrics
@@ -191,7 +194,7 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
             history.append(Turn(user=user_message, assistant=assistant_reply))
 
             # Ask the judge if current task is achieved
-            task_done, reason = await goal_checker.is_task_achieved(current_task, history)
+            task_done, reason = await goal_checker.is_task_achieved(current_task, history, context=domain_context)
             logger.log_task_check(turn_idx, task_done, reason)
 
             # Check tool usage if expected tools are specified
