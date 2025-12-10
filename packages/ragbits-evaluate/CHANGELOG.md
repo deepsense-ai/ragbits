@@ -6,6 +6,8 @@
 
 - Feat: introduce agent simulation module with utilities for agent-to-agent conversation and evaluation scenarios (#857)
 
+- Feat: add structured results to agent simulation with `SimulationResult`, `TurnResult`, `TaskResult`, and `ConversationMetrics` models (#885)
+
 ## 1.6.2 (2026-03-26)
 
 - ragbits-document-search updated to version v1.6.2
