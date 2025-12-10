@@ -6,7 +6,8 @@ This module uses lazy imports for components that require optional dependencies
 
 from typing import TYPE_CHECKING
 
-# Import result models eagerly - they have no external dependencies
+# Import context and result models eagerly - they have no external dependencies
+from ragbits.evaluate.agent_simulation.context import DomainContext
 from ragbits.evaluate.agent_simulation.results import (
     ConversationMetrics,
     SimulationResult,
@@ -27,6 +28,7 @@ __all__ = [
     "ConversationLogger",
     "ConversationMetrics",
     "DeepEvalEvaluator",
+    "DomainContext",
     "GoalChecker",
     "Personality",
     "Scenario",
