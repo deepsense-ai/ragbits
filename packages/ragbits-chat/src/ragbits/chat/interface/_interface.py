@@ -10,7 +10,7 @@ from collections.abc import AsyncGenerator, Callable
 from typing import Any
 
 from ragbits.agents.tools.todo import Task
-from ragbits.chat.interface.summary import SummaryGenerator
+from ragbits.chat.interface.summary import HeuristicSummaryGenerator, SummaryGenerator
 from ragbits.chat.interface.ui_customization import UICustomization
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
@@ -108,16 +108,14 @@ def with_chat_metadata(  # noqa: PLR0915
             # Generate summary to serve as title for new conversations
             try:
                 summary = await self.generate_conversation_summary(message, history, context)
-                yield ConversationSummaryResponse(content=ConversationSummaryContent(summary=summary))
+                if summary:
+                    yield ConversationSummaryResponse(content=ConversationSummaryContent(summary=summary))
             except Exception:
                 logger.exception("Failed to generate conversation title")
 
-        responses = []
-        main_response = ""
-        extra_responses: list[ChatResponseUnion] = []
+        responses, main_response, extra_responses = [], "", []
         timestamp = time.time()
-        response_token_count = 0.0
-        first_token_time = None
+        response_token_count, first_token_time = 0.0, None
 
         try:
             async for response in func(self, message, history, context):
@@ -212,7 +210,7 @@ class ChatInterface(ABC):
     show_usage: bool = False
     ui_customization: UICustomization | None = None
     history_persistence: HistoryPersistenceStrategy | None = None
-    summary_generator: SummaryGenerator | None = None
+    summary_generator: SummaryGenerator = HeuristicSummaryGenerator()
 
     def __init_subclass__(cls, **kwargs: dict) -> None:
         """Automatically apply the with_chat_metadata decorator to the chat method in subclasses."""
@@ -395,8 +393,5 @@ class ChatInterface(ABC):
         logger.info(f"[{self.__class__.__name__}] Saving {feedback} for message {message_id} with payload {payload}")
 
     async def generate_conversation_summary(self, message: str, history: ChatFormat, context: ChatContext) -> str:
-        """Delegate to the configured summary generator."""
-        if not self.summary_generator:
-            raise Exception("Tried to invoke `generate_conversation_summary`. No SummaryGenerator found.")
-
+        """Handles conversation summary generation using the configured summary_generator."""
         return await self.summary_generator.generate(message, history, context)
