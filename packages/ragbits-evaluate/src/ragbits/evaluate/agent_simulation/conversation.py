@@ -1,6 +1,8 @@
 """Conversation orchestration for agent simulation scenarios."""
 
+from collections.abc import Awaitable, Callable
 from datetime import datetime, timezone
+from typing import Any
 
 from ragbits.agents.tool import ToolCallResult
 from ragbits.chat.interface import ChatInterface
@@ -19,6 +21,8 @@ from ragbits.evaluate.agent_simulation.results import (
     TurnResult,
 )
 from ragbits.evaluate.agent_simulation.simulation import GoalChecker, SimulatedUser, ToolUsageChecker, build_llm
+
+ProgressCallback = Callable[[str, Any], Awaitable[None]]
 
 
 def _evaluate_with_deepeval(history: list[Turn], logger: ConversationLogger) -> dict[str, float]:
@@ -71,6 +75,7 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
     domain_context: DomainContext | None = None,
     data_snapshot: DataSnapshot | None = None,
     metric_collectors: list[MetricCollector] | None = None,
+    progress_callback: ProgressCallback | None = None,
 ) -> SimulationResult:
     """Run a conversation between an agent and a simulated user.
 
@@ -93,6 +98,7 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
         domain_context: Optional domain context for goal checking (currency, locale, business rules)
         data_snapshot: Optional data snapshot to ground simulated user requests to available data
         metric_collectors: Optional list of custom metric collectors for per-turn metrics
+        progress_callback: Optional async callback for progress updates (event_type, **kwargs)
 
     Returns:
         SimulationResult containing all turns, task results, and metrics
@@ -240,9 +246,33 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
             # Notify metric collectors of turn end
             collectors.on_turn_end(turn_result)
 
+            # Emit progress callback for turn completion
+            if progress_callback:
+                await progress_callback(
+                    "turn",
+                    turn_index=turn_idx,
+                    task_index=current_task_index,
+                    user_message=user_message,
+                    assistant_message=assistant_reply,
+                    tool_calls=[{"name": tc.name, "arguments": tc.arguments, "result": tc.result} for tc in tool_calls],
+                    task_completed=task_done,
+                    task_completed_reason=reason,
+                )
+
             if task_done:
                 print(f"Task completed: {reason}")
                 task_final_reasons[current_task_index] = reason
+
+                # Emit progress callback for task completion
+                if progress_callback:
+                    await progress_callback(
+                        "task_complete",
+                        task_index=current_task_index,
+                        task_description=current_task.task,
+                        turns_taken=task_turn_counts.get(current_task_index, 0),
+                        reason=reason,
+                    )
+
                 has_next = sim_user.advance_to_next_task()
                 if not has_next:
                     print("\nAll tasks completed!")
