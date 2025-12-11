@@ -76,6 +76,7 @@ uv run python examples/evaluate/agent-scenarios/duet_cli.py \
 - `--agent-model-name`: LLM model for the hotel booking agent (defaults to `config.llm_model`)
 - `--sim-user-model-name`: LLM model for the simulated user (defaults to `config.llm_model`)
 - `--checker-model-name`: LLM model for the goal checker (defaults to `config.llm_model`)
+- `--enable-metrics`: Enable custom metric collectors (latency, token usage, tool usage) for detailed performance analysis
 
 ## Scenarios
 

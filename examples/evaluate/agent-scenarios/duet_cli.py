@@ -7,7 +7,14 @@ import json
 from config import config
 from fixtures.hotel.hotel_chat import HotelChat
 
-from ragbits.evaluate.agent_simulation import load_personalities, load_scenarios, run_simulation
+from ragbits.evaluate.agent_simulation import (
+    LatencyMetricCollector,
+    TokenUsageMetricCollector,
+    ToolUsageMetricCollector,
+    load_personalities,
+    load_scenarios,
+    run_simulation,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -28,6 +35,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sim-user-model-name", type=str, help="Override simulated user LLM model name")
     parser.add_argument("--checker-model-name", type=str, help="Override goal checker LLM model name")
     parser.add_argument("--output-json", type=str, help="Path to output JSON file for structured results")
+    parser.add_argument(
+        "--enable-metrics",
+        action="store_true",
+        help="Enable custom metric collectors (latency, token usage, tool usage)",
+    )
     return parser.parse_args()
 
 
@@ -56,6 +68,17 @@ def main() -> None:
         "If information is unavailable, explain why briefly.\n\n"
     )
 
+    # Initialize metric collectors if enabled
+    metric_collectors = (
+        [
+            LatencyMetricCollector(),
+            TokenUsageMetricCollector(),
+            ToolUsageMetricCollector(),
+        ]
+        if args.enable_metrics
+        else None
+    )
+
     hotel_chat = HotelChat(args.agent_model_name or config.llm_model, config.openai_api_key)
     result = asyncio.run(
         run_simulation(
@@ -71,6 +94,7 @@ def main() -> None:
             api_key=config.openai_api_key,
             user_message_prefix=message_prefix,
             personality=personality,
+            metric_collectors=metric_collectors,
         )
     )
 
@@ -80,6 +104,27 @@ def main() -> None:
     print(f"Tasks completed: {result.metrics.tasks_completed}/{result.metrics.total_tasks}")
     print(f"Success rate: {result.metrics.success_rate:.1%}")
     print(f"Total turns: {result.metrics.total_turns}")
+
+    # Print custom metrics if enabled
+    if result.metrics.custom:
+        print("\n=== Custom Metrics ===")
+        custom = result.metrics.custom
+
+        # Latency metrics
+        if "latency_avg_ms" in custom:
+            print(f"Latency (avg): {custom['latency_avg_ms']:.1f}ms")
+            print(f"Latency (min/max): {custom['latency_min_ms']:.1f}ms / {custom['latency_max_ms']:.1f}ms")
+
+        # Token usage metrics
+        if "tokens_total" in custom:
+            print(f"Tokens (total): {custom['tokens_total']}")
+            print(f"Tokens (avg/turn): {custom['tokens_avg_per_turn']:.1f}")
+
+        # Tool usage metrics
+        if "tools_total_calls" in custom:
+            print(f"Tool calls (total): {custom['tools_total_calls']}")
+            print(f"Unique tools used: {', '.join(custom['tools_unique'])}")
+            print(f"Turns with tools: {custom['turns_with_tools']}")
 
     # Save to JSON if requested
     if args.output_json:
