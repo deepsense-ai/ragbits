@@ -40,6 +40,7 @@ export interface SimulationConfig {
   sim_user_model_name: string | null;
   checker_model_name: string | null;
   default_model: string;
+  personality: string | null;
 }
 
 // Execution tracking
@@ -199,6 +200,18 @@ export interface ConversationMetrics {
 
 // UI State
 export type ViewMode = "conversation" | "summary";
+
+// Navigation modes for the eval dashboard
+export type EvalView = "scenarios" | "scenario-detail" | "runner";
+
+// Run history entry - represents a single execution run
+export interface RunHistoryEntry {
+  runId: string;
+  scenarioName: string;
+  timestamp: number;
+  status: SimulationStatus;
+  execution: ScenarioExecution;
+}
 
 export interface ExecutionProgress {
   total: number;

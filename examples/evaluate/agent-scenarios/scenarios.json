@@ -1,6 +1,6 @@
 [
   {
-    "name": "Scenario 1",
+    "name": "Krakow Deluxe Room Search and Booking",
     "tasks": [
       {
         "task": "are there rooms available in Krakow on 2025-06-01",
@@ -20,7 +20,7 @@
     ]
   },
   {
-    "name": "Scenario 2",
+    "name": "Warsaw Budget Room Multi-Night Booking",
     "tasks": [
       {
         "task": "find hotels in Warsaw",
@@ -40,7 +40,7 @@
     ]
   },
   {
-    "name": "Scenario 3",
+    "name": "Gdańsk Suite Weekend Reservation",
     "tasks": [
       {
         "task": "search for hotels in Gdańsk",
@@ -60,7 +60,7 @@
     ]
   },
   {
-    "name": "Scenario 4",
+    "name": "Krakow Best Hotel Premium Room Availability Check",
     "tasks": [
       {
         "task": "I would like to travel to Krakow. What is the best raded hotel there",
@@ -90,7 +90,7 @@
     ]
   },
   {
-    "name": "Scenario 5",
+    "name": "Future Date Booking Attempt",
     "tasks": [
       {
         "task": "book room in Krakow on 2030-06-01",
@@ -105,7 +105,7 @@
     ]
   },
   {
-    "name": "Scenario 6",
+    "name": "Gdańsk Suite Booking with Guest Name",
     "tasks": [
       {
         "task": "search for hotels in Gdańsk",

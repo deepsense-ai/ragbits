@@ -7,15 +7,18 @@ import type {
   SimulationConfig,
   ProgressUpdate,
   ViewMode,
+  EvalView,
   ExecutionProgress,
   ResultSummary,
   SimulationResult,
   TurnUpdate,
+  RunHistoryEntry,
 } from "../types";
 
-// Helper to check if a scenario is a personality (not runnable directly)
-export const isPersonalityScenario = (name: string): boolean => {
-  return name.toLowerCase().startsWith("personality");
+// Helper to check if a scenario is a persona (not runnable directly)
+// Personas have 0 tasks, scenarios have 1 or more tasks
+export const isPersonaScenario = (numTasks: number): boolean => {
+  return numTasks === 0;
 };
 
 export interface EvalStore {
@@ -42,6 +45,11 @@ export interface EvalStore {
 
   // UI state
   viewMode: ViewMode;
+  evalView: EvalView;
+
+  // Run history - keyed by scenarioName, contains list of runs
+  runHistory: Record<string, RunHistoryEntry[]>;
+  selectedRunId: string | null;
 
   // Actions
   actions: {
@@ -79,6 +87,14 @@ export interface EvalStore {
 
     // UI
     setViewMode: (mode: ViewMode) => void;
+    setEvalView: (view: EvalView) => void;
+    navigateToScenarioDetail: (scenarioName: string) => void;
+    navigateToRunner: (scenarioName: string) => void;
+    navigateBack: () => void;
+
+    // Run history
+    selectRun: (runId: string | null) => void;
+    addToRunHistory: (scenarioName: string, entry: RunHistoryEntry) => void;
 
     // Dev/Testing
     loadMockData: () => void;
@@ -91,6 +107,7 @@ const DEFAULT_SIMULATION_CONFIG: SimulationConfig = {
   sim_user_model_name: null,
   checker_model_name: null,
   default_model: "gpt-4o-mini",
+  personality: null,
 };
 
 export const createEvalStore = () =>
@@ -111,6 +128,9 @@ export const createEvalStore = () =>
       selectedResult: null,
       isResultsLoading: false,
       viewMode: "summary" as ViewMode,
+      evalView: "scenarios" as EvalView,
+      runHistory: {},
+      selectedRunId: null,
 
       actions: {
         setConfig: (config) => {
@@ -169,10 +189,10 @@ export const createEvalStore = () =>
         selectAllScenariosForRun: () => {
           set((state) => {
             if (!state.config) return;
-            // Select all non-personality scenarios
+            // Select all non-persona scenarios
             state.selectedForRun = state.config.available_scenarios
-              .map((s) => s.name)
-              .filter((name) => !isPersonalityScenario(name));
+              .filter((s) => !isPersonaScenario(s.num_tasks))
+              .map((s) => s.name);
           });
         },
 
@@ -330,6 +350,50 @@ export const createEvalStore = () =>
           });
         },
 
+        setEvalView: (view) => {
+          set((state) => {
+            state.evalView = view;
+          });
+        },
+
+        navigateToScenarioDetail: (scenarioName) => {
+          set((state) => {
+            state.selectedScenarioName = scenarioName;
+            state.evalView = "scenario-detail";
+          });
+        },
+
+        navigateToRunner: (scenarioName) => {
+          set((state) => {
+            state.selectedScenarioName = scenarioName;
+            state.evalView = "runner";
+            state.selectedRunId = null;
+          });
+        },
+
+        navigateBack: () => {
+          set((state) => {
+            state.evalView = "scenarios";
+            state.selectedRunId = null;
+          });
+        },
+
+        selectRun: (runId) => {
+          set((state) => {
+            state.selectedRunId = runId;
+          });
+        },
+
+        addToRunHistory: (scenarioName, entry) => {
+          set((state) => {
+            if (!state.runHistory[scenarioName]) {
+              state.runHistory[scenarioName] = [];
+            }
+            // Add to the beginning (most recent first)
+            state.runHistory[scenarioName].unshift(entry);
+          });
+        },
+
         loadMockData: () => {
           set((state) => {
             // Mock config
@@ -460,6 +524,45 @@ export const createEvalStore = () =>
             };
 
             state.selectedScenarioName = "Scenario 1";
+
+            // Mock run history
+            state.runHistory = {
+              "Scenario 1": [
+                {
+                  runId: "run-001",
+                  scenarioName: "Scenario 1",
+                  timestamp: Date.now() - 60000,
+                  status: "completed",
+                  execution: state.executions["Scenario 1"],
+                },
+                {
+                  runId: "run-002",
+                  scenarioName: "Scenario 1",
+                  timestamp: Date.now() - 3600000,
+                  status: "failed",
+                  execution: {
+                    scenarioName: "Scenario 1",
+                    status: "failed",
+                    startTime: Date.now() - 3600000,
+                    currentTurn: 1,
+                    currentTaskIndex: 0,
+                    currentTask: null,
+                    turns: [
+                      {
+                        turn_index: 0,
+                        task_index: 0,
+                        user_message: "Can you check for available rooms?",
+                        assistant_message: "I encountered an error while searching.",
+                        tool_calls: [],
+                        task_completed: false,
+                        task_completed_reason: "API error",
+                      },
+                    ],
+                    error: "Connection timeout",
+                  },
+                },
+              ],
+            };
           });
         },
       },

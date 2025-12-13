@@ -1,0 +1,144 @@
+{
+  "scenario_name": "Warsaw Budget Room Multi-Night Booking",
+  "start_time": "2025-12-12T14:44:36.607543+00:00",
+  "end_time": "2025-12-12T14:44:59.913225+00:00",
+  "status": "timeout",
+  "agent_model": null,
+  "simulated_user_model": null,
+  "checker_model": null,
+  "personality": null,
+  "error": null,
+  "turns": [
+    {
+      "turn_index": 1,
+      "task_index": 0,
+      "user_message": "Can you help me find budget hotels in Warsaw for a multi-night stay? I'm looking for options from March 10 to March 15.",
+      "assistant_message": "It appears that there are no budget hotel rooms available in Warsaw for your requested dates from March 10 to March 15. Would you like to expand your search criteria, such as adjusting your budget or looking for different dates?",
+      "tool_calls": [
+        {
+          "name": "search_available_rooms",
+          "arguments": {
+            "start_date": "2025-03-10",
+            "end_date": "2025-03-15",
+            "city": "Warsaw",
+            "max_price": 300
+          },
+          "result": "[]"
+        }
+      ],
+      "task_completed": false,
+      "task_completed_reason": "The assistant did not provide a list of hotels as requested.",
+      "token_usage": {
+        "total": 1544,
+        "prompt": 1457,
+        "completion": 87
+      },
+      "latency_ms": null
+    },
+    {
+      "turn_index": 2,
+      "task_index": 0,
+      "user_message": "Could you check for availability from March 10 to March 12 instead?",
+      "assistant_message": "Could you please specify the city where you'd like to search for hotel availability?",
+      "tool_calls": [],
+      "task_completed": false,
+      "task_completed_reason": "The assistant did not provide a list of hotels in Warsaw.",
+      "token_usage": {
+        "total": 706,
+        "prompt": 690,
+        "completion": 16
+      },
+      "latency_ms": null
+    },
+    {
+      "turn_index": 3,
+      "task_index": 0,
+      "user_message": "I'm looking for budget hotel availability in Warsaw from March 10 to March 12.",
+      "assistant_message": "Unfortunately, there are no budget hotel rooms available in Warsaw from March 10 to March 12 at a price of up to 200 PLN. \n\nWould you like me to search for hotel options with a higher budget or in a different city?",
+      "tool_calls": [
+        {
+          "name": "search_available_rooms",
+          "arguments": {
+            "start_date": "2025-03-10",
+            "end_date": "2025-03-12",
+            "city": "Warsaw",
+            "max_price": 200
+          },
+          "result": "[]"
+        }
+      ],
+      "task_completed": false,
+      "task_completed_reason": "Assistant did not provide a list of hotels in Warsaw.",
+      "token_usage": {
+        "total": 1526,
+        "prompt": 1435,
+        "completion": 91
+      },
+      "latency_ms": null
+    },
+    {
+      "turn_index": 4,
+      "task_index": 0,
+      "user_message": "Please check for hotels in Warsaw from March 10 to March 12 with a budget of up to 300 PLN.",
+      "assistant_message": "It looks like there are no available hotel rooms in Warsaw from March 10 to March 12 within your budget of up to 300 PLN. If you're flexible with your dates or budget, I can help you search for other options. Would you like to try a different city, dates, or price range?",
+      "tool_calls": [
+        {
+          "name": "search_available_rooms",
+          "arguments": {
+            "start_date": "2025-03-10",
+            "end_date": "2025-03-12",
+            "city": "Warszawa",
+            "max_price": 300
+          },
+          "result": "[]"
+        }
+      ],
+      "task_completed": false,
+      "task_completed_reason": "The assistant did not provide a list of hotels in Warsaw.",
+      "token_usage": {
+        "total": 1555,
+        "prompt": 1450,
+        "completion": 105
+      },
+      "latency_ms": null
+    }
+  ],
+  "tasks": [
+    {
+      "task_index": 0,
+      "description": "find hotels in Warsaw",
+      "expected_result": "{list of hotels in Warsaw}",
+      "completed": false,
+      "turns_taken": 4,
+      "final_reason": "Timeout: exceeded 4 turns"
+    },
+    {
+      "task_index": 1,
+      "description": "check availability for 3 nights from April 1, 2025",
+      "expected_result": "{available rooms for specified dates}",
+      "completed": false,
+      "turns_taken": 0,
+      "final_reason": "Not attempted"
+    },
+    {
+      "task_index": 2,
+      "description": "book a budget-friendly room",
+      "expected_result": "{booking confirmation}",
+      "completed": false,
+      "turns_taken": 0,
+      "final_reason": "Not attempted"
+    }
+  ],
+  "metrics": {
+    "total_turns": 4,
+    "total_tasks": 3,
+    "tasks_completed": 0,
+    "success_rate": 0.0,
+    "total_tokens": 5331,
+    "prompt_tokens": 5032,
+    "completion_tokens": 299,
+    "total_cost_usd": 0.0009341999999999999,
+    "deepeval_scores": {},
+    "custom": {}
+  }
+}

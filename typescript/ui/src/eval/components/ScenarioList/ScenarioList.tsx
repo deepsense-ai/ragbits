@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useMemo } from "react";
 import { useRagbitsContext } from "@ragbits/api-client-react";
 import { useEvalStore, useEvalStoreApi } from "../../stores/EvalStoreContext";
-import { isPersonalityScenario } from "../../stores/evalStore";
+import { isPersonaScenario } from "../../stores/evalStore";
 import { ScenarioCard } from "./ScenarioCard";
 import { Spinner, Checkbox } from "@heroui/react";
 import type { Scenario } from "../../types";
@@ -14,6 +14,7 @@ export function ScenarioList() {
   const selectedScenarioName = useEvalStore((s) => s.selectedScenarioName);
   const selectedForRun = useEvalStore((s) => s.selectedForRun);
   const executions = useEvalStore((s) => s.executions);
+  const activePersona = useEvalStore((s) => s.simulationConfig.personality);
   const loadedRef = useRef(false);
 
   const handleSelectScenario = useCallback((name: string) => {
@@ -30,6 +31,21 @@ export function ScenarioList() {
 
   const handleClearSelection = useCallback(() => {
     storeApi.getState().actions.clearScenariosForRun();
+  }, [storeApi]);
+
+  const handleViewDetails = useCallback((name: string) => {
+    storeApi.getState().actions.navigateToScenarioDetail(name);
+  }, [storeApi]);
+
+  const handleRunScenario = useCallback((name: string) => {
+    storeApi.getState().actions.navigateToRunner(name);
+  }, [storeApi]);
+
+  const handleTogglePersona = useCallback((name: string) => {
+    const currentPersona = storeApi.getState().simulationConfig.personality;
+    // Toggle: if already active, deactivate; otherwise activate
+    const newPersona = currentPersona === name ? null : name;
+    storeApi.getState().actions.setSimulationConfig({ personality: newPersona });
   }, [storeApi]);
 
   // Load scenario details when config is available
@@ -54,13 +70,16 @@ export function ScenarioList() {
     loadScenarios();
   }, [client, config, storeApi]);
 
-  // Split scenarios into runnable and personalities
-  const { runnableScenarios, personalityScenarios } = useMemo(() => {
-    if (!config) return { runnableScenarios: [], personalityScenarios: [] };
-    const names = config.available_scenarios.map((s) => s.name);
+  // Split scenarios into runnable and personas
+  const { runnableScenarios, personaScenarios } = useMemo(() => {
+    if (!config) return { runnableScenarios: [], personaScenarios: [] };
     return {
-      runnableScenarios: names.filter((name) => !isPersonalityScenario(name)),
-      personalityScenarios: names.filter((name) => isPersonalityScenario(name)),
+      runnableScenarios: config.available_scenarios
+        .filter((s) => !isPersonaScenario(s.num_tasks))
+        .map((s) => s.name),
+      personaScenarios: config.available_scenarios
+        .filter((s) => isPersonaScenario(s.num_tasks))
+        .map((s) => s.name),
     };
   }, [config]);
 
@@ -76,7 +95,7 @@ export function ScenarioList() {
     );
   }
 
-  if (runnableScenarios.length === 0 && personalityScenarios.length === 0) {
+  if (runnableScenarios.length === 0 && personaScenarios.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-6 text-center">
         <div className="text-4xl mb-4">📭</div>
@@ -124,22 +143,24 @@ export function ScenarioList() {
               isSelectedForRun={selectedForRun.includes(name)}
               onSelect={() => handleSelectScenario(name)}
               onToggleForRun={() => handleToggleForRun(name)}
+              onViewDetails={() => handleViewDetails(name)}
+              onRun={() => handleRunScenario(name)}
               isRunnable
             />
           ))}
         </>
       )}
 
-      {/* Personalities Section */}
-      {personalityScenarios.length > 0 && (
+      {/* Personas Section */}
+      {personaScenarios.length > 0 && (
         <>
           <h2 className="text-sm font-semibold text-foreground-500 uppercase tracking-wide mt-4 mb-2">
-            Personalities ({personalityScenarios.length})
+            Personas ({personaScenarios.length})
           </h2>
           <p className="text-xs text-foreground-400 mb-2">
-            Used as simulated user profiles during scenario runs
+            Click to activate a persona for simulation runs
           </p>
-          {personalityScenarios.map((name) => (
+          {personaScenarios.map((name) => (
             <ScenarioCard
               key={name}
               name={name}
@@ -149,6 +170,9 @@ export function ScenarioList() {
               isSelectedForRun={false}
               onSelect={() => handleSelectScenario(name)}
               isRunnable={false}
+              isPersona
+              isActivePersona={activePersona === name}
+              onTogglePersona={() => handleTogglePersona(name)}
             />
           ))}
         </>

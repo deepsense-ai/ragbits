@@ -28,6 +28,8 @@ from ragbits.evaluate.api_types import (
     ScenarioDetail,
     ScenarioSummary,
     TaskDetail,
+    TestPersonaRequest,
+    TestPersonaResponse,
 )
 from ragbits.evaluate.execution_manager import ExecutionManager, create_progress_callback
 
@@ -114,6 +116,7 @@ class EvalAPI:
         self._setup_config_routes()
         self._setup_scenario_routes()
         self._setup_execution_routes()
+        self._setup_persona_routes()
         self._setup_results_routes()
         self._setup_ui_routes()
 
@@ -206,6 +209,54 @@ class EvalAPI:
                 self._progress_generator(run_id),
                 media_type="text/event-stream",
             )
+
+    def _setup_persona_routes(self) -> None:
+        """Setup persona testing endpoints."""
+
+        @self.app.post("/api/eval/test-persona", response_class=JSONResponse)
+        async def test_persona(request: TestPersonaRequest) -> JSONResponse:
+            """Generate a simulated user message for a task using a persona."""
+            from ragbits.core.llms import LiteLLM
+            from ragbits.evaluate.agent_simulation.models import Personality, Task
+            from ragbits.evaluate.agent_simulation.scenarios import load_personalities
+            from ragbits.evaluate.agent_simulation.simulation import generate_persona_message
+
+            # Load persona if specified
+            persona: Personality | None = None
+            if request.persona:
+                # Try to find persona in the scenarios directory
+                personas_file = self.scenarios_dir / "personas.json"
+                if not personas_file.exists():
+                    # Fallback to old name
+                    personas_file = self.scenarios_dir / "personalities.json"
+
+                if personas_file.exists():
+                    try:
+                        personas = load_personalities(str(personas_file))
+                        persona = next((p for p in personas if p.name == request.persona), None)
+                    except Exception as e:
+                        logger.warning(f"Failed to load personas: {e}")
+
+            # Build the model name
+            model_name = request.model or "gpt-4o-mini"
+
+            # Create LLM instance and task
+            llm = LiteLLM(model_name=model_name, use_structured_output=True)
+            task = Task(task=request.task, expected_result=request.expected_result or "")
+
+            try:
+                message = await generate_persona_message(llm=llm, task=task, persona=persona)
+
+                return JSONResponse(
+                    content=TestPersonaResponse(
+                        message=message,
+                        persona=persona.name if persona else None,
+                        model=model_name,
+                    ).model_dump()
+                )
+            except Exception as e:
+                logger.exception("Failed to generate persona message")
+                raise HTTPException(status_code=500, detail=f"Failed to generate message: {str(e)}") from e
 
     def _setup_results_routes(self) -> None:
         """Setup results management endpoints."""

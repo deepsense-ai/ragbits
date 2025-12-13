@@ -22,9 +22,9 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Two-agent terminal chat (ragbits hotel agent + simulated user)")
     parser.add_argument("--scenario-id", type=int, required=True, help="Scenario ID (1-based index)")
     parser.add_argument("--scenarios-file", type=str, default="scenarios.json", help="Path to scenarios file")
-    parser.add_argument("--personality-id", type=int, help="Personality ID (1-based index, optional)")
+    parser.add_argument("--persona-id", type=int, help="Persona ID (1-based index, optional)")
     parser.add_argument(
-        "--personalities-file", type=str, default="personalities.json", help="Path to personalities file"
+        "--personas-file", type=str, default="personas.json", help="Path to personas file"
     )
     parser.add_argument(
         "--max-turns-scenario", type=int, default=15, help="Max number of conversation turns for the entire scenario"
@@ -53,13 +53,13 @@ def main() -> None:
         raise ValueError(f"Scenario ID {args.scenario_id} out of range. Available: 1-{len(scenarios)}")
     scenario = scenarios[args.scenario_id - 1]
 
-    # Load and validate personality (if provided)
-    personality = None
-    if args.personality_id is not None:
-        personalities = load_personalities(args.personalities_file)
-        if args.personality_id < 1 or args.personality_id > len(personalities):
-            raise ValueError(f"Personality ID {args.personality_id} out of range. Available: 1-{len(personalities)}")
-        personality = personalities[args.personality_id - 1]
+    # Load and validate persona (if provided)
+    persona = None
+    if args.persona_id is not None:
+        personas = load_personalities(args.personas_file)
+        if args.persona_id < 1 or args.persona_id > len(personas):
+            raise ValueError(f"Persona ID {args.persona_id} out of range. Available: 1-{len(personas)}")
+        persona = personas[args.persona_id - 1]
 
     # Hotel-specific message prefix
     message_prefix = (
@@ -93,7 +93,7 @@ def main() -> None:
             default_model=config.llm_model,
             api_key=config.openai_api_key,
             user_message_prefix=message_prefix,
-            personality=personality,
+            personality=persona,
             metric_collectors=metric_collectors,
         )
     )

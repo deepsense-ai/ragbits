@@ -11,7 +11,12 @@ interface ScenarioCardProps {
   isSelectedForRun: boolean;
   onSelect: () => void;
   onToggleForRun?: () => void;
+  onViewDetails?: () => void;
+  onRun?: () => void;
   isRunnable?: boolean;
+  isPersona?: boolean;
+  isActivePersona?: boolean;
+  onTogglePersona?: () => void;
 }
 
 const STATUS_CONFIG: Record<
@@ -34,7 +39,12 @@ export function ScenarioCard({
   isSelectedForRun,
   onSelect,
   onToggleForRun,
+  onViewDetails,
+  onRun,
   isRunnable = true,
+  isPersona = false,
+  isActivePersona = false,
+  onTogglePersona,
 }: ScenarioCardProps) {
   const status = execution?.status ?? "idle";
   const statusConfig = STATUS_CONFIG[status];
@@ -42,11 +52,12 @@ export function ScenarioCard({
   return (
     <Card
       isPressable
-      onPress={onSelect}
+      onPress={isPersona ? onTogglePersona : onSelect}
       className={cn(
         "transition-all",
         isSelected && "ring-2 ring-primary",
         isSelectedForRun && "bg-primary-50 dark:bg-primary-900/20",
+        isActivePersona && "ring-2 ring-success bg-success-50 dark:bg-success-900/20",
       )}
     >
       <CardBody className="gap-2 p-3">
@@ -62,7 +73,9 @@ export function ScenarioCard({
           )}
           <div className="flex-1 min-w-0">
             <h3 className="font-medium text-foreground truncate">{name}</h3>
-            {scenario ? (
+            {isPersona ? (
+              <p className="text-xs text-foreground-500">Persona</p>
+            ) : scenario ? (
               <p className="text-xs text-foreground-500">
                 {scenario.tasks.length} task{scenario.tasks.length !== 1 ? "s" : ""}
               </p>
@@ -70,22 +83,38 @@ export function ScenarioCard({
               <Skeleton className="h-3 w-16 rounded mt-1" />
             )}
           </div>
-          <Chip
-            size="sm"
-            color={statusConfig.color}
-            variant="flat"
-            startContent={
-              <Icon
-                icon={statusConfig.icon}
-                className={cn(
-                  "text-sm",
-                  status === "running" && "animate-spin",
-                )}
-              />
-            }
-          >
-            {statusConfig.label}
-          </Chip>
+          {isPersona ? (
+            <Chip
+              size="sm"
+              color={isActivePersona ? "success" : "default"}
+              variant="flat"
+              startContent={
+                <Icon
+                  icon={isActivePersona ? "heroicons:check" : "heroicons:user"}
+                  className="text-sm"
+                />
+              }
+            >
+              {isActivePersona ? "Active" : "Inactive"}
+            </Chip>
+          ) : (
+            <Chip
+              size="sm"
+              color={statusConfig.color}
+              variant="flat"
+              startContent={
+                <Icon
+                  icon={statusConfig.icon}
+                  className={cn(
+                    "text-sm",
+                    status === "running" && "animate-spin",
+                  )}
+                />
+              }
+            >
+              {statusConfig.label}
+            </Chip>
+          )}
         </div>
 
         {/* Progress indicator for running scenarios */}
@@ -118,6 +147,32 @@ export function ScenarioCard({
             <span>
               {execution.turns.filter((t) => t.task_completed).length} tasks done
             </span>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        {isRunnable && (
+          <div className="flex items-center gap-1 mt-2 pt-2 border-t border-divider">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewDetails?.();
+              }}
+              className="flex-1 flex items-center justify-center gap-1 px-2 py-1 text-xs text-foreground-500 hover:text-foreground hover:bg-default-100 rounded transition-colors"
+            >
+              <Icon icon="heroicons:document-text" className="text-sm" />
+              Details
+            </button>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onRun?.();
+              }}
+              className="flex-1 flex items-center justify-center gap-1 px-2 py-1 text-xs text-primary hover:bg-primary-100 rounded transition-colors"
+            >
+              <Icon icon="heroicons:play" className="text-sm" />
+              Run
+            </button>
           </div>
         )}
       </CardBody>

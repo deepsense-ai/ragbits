@@ -141,3 +141,22 @@ class ResultsListResponse(BaseModel):
 
     results: list[ResultSummary]
     total: int
+
+
+class TestPersonaRequest(BaseModel):
+    """Request to test how a persona would ask a task."""
+
+    task: str
+    expected_result: str | None = None
+    persona: str | None = None
+    scenario_name: str | None = None
+    task_index: int | None = None
+    model: str | None = None
+
+
+class TestPersonaResponse(BaseModel):
+    """Response with the generated persona message."""
+
+    message: str
+    persona: str | None = None
+    model: str

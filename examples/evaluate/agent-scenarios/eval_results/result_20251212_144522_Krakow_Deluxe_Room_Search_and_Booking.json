@@ -1,0 +1,179 @@
+{
+  "scenario_name": "Krakow Deluxe Room Search and Booking",
+  "start_time": "2025-12-12T14:44:34.872689+00:00",
+  "end_time": "2025-12-12T14:45:22.292986+00:00",
+  "status": "timeout",
+  "agent_model": null,
+  "simulated_user_model": null,
+  "checker_model": null,
+  "personality": null,
+  "error": null,
+  "turns": [
+    {
+      "turn_index": 1,
+      "task_index": 0,
+      "user_message": "Check availability for deluxe rooms in Krakow on 2025-06-01.",
+      "assistant_message": "Here are the available deluxe rooms in Krak\u00f3w on June 1, 2025:\n\n1. **Grand Hotel Krak\u00f3w**\n   - **Room Number:** 202\n   - **Price per Night:** 500 PLN\n   - **Capacity:** 3 guests\n   - **Amenities:** WiFi, TV, Air Conditioning, Balcony, City View, Minibar\n\n2. **Hotel Stary Krak\u00f3w**\n   - **Room Number:** 22\n   - **Price per Night:** 480 PLN\n   - **Capacity:** 3 guests\n   - **Amenities:** WiFi, TV, Air Conditioning, City View, Minibar, Balcony\n\n3. **Hotel Copernicus**\n   - **Room Number:** 2\n   - **Price per Night:** 550 PLN\n   - **Capacity:** 2 guests\n   - **Amenities:** WiFi, TV, Air Conditioning, Balcony, City View, Minibar\n\n4. **Hotel Copernicus**\n   - **Room Number:** 3\n   - **Price per Night:** 550 PLN\n   - **Capacity:** 3 guests\n   - **Amenities:** WiFi, TV, Air Conditioning, Balcony, City View, Minibar\n\n5. **Qubus Hotel Krak\u00f3w**\n   - **Room Number:** 211\n   - **Price per Night:** 420 PLN\n   - **Capacity:** 3 guests\n   - **Amenities:** WiFi, TV, Air Conditioning, Balcony, Minibar\n\nLet me know if you would like to proceed with any specific reservation or need more information!",
+      "tool_calls": [
+        {
+          "name": "search_available_rooms",
+          "arguments": {
+            "start_date": "2025-06-01",
+            "end_date": "2025-06-02",
+            "city": "Krak\u00f3w",
+            "room_type": "deluxe"
+          },
+          "result": "[\n  {\n    \"hotel_id\": 1,\n    \"hotel_name\": \"Grand Hotel Krak\\u00f3w\",\n    \"city\": \"Krak\\u00f3w\",\n    \"room_id\": 4,\n    \"room_number\": \"202\",\n    \"room_type\": \"deluxe\",\n    \"price_per_night\": 500.0,\n    \"capacity\": 3,\n    \"amenities\": [\n      \"wifi\",\n      \"tv\",\n      \"air_conditioning\",\n      \"balcony\",\n      \"city_view\",\n      \"minibar\"\n    ]\n  },\n  {\n    \"hotel_id\": 2,\n    \"hotel_name\": \"Hotel Stary Krak\\u00f3w\",\n    \"city\": \"Krak\\u00f3w\",\n    \"room_id\": 9,\n    \"room_number\": \"22\",\n    \"room_type\": \"deluxe\",\n    \"price_per_night\": 480.0,\n    \"capacity\": 3,\n    \"amenities\": [\n      \"wifi\",\n      \"tv\",\n      \"air_conditioning\",\n      \"city_view\",\n      \"minibar\",\n      \"balcony\"\n    ]\n  },\n  {\n    \"hotel_id\": 4,\n    \"hotel_name\": \"Hotel Copernicus\",\n    \"city\": \"Krak\\u00f3w\",\n    \"room_id\": 18,\n    \"room_number\": \"2\",\n    \"room_type\": \"deluxe\",\n    \"price_per_night\": 550.0,\n    \"capacity\": 2,\n    \"amenities\": [\n      \"wifi\",\n      \"tv\",\n      \"air_conditioning\",\n      \"balcony\",\n      \"city_view\",\n      \"minibar\"\n    ]\n  },\n  {\n    \"hotel_id\": 4,\n    \"hotel_name\": \"Hotel Copernicus\",\n    \"city\": \"Krak\\u00f3w\",\n    \"room_id\": 19,\n    \"room_number\": \"3\",\n    \"room_type\": \"deluxe\",\n    \"price_per_night\": 550.0,\n    \"capacity\": 3,\n    \"amenities\": [\n      \"wifi\",\n      \"tv\",\n      \"air_conditioning\",\n      \"balcony\",\n      \"city_view\",\n      \"minibar\"\n    ]\n  },\n  {\n    \"hotel_id\": 5,\n    \"hotel_name\": \"Qubus Hotel Krak\\u00f3w\",\n    \"city\": \"Krak\\u00f3w\",\n    \"room_id\": 25,\n    \"room_number\": \"211\",\n    \"room_type\": \"deluxe\",\n    \"price_per_night\": 420.0,\n    \"capacity\": 3,\n    \"amenities\": [\n      \"wifi\",\n      \"tv\",\n      \"air_conditioning\",\n      \"balcony\",\n      \"minibar\"\n    ]\n  }\n]"
+        }
+      ],
+      "task_completed": true,
+      "task_completed_reason": "Available rooms listed for the requested date.",
+      "token_usage": {
+        "total": 2403,
+        "prompt": 2033,
+        "completion": 370
+      },
+      "latency_ms": null
+    },
+    {
+      "turn_index": 2,
+      "task_index": 1,
+      "user_message": "I would like to book the deluxe room at Hotel Stary Krak\u00f3w, Room 22, for one night on 2025-06-01. Please confirm the booking.",
+      "assistant_message": "Here's the booking information for your stay at Hotel Stary Krak\u00f3w:\n\n- **Hotel Name**: Hotel Stary Krak\u00f3w\n- **Address**: ul. Szczepa\u0144ska 5, 31-011 Krak\u00f3w\n- **Room Number**: 22\n- **Room Type**: Deluxe\n- **Check-in Date**: 2025-06-01\n- **Check-out Date**: 2025-06-02\n- **Price**: 480 PLN per night\n- **Capacity**: 3 guests\n- **Amenities**: Wi-Fi, TV, Air Conditioning, City View, Minibar, Balcony\n\nPlease confirm the guest name you would like to use for the reservation, and I will proceed with the booking.",
+      "tool_calls": [
+        {
+          "name": "list_hotels",
+          "arguments": {
+            "city": "Krak\u00f3w"
+          },
+          "result": "[\n  {\n    \"id\": 1,\n    \"name\": \"Grand Hotel Krak\\u00f3w\",\n    \"city\": \"Krak\\u00f3w\",\n    \"address\": \"ul. S\\u0142awkowska 5/7, 31-014 Krak\\u00f3w\",\n    \"rating\": 4.8,\n    \"amenities\": [\n      \"swimming_pool\",\n      \"spa\",\n      \"gym\",\n      \"restaurant\",\n      \"parking\",\n      \"wifi\",\n      \"room_service\"\n    ]\n  },\n  {\n    \"id\": 4,\n    \"name\": \"Hotel Copernicus\",\n    \"city\": \"Krak\\u00f3w\",\n    \"address\": \"ul. Kanonicza 16, 31-002 Krak\\u00f3w\",\n    \"rating\": 4.9,\n    \"amenities\": [\n      \"spa\",\n      \"restaurant\",\n      \"wifi\",\n      \"room_service\",\n      \"bar\"\n    ]\n  },\n  {\n    \"id\": 2,\n    \"name\": \"Hotel Stary Krak\\u00f3w\",\n    \"city\": \"Krak\\u00f3w\",\n    \"address\": \"ul. Szczepa\\u0144ska 5, 31-011 Krak\\u00f3w\",\n    \"rating\": 4.5,\n    \"amenities\": [\n      \"spa\",\n      \"restaurant\",\n      \"parking\",\n      \"wifi\",\n      \"bar\"\n    ]\n  },\n  {\n    \"id\": 5,\n    \"name\": \"Qubus Hotel Krak\\u00f3w\",\n    \"city\": \"Krak\\u00f3w\",\n    \"address\": \"ul. Nadwi\\u015bla\\u0144ska 6, 30-527 Krak\\u00f3w\",\n    \"rating\": 4.3,\n    \"amenities\": [\n      \"gym\",\n      \"restaurant\",\n      \"parking\",\n      \"wifi\",\n      \"bar\"\n    ]\n  },\n  {\n    \"id\": 3,\n    \"name\": \"Radisson Blu Hotel Krak\\u00f3w\",\n    \"city\": \"Krak\\u00f3w\",\n    \"address\": \"ul. Straszewskiego 17, 31-101 Krak\\u00f3w\",\n    \"rating\": 4.6,\n    \"amenities\": [\n      \"swimming_pool\",\n      \"gym\",\n      \"restaurant\",\n      \"parking\",\n      \"wifi\",\n      \"business_center\"\n    ]\n  }\n]"
+        },
+        {
+          "name": "get_hotel_details",
+          "arguments": {
+            "hotel_id": 2
+          },
+          "result": "{\n  \"id\": 2,\n  \"name\": \"Hotel Stary Krak\\u00f3w\",\n  \"city\": \"Krak\\u00f3w\",\n  \"address\": \"ul. Szczepa\\u0144ska 5, 31-011 Krak\\u00f3w\",\n  \"rating\": 4.5,\n  \"amenities\": [\n    \"spa\",\n    \"restaurant\",\n    \"parking\",\n    \"wifi\",\n    \"bar\"\n  ],\n  \"rooms\": [\n    {\n      \"id\": 6,\n      \"number\": \"11\",\n      \"room_type\": \"standard\",\n      \"price_per_night\": 320.0,\n      \"capacity\": 2,\n      \"amenities\": [\n        \"wifi\",\n        \"tv\",\n        \"air_conditioning\"\n      ]\n    },\n    {\n      \"id\": 7,\n      \"number\": \"12\",\n      \"room_type\": \"standard\",\n      \"price_per_night\": 320.0,\n      \"capacity\": 2,\n      \"amenities\": [\n        \"wifi\",\n        \"tv\",\n        \"air_conditioning\",\n        \"balcony\"\n      ]\n    },\n    {\n      \"id\": 8,\n      \"number\": \"21\",\n      \"room_type\": \"deluxe\",\n      \"price_per_night\": 480.0,\n      \"capacity\": 2,\n      \"amenities\": [\n        \"wifi\",\n        \"tv\",\n        \"air_conditioning\",\n        \"city_view\",\n        \"minibar\"\n      ]\n    },\n    {\n      \"id\": 9,\n      \"number\": \"22\",\n      \"room_type\": \"deluxe\",\n      \"price_per_night\": 480.0,\n      \"capacity\": 3,\n      \"amenities\": [\n        \"wifi\",\n        \"tv\",\n        \"air_conditioning\",\n        \"city_view\",\n        \"minibar\",\n        \"balcony\"\n      ]\n    },\n    {\n      \"id\": 10,\n      \"number\": \"31\",\n      \"room_type\": \"suite\",\n      \"price_per_night\": 700.0,\n      \"capacity\": 4,\n      \"amenities\": [\n        \"wifi\",\n        \"tv\",\n        \"air_conditioning\",\n        \"balcony\",\n        \"city_view\",\n        \"minibar\",\n        \"living_room\"\n      ]\n    },\n    {\n      \"id\": 11,\n      \"number\": \"32\",\n      \"room_type\": \"suite\",\n      \"price_per_night\": 700.0,\n      \"capacity\": 4,\n      \"amenities\": [\n        \"wifi\",\n        \"tv\",\n        \"air_conditioning\",\n        \"balcony\",\n        \"city_view\",\n        \"minibar\",\n        \"living_room\"\n      ]\n    }\n  ]\n}"
+        }
+      ],
+      "task_completed": true,
+      "task_completed_reason": "The assistant provided a list of deluxe rooms as requested.",
+      "token_usage": {
+        "total": 4052,
+        "prompt": 3860,
+        "completion": 192
+      },
+      "latency_ms": null
+    },
+    {
+      "turn_index": 3,
+      "task_index": 2,
+      "user_message": "The guest name is John Smith. Please proceed with the booking.",
+      "assistant_message": "Could you please provide me with the following details to complete the booking?\n\n1. **Check-in Date** (YYYY-MM-DD format)\n2. **Check-out Date** (YYYY-MM-DD format)\n3. **City** where you'd like to stay\n4. Any specific **room type** you prefer? (options: standard, deluxe, suite)\n5. Your **budget range** (minimum and maximum price per night, if applicable) \n\nOnce I have this information, I can find available rooms and assist you further with the reservation for John Smith.",
+      "tool_calls": [],
+      "task_completed": false,
+      "task_completed_reason": "Booking was not completed; additional information was requested instead of confirming the reservation.",
+      "token_usage": {
+        "total": 801,
+        "prompt": 688,
+        "completion": 113
+      },
+      "latency_ms": null
+    },
+    {
+      "turn_index": 4,
+      "task_index": 2,
+      "user_message": "The check-in date is 2025-06-01, the check-out date is 2025-06-02, the city is Krak\u00f3w, the room type is deluxe, and the budget is 480 PLN per night.",
+      "assistant_message": "I've found two deluxe rooms available in Krak\u00f3w for your specified dates:\n\n1. **Hotel Stary Krak\u00f3w**\n   - **Room Number:** 22\n   - **Price per Night:** 480 PLN\n   - **Capacity:** 3 guests\n   - **Amenities:** WiFi, TV, Air Conditioning, City View, Minibar, Balcony\n\n2. **Qubus Hotel Krak\u00f3w**\n   - **Room Number:** 211\n   - **Price per Night:** 420 PLN\n   - **Capacity:** 3 guests\n   - **Amenities:** WiFi, TV, Air Conditioning, Balcony, Minibar\n\nPlease let me know which hotel and room you would like to reserve, along with the guest name for the reservation!",
+      "tool_calls": [
+        {
+          "name": "search_available_rooms",
+          "arguments": {
+            "start_date": "2025-06-01",
+            "end_date": "2025-06-02",
+            "city": "Krak\u00f3w",
+            "room_type": "deluxe",
+            "max_price": 480
+          },
+          "result": "[\n  {\n    \"hotel_id\": 2,\n    \"hotel_name\": \"Hotel Stary Krak\\u00f3w\",\n    \"city\": \"Krak\\u00f3w\",\n    \"room_id\": 9,\n    \"room_number\": \"22\",\n    \"room_type\": \"deluxe\",\n    \"price_per_night\": 480.0,\n    \"capacity\": 3,\n    \"amenities\": [\n      \"wifi\",\n      \"tv\",\n      \"air_conditioning\",\n      \"city_view\",\n      \"minibar\",\n      \"balcony\"\n    ]\n  },\n  {\n    \"hotel_id\": 5,\n    \"hotel_name\": \"Qubus Hotel Krak\\u00f3w\",\n    \"city\": \"Krak\\u00f3w\",\n    \"room_id\": 25,\n    \"room_number\": \"211\",\n    \"room_type\": \"deluxe\",\n    \"price_per_night\": 420.0,\n    \"capacity\": 3,\n    \"amenities\": [\n      \"wifi\",\n      \"tv\",\n      \"air_conditioning\",\n      \"balcony\",\n      \"minibar\"\n    ]\n  }\n]"
+        }
+      ],
+      "task_completed": false,
+      "task_completed_reason": "Booking not completed, additional confirmation needed from user.",
+      "token_usage": {
+        "total": 1947,
+        "prompt": 1745,
+        "completion": 202
+      },
+      "latency_ms": null
+    },
+    {
+      "turn_index": 5,
+      "task_index": 2,
+      "user_message": "I would like to reserve the deluxe room at Hotel Stary Krak\u00f3w, Room 22, for John Smith. Please proceed with the booking.",
+      "assistant_message": "I'll need you to provide me with the check-in and check-out dates for John Smith's stay at Hotel Stary Krak\u00f3w. Once I have that information, I can proceed with the booking.",
+      "tool_calls": [],
+      "task_completed": false,
+      "task_completed_reason": "The booking task was not completed as the assistant did not finalize the reservation.",
+      "token_usage": {
+        "total": 744,
+        "prompt": 704,
+        "completion": 40
+      },
+      "latency_ms": null
+    },
+    {
+      "turn_index": 6,
+      "task_index": 2,
+      "user_message": "The check-in date is 2025-06-01 and the check-out date is 2025-06-02. Please complete the booking for John Smith.",
+      "assistant_message": "To proceed with the booking for John Smith from June 1, 2025, to June 2, 2025, I first need to know the city where you would like to book the hotel. Could you please provide that information?",
+      "tool_calls": [],
+      "task_completed": false,
+      "task_completed_reason": "The assistant has not completed the booking despite multiple confirmations from the user.",
+      "token_usage": {
+        "total": 759,
+        "prompt": 709,
+        "completion": 50
+      },
+      "latency_ms": null
+    }
+  ],
+  "tasks": [
+    {
+      "task_index": 0,
+      "description": "are there rooms available in Krakow on 2025-06-01",
+      "expected_result": "{list of available rooms}",
+      "completed": true,
+      "turns_taken": 1,
+      "final_reason": "Available rooms listed for the requested date."
+    },
+    {
+      "task_index": 1,
+      "description": "are there delux rooms",
+      "expected_result": "{list of rooms}",
+      "completed": true,
+      "turns_taken": 1,
+      "final_reason": "The assistant provided a list of deluxe rooms as requested."
+    },
+    {
+      "task_index": 2,
+      "description": "book room",
+      "expected_result": "{book room}",
+      "completed": false,
+      "turns_taken": 4,
+      "final_reason": "Timeout: exceeded 4 turns"
+    }
+  ],
+  "metrics": {
+    "total_turns": 6,
+    "total_tasks": 3,
+    "tasks_completed": 2,
+    "success_rate": 0.6666666666666666,
+    "total_tokens": 10706,
+    "prompt_tokens": 9739,
+    "completion_tokens": 967,
+    "total_cost_usd": 0.0020410499999999995,
+    "deepeval_scores": {},
+    "custom": {}
+  }
+}

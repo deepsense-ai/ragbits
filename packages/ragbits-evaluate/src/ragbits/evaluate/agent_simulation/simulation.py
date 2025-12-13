@@ -104,6 +104,41 @@ class SimulatedUser:
         return response.strip()
 
 
+async def generate_persona_message(
+    llm: LiteLLM,
+    task: Task,
+    persona: Personality | None = None,
+) -> str:
+    """Generate a single user message for a task with optional persona.
+
+    This is a standalone function for testing how a persona would phrase a task request,
+    without requiring a full scenario or conversation history.
+
+    Args:
+        llm: The LLM to use for generating the message.
+        task: The task to generate a message for.
+        persona: Optional persona to influence communication style.
+
+    Returns:
+        The generated user message.
+    """
+    persona_instruction = ""
+    if persona:
+        persona_instruction = f"\n\nPersona: {persona.description}"
+
+    prompt = (
+        "[SYSTEM]\n"
+        "You are simulating a concise human user in a terminal chat. "
+        f"Current task: {task.task}{persona_instruction}\n"
+        "Write ONLY a single user message to request help with this task. "
+        "Be specific and brief.\n\n"
+        "[TASK]\nWrite the USER message now:"
+    )
+
+    response = await llm.generate(prompt=prompt)
+    return response.strip()
+
+
 class GoalChecker:
     """A lightweight judge model that decides whether the current task has been achieved.
 
