@@ -1,7 +1,10 @@
 """Conversation orchestration for agent simulation scenarios."""
 
+import asyncio
+import sys
+from collections.abc import Callable
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Any
+from typing import IO, TYPE_CHECKING, Any
 
 from ragbits.agents.tool import ToolCallResult
 from ragbits.chat.adapters import AdapterContext, AdapterPipeline, ResponseAdapter
@@ -26,21 +29,27 @@ if TYPE_CHECKING:
     pass
 
 
-def _evaluate_with_deepeval(history: list[Turn], logger: ConversationLogger) -> dict[str, float]:
+def _evaluate_with_deepeval(
+    history: list[Turn],
+    logger: ConversationLogger,
+    output_stream: IO[str] | None = None,
+) -> dict[str, float]:
     """Evaluate conversation with DeepEval metrics.
 
     Args:
         history: List of conversation turns to evaluate
         logger: Logger instance to record evaluation results
+        output_stream: Optional stream for output (defaults to sys.stdout)
 
     Returns:
         Dictionary of metric names to scores
     """
+    out = output_stream if output_stream is not None else sys.stdout
     scores: dict[str, float] = {}
     if not history:
         return scores
 
-    print("\n=== Running DeepEval Evaluation ===")
+    print("\n=== Running DeepEval Evaluation ===", file=out)
     deepeval_evaluator = DeepEvalEvaluator()
     try:
         evaluation_results = deepeval_evaluator.evaluate_conversation(history)
@@ -48,13 +57,13 @@ def _evaluate_with_deepeval(history: list[Turn], logger: ConversationLogger) -> 
         for metric_name, result in evaluation_results.items():
             score = result.get("score")
             if score is not None:
-                print(f"{metric_name}: {score:.4f}")
+                print(f"{metric_name}: {score:.4f}", file=out)
                 scores[metric_name] = float(score)
             else:
                 error = result.get("error", "Unknown error")
-                print(f"{metric_name}: Error - {error}")
+                print(f"{metric_name}: Error - {error}", file=out)
     except Exception as e:
-        print(f"Error during DeepEval evaluation: {e}")
+        print(f"Error during DeepEval evaluation: {e}", file=out)
         logger.log_deepeval_metrics({"error": str(e)})
 
     return scores
@@ -77,6 +86,7 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
     data_snapshot: DataSnapshot | None = None,
     metric_collectors: list[MetricCollector] | None = None,
     response_adapters: list[ResponseAdapter] | None = None,
+    output_stream: IO[str] | None = None,
 ) -> SimulationResult:
     """Run a conversation between an agent and a simulated user.
 
@@ -116,9 +126,16 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
                     ToolResultTextAdapter(renderers={...}),
                 ]
 
+        output_stream: Optional stream for simulation output (print statements).
+            If None, defaults to sys.stdout. Pass a file handle, StringIO,
+            or any file-like object to redirect output. Use io.StringIO()
+            to capture output or a custom stream to integrate with logging.
+
     Returns:
         SimulationResult containing all turns, task results, and metrics
     """
+    # Use provided stream or default to stdout
+    out = output_stream if output_stream is not None else sys.stdout
     start_time = datetime.now(timezone.utc)
 
     # Initialize metric collectors
@@ -155,6 +172,7 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
 
     turns_for_current_task = 0
     current_task_id = None
+    chat_context = ChatContext()
     status = SimulationStatus.RUNNING
     error_message: str | None = None
 
@@ -162,7 +180,7 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
         for turn_idx in range(1, max_turns_scenario + 1):
             current_task = sim_user.get_current_task()
             if current_task is None:
-                print("\nAll tasks completed!")
+                print("\nAll tasks completed!", file=out)
                 status = SimulationStatus.COMPLETED
                 break
 
@@ -176,7 +194,7 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
 
             # Check if we've exceeded max turns for this task
             if max_turns_task is not None and turns_for_current_task >= max_turns_task:
-                print(f"\nReached maximum number of turns ({max_turns_task}) for current task. Exiting.")
+                print(f"\nReached maximum number of turns ({max_turns_task}) for current task. Exiting.", file=out)
                 status = SimulationStatus.TIMEOUT
                 task_final_reasons[current_task_index] = f"Timeout: exceeded {max_turns_task} turns"
                 break
@@ -184,9 +202,9 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
             turns_for_current_task += 1
             task_turn_counts[current_task_index] = task_turn_counts.get(current_task_index, 0) + 1
 
-            print(f"\n=== Turn {turn_idx} (Task turn: {turns_for_current_task}) ===")
-            print(f"Current Task: {current_task.task}")
-            print(f"User: {user_message}")
+            print(f"\n=== Turn {turn_idx} (Task turn: {turns_for_current_task}) ===", file=out)
+            print(f"Current Task: {current_task.task}", file=out)
+            print(f"User: {user_message}", file=out)
 
             # Notify metric collectors of turn start
             collectors.on_turn_start(turn_idx, current_task_index, user_message)
@@ -197,7 +215,6 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
             assistant_reply_parts: list[str] = []
             tool_calls: list[ToolCallResult] = []
             turn_usage: Usage = Usage()
-            dummy_chat_context = ChatContext()
 
             stream = chat.chat(
                 message=full_user_message,
@@ -206,7 +223,7 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
                     for turn in history
                     for d in ({"role": "user", "text": turn.user}, {"role": "assistant", "text": turn.assistant})
                 ],
-                context=dummy_chat_context,
+                context=chat_context,
             )
 
             # Apply adapter pipeline if configured
@@ -226,16 +243,19 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
                     tool_calls.append(chunk)
                 elif isinstance(chunk, Usage):
                     turn_usage += chunk
+                elif conv_id := chunk.as_conversation_id():
+                    chat_context.conversation_id = conv_id
 
             total_usage += turn_usage
             assistant_reply = "".join(assistant_reply_parts).strip()
-            print(f"Assistant: {assistant_reply}")
+            print(f"Assistant: {assistant_reply}", file=out)
             if tool_calls:
-                print(f"Tools used: {[tc.name for tc in tool_calls]}")
+                print(f"Tools used: {[tc.name for tc in tool_calls]}", file=out)
             print(
                 f"Assistant token usage: {turn_usage.total_tokens} total "
                 f"({turn_usage.prompt_tokens} prompt + {turn_usage.completion_tokens} completion), "
-                f"estimated cost: ${turn_usage.estimated_cost:.6f}"
+                f"estimated cost: ${turn_usage.estimated_cost:.6f}",
+                file=out,
             )
             logger.log_turn(turn_idx, current_task, user_message, assistant_reply, tool_calls, turn_usage)
 
@@ -251,9 +271,9 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
                 tools_used_correctly, tool_reason = tool_checker.check_tool_usage(current_task, tool_calls)
                 logger.log_tool_check(turn_idx, tools_used_correctly, tool_reason, tool_calls)
                 if not tools_used_correctly:
-                    print(f"Tool usage issue: {tool_reason}")
+                    print(f"Tool usage issue: {tool_reason}", file=out)
                 else:
-                    print(f"Tool usage verified: {tool_reason}")
+                    print(f"Tool usage verified: {tool_reason}", file=out)
 
             # Create turn result
             turn_result = TurnResult(
@@ -276,11 +296,11 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
             collectors.on_turn_end(turn_result)
 
             if task_done:
-                print(f"Task completed: {reason}")
+                print(f"Task completed: {reason}", file=out)
                 task_final_reasons[current_task_index] = reason
                 has_next = sim_user.advance_to_next_task()
                 if not has_next:
-                    print("\nAll tasks completed!")
+                    print("\nAll tasks completed!", file=out)
                     status = SimulationStatus.COMPLETED
                     break
                 next_task = sim_user.get_current_task()
@@ -290,20 +310,20 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
                 turns_for_current_task = 0
                 current_task_id = id(next_task) if next_task else None
             else:
-                print(f"Task not completed: {reason}")
+                print(f"Task not completed: {reason}", file=out)
                 task_final_reasons[current_task_index] = reason
 
             # Ask the simulator for the next user message
             user_message = await sim_user.next_message(history)
 
         else:
-            print("\nReached maximum number of turns. Exiting.")
+            print("\nReached maximum number of turns. Exiting.", file=out)
             status = SimulationStatus.TIMEOUT
 
     except Exception as e:
         status = SimulationStatus.FAILED
         error_message = str(e)
-        print(f"\nSimulation failed with error: {error_message}")
+        print(f"\nSimulation failed with error: {error_message}", file=out)
 
     # Build task results
     for i, task in enumerate(scenario.tasks):
@@ -322,16 +342,17 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
         )
 
     # Print total token usage summary
-    print("\n=== Total Assistant Token Usage ===")
+    print("\n=== Total Assistant Token Usage ===", file=out)
     print(
         f"Total assistant tokens: {total_usage.total_tokens} "
-        f"({total_usage.prompt_tokens} prompt + {total_usage.completion_tokens} completion)"
+        f"({total_usage.prompt_tokens} prompt + {total_usage.completion_tokens} completion)",
+        file=out,
     )
-    print(f"Total estimated cost: ${total_usage.estimated_cost:.6f}")
+    print(f"Total estimated cost: ${total_usage.estimated_cost:.6f}", file=out)
     logger.log_total_usage(total_usage)
 
     # Evaluate conversation with DeepEval metrics
-    deepeval_scores = _evaluate_with_deepeval(history, logger)
+    deepeval_scores = _evaluate_with_deepeval(history, logger, output_stream=out)
 
     # Collect custom metrics from collectors
     custom_metrics = collectors.on_conversation_end(turn_results)
