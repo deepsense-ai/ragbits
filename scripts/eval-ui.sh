@@ -16,8 +16,8 @@ if [[ -n "$BACKEND_PID" || -n "$FRONTEND_PID" ]]; then
     sleep 1
 fi
 
-# Launch backend in a new vertical split pane
-kitten @ launch --location=vsplit --cwd="$RAGBITS_ROOT" --title="Eval Backend" bash -c "cd $RAGBITS_ROOT && uv run python examples/evaluate/agent-scenarios/run_eval_ui.py; exec bash"
+# Launch backend in a new vertical split pane (pass OPENAI_API_KEY to the subprocess)
+kitten @ launch --location=vsplit --cwd="$RAGBITS_ROOT" --title="Eval Backend" --env="OPENAI_API_KEY=$OPENAI_API_KEY" bash -c "cd $RAGBITS_ROOT && uv run python examples/evaluate/agent-scenarios/run_eval_ui.py; exec bash"
 
 # Run frontend in current pane
 cd "$RAGBITS_ROOT/typescript/ui" && npm run dev:eval
