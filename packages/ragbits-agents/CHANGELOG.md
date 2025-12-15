@@ -8,6 +8,7 @@
 - Add parallel tool calling support to agents for concurrent tool execution (#836)
 - Add Support for Thinking in agents (#837)
 - Add support for confirmation requests in agents (#866)
+- Allow passing Tool objects directly to Agent (#886)
 
 ## 1.4.2 (2026-02-18)
 
