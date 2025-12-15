@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix production UI build to not have VITE_API_URL set (#887)
 - Make `SummaryGenerator` optional in `ChatInterface` by providing a default Heuristic implementation.
 - Refactor ragbits-client types to remove excessive use of any (#881)
 - Split params into path params, query params in API client (#871)
