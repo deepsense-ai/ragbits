@@ -409,6 +409,8 @@ class Agent(
                 self.tools.append(Tool.from_agent(agent, **kwargs))
             elif isinstance(tool, Agent):
                 self.tools.append(Tool.from_agent(tool))
+            elif isinstance(tool, Tool):
+                self.tools.append(tool)
             else:
                 self.tools.append(Tool.from_callable(tool))
         self.mcp_servers = mcp_servers or []
