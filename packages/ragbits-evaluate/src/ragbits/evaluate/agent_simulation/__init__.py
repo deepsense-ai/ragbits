@@ -7,6 +7,19 @@ This module uses lazy imports for components that require optional dependencies
 from typing import TYPE_CHECKING
 
 # Import context, metrics, and result models eagerly - they have no external dependencies
+# Adapters are re-exported from ragbits.chat.adapters for convenience
+from ragbits.chat.adapters import (
+    AdapterContext,
+    AdapterPipeline,
+    BaseAdapter,
+    ChatResponseAdapter,
+    FilterAdapter,
+    ResponseAdapter,
+    TextAccumulatorAdapter,
+    ToolCallAccumulatorAdapter,
+    ToolResultTextAdapter,
+    UsageAggregatorAdapter,
+)
 from ragbits.evaluate.agent_simulation.context import DataSnapshot, DomainContext
 from ragbits.evaluate.agent_simulation.metrics import (
     CompositeMetricCollector,
@@ -32,26 +45,42 @@ if TYPE_CHECKING:
     from ragbits.evaluate.agent_simulation.simulation import GoalChecker, SimulatedUser
 
 __all__ = [
+    # Adapters
+    "AdapterContext",
+    "AdapterPipeline",
+    "BaseAdapter",
+    "ChatResponseAdapter",
+    "FilterAdapter",
+    "ResponseAdapter",
+    "TextAccumulatorAdapter",
+    "ToolCallAccumulatorAdapter",
+    "ToolResultTextAdapter",
+    "UsageAggregatorAdapter",
+    # Metrics
     "CompositeMetricCollector",
-    "ConversationLogger",
-    "ConversationMetrics",
-    "DataSnapshot",
-    "DeepEvalEvaluator",
-    "DomainContext",
-    "GoalChecker",
     "LatencyMetricCollector",
     "MetricCollector",
+    "TokenUsageMetricCollector",
+    "ToolUsageMetricCollector",
+    # Context
+    "DataSnapshot",
+    "DomainContext",
+    # Results
+    "ConversationMetrics",
+    "SimulationResult",
+    "SimulationStatus",
+    "TaskResult",
+    "TurnResult",
+    # Components (lazy loaded)
+    "ConversationLogger",
+    "DeepEvalEvaluator",
+    "GoalChecker",
     "Personality",
     "Scenario",
     "SimulatedUser",
-    "SimulationResult",
-    "SimulationStatus",
     "Task",
-    "TaskResult",
-    "TokenUsageMetricCollector",
-    "ToolUsageMetricCollector",
     "Turn",
-    "TurnResult",
+    # Functions (lazy loaded)
     "load_personalities",
     "load_scenarios",
     "run_simulation",
