@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Button,
   Card,
@@ -6,6 +6,8 @@ import {
   Chip,
   ScrollShadow,
   Divider,
+  Tabs,
+  Tab,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRagbitsContext } from "@ragbits/api-client-react";
@@ -14,8 +16,11 @@ import { selectProgress } from "../../stores/evalStore";
 import type { ProgressUpdate, RunHistoryEntry, ScenarioExecution } from "../../types";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { ResponsesView } from "../ResultsView/ResponsesView";
 
 const EMPTY_ARRAY: RunHistoryEntry[] = [];
+
+type RunnerViewMode = "conversation" | "responses";
 
 export function ScenarioRunner() {
   const { client } = useRagbitsContext();
@@ -26,6 +31,7 @@ export function ScenarioRunner() {
   const selectedRunId = useEvalStore((s) => s.selectedRunId);
   const isExecuting = useEvalStore((s) => s.isExecuting);
   const executions = useEvalStore((s) => s.executions);
+  const [viewMode, setViewMode] = useState<RunnerViewMode>("conversation");
 
   // Derive values from stable selectors
   const scenario = selectedScenarioName ? scenarios[selectedScenarioName] : null;
@@ -268,27 +274,63 @@ export function ScenarioRunner() {
           </div>
         </div>
 
-        {/* Conversation View */}
-        <div className="flex-1 min-h-0 overflow-hidden">
-          {displayExecution ? (
-            <ConversationDisplay
-              execution={displayExecution}
-              scenario={scenario}
-            />
-          ) : (
-            <div className="flex h-full flex-col items-center justify-center p-8 text-center">
-              <Icon
-                icon="heroicons:play-circle"
-                className="text-6xl text-foreground-300 mb-4"
+        {/* View Tabs and Content */}
+        <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          {/* Tabs */}
+          <div className="border-b border-divider px-4 py-2">
+            <Tabs
+              selectedKey={viewMode}
+              onSelectionChange={(key) => setViewMode(key as RunnerViewMode)}
+              size="sm"
+              variant="underlined"
+            >
+              <Tab
+                key="conversation"
+                title={
+                  <div className="flex items-center gap-2">
+                    <Icon icon="heroicons:chat-bubble-left-right" />
+                    <span>Conversation</span>
+                  </div>
+                }
               />
-              <h2 className="text-lg font-medium text-foreground">
-                Ready to Run
-              </h2>
-              <p className="text-sm text-foreground-500 mt-2">
-                Click "Run" to start the scenario evaluation
-              </p>
-            </div>
-          )}
+              <Tab
+                key="responses"
+                title={
+                  <div className="flex items-center gap-2">
+                    <Icon icon="heroicons:squares-2x2" />
+                    <span>Responses</span>
+                  </div>
+                }
+              />
+            </Tabs>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 min-h-0 overflow-hidden">
+            {viewMode === "conversation" ? (
+              displayExecution ? (
+                <ConversationDisplay
+                  execution={displayExecution}
+                  scenario={scenario}
+                />
+              ) : (
+                <div className="flex h-full flex-col items-center justify-center p-8 text-center">
+                  <Icon
+                    icon="heroicons:play-circle"
+                    className="text-6xl text-foreground-300 mb-4"
+                  />
+                  <h2 className="text-lg font-medium text-foreground">
+                    Ready to Run
+                  </h2>
+                  <p className="text-sm text-foreground-500 mt-2">
+                    Click "Run" to start the scenario evaluation
+                  </p>
+                </div>
+              )
+            ) : (
+              <ResponsesView scenarioName={selectedScenarioName} />
+            )}
+          </div>
         </div>
       </div>
     </div>

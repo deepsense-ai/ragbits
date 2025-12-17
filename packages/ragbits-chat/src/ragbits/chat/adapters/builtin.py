@@ -27,14 +27,13 @@ class ChatResponseAdapter(BaseAdapter):
 
     @property
     def input_types(self) -> tuple[type, ...]:
-        # Import at runtime to avoid hard dependency
-        from ragbits.chat.interface.types import ChatResponse
+        from ragbits.chat.interface.types import TextResponse
 
-        return (ChatResponse,)
+        return (TextResponse,)
 
     @property
     def output_types(self) -> tuple[type, ...]:
-        return (str, object)
+        return (str,)
 
     async def adapt(
         self,
@@ -55,10 +54,8 @@ class ChatResponseAdapter(BaseAdapter):
 
         content = chunk.content
 
-        # Handle TextContent - extract the text
-        if isinstance(content, TextContent):
-            if content.text:
-                yield content.text
+        if content.text:
+            yield content.text
         # Handle other content types - yield the content itself
         elif content is not None:
             yield content
@@ -73,7 +70,6 @@ class ToolResultTextAdapter(BaseAdapter):
     Example:
         >>> async def render_products(tool_call):
         ...     return f"Found {len(tool_call.result)} products"
-        ...
         >>> adapter = ToolResultTextAdapter(
         ...     renderers={"show_products": render_products},
         ...     pass_through=True,
@@ -283,6 +279,60 @@ class ToolCallAccumulatorAdapter(BaseAdapter):
             The tool call if emit is True.
         """
         context.tool_calls.append(chunk)
+        if self._emit:
+            yield chunk
+
+
+class SourceCaptureAdapter(BaseAdapter):
+    """Captures ReferenceResponse objects and stores them in context.
+
+    Use this adapter to collect source/reference documents from the chat
+    response stream for tracking and display purposes.
+
+    Example:
+        >>> adapter = SourceCaptureAdapter(emit=True)
+        >>> # References are stored in context.sources and optionally passed through
+    """
+
+    def __init__(self, emit: bool = True) -> None:
+        """Initialize the adapter.
+
+        Args:
+            emit: If True, also yield reference chunks (pass-through).
+        """
+        self._emit = emit
+
+    @property
+    def input_types(self) -> tuple[type, ...]:
+        from ragbits.chat.interface.types import ReferenceResponse
+
+        return (ReferenceResponse,)
+
+    @property
+    def output_types(self) -> tuple[type, ...]:
+        from ragbits.chat.interface.types import ReferenceResponse
+
+        return (ReferenceResponse,) if self._emit else ()
+
+    async def adapt(
+        self,
+        chunk: Any,
+        context: AdapterContext,
+    ) -> AsyncGenerator[Any, None]:
+        """Capture reference and optionally emit.
+
+        Args:
+            chunk: ReferenceResponse to capture.
+            context: Adapter context.
+
+        Yields:
+            The reference if emit is True.
+        """
+        # Store the reference in context for later use
+        if not hasattr(context, "sources"):
+            context.sources = []
+        context.sources.append(chunk.content)
+
         if self._emit:
             yield chunk
 

@@ -52,6 +52,7 @@ export interface ScenarioExecution {
   currentTaskIndex: number;
   currentTask: string | null;
   turns: TurnUpdate[];
+  responseChunks: ResponseChunk[];
   error: string | null;
 }
 
@@ -77,7 +78,8 @@ export type ProgressUpdate =
   | TurnProgressUpdate
   | TaskCompleteUpdate
   | CompletionUpdate
-  | ErrorUpdate;
+  | ErrorUpdate
+  | ResponseChunkUpdate;
 
 export interface StatusProgressUpdate {
   type: "status";
@@ -129,6 +131,26 @@ export interface ErrorUpdate {
   run_id: string;
   scenario_name: string;
   error: string;
+}
+
+export interface ResponseChunkUpdate {
+  type: "response_chunk";
+  run_id: string;
+  scenario_name: string;
+  turn_index: number;
+  task_index: number;
+  chunk_type: string;
+  chunk_data: Record<string, unknown>;
+}
+
+// Stored response chunk with additional client-side metadata
+export interface ResponseChunk {
+  turn_index: number;
+  task_index: number;
+  chunk_index: number;
+  chunk_type: string;
+  chunk_data: Record<string, unknown>;
+  timestamp: number;
 }
 
 // Results
@@ -199,7 +221,7 @@ export interface ConversationMetrics {
 }
 
 // UI State
-export type ViewMode = "conversation" | "summary";
+export type ViewMode = "conversation" | "summary" | "responses";
 
 // Navigation modes for the eval dashboard
 export type EvalView = "scenarios" | "scenario-detail" | "runner";

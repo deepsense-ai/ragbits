@@ -23,9 +23,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--scenario-id", type=int, required=True, help="Scenario ID (1-based index)")
     parser.add_argument("--scenarios-file", type=str, default="scenarios.json", help="Path to scenarios file")
     parser.add_argument("--persona-id", type=int, help="Persona ID (1-based index, optional)")
-    parser.add_argument(
-        "--personas-file", type=str, default="personas.json", help="Path to personas file"
-    )
+    parser.add_argument("--personas-file", type=str, default="personas.json", help="Path to personas file")
     parser.add_argument(
         "--max-turns-scenario", type=int, default=15, help="Max number of conversation turns for the entire scenario"
     )

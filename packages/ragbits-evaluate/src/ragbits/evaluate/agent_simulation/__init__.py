@@ -6,20 +6,6 @@ This module uses lazy imports for components that require optional dependencies
 
 from typing import TYPE_CHECKING
 
-# Import context, metrics, and result models eagerly - they have no external dependencies
-# Adapters are re-exported from ragbits.chat.adapters for convenience
-from ragbits.chat.adapters import (
-    AdapterContext,
-    AdapterPipeline,
-    BaseAdapter,
-    ChatResponseAdapter,
-    FilterAdapter,
-    ResponseAdapter,
-    TextAccumulatorAdapter,
-    ToolCallAccumulatorAdapter,
-    ToolResultTextAdapter,
-    UsageAggregatorAdapter,
-)
 from ragbits.evaluate.agent_simulation.context import DataSnapshot, DomainContext
 from ragbits.evaluate.agent_simulation.metrics import (
     CompositeMetricCollector,
@@ -40,22 +26,11 @@ if TYPE_CHECKING:
     from ragbits.evaluate.agent_simulation.conversation import run_simulation
     from ragbits.evaluate.agent_simulation.deepeval_evaluator import DeepEvalEvaluator
     from ragbits.evaluate.agent_simulation.logger import ConversationLogger
-    from ragbits.evaluate.agent_simulation.models import Personality, Scenario, Task, Turn
+    from ragbits.evaluate.agent_simulation.models import Personality, Scenario, SimulationConfig, Task, Turn
     from ragbits.evaluate.agent_simulation.scenarios import load_personalities, load_scenarios
     from ragbits.evaluate.agent_simulation.simulation import GoalChecker, SimulatedUser
 
 __all__ = [
-    # Adapters
-    "AdapterContext",
-    "AdapterPipeline",
-    "BaseAdapter",
-    "ChatResponseAdapter",
-    "FilterAdapter",
-    "ResponseAdapter",
-    "TextAccumulatorAdapter",
-    "ToolCallAccumulatorAdapter",
-    "ToolResultTextAdapter",
-    "UsageAggregatorAdapter",
     # Metrics
     "CompositeMetricCollector",
     "LatencyMetricCollector",
@@ -78,6 +53,7 @@ __all__ = [
     "Personality",
     "Scenario",
     "SimulatedUser",
+    "SimulationConfig",
     "Task",
     "Turn",
     # Functions (lazy loaded)
@@ -101,7 +77,7 @@ def __getattr__(name: str) -> object:
         from ragbits.evaluate.agent_simulation.logger import ConversationLogger
 
         return ConversationLogger
-    if name in ("Personality", "Scenario", "Task", "Turn"):
+    if name in ("Personality", "Scenario", "SimulationConfig", "Task", "Turn"):
         from ragbits.evaluate.agent_simulation import models
 
         return getattr(models, name)

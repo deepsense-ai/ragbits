@@ -6,6 +6,9 @@ from typing import TYPE_CHECKING, Type
 
 from pydantic import BaseModel, Field, create_model
 
+from ragbits.evaluate.agent_simulation.context import DataSnapshot, DomainContext
+from ragbits.evaluate.agent_simulation.metrics.collectors import MetricCollector
+
 if TYPE_CHECKING:
     from ragbits.evaluate.agent_simulation.display import ScenarioLiveDisplay
     from rich.console import Console
@@ -96,4 +99,63 @@ class Personality(BaseModel):
     description: str = Field(
         ...,
         description="Detailed description of user behaviour, style of communication, internal motives, language, attitute, etc.",
+    )
+
+
+class SimulationConfig(BaseModel):
+    """Configuration for running agent simulations.
+
+    Groups parameters that are commonly passed between simulation components.
+    Excludes instance-specific objects like ChatInterface, callbacks, and streams.
+    """
+
+    model_config = {"arbitrary_types_allowed": True}
+
+    max_turns_scenario: int = Field(
+        default=15,
+        description="Maximum number of conversation turns for the entire scenario.",
+    )
+    max_turns_task: int | None = Field(
+        default=4,
+        description="Maximum number of conversation turns per task (None for no limit).",
+    )
+    log_file: str | None = Field(
+        default=None,
+        description="Optional path to log file.",
+    )
+    agent_model_name: str | None = Field(
+        default=None,
+        description="Optional override for agent LLM model name.",
+    )
+    sim_user_model_name: str | None = Field(
+        default=None,
+        description="Optional override for simulated user LLM model name.",
+    )
+    checker_model_name: str | None = Field(
+        default=None,
+        description="Optional override for goal checker LLM model name.",
+    )
+    default_model: str = Field(
+        default="gpt-4o-mini",
+        description="Default LLM model name when specific models not provided.",
+    )
+    api_key: str = Field(
+        default="",
+        description="API key for LLM.",
+    )
+    user_message_prefix: str = Field(
+        default="",
+        description="Optional prefix to add to user messages before sending to agent.",
+    )
+    domain_context: DomainContext | None = Field(
+        default=None,
+        description="Optional domain context for goal checking (currency, locale, business rules).",
+    )
+    data_snapshot: DataSnapshot | None = Field(
+        default=None,
+        description="Optional data snapshot to ground simulated user requests to available data.",
+    )
+    metric_collectors: list[MetricCollector] | None = Field(
+        default=None,
+        description="Optional list of custom metric collectors for per-turn metrics.",
     )

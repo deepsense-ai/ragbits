@@ -17,7 +17,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from ragbits.chat.interface import ChatInterface
-from ragbits.evaluate.agent_simulation.models import Scenario
+from ragbits.evaluate.agent_simulation.models import Scenario, SimulationConfig
 from ragbits.evaluate.agent_simulation.results import SimulationResult, SimulationStatus
 from ragbits.evaluate.agent_simulation.scenarios import load_scenarios
 from ragbits.evaluate.api_types import (
@@ -46,6 +46,8 @@ class EvalAPI:
         results_dir: str = "./eval_results",
         cors_origins: list[str] | None = None,
         ui_build_dir: str | None = None,
+        response_adapters: list = None,
+        simulation_config: SimulationConfig | None = None,
     ) -> None:
         """Initialize the EvalAPI.
 
@@ -56,12 +58,17 @@ class EvalAPI:
             results_dir: Directory for storing evaluation results.
             cors_origins: List of allowed CORS origins.
             ui_build_dir: Path to custom UI build directory.
+            response_adapters: List of response adapters for processing chat responses.
+            simulation_config: Default SimulationConfig for running evaluations.
+                Can be overridden per-run via API request.
         """
         self.chat_factory = self._load_chat_factory(chat_factory)
         self.scenarios_dir = Path(scenarios_dir)
         self.results_dir = Path(results_dir)
         self.dist_dir = Path(ui_build_dir) if ui_build_dir else Path(__file__).parent / "ui-build"
         self.cors_origins = cors_origins or []
+        self.response_adapters = response_adapters
+        self.simulation_config = simulation_config or SimulationConfig()
 
         # Ensure directories exist
         self.scenarios_dir.mkdir(parents=True, exist_ok=True)
@@ -128,9 +135,7 @@ class EvalAPI:
             """Get evaluation configuration with available scenarios."""
             scenarios = self._get_scenarios()
             response = EvalConfigResponse(
-                available_scenarios=[
-                    ScenarioSummary(name=s.name, num_tasks=len(s.tasks)) for s in scenarios.values()
-                ],
+                available_scenarios=[ScenarioSummary(name=s.name, num_tasks=len(s.tasks)) for s in scenarios.values()],
                 scenarios_dir=str(self.scenarios_dir),
             )
             return JSONResponse(content=response.model_dump())
@@ -308,7 +313,7 @@ class EvalAPI:
         self,
         run_id: str,
         scenario: Scenario,
-        config: dict[str, Any],
+        request_config: dict[str, Any],
     ) -> None:
         """Run a single scenario and emit progress updates."""
         from ragbits.evaluate.agent_simulation.conversation import run_simulation
@@ -329,15 +334,17 @@ class EvalAPI:
             chat = self.chat_factory()
             await chat.setup()
 
+            # Merge request config with default simulation config
+            # Request values override defaults
+            config = self.simulation_config.model_copy(
+                update={k: v for k, v in request_config.items() if v is not None}
+            )
+
             # Run the simulation with progress callback
             result = await run_simulation(
                 scenario=scenario,
                 chat=chat,
-                max_turns_scenario=config.get("max_turns_scenario", 15),
-                max_turns_task=config.get("max_turns_task", 4),
-                sim_user_model_name=config.get("sim_user_model_name"),
-                checker_model_name=config.get("checker_model_name"),
-                default_model=config.get("default_model", "gpt-4o-mini"),
+                config=config,
                 progress_callback=callback,
             )
 

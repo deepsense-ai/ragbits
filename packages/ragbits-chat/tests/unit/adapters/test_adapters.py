@@ -540,10 +540,12 @@ class TestAdapterPipeline:
             yield 42  # Should pass through unchanged
             yield "world"
 
-        pipeline = AdapterPipeline([
-            UppercaseAdapter(),
-            FilterAdapter(exclude_types=(int,)),
-        ])
+        pipeline = AdapterPipeline(
+            [
+                UppercaseAdapter(),
+                FilterAdapter(exclude_types=(int,)),
+            ]
+        )
         context = AdapterContext(
             turn_index=1,
             task_index=0,

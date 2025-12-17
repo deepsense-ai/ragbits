@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react";
 import { useEvalStore, useEvalStoreApi } from "../../stores/EvalStoreContext";
 import { ConversationView } from "./ConversationView";
 import { SummaryView } from "./SummaryView";
+import { ResponsesView } from "./ResponsesView";
 import type { ViewMode } from "../../types";
 
 export function ResultsContainer() {
@@ -43,6 +44,15 @@ export function ResultsContainer() {
               </div>
             }
           />
+          <Tab
+            key="responses"
+            title={
+              <div className="flex items-center gap-2">
+                <Icon icon="heroicons:squares-2x2" />
+                <span>Responses</span>
+              </div>
+            }
+          />
         </Tabs>
       </div>
 
@@ -50,8 +60,10 @@ export function ResultsContainer() {
       <div className="flex-1 min-h-0 overflow-hidden">
         {viewMode === "summary" ? (
           <SummaryView />
-        ) : (
+        ) : viewMode === "conversation" ? (
           <ConversationView scenarioName={selectedScenarioName} />
+        ) : (
+          <ResponsesView scenarioName={selectedScenarioName} />
         )}
       </div>
     </div>

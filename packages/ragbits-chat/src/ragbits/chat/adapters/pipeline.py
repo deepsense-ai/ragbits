@@ -22,10 +22,12 @@ class AdapterPipeline:
         ...     ChatResponseAdapter,
         ...     FilterAdapter,
         ... )
-        >>> pipeline = AdapterPipeline([
-        ...     ChatResponseAdapter(),
-        ...     FilterAdapter(exclude_types=(SomeCommand,)),
-        ... ])
+        >>> pipeline = AdapterPipeline(
+        ...     [
+        ...         ChatResponseAdapter(),
+        ...         FilterAdapter(exclude_types=(SomeCommand,)),
+        ...     ]
+        ... )
         >>> async for chunk in pipeline.process(stream, context):
         ...     print(chunk)
     """

@@ -13,6 +13,7 @@ import type {
   SimulationResult,
   TurnUpdate,
   RunHistoryEntry,
+  ResponseChunk,
 } from "../types";
 
 // Helper to check if a scenario is a persona (not runnable directly)
@@ -217,6 +218,7 @@ export const createEvalStore = () =>
                 currentTaskIndex: 0,
                 currentTask: null,
                 turns: [],
+                responseChunks: [],
                 error: null,
               };
             }
@@ -284,6 +286,19 @@ export const createEvalStore = () =>
                   state.isExecuting = false;
                 }
                 break;
+
+              case "response_chunk": {
+                const chunk: ResponseChunk = {
+                  turn_index: update.turn_index,
+                  task_index: update.task_index,
+                  chunk_index: execution.responseChunks.length,
+                  chunk_type: update.chunk_type,
+                  chunk_data: update.chunk_data,
+                  timestamp: Date.now(),
+                };
+                execution.responseChunks.push(chunk);
+                break;
+              }
             }
           });
         },
@@ -470,6 +485,7 @@ export const createEvalStore = () =>
                     task_completed_reason: "Room booked successfully",
                   },
                 ],
+                responseChunks: [],
                 error: null,
               },
               "Scenario 2": {
@@ -499,6 +515,7 @@ export const createEvalStore = () =>
                     task_completed_reason: "Activities recommended",
                   },
                 ],
+                responseChunks: [],
                 error: null,
               },
               "Scenario 3": {
@@ -519,6 +536,7 @@ export const createEvalStore = () =>
                     task_completed_reason: "Process started",
                   },
                 ],
+                responseChunks: [],
                 error: "Scenario timed out after 15 turns",
               },
             };
@@ -558,6 +576,7 @@ export const createEvalStore = () =>
                         task_completed_reason: "API error",
                       },
                     ],
+                    responseChunks: [],
                     error: "Connection timeout",
                   },
                 },

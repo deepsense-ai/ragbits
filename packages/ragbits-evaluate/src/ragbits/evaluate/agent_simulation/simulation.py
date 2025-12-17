@@ -97,7 +97,7 @@ class SimulatedUser:
             "write ONLY the next user message to work on the current task. Be specific and brief.\n\n"
             "[CONVERSATION]\n"
             f"{history_block}\n\n"
-            "[TASK]\nWrite the next USER message now:"
+            f"[TASK]\nWrite the next USER message now (follow task: {current_task.task}):"
         )
 
         response = await self.llm.generate(prompt=prompt)

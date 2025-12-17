@@ -6,15 +6,13 @@ from datetime import datetime, timezone
 from typing import IO, TYPE_CHECKING, Any
 
 from ragbits.agents.tool import ToolCallResult
-from ragbits.chat.adapters import AdapterContext, AdapterPipeline, ResponseAdapter
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.types import ChatContext
+from ragbits.chat.interface.types import ChatContext, ConversationIdResponse, TextResponse
 from ragbits.core.llms import Usage
-from ragbits.evaluate.agent_simulation.context import DataSnapshot, DomainContext
 from ragbits.evaluate.agent_simulation.deepeval_evaluator import DeepEvalEvaluator
 from ragbits.evaluate.agent_simulation.logger import ConversationLogger
-from ragbits.evaluate.agent_simulation.metrics.collectors import CompositeMetricCollector, MetricCollector
-from ragbits.evaluate.agent_simulation.models import Personality, Scenario, Turn
+from ragbits.evaluate.agent_simulation.metrics.collectors import CompositeMetricCollector
+from ragbits.evaluate.agent_simulation.models import Personality, Scenario, SimulationConfig, Turn
 from ragbits.evaluate.agent_simulation.results import (
     ConversationMetrics,
     SimulationResult,
@@ -28,6 +26,42 @@ if TYPE_CHECKING:
     pass
 
 ProgressCallback = Callable[[str, Any], Awaitable[None]]
+
+
+def _serialize_response_chunk(chunk: Any) -> tuple[str, dict[str, Any]]:
+    """Serialize a response chunk to (type, data) tuple.
+
+    Args:
+        chunk: The chunk to serialize (TextResponse, ToolCallResult, Usage, etc.)
+
+    Returns:
+        Tuple of (chunk_type, chunk_data_dict)
+    """
+    if isinstance(chunk, TextResponse):
+        return ("text", {"text": chunk.content.text})
+    elif isinstance(chunk, ToolCallResult):
+        return (
+            "tool_call",
+            {
+                "name": chunk.name,
+                "arguments": chunk.arguments,
+                "result": chunk.result,
+            },
+        )
+    elif isinstance(chunk, Usage):
+        return (
+            "usage",
+            {
+                "prompt_tokens": chunk.prompt_tokens,
+                "completion_tokens": chunk.completion_tokens,
+                "total_tokens": chunk.total_tokens,
+                "estimated_cost": chunk.estimated_cost,
+                "n_requests": chunk.n_requests,
+            },
+        )
+    else:
+        # Fallback for unknown types
+        return ("unknown", {"raw": str(chunk), "type": type(chunk).__name__})
 
 
 def _evaluate_with_deepeval(
@@ -73,21 +107,10 @@ def _evaluate_with_deepeval(
 async def run_simulation(  # noqa: PLR0912, PLR0915
     scenario: Scenario,
     chat: ChatInterface,
-    max_turns_scenario: int = 15,
-    max_turns_task: int | None = 4,
-    log_file: str | None = None,
-    agent_model_name: str | None = None,
-    sim_user_model_name: str | None = None,
-    checker_model_name: str | None = None,
-    default_model: str = "gpt-4o-mini",
-    api_key: str = "",
-    user_message_prefix: str = "",
+    config: SimulationConfig | None = None,
+    *,
     personality: Personality | None = None,
-    domain_context: DomainContext | None = None,
-    data_snapshot: DataSnapshot | None = None,
-    metric_collectors: list[MetricCollector] | None = None,
     progress_callback: ProgressCallback | None = None,
-    response_adapters: list[ResponseAdapter] | None = None,
     output_stream: IO[str] | None = None,
 ) -> SimulationResult:
     """Run a conversation between an agent and a simulated user.
@@ -98,37 +121,10 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
     Args:
         scenario: The scenario containing tasks to complete
         chat: An instantiated ChatInterface used to drive the assistant side of the conversation.
-        max_turns_scenario: Maximum number of conversation turns for the entire scenario
-        max_turns_task: Maximum number of conversation turns per task (None for no limit)
-        log_file: Optional path to log file
-        agent_model_name: Optional override for agent LLM model name
-        sim_user_model_name: Optional override for simulated user LLM model name
-        checker_model_name: Optional override for goal checker LLM model name
-        default_model: Default LLM model name
-        api_key: API key for LLM
-        user_message_prefix: Optional prefix to add to user messages before sending to agent
-        personality: Optional personality to use for the simulated user
-        domain_context: Optional domain context for goal checking (currency, locale, business rules)
-        data_snapshot: Optional data snapshot to ground simulated user requests to available data
-        metric_collectors: Optional list of custom metric collectors for per-turn metrics
+        config: Optional SimulationConfig with all simulation parameters. If not provided,
+            uses default values.
+        personality: Optional personality to use for the simulated user.
         progress_callback: Optional async callback for progress updates (event_type, **kwargs)
-        response_adapters: Optional list of adapters to transform chat responses.
-            If None, expects chat to yield str/ToolCallResult/Usage directly.
-            Use adapters when your ChatInterface yields ChatResponse objects or
-            other types that need transformation.
-
-            Common setup for ChatResponse-yielding interfaces::
-
-                from ragbits.evaluate.agent_simulation.adapters import (
-                    ChatResponseAdapter,
-                    ToolResultTextAdapter,
-                )
-
-                response_adapters=[
-                    ChatResponseAdapter(),
-                    ToolResultTextAdapter(renderers={...}),
-                ]
-
         output_stream: Optional stream for simulation output (print statements).
             If None, defaults to sys.stdout. Pass a file handle, StringIO,
             or any file-like object to redirect output. Use io.StringIO()
@@ -137,15 +133,16 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
     Returns:
         SimulationResult containing all turns, task results, and metrics
     """
+    # Use default config if not provided
+    if config is None:
+        config = SimulationConfig()
+
     # Use provided stream or default to stdout
     out = output_stream if output_stream is not None else sys.stdout
     start_time = datetime.now(timezone.utc)
 
     # Initialize metric collectors
-    collectors = CompositeMetricCollector(metric_collectors)
-
-    # Build adapter pipeline if adapters provided
-    adapter_pipeline = AdapterPipeline(response_adapters) if response_adapters else None
+    collectors = CompositeMetricCollector(config.metric_collectors)
 
     # Initialize result tracking
     turn_results: list[TurnResult] = []
@@ -155,19 +152,23 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
 
     # Simulated user uses an independent llm (can share the same provider)
     sim_user = SimulatedUser(
-        llm=build_llm(sim_user_model_name, default_model, api_key),
+        llm=build_llm(config.sim_user_model_name, config.default_model, config.api_key),
         scenario=scenario,
         personality=personality,
-        data_snapshot=data_snapshot,
+        data_snapshot=config.data_snapshot,
     )
     # Independent goal checker model
-    goal_checker = GoalChecker(llm=build_llm(checker_model_name, default_model, api_key), scenario=scenario)
+    goal_checker = GoalChecker(
+        llm=build_llm(config.checker_model_name, config.default_model, config.api_key), scenario=scenario
+    )
     # Tool usage checker (simple comparator, no LLM needed)
     tool_checker = ToolUsageChecker(scenario=scenario)
 
     history: list[Turn] = []
-    logger = ConversationLogger(log_file)
-    logger.initialize_session(scenario, agent_model_name, sim_user_model_name, checker_model_name, personality)
+    logger = ConversationLogger(config.log_file)
+    logger.initialize_session(
+        scenario, config.agent_model_name, config.sim_user_model_name, config.checker_model_name, personality
+    )
     total_usage = Usage()
 
     # Seed: ask the simulated user for the first message based on the first task
@@ -180,7 +181,7 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
     error_message: str | None = None
 
     try:
-        for turn_idx in range(1, max_turns_scenario + 1):
+        for turn_idx in range(1, config.max_turns_scenario + 1):
             current_task = sim_user.get_current_task()
             if current_task is None:
                 print("\nAll tasks completed!", file=out)
@@ -196,10 +197,12 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
                 current_task_id = id(current_task)
 
             # Check if we've exceeded max turns for this task
-            if max_turns_task is not None and turns_for_current_task >= max_turns_task:
-                print(f"\nReached maximum number of turns ({max_turns_task}) for current task. Exiting.", file=out)
+            if config.max_turns_task is not None and turns_for_current_task >= config.max_turns_task:
+                print(
+                    f"\nReached maximum number of turns ({config.max_turns_task}) for current task. Exiting.", file=out
+                )
                 status = SimulationStatus.TIMEOUT
-                task_final_reasons[current_task_index] = f"Timeout: exceeded {max_turns_task} turns"
+                task_final_reasons[current_task_index] = f"Timeout: exceeded {config.max_turns_task} turns"
                 break
 
             turns_for_current_task += 1
@@ -213,7 +216,9 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
             collectors.on_turn_start(turn_idx, current_task_index, user_message)
 
             # Add optional prefix to user message
-            full_user_message = user_message_prefix + user_message if user_message_prefix else user_message
+            full_user_message = (
+                config.user_message_prefix + user_message if config.user_message_prefix else user_message
+            )
 
             assistant_reply_parts: list[str] = []
             tool_calls: list[ToolCallResult] = []
@@ -229,25 +234,27 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
                 context=chat_context,
             )
 
-            # Apply adapter pipeline if configured
-            if adapter_pipeline:
-                adapter_context = AdapterContext(
-                    turn_index=turn_idx,
-                    task_index=current_task_index,
-                    user_message=user_message,
-                    history=history,
-                )
-                stream = adapter_pipeline.process(stream, adapter_context)
-
             async for chunk in stream:
-                if isinstance(chunk, str):
-                    assistant_reply_parts.append(chunk)
+                # Emit response chunk event for real-time streaming
+                if progress_callback:
+                    chunk_type, chunk_data = _serialize_response_chunk(chunk)
+                    await progress_callback(
+                        "response_chunk",
+                        turn_index=turn_idx,
+                        task_index=current_task_index,
+                        chunk_type=chunk_type,
+                        chunk_data=chunk_data,
+                    )
+
+                # Process chunk by type
+                if isinstance(chunk, TextResponse):
+                    assistant_reply_parts.append(chunk.content.text)
                 elif isinstance(chunk, ToolCallResult):
                     tool_calls.append(chunk)
                 elif isinstance(chunk, Usage):
                     turn_usage += chunk
-                elif conv_id := chunk.as_conversation_id():
-                    chat_context.conversation_id = conv_id
+                elif isinstance(chunk, ConversationIdResponse):
+                    chat_context.conversation_id = chunk.content.conversation_id
 
             total_usage += turn_usage
             assistant_reply = "".join(assistant_reply_parts).strip()
@@ -266,7 +273,9 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
             history.append(Turn(user=user_message, assistant=assistant_reply))
 
             # Ask the judge if current task is achieved
-            task_done, reason = await goal_checker.is_task_achieved(current_task, history, context=domain_context)
+            task_done, reason = await goal_checker.is_task_achieved(
+                current_task, history, context=config.domain_context
+            )
             logger.log_task_check(turn_idx, task_done, reason)
 
             # Check tool usage if expected tools are specified
@@ -405,9 +414,9 @@ async def run_simulation(  # noqa: PLR0912, PLR0915
         start_time=start_time,
         end_time=datetime.now(timezone.utc),
         status=status,
-        agent_model=agent_model_name,
-        simulated_user_model=sim_user_model_name,
-        checker_model=checker_model_name,
+        agent_model=config.agent_model_name,
+        simulated_user_model=config.sim_user_model_name,
+        checker_model=config.checker_model_name,
         personality=personality.name if personality else None,
         error=error_message,
         turns=turn_results,

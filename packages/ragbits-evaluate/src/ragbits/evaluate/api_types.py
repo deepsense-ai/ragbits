@@ -37,8 +37,11 @@ class EvalConfigResponse(BaseModel):
     scenarios_dir: str
 
 
-class SimulationConfig(BaseModel):
-    """Configuration for running a simulation."""
+class RunEvaluationConfig(BaseModel):
+    """Configuration for running a simulation via API.
+
+    This is the frontend-facing config model with validation constraints.
+    """
 
     max_turns_scenario: int = Field(default=15, ge=1, le=100)
     max_turns_task: int | None = Field(default=4, ge=1, le=50)
@@ -51,7 +54,7 @@ class RunEvaluationRequest(BaseModel):
     """Request to start an evaluation run."""
 
     scenario_names: list[str] = Field(..., min_length=1)
-    config: SimulationConfig = Field(default_factory=SimulationConfig)
+    config: RunEvaluationConfig = Field(default_factory=RunEvaluationConfig)
 
 
 class RunStartResponse(BaseModel):
@@ -119,6 +122,37 @@ class ErrorUpdate(ProgressUpdate):
 
     type: str = "error"
     error: str
+
+
+class SourceReference(BaseModel):
+    """A source/reference document from the chat response."""
+
+    title: str
+    content: str
+    url: str | None = None
+
+
+class SourceUpdate(ProgressUpdate):
+    """Source/reference document progress update."""
+
+    type: str = "source"
+    turn_index: int
+    task_index: int
+    source: SourceReference
+
+
+class ResponseChunkUpdate(ProgressUpdate):
+    """Real-time ChatInterface response chunk progress update.
+
+    Streams raw response chunks from the ChatInterface as they arrive,
+    enabling real-time visibility into all response types.
+    """
+
+    type: str = "response_chunk"
+    turn_index: int
+    task_index: int
+    chunk_type: str  # e.g., "text", "reference", "tool_call", "usage", "live_update", etc.
+    chunk_data: dict[str, Any]
 
 
 class ResultSummary(BaseModel):

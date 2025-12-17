@@ -14,7 +14,10 @@ from ragbits.evaluate.api_types import (
     CompletionUpdate,
     ErrorUpdate,
     ProgressUpdate,
+    ResponseChunkUpdate,
     ResultSummary,
+    SourceReference,
+    SourceUpdate,
     StatusProgressUpdate,
     TaskCompleteUpdate,
     TurnProgressUpdate,
@@ -193,9 +196,7 @@ class ExecutionManager:
         Returns:
             Tuple of (results list, total count).
         """
-        result_files = sorted(
-            self.results_dir.glob("result_*.json"), key=lambda p: p.stat().st_mtime, reverse=True
-        )
+        result_files = sorted(self.results_dir.glob("result_*.json"), key=lambda p: p.stat().st_mtime, reverse=True)
 
         total = len(result_files)
         paginated = result_files[offset : offset + limit]
@@ -335,6 +336,15 @@ def create_progress_callback(
                 run_id=run_id,
                 scenario_name=scenario_name,
                 error=kwargs.get("error", "Unknown error"),
+            )
+        elif event_type == "response_chunk":
+            update = ResponseChunkUpdate(
+                run_id=run_id,
+                scenario_name=scenario_name,
+                turn_index=kwargs.get("turn_index", 0),
+                task_index=kwargs.get("task_index", 0),
+                chunk_type=kwargs.get("chunk_type", "unknown"),
+                chunk_data=kwargs.get("chunk_data", {}),
             )
         else:
             return

@@ -14,14 +14,16 @@ Example:
     >>> async def render_products(tool_call):
     ...     return f"Found {len(tool_call.result)} products"
     >>>
-    >>> pipeline = AdapterPipeline([
-    ...     ChatResponseAdapter(),
-    ...     FilterAdapter(exclude_types=(SomeUICommand,)),
-    ...     ToolResultTextAdapter(
-    ...         renderers={"show_products": render_products},
-    ...         pass_through=True,
-    ...     ),
-    ... ])
+    >>> pipeline = AdapterPipeline(
+    ...     [
+    ...         ChatResponseAdapter(),
+    ...         FilterAdapter(exclude_types=(SomeUICommand,)),
+    ...         ToolResultTextAdapter(
+    ...             renderers={"show_products": render_products},
+    ...             pass_through=True,
+    ...         ),
+    ...     ]
+    ... )
     >>>
     >>> async for chunk in pipeline.process(chat_stream, context):
     ...     print(chunk)
