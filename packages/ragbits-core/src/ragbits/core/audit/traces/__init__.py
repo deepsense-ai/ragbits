@@ -7,10 +7,14 @@ from types import SimpleNamespace
 from typing import Any, ParamSpec, TypeVar
 
 from ragbits.core.audit.traces.base import TraceHandler
+from ragbits.core.audit.traces.memory import MemoryTraceHandler, TraceSpan
 
 __all__ = [
+    "MemoryTraceHandler",
     "TraceHandler",
+    "TraceSpan",
     "clear_trace_handlers",
+    "collect_traces",
     "set_trace_handlers",
     "trace",
     "traceable",
@@ -24,7 +28,7 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
-def set_trace_handlers(handlers: Handler | list[Handler]) -> None:
+def set_trace_handlers(handlers: Handler | list[Handler]) -> None:  # noqa: PLR0912
     """
     Set the global trace handlers.
 
@@ -62,6 +66,10 @@ def set_trace_handlers(handlers: Handler | list[Handler]) -> None:
 
                     if not any(isinstance(item, CLITraceHandler) for item in _trace_handlers):
                         _trace_handlers.append(CLITraceHandler())
+
+                case "memory":
+                    if not any(isinstance(item, MemoryTraceHandler) for item in _trace_handlers):
+                        _trace_handlers.append(MemoryTraceHandler())
 
                 case _:
                     raise ValueError(f"Handler {handler} not found.")
