@@ -254,9 +254,7 @@ class SimulationResult:
         metrics_data = data.get("metrics")
         metrics = ConversationMetrics(metrics=metrics_data) if metrics_data else None
 
-        response_chunks = [
-            ResponseChunk.from_dict(c) for c in data.get("response_chunks", [])
-        ]
+        response_chunks = [ResponseChunk.from_dict(c) for c in data.get("response_chunks", [])]
 
         return cls(
             scenario_name=data["scenario_name"],

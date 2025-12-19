@@ -323,9 +323,7 @@ class ToolCallCheckerConfig(BaseCheckerConfig):
         called_names = [tc.name for tc in tool_calls]
 
         if self.mode == "all":
-            completed = len(unmatched_tools) == 0 and all(
-                d.get("status") == "matched" for d in match_details.values()
-            )
+            completed = len(unmatched_tools) == 0 and all(d.get("status") == "matched" for d in match_details.values())
             if completed:
                 reason = f"All expected tools matched: {', '.join(matched_tools)}"
             else:

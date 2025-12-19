@@ -188,8 +188,7 @@ class EvalAPI:
                         filename=sf.filename,
                         group=sf.group,
                         scenarios=[
-                            ScenarioSummary(name=s.name, num_tasks=len(s.tasks), group=s.group)
-                            for s in sf.scenarios
+                            ScenarioSummary(name=s.name, num_tasks=len(s.tasks), group=s.group) for s in sf.scenarios
                         ],
                     )
                     for sf in scenario_files
@@ -320,10 +319,7 @@ class EvalAPI:
             """List all available personas."""
             personas = self._get_personas()
             response = PersonasListResponse(
-                personas=[
-                    PersonaSummary(name=p.name, description=p.description)
-                    for p in personas.values()
-                ],
+                personas=[PersonaSummary(name=p.name, description=p.description) for p in personas.values()],
                 total=len(personas),
             )
             return JSONResponse(content=response.model_dump())
@@ -334,9 +330,7 @@ class EvalAPI:
             persona = self._get_persona(persona_name)
             if not persona:
                 raise HTTPException(status_code=404, detail=f"Persona '{persona_name}' not found")
-            return JSONResponse(
-                content=PersonaSummary(name=persona.name, description=persona.description).model_dump()
-            )
+            return JSONResponse(content=PersonaSummary(name=persona.name, description=persona.description).model_dump())
 
         @self.app.post("/api/eval/personas/reload", response_class=JSONResponse)
         async def reload_personas() -> JSONResponse:

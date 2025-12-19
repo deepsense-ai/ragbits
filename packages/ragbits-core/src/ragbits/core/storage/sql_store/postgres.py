@@ -23,13 +23,8 @@ class PostgresSQLStore(SQLStore["asyncpg.Connection"]):
 
         async with store:
             # Execute queries
-            await store.execute(
-                "INSERT INTO app_items (key, value) VALUES ($1, $2)",
-                "foo", "bar"
-            )
-            result = await store.fetch_one(
-                "SELECT * FROM app_items WHERE key = $1", "foo"
-            )
+            await store.execute("INSERT INTO app_items (key, value) VALUES ($1, $2)", "foo", "bar")
+            result = await store.fetch_one("SELECT * FROM app_items WHERE key = $1", "foo")
         ```
     """
 

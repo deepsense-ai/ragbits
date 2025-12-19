@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:eval": "vite --open /eval.html",
     "dev:backend": "cd ../../ && uv sync && ragbits api run --debug",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "preview:eval": "vite preview --open /eval.html",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "wait:backend": "wait-on http-get://127.0.0.1:8000/",

@@ -423,9 +423,7 @@ class FileEvalReportStore(EvalReportStore):
                     scenario_name=scenario_name,
                     persona=result.get("persona"),
                     status=status,
-                    start_time=datetime.fromisoformat(
-                        result.get("start_time", datetime.now(timezone.utc).isoformat())
-                    ),
+                    start_time=datetime.fromisoformat(result.get("start_time", datetime.now(timezone.utc).isoformat())),
                     end_time=datetime.fromisoformat(result["end_time"]) if result.get("end_time") else None,
                     turns=turns,
                     tasks=tasks,

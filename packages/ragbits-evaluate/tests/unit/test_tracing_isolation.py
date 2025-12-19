@@ -93,12 +93,8 @@ class TestTracingIsolation:
         sim1_names = [t["name"] for t in sim1_traces]
         sim2_names = [t["name"] for t in sim2_traces]
 
-        assert any(
-            "slow_traced_operation" in n for n in sim1_names
-        ), f"sim1 should have its trace, got: {sim1_names}"
-        assert any(
-            "slow_traced_operation" in n for n in sim2_names
-        ), f"sim2 should have its trace, got: {sim2_names}"
+        assert any("slow_traced_operation" in n for n in sim1_names), f"sim1 should have its trace, got: {sim1_names}"
+        assert any("slow_traced_operation" in n for n in sim2_names), f"sim2 should have its trace, got: {sim2_names}"
 
         # Verify isolation - each simulation should only see its own trace
         # This is the key assertion that will fail with global handlers

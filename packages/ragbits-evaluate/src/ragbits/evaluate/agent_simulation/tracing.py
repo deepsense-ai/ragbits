@@ -110,9 +110,7 @@ class TraceAnalyzer:
         self._extract_tool_calls_recursive(self._spans, tool_calls)
         return tool_calls
 
-    def _extract_tool_calls_recursive(
-        self, spans: list[TraceSpan], results: list[ToolCallResult]
-    ) -> None:
+    def _extract_tool_calls_recursive(self, spans: list[TraceSpan], results: list[ToolCallResult]) -> None:
         """Recursively extract tool calls from spans and their children.
 
         Args:
@@ -183,9 +181,7 @@ class TraceAnalyzer:
         self._extract_usage_recursive(self._spans, usage_items)
         return Usage(requests=usage_items)
 
-    def _extract_usage_recursive(
-        self, spans: list[TraceSpan], results: list[UsageItem]
-    ) -> None:
+    def _extract_usage_recursive(self, spans: list[TraceSpan], results: list[UsageItem]) -> None:
         """Recursively extract usage info from spans and their children.
 
         Args:

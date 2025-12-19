@@ -49,8 +49,7 @@ class SQLiteConnection(DatabaseConnection["aiosqlite.Connection"]):
             import aiosqlite
         except ImportError as e:
             raise ImportError(
-                "aiosqlite is required for SQLite support. "
-                "Install it with: pip install ragbits-core[sqlite]"
+                "aiosqlite is required for SQLite support. " "Install it with: pip install ragbits-core[sqlite]"
             ) from e
 
         self._connection = await aiosqlite.connect(self._db_path)
