@@ -3,24 +3,28 @@
 from __future__ import annotations
 
 import time
+from functools import reduce
 from typing import TYPE_CHECKING, Any
+
+from ragbits.chat.interface.types import ChatResponseUnion, TextResponse
+from ragbits.core.llms.base import Usage
+from ragbits.evaluate.agent_simulation.metrics.collectors import MetricCollector
 
 if TYPE_CHECKING:
     from ragbits.evaluate.agent_simulation.results import TurnResult
 
 
-class LatencyMetricCollector:
+class LatencyMetricCollector(MetricCollector):
     """Tracks response latency per turn.
 
     Measures the wall-clock time from turn start to turn end,
     providing average, min, max, and per-turn latency metrics.
 
     Example:
-        >>> collector = LatencyMetricCollector()
         >>> result = await run_simulation(
         ...     scenario=scenario,
         ...     chat=chat,
-        ...     metric_collectors=[collector],
+        ...     config=SimulationConfig(metrics=[LatencyMetricCollector]),
         ... )
         >>> print(result.metrics.custom["latency_avg_ms"])
     """
@@ -29,6 +33,7 @@ class LatencyMetricCollector:
         """Initialize the latency collector."""
         self._turn_start: float | None = None
         self._latencies: list[float] = []
+        self._times_to_first_token: dict[int, float] = {}
 
     def on_turn_start(self, turn_index: int, task_index: int, user_message: str) -> None:
         """Record the start time for this turn.
@@ -39,6 +44,20 @@ class LatencyMetricCollector:
             user_message: The user message (unused).
         """
         self._turn_start = time.perf_counter()
+
+    def on_streamed_response(
+        self, turn_index: int, task_index: int, user_message: str, response: ChatResponseUnion
+    ) -> None:
+        """Record time to first token on first text response.
+
+        Args:
+            turn_index: 1-based index of the current turn.
+            task_index: 0-based index of the current task.
+            user_message: The user message (unused).
+            response: Response chunk from chat interface.
+        """
+        if turn_index not in self._times_to_first_token and isinstance(response, TextResponse):
+            self._times_to_first_token[turn_index] = (time.perf_counter() - self._turn_start) * 1000
 
     def on_turn_end(self, turn_result: TurnResult) -> None:
         """Calculate and store the latency for this turn.
@@ -61,41 +80,47 @@ class LatencyMetricCollector:
             Dictionary with latency_avg_ms, latency_max_ms, latency_min_ms,
             and latency_per_turn_ms.
         """
-        if not self._latencies:
-            return {}
+        ttfts = list(self._times_to_first_token.values())
 
-        return {
-            "latency_avg_ms": sum(self._latencies) / len(self._latencies),
-            "latency_max_ms": max(self._latencies),
-            "latency_min_ms": min(self._latencies),
-            "latency_per_turn_ms": self._latencies.copy(),
-        }
+        rv = {}
+        if self._latencies:
+            rv.update(
+                {
+                    "latency_avg_ms": sum(self._latencies) / len(self._latencies),
+                    "latency_max_ms": max(self._latencies),
+                    "latency_min_ms": min(self._latencies),
+                }
+            )
+        if ttfts:
+            rv.update(
+                {
+                    "time_to_first_token_avg_ms": sum(ttfts) / len(ttfts),
+                    "time_to_first_token_max_ms": max(ttfts),
+                    "time_to_first_token_min_ms": min(ttfts),
+                }
+            )
 
-    def reset(self) -> None:
-        """Reset collector state for a new conversation."""
-        self._turn_start = None
-        self._latencies = []
+        return rv
 
 
-class TokenUsageMetricCollector:
+class TokenUsageMetricCollector(MetricCollector):
     """Tracks token usage and estimated cost per turn.
 
     Aggregates token counts from each turn to provide total and
     per-turn token usage statistics.
 
     Example:
-        >>> collector = TokenUsageMetricCollector()
         >>> result = await run_simulation(
         ...     scenario=scenario,
         ...     chat=chat,
-        ...     metric_collectors=[collector],
+        ...     config=SimulationConfig(metrics=[TokenUsageMetricCollector]),
         ... )
         >>> print(result.metrics.custom["tokens_total"])
     """
 
     def __init__(self) -> None:
         """Initialize the token usage collector."""
-        self._turn_tokens: list[dict[str, int]] = []
+        self._usage: dict[int, Usage] = {}
 
     def on_turn_start(self, turn_index: int, task_index: int, user_message: str) -> None:
         """No-op for token collector.
@@ -113,10 +138,7 @@ class TokenUsageMetricCollector:
         Args:
             turn_result: The result of the completed turn.
         """
-        if turn_result.token_usage:
-            self._turn_tokens.append(turn_result.token_usage.copy())
-        else:
-            self._turn_tokens.append({"total": 0, "prompt": 0, "completion": 0})
+        self._usage[turn_result.turn_index] = turn_result.token_usage
 
     def on_conversation_end(self, all_turns: list[TurnResult]) -> dict[str, Any]:
         """Return aggregated token usage metrics.
@@ -126,40 +148,33 @@ class TokenUsageMetricCollector:
 
         Returns:
             Dictionary with tokens_total, tokens_prompt, tokens_completion,
-            tokens_avg_per_turn, and tokens_per_turn.
+            tokens_avg_per_turn, and estimated_usd.
         """
-        if not self._turn_tokens:
+        if not self._usage:
             return {}
 
-        total = sum(t.get("total", 0) for t in self._turn_tokens)
-        prompt = sum(t.get("prompt", 0) for t in self._turn_tokens)
-        completion = sum(t.get("completion", 0) for t in self._turn_tokens)
+        total_usage = reduce(lambda a, b: a + b, self._usage.values())
 
         return {
-            "tokens_total": total,
-            "tokens_prompt": prompt,
-            "tokens_completion": completion,
-            "tokens_avg_per_turn": total / len(self._turn_tokens) if self._turn_tokens else 0,
-            "tokens_per_turn": [t.get("total", 0) for t in self._turn_tokens],
+            "tokens_total": total_usage.total_tokens,
+            "tokens_prompt": total_usage.prompt_tokens,
+            "tokens_completion": total_usage.completion_tokens,
+            "tokens_avg_per_turn": total_usage.total_tokens / len(self._usage),
+            "estimated_usd": total_usage.estimated_cost,
         }
 
-    def reset(self) -> None:
-        """Reset collector state for a new conversation."""
-        self._turn_tokens = []
 
-
-class ToolUsageMetricCollector:
+class ToolUsageMetricCollector(MetricCollector):
     """Tracks tool call patterns during the conversation.
 
     Records which tools were called, how often, and on which turns,
     providing insights into agent behavior.
 
     Example:
-        >>> collector = ToolUsageMetricCollector()
         >>> result = await run_simulation(
         ...     scenario=scenario,
         ...     chat=chat,
-        ...     metric_collectors=[collector],
+        ...     config=SimulationConfig(metrics=[ToolUsageMetricCollector]),
         ... )
         >>> print(result.metrics.custom["tools_unique"])
     """
@@ -214,8 +229,3 @@ class ToolUsageMetricCollector:
             "tools_per_turn": self._tool_calls.copy(),
             "turns_with_tools": turns_with_tools,
         }
-
-    def reset(self) -> None:
-        """Reset collector state for a new conversation."""
-        self._tool_calls = []
-        self._tool_counts = {}

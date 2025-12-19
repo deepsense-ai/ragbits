@@ -4,6 +4,10 @@ import time
 
 from ragbits.evaluate.agent_simulation.metrics import (
     CompositeMetricCollector,
+    DeepEvalAllMetricsCollector,
+    DeepEvalCompletenessMetricCollector,
+    DeepEvalKnowledgeRetentionMetricCollector,
+    DeepEvalRelevancyMetricCollector,
     LatencyMetricCollector,
     MetricCollector,
     TokenUsageMetricCollector,
@@ -80,21 +84,6 @@ class TestLatencyMetricCollector:
         assert result["latency_max_ms"] == max(result["latency_per_turn_ms"])
         assert result["latency_min_ms"] == min(result["latency_per_turn_ms"])
 
-    @staticmethod
-    def test_latency_collector_reset() -> None:
-        """Test latency collector reset."""
-        collector = LatencyMetricCollector()
-
-        collector.on_turn_start(1, 0, "Hello")
-        turn = _make_turn_result(1)
-        collector.on_turn_end(turn)
-
-        collector.reset()
-
-        result = collector.on_conversation_end([])
-        assert result == {}
-
-
 class TestTokenUsageMetricCollector:
     """Tests for TokenUsageMetricCollector."""
 
@@ -157,20 +146,6 @@ class TestTokenUsageMetricCollector:
 
         assert result["tokens_total"] == 0
         assert result["tokens_per_turn"] == [0]
-
-    @staticmethod
-    def test_token_collector_reset() -> None:
-        """Test token collector reset."""
-        collector = TokenUsageMetricCollector()
-
-        turn = _make_turn_result(1, token_usage={"total": 100, "prompt": 80, "completion": 20})
-        collector.on_turn_end(turn)
-
-        collector.reset()
-
-        result = collector.on_conversation_end([])
-        assert result == {}
-
 
 class TestToolUsageMetricCollector:
     """Tests for ToolUsageMetricCollector."""
@@ -246,21 +221,6 @@ class TestToolUsageMetricCollector:
         assert result["tools_per_turn"] == [["search"], [], ["search", "calculate"]]
         assert result["turns_with_tools"] == 2
 
-    @staticmethod
-    def test_tool_collector_reset() -> None:
-        """Test tool collector reset."""
-        collector = ToolUsageMetricCollector()
-
-        turn = _make_turn_result(1, tool_calls=[{"name": "search", "arguments": {}, "result": "r"}])
-        collector.on_turn_end(turn)
-
-        collector.reset()
-
-        result = collector.on_conversation_end([])
-        assert result["tools_total_calls"] == 0
-        assert result["tools_unique"] == []
-
-
 class TestCompositeMetricCollector:
     """Tests for CompositeMetricCollector."""
 
@@ -323,21 +283,6 @@ class TestCompositeMetricCollector:
         result = composite.on_conversation_end([turn])
         assert result["tokens_total"] == 50
 
-    @staticmethod
-    def test_composite_reset() -> None:
-        """Test composite reset."""
-        token_collector = TokenUsageMetricCollector()
-        composite = CompositeMetricCollector([token_collector])
-
-        turn = _make_turn_result(1, token_usage={"total": 100, "prompt": 80, "completion": 20})
-        composite.on_turn_end(turn)
-
-        composite.reset()
-
-        result = composite.on_conversation_end([])
-        assert result == {}
-
-
 class TestMetricCollectorProtocol:
     """Tests for MetricCollector protocol compliance."""
 
@@ -358,3 +303,177 @@ class TestMetricCollectorProtocol:
         """Test ToolUsageMetricCollector satisfies MetricCollector protocol."""
         collector = ToolUsageMetricCollector()
         assert isinstance(collector, MetricCollector)
+
+    @staticmethod
+    def test_deepeval_completeness_is_metric_collector() -> None:
+        """Test DeepEvalCompletenessMetricCollector satisfies MetricCollector protocol."""
+        collector = DeepEvalCompletenessMetricCollector()
+        assert isinstance(collector, MetricCollector)
+
+    @staticmethod
+    def test_deepeval_relevancy_is_metric_collector() -> None:
+        """Test DeepEvalRelevancyMetricCollector satisfies MetricCollector protocol."""
+        collector = DeepEvalRelevancyMetricCollector()
+        assert isinstance(collector, MetricCollector)
+
+    @staticmethod
+    def test_deepeval_knowledge_retention_is_metric_collector() -> None:
+        """Test DeepEvalKnowledgeRetentionMetricCollector satisfies MetricCollector protocol."""
+        collector = DeepEvalKnowledgeRetentionMetricCollector()
+        assert isinstance(collector, MetricCollector)
+
+    @staticmethod
+    def test_deepeval_all_metrics_is_metric_collector() -> None:
+        """Test DeepEvalAllMetricsCollector satisfies MetricCollector protocol."""
+        collector = DeepEvalAllMetricsCollector()
+        assert isinstance(collector, MetricCollector)
+
+
+class TestDeepEvalMetricCollectors:
+    """Tests for DeepEval metric collectors (without actual DeepEval evaluation)."""
+
+    @staticmethod
+    def test_completeness_collector_empty() -> None:
+        """Test completeness collector with no turns returns empty dict."""
+        collector = DeepEvalCompletenessMetricCollector()
+        result = collector.on_conversation_end([])
+        assert result == {}
+
+    @staticmethod
+    def test_completeness_collector_records_turns() -> None:
+        """Test completeness collector records turns correctly."""
+        collector = DeepEvalCompletenessMetricCollector()
+
+        turn = _make_turn_result(1)
+        collector.on_turn_start(1, 0, "Hello")
+        collector.on_turn_end(turn)
+
+        # Should have recorded the turn
+        assert len(collector._turns) == 1
+        assert collector._turns[0] == ("User message 1", "Assistant response 1")
+
+    @staticmethod
+    def test_completeness_collector_reset() -> None:
+        """Test completeness collector reset."""
+        collector = DeepEvalCompletenessMetricCollector()
+
+        turn = _make_turn_result(1)
+        collector.on_turn_end(turn)
+
+        collector.reset()
+        assert collector._turns == []
+
+    @staticmethod
+    def test_relevancy_collector_empty() -> None:
+        """Test relevancy collector with no turns returns empty dict."""
+        collector = DeepEvalRelevancyMetricCollector()
+        result = collector.on_conversation_end([])
+        assert result == {}
+
+    @staticmethod
+    def test_relevancy_collector_records_turns() -> None:
+        """Test relevancy collector records turns correctly."""
+        collector = DeepEvalRelevancyMetricCollector()
+
+        turn = _make_turn_result(1)
+        collector.on_turn_end(turn)
+
+        assert len(collector._turns) == 1
+
+    @staticmethod
+    def test_knowledge_retention_collector_empty() -> None:
+        """Test knowledge retention collector with no turns returns empty dict."""
+        collector = DeepEvalKnowledgeRetentionMetricCollector()
+        result = collector.on_conversation_end([])
+        assert result == {}
+
+    @staticmethod
+    def test_all_metrics_collector_delegates() -> None:
+        """Test all metrics collector delegates to child collectors."""
+        collector = DeepEvalAllMetricsCollector()
+
+        turn = _make_turn_result(1)
+        collector.on_turn_start(1, 0, "Hello")
+        collector.on_turn_end(turn)
+
+        # Check that child collectors received the turn
+        assert len(collector._completeness._turns) == 1
+        assert len(collector._relevancy._turns) == 1
+        assert len(collector._knowledge_retention._turns) == 1
+
+    @staticmethod
+    def test_all_metrics_collector_reset() -> None:
+        """Test all metrics collector resets all children."""
+        collector = DeepEvalAllMetricsCollector()
+
+        turn = _make_turn_result(1)
+        collector.on_turn_end(turn)
+
+        collector.reset()
+
+        assert collector._completeness._turns == []
+        assert collector._relevancy._turns == []
+        assert collector._knowledge_retention._turns == []
+
+
+class TestSimulationConfigMetricsValidation:
+    """Tests for SimulationConfig metrics field validation."""
+
+    @staticmethod
+    def test_metrics_with_classes() -> None:
+        """Test that passing classes (types) works correctly."""
+        from ragbits.evaluate.agent_simulation.models import SimulationConfig
+
+        config = SimulationConfig(metrics=[LatencyMetricCollector, TokenUsageMetricCollector])
+        assert len(config.metrics) == 2
+        assert config.metrics[0] is LatencyMetricCollector
+        assert config.metrics[1] is TokenUsageMetricCollector
+
+    @staticmethod
+    def test_create_metric_collectors_creates_fresh_instances() -> None:
+        """Test that create_metric_collectors creates fresh instances each time."""
+        from ragbits.evaluate.agent_simulation.models import SimulationConfig
+
+        config = SimulationConfig(metrics=[LatencyMetricCollector, TokenUsageMetricCollector])
+
+        # Create instances twice
+        collectors1 = config.create_metric_collectors()
+        collectors2 = config.create_metric_collectors()
+
+        # Should be different instances
+        assert collectors1[0] is not collectors2[0]
+        assert collectors1[1] is not collectors2[1]
+
+        # But same types
+        assert isinstance(collectors1[0], LatencyMetricCollector)
+        assert isinstance(collectors2[0], LatencyMetricCollector)
+
+    @staticmethod
+    def test_metrics_with_lambda_factory() -> None:
+        """Test that lambda factories work for collectors with arguments."""
+        from ragbits.evaluate.agent_simulation.models import SimulationConfig
+
+        # Use lambda for potential custom collector with args
+        config = SimulationConfig(metrics=[lambda: LatencyMetricCollector()])
+        collectors = config.create_metric_collectors()
+
+        assert len(collectors) == 1
+        assert isinstance(collectors[0], LatencyMetricCollector)
+
+    @staticmethod
+    def test_metrics_none_is_valid() -> None:
+        """Test that None metrics is valid."""
+        from ragbits.evaluate.agent_simulation.models import SimulationConfig
+
+        config = SimulationConfig(metrics=None)
+        assert config.metrics is None
+        assert config.create_metric_collectors() == []
+
+    @staticmethod
+    def test_metrics_empty_list_is_valid() -> None:
+        """Test that empty list metrics is valid."""
+        from ragbits.evaluate.agent_simulation.models import SimulationConfig
+
+        config = SimulationConfig(metrics=[])
+        assert config.metrics == []
+        assert config.create_metric_collectors() == []
