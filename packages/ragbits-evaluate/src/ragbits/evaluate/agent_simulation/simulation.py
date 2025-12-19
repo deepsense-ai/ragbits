@@ -2,16 +2,47 @@
 
 from __future__ import annotations
 
-import json
-import re
 from typing import TYPE_CHECKING
 
-from ragbits.agents.tool import ToolCallResult
+from pydantic import BaseModel
+
 from ragbits.core.llms import LiteLLM
+from ragbits.core.prompt import Prompt
 from ragbits.evaluate.agent_simulation.models import Personality, Scenario, Task, Turn
 
 if TYPE_CHECKING:
-    from ragbits.evaluate.agent_simulation.context import DataSnapshot, DomainContext
+    from ragbits.evaluate.agent_simulation.context import DataSnapshot
+
+
+class SimulatedUserPromptInput(BaseModel):
+    """Input for the simulated user prompt."""
+
+    scenario_name: str
+    task_context: str
+    personality_instruction: str
+    grounding_block: str
+    history_block: str
+    current_task: str
+
+
+class SimulatedUserPrompt(Prompt[SimulatedUserPromptInput, str]):
+    """Prompt for generating simulated user messages."""
+
+    system_prompt = """
+You are simulating a concise human user in a terminal chat.
+Scenario: {{ scenario_name }}
+{{ task_context }}{{ personality_instruction }}{{ grounding_block }}
+Given the assistant's last reply and the conversation so far,
+write ONLY the next user message to work on the current task. Be specific and brief.
+"""
+
+    user_prompt = """
+[CONVERSATION]
+{{ history_block }}
+
+[TASK]
+Write the next USER message now (follow task: {{ current_task }}):
+"""
 
 
 class SimulatedUser:
@@ -64,177 +95,52 @@ class SimulatedUser:
         if current_task is None:
             return "Thank you, all tasks are completed."
 
-        history_text = []
-        for t in history:
-            history_text.append(f"User: {t.user}\nAssistant: {t.assistant}")
-        history_block = "\n\n".join(history_text) if history_text else "(no prior messages)"
+        prompt = SimulatedUserPrompt(
+            SimulatedUserPromptInput(
+                scenario_name=self.scenario.name,
+                task_context=self._build_task_context(current_task),
+                personality_instruction=self._build_personality_instruction(),
+                grounding_block=self._build_grounding_block(),
+                history_block=self._build_history_block(history),
+                current_task=current_task.task,
+            )
+        )
 
+        response = await self.llm.generate(prompt)
+        return response.strip()
+
+    def _build_task_context(self, current_task: Task) -> str:
+        """Build the task context string."""
         task_context = f"Current task: {current_task.task}"
         if self.current_task_idx > 0:
             completed_tasks = ", ".join([t.task for t in self.scenario.tasks[: self.current_task_idx]])
             task_context += f"\nCompleted tasks: {completed_tasks}"
+        return task_context
 
-        personality_instruction = ""
+    def _build_personality_instruction(self) -> str:
+        """Build the personality instruction string."""
         if self.personality:
-            personality_instruction = f"\n\nPersonality: {self.personality.description}"
+            return f"\n\nPersonality: {self.personality.description}"
+        return ""
 
-        # Build data grounding block if snapshot is provided
-        grounding_block = ""
-        if self.data_snapshot:
-            grounding_block = (
-                "\n\n[AVAILABLE DATA]\n"
-                f"{self.data_snapshot.format_for_prompt()}\n\n"
-                "IMPORTANT: Only reference items that exist in the AVAILABLE DATA above. "
-                "Do not ask for entities that are not listed."
-            )
+    def _build_grounding_block(self) -> str:
+        """Build the data grounding block string."""
+        if not self.data_snapshot:
+            return ""
 
-        prompt = (
-            "[SYSTEM]\n"
-            "You are simulating a concise human user in a terminal chat. "
-            f"Scenario: {self.scenario.name}\n"
-            f"{task_context}{personality_instruction}{grounding_block}\n"
-            "Given the assistant's last reply and the conversation so far, "
-            "write ONLY the next user message to work on the current task. Be specific and brief.\n\n"
-            "[CONVERSATION]\n"
-            f"{history_block}\n\n"
-            "[TASK]\nWrite the next USER message now:"
-        )
-
-        response = await self.llm.generate(prompt=prompt)
-        return response.strip()
-
-
-class GoalChecker:
-    """A lightweight judge model that decides whether the current task has been achieved.
-
-    It inspects the conversation so far and checks if the task matches the expected result.
-    Supports optional domain context for accurate evaluation in specific domains.
-    """
-
-    def __init__(self, llm: LiteLLM, scenario: Scenario) -> None:
-        self.llm = llm
-        self.scenario = scenario
-
-    async def is_task_achieved(
-        self,
-        current_task: Task,
-        history: list[Turn],
-        context: DomainContext | None = None,
-    ) -> tuple[bool, str]:
-        """Check if the current task has been completed based on the conversation history.
-
-        Args:
-            current_task: The task to check completion for.
-            history: List of conversation turns so far.
-            context: Optional domain context for accurate evaluation (e.g., currency, locale).
-
-        Returns:
-            Tuple of (is_completed, reason).
+        return f"""
+        <AVAILABLE_DATA comment="This section lists data available for agent, not listed entities may not exist.">
+            {self.data_snapshot.format_for_prompt()}
+        </AVAILABLE_DATA>
         """
-        history_text = []
-        for t in history:
-            history_text.append(f"User: {t.user}\nAssistant: {t.assistant}")
-        history_block = "\n\n".join(history_text) if history_text else "(no prior messages)"
 
-        # Build context block if provided
-        context_block = ""
-        if context:
-            context_block = (
-                "\n[IMPORTANT CONTEXT]\n"
-                f"{context.format_for_prompt()}\n\n"
-                "When evaluating task completion, consider the domain context above "
-                f"and use {context.locale} locale conventions.\n\n"
-            )
-
-        prompt = (
-            "[SYSTEM]\n"
-            "You are a strict task-completion judge for a user-assistant conversation. "
-            "Decide if the assistant has fulfilled the current task.\n"
-            f"Current task: {current_task.task}\n"
-            f"Expected result: {current_task.expected_result}\n"
-            f"{context_block}"
-            "Respond with a concise JSON object ONLY, no extra text, with fields:\n"
-            '{"done": true|false, "reason": "short reason"}\n\n'
-            "[CONVERSATION]\n"
-            f"{history_block}\n\n"
-            "[TASK]\nReturn the JSON now:"
-        )
-
-        response = await self.llm.generate(prompt=prompt)
-        text = response.strip()
-        # Be robust to slight deviations by attempting a minimal parse
-        done = False
-        reason = ""
-
-        if not text:
-            return False, "Empty response from goal checker"
-
-        # Try to extract JSON from markdown code blocks if present
-        code_block_match = re.search(r"```(?:json)?\s*(\{.*?\})\s*```", text, re.DOTALL)
-        if code_block_match:
-            text = code_block_match.group(1)
-
-        # Try to find JSON object in the text
-        json_match = re.search(r"\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}", text, re.DOTALL)
-        if json_match:
-            text = json_match.group(0)
-
-        try:
-            data = json.loads(text)
-            done = bool(data.get("done", False))
-            reason = str(data.get("reason", "")).strip()
-        except json.JSONDecodeError:
-            # If JSON parsing fails, try to infer from response text
-            reason = f"Failed to parse JSON response: {text[:100]}"
-            # Heuristic: if response contains "done" or "completed" or "true", assume done
-            text_lower = text.lower()
-            if any(word in text_lower for word in ["done", "completed", "true", "yes", "success"]):
-                done = True
-            elif any(word in text_lower for word in ["not done", "incomplete", "false", "no", "failed"]):
-                done = False
-
-        return done, reason
-
-
-class ToolUsageChecker:
-    """A simple comparator that verifies whether the agent used the expected tools.
-
-    It checks if all expected tools from the task were called during the conversation turn.
-    """
-
-    def __init__(self, scenario: Scenario) -> None:
-        self.scenario = scenario
-
-    def check_tool_usage(self, current_task: Task, tool_calls: list[ToolCallResult]) -> tuple[bool, str]:  # noqa: PLR6301
-        """Check if the expected tools were used for the current task.
-
-        Args:
-            current_task: The current task being evaluated
-            tool_calls: List of tool calls made during this turn
-
-        Returns:
-            Tuple of (success: bool, reason: str)
-        """
-        if not current_task.expected_tools:
-            return True, "No expected tools specified"
-
-        if not tool_calls:
-            return False, "No tools were called, but tools were expected"
-
-        # Get the names of tools that were actually called
-        called_tool_names = [tc.name for tc in tool_calls]
-        expected_tool_names = current_task.expected_tools
-
-        # Check if all expected tools were used
-        missing_tools = [tool for tool in expected_tool_names if tool not in called_tool_names]
-
-        if missing_tools:
-            return (
-                False,
-                f"Expected tools not used: {', '.join(missing_tools)}. Tools called: {', '.join(called_tool_names)}",
-            )
-
-        return True, f"All expected tools used: {', '.join(called_tool_names)}"
+    @staticmethod
+    def _build_history_block(history: list[Turn]) -> str:
+        """Build the conversation history block string."""
+        if not history:
+            return "(no prior messages)"
+        history_text = [f"User: {t.user}\nAssistant: {t.assistant}" for t in history]
+        return "\n\n".join(history_text)
 
 
 def build_llm(model_name: str | None, default_model: str, api_key: str) -> LiteLLM:

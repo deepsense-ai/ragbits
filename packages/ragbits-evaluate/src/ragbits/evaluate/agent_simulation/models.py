@@ -1,37 +1,217 @@
 """Data models for agent simulation scenarios."""
 
-from dataclasses import dataclass
+from __future__ import annotations
+
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, Literal
+
+from pydantic import BaseModel, Field, create_model
+
+from ragbits.evaluate.agent_simulation.context import DataSnapshot, DomainContext
+from ragbits.evaluate.agent_simulation.metrics.collectors import MetricCollector
+
+if TYPE_CHECKING:
+    from rich.console import Console
+
+    from ragbits.evaluate.agent_simulation.checkers import BaseCheckerConfig
+    from ragbits.evaluate.agent_simulation.display import ScenarioLiveDisplay
 
 
-@dataclass
-class Turn:
+class Turn(BaseModel):
     """A single conversation turn between user and assistant."""
 
     user: str
     assistant: str
 
 
-@dataclass
-class Task:
-    """A single task with its expected result."""
+class Task(BaseModel):
+    """A singular task or goal that simulated user is destined to complete."""
 
-    task: str
-    expected_result: str
-    expected_tools: list[str] | None = None
-    """Optional list of tool names that should be used to complete this task."""
+    task: str = Field(
+        ...,
+        description="A natural language description of the objective that simulated user needs to complete.",
+    )
+    checkers: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="List of checker configurations. Each dict must have 'type' key and checker-specific fields.",
+    )
+    checker_mode: Literal["all", "any"] = Field(
+        default="all",
+        description="How to combine multiple checkers: 'all' (all must pass), 'any' (one must pass)",
+    )
+
+    def get_parsed_checkers(self) -> list[BaseCheckerConfig]:
+        """Parse checker configs into typed checker instances.
+
+        Returns:
+            List of parsed checker config instances.
+        """
+        from ragbits.evaluate.agent_simulation.checkers import parse_checker_config
+
+        return [parse_checker_config(c) for c in self.checkers]
+
+    def get_checker_summary(self) -> str:
+        """Get a human-readable summary of configured checkers.
+
+        Returns:
+            Summary string describing the checkers.
+        """
+        if not self.checkers:
+            return "no checkers"
+
+        types = [c.get("type", "unknown") for c in self.checkers]
+        return f"{', '.join(types)} ({self.checker_mode})"
 
 
-@dataclass
-class Scenario:
+class Scenario(BaseModel):
     """A scenario containing multiple tasks to be completed sequentially."""
 
-    name: str
-    tasks: list[Task]
+    name: str = Field(..., description="Short name identyfing the scenario")
+    tasks: list[Task] = Field(
+        default_factory=list,
+        description=(
+            "List of tasks that will be executed during the scenario. "
+            "Simulating LLM will use this list to determine next steps. "
+            "It can be both treated as conversation outline or a checklist "
+            "that should be realized by simulated user. "
+            "Expected result will be used to judge if specific exchange of messages "
+            "was aligned with system expectactions. "
+        ),
+    )
+
+    turn_limit: int | None = Field(
+        None,
+        description=(
+            "Limit how many turns can be ran before failing the scenario. "
+            "If set here it will override default settings."
+        ),
+    )
+    turn_limit_per_task: int | None = Field(
+        None,
+        description="Limit number of turns, this time per task. Specific tasks can override their limits.",
+    )
+
+    group: str | None = Field(
+        None,
+        description=(
+            "Scenarios may be coupled together by being in the same group. "
+            "Scenarios in groups are often executed one after another, "
+            "may have some sort of dependencies or inference. "
+            "In final results aggregated group metrics can be found."
+        ),
+    )
+
+    def display(self, console: Console | None = None) -> None:
+        """Display scenario with rich panel."""
+        from ragbits.evaluate.agent_simulation.display import display_scenario
+
+        display_scenario(self, console)
+
+    def live_display(self, console: Console | None = None) -> ScenarioLiveDisplay:
+        """Create a live display for this scenario."""
+        from ragbits.evaluate.agent_simulation.display import ScenarioLiveDisplay
+
+        return ScenarioLiveDisplay(self, console)
+
+    @classmethod
+    def dto(cls) -> type[Scenario]:
+        """Create a DTO class for serialization."""
+        if not hasattr(cls, "_dto_cls"):
+            cls._dto_cls = create_model(
+                "ScenarioDTO",
+                __base__=cls,
+                name=(str, cls.__pydantic_fields__["name"]),
+                tasks=(list[Task], cls.__pydantic_fields__["tasks"]),
+            )
+        return cls._dto_cls
 
 
-@dataclass
-class Personality:
+class Personality(BaseModel):
     """A personality definition for the simulated user."""
 
-    name: str
-    description: str
+    name: str = Field(
+        ...,
+        description="A descriptive name that will help to identify this specific instance of personality.",
+    )
+    description: str = Field(
+        ...,
+        description=(
+            "Detailed description of user behaviour, style of communication, "
+            "internal motives, language, attitute, etc."
+        ),
+    )
+
+
+class SimulationConfig(BaseModel):
+    """Configuration for running agent simulations.
+
+    Groups parameters that are commonly passed between simulation components.
+    Excludes instance-specific objects like ChatInterface, callbacks, and streams.
+    """
+
+    model_config = {"arbitrary_types_allowed": True}
+
+    max_turns_scenario: int = Field(
+        default=15,
+        description="Maximum number of conversation turns for the entire scenario.",
+    )
+    max_turns_task: int | None = Field(
+        default=4,
+        description="Maximum number of conversation turns per task (None for no limit).",
+    )
+    log_file: str | None = Field(
+        default=None,
+        description="Optional path to log file.",
+    )
+    agent_model_name: str | None = Field(
+        default=None,
+        description="Optional override for agent LLM model name.",
+    )
+    sim_user_model_name: str | None = Field(
+        default=None,
+        description="Optional override for simulated user LLM model name.",
+    )
+    checker_model_name: str | None = Field(
+        default=None,
+        description="Optional override for goal checker LLM model name.",
+    )
+    default_model: str = Field(
+        default="gpt-4o-mini",
+        description="Default LLM model name when specific models not provided.",
+    )
+    api_key: str = Field(
+        default="",
+        description="API key for LLM.",
+    )
+    user_message_prefix: str = Field(
+        default="",
+        description="Optional prefix to add to user messages before sending to agent.",
+    )
+    domain_context: DomainContext | None = Field(
+        default=None,
+        description="Optional domain context for goal checking (currency, locale, business rules).",
+    )
+    data_snapshot: DataSnapshot | None = Field(
+        default=None,
+        description="Optional data snapshot to ground simulated user requests to available data.",
+    )
+    metrics: list[type[MetricCollector] | Callable[[], MetricCollector]] | None = Field(
+        default=None,
+        description=(
+            "Optional list of metric collector factories. Each item can be either a class "
+            "(e.g., LatencyMetricCollector) or a callable that returns a collector instance "
+            "(e.g., lambda: CustomCollector(arg=value)). Fresh instances are created for each run."
+        ),
+    )
+
+    def create_metric_collectors(self) -> list[MetricCollector]:
+        """Create fresh metric collector instances for a simulation run.
+
+        Each call creates new instances to ensure concurrent runs don't share state.
+
+        Returns:
+            List of freshly instantiated metric collectors.
+        """
+        if not self.metrics:
+            return []
+        return [factory() for factory in self.metrics]
