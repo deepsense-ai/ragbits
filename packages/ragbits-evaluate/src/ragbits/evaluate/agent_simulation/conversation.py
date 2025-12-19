@@ -7,8 +7,6 @@ from datetime import datetime, timezone
 from typing import IO, Any
 from uuid import uuid4
 
-from loguru import logger
-
 from ragbits.agents.tool import ToolCallResult
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import (
@@ -711,7 +709,6 @@ async def run_simulation(
             ctx.print(f"\nSimulation failed with error: {state.error_message}")
 
         traces = trace_handler.get_traces()
-        logger.debug(traces)
 
     task_results = _build_task_results(scenario, ctx, state)
     ctx.logger.log_total_usage(state.total_usage)
