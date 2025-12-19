@@ -69,32 +69,35 @@ class TestTaskResult:
         task = TaskResult(
             task_index=0,
             description="Find hotels",
-            expected_result="List of hotels",
             completed=True,
             turns_taken=3,
             final_reason="Hotels found",
+            checkers=[{"type": "llm", "expected_result": "List of hotels"}],
+            checker_mode="all",
         )
 
         assert task.task_index == 0
         assert task.description == "Find hotels"
-        assert task.expected_result == "List of hotels"
         assert task.completed is True
         assert task.turns_taken == 3
         assert task.final_reason == "Hotels found"
+        assert len(task.checkers) == 1
+        assert task.checkers[0]["type"] == "llm"
+        assert task.checker_mode == "all"
 
     @staticmethod
-    def test_task_result_with_none_expected() -> None:
-        """Test TaskResult with None expected_result."""
+    def test_task_result_with_defaults() -> None:
+        """Test TaskResult with default values."""
         task = TaskResult(
             task_index=0,
             description="Find hotels",
-            expected_result=None,
             completed=False,
             turns_taken=1,
             final_reason="Not completed",
         )
 
-        assert task.expected_result is None
+        assert task.checkers == []
+        assert task.checker_mode == "all"
 
 
 class TestConversationMetrics:
@@ -102,74 +105,59 @@ class TestConversationMetrics:
 
     @staticmethod
     def test_conversation_metrics_creation() -> None:
-        """Test creating ConversationMetrics with all fields."""
+        """Test creating ConversationMetrics with flat metrics dict."""
         metrics = ConversationMetrics(
-            total_turns=10,
-            total_tasks=3,
-            tasks_completed=2,
-            total_tokens=1500,
-            prompt_tokens=1200,
-            completion_tokens=300,
-            total_cost_usd=0.015,
-            deepeval_scores={"completeness": 0.85, "relevancy": 0.90},
-            custom={"latency_avg": 200.0},
+            metrics={
+                "total_turns": 10,
+                "total_tasks": 3,
+                "tasks_completed": 2,
+                "success_rate": 2 / 3,
+                "total_tokens": 1500,
+                "prompt_tokens": 1200,
+                "completion_tokens": 300,
+                "total_cost_usd": 0.015,
+                "deepeval_completeness": 0.85,
+                "deepeval_relevancy": 0.90,
+                "latency_avg_ms": 200.0,
+            }
         )
 
         assert metrics.total_turns == 10
         assert metrics.total_tasks == 3
         assert metrics.tasks_completed == 2
-        assert metrics.total_tokens == 1500
-        assert metrics.prompt_tokens == 1200
-        assert metrics.completion_tokens == 300
-        assert metrics.total_cost_usd == 0.015
-        assert metrics.deepeval_scores["completeness"] == 0.85
-        assert metrics.custom["latency_avg"] == 200.0
+        assert metrics.metrics["total_tokens"] == 1500
+        assert metrics.metrics["deepeval_completeness"] == 0.85
+        assert metrics.metrics["latency_avg_ms"] == 200.0
 
     @staticmethod
-    def test_success_rate_calculation() -> None:
-        """Test success_rate property calculation."""
+    def test_success_rate_from_metrics() -> None:
+        """Test success_rate property from metrics dict."""
         metrics = ConversationMetrics(
-            total_turns=10,
-            total_tasks=4,
-            tasks_completed=3,
+            metrics={
+                "total_turns": 10,
+                "total_tasks": 4,
+                "tasks_completed": 3,
+                "success_rate": 0.75,
+            }
         )
         assert metrics.success_rate == 0.75
 
     @staticmethod
-    def test_success_rate_zero_tasks() -> None:
-        """Test success_rate with zero tasks."""
-        metrics = ConversationMetrics(
-            total_turns=0,
-            total_tasks=0,
-            tasks_completed=0,
-        )
+    def test_success_rate_missing() -> None:
+        """Test success_rate defaults to 0.0 when missing."""
+        metrics = ConversationMetrics(metrics={})
         assert metrics.success_rate == 0.0
 
     @staticmethod
-    def test_success_rate_all_completed() -> None:
-        """Test success_rate when all tasks completed."""
-        metrics = ConversationMetrics(
-            total_turns=5,
-            total_tasks=2,
-            tasks_completed=2,
-        )
-        assert metrics.success_rate == 1.0
-
-    @staticmethod
     def test_conversation_metrics_defaults() -> None:
-        """Test ConversationMetrics with default values."""
-        metrics = ConversationMetrics(
-            total_turns=5,
-            total_tasks=2,
-            tasks_completed=1,
-        )
+        """Test ConversationMetrics with default empty metrics."""
+        metrics = ConversationMetrics()
 
-        assert metrics.total_tokens == 0
-        assert metrics.prompt_tokens == 0
-        assert metrics.completion_tokens == 0
-        assert metrics.total_cost_usd == 0.0
-        assert metrics.deepeval_scores == {}
-        assert metrics.custom == {}
+        assert metrics.total_turns == 0
+        assert metrics.total_tasks == 0
+        assert metrics.tasks_completed == 0
+        assert metrics.success_rate == 0.0
+        assert metrics.metrics == {}
 
 
 class TestSimulationStatus:
@@ -228,18 +216,20 @@ class TestSimulationResult:
             TaskResult(
                 task_index=0,
                 description="Find hotels",
-                expected_result="List of hotels",
                 completed=True,
                 turns_taken=1,
                 final_reason="Hotels found",
+                checkers=[{"type": "llm", "expected_result": "List of hotels"}],
+                checker_mode="all",
             ),
             TaskResult(
                 task_index=1,
                 description="Book hotel",
-                expected_result="Booking confirmation",
                 completed=True,
                 turns_taken=1,
                 final_reason="Booking done",
+                checkers=[{"type": "tool_call", "tools": ["book_hotel"]}],
+                checker_mode="all",
             ),
         ]
 
@@ -248,14 +238,17 @@ class TestSimulationResult:
     def sample_metrics() -> ConversationMetrics:
         """Create sample metrics."""
         return ConversationMetrics(
-            total_turns=2,
-            total_tasks=2,
-            tasks_completed=2,
-            total_tokens=180,
-            prompt_tokens=140,
-            completion_tokens=40,
-            total_cost_usd=0.002,
-            deepeval_scores={"completeness": 0.95},
+            metrics={
+                "total_turns": 2,
+                "total_tasks": 2,
+                "tasks_completed": 2,
+                "success_rate": 1.0,
+                "total_tokens": 180,
+                "prompt_tokens": 140,
+                "completion_tokens": 40,
+                "total_cost_usd": 0.002,
+                "deepeval_completeness": 0.95,
+            }
         )
 
     @staticmethod
@@ -274,7 +267,7 @@ class TestSimulationResult:
             agent_model="gpt-4o-mini",
             simulated_user_model="gpt-4o-mini",
             checker_model="gpt-4o-mini",
-            personality="Friendly",
+            persona="Friendly",
             turns=sample_turn_results,
             tasks=sample_task_results,
             metrics=sample_metrics,
@@ -286,7 +279,7 @@ class TestSimulationResult:
         assert sample_result.scenario_name == "Hotel Booking"
         assert sample_result.status == SimulationStatus.COMPLETED
         assert sample_result.agent_model == "gpt-4o-mini"
-        assert sample_result.personality == "Friendly"
+        assert sample_result.persona == "Friendly"
         assert len(sample_result.turns) == 2
         assert len(sample_result.tasks) == 2
         assert sample_result.metrics is not None
@@ -317,7 +310,7 @@ class TestSimulationResult:
         assert data["scenario_name"] == "Hotel Booking"
         assert data["status"] == "completed"
         assert data["agent_model"] == "gpt-4o-mini"
-        assert data["personality"] == "Friendly"
+        assert data["persona"] == "Friendly"
         assert data["start_time"] == "2024-01-15T10:00:00+00:00"
         assert data["end_time"] == "2024-01-15T10:05:00+00:00"
         assert len(data["turns"]) == 2
@@ -346,7 +339,7 @@ class TestSimulationResult:
         assert loaded.scenario_name == sample_result.scenario_name
         assert loaded.status == sample_result.status
         assert loaded.agent_model == sample_result.agent_model
-        assert loaded.personality == sample_result.personality
+        assert loaded.persona == sample_result.persona
         assert len(loaded.turns) == len(sample_result.turns)
         assert len(loaded.tasks) == len(sample_result.tasks)
         assert loaded.metrics is not None
@@ -381,7 +374,7 @@ class TestSimulationResult:
 
     @staticmethod
     def test_from_dict_with_metrics() -> None:
-        """Test from_dict with metrics."""
+        """Test from_dict with flat metrics format."""
         data = {
             "scenario_name": "Test",
             "start_time": "2024-01-15T10:00:00+00:00",
@@ -390,12 +383,12 @@ class TestSimulationResult:
                 "total_turns": 5,
                 "total_tasks": 2,
                 "tasks_completed": 1,
+                "success_rate": 0.5,
                 "total_tokens": 500,
                 "prompt_tokens": 400,
                 "completion_tokens": 100,
                 "total_cost_usd": 0.005,
-                "deepeval_scores": {"completeness": 0.8},
-                "custom": {},
+                "deepeval_completeness": 0.8,
             },
         }
 
@@ -403,4 +396,28 @@ class TestSimulationResult:
         assert result.metrics is not None
         assert result.metrics.total_turns == 5
         assert result.metrics.success_rate == 0.5
-        assert result.metrics.deepeval_scores["completeness"] == 0.8
+        assert result.metrics.metrics["deepeval_completeness"] == 0.8
+
+    @staticmethod
+    def test_from_dict_with_legacy_metrics() -> None:
+        """Test from_dict with legacy metrics format (deepeval_scores + custom)."""
+        data = {
+            "scenario_name": "Test",
+            "start_time": "2024-01-15T10:00:00+00:00",
+            "status": "completed",
+            "metrics": {
+                "total_turns": 5,
+                "total_tasks": 2,
+                "tasks_completed": 1,
+                "success_rate": 0.5,
+                "deepeval_scores": {"completeness": 0.8},
+                "custom": {"latency_avg_ms": 150.0},
+            },
+        }
+
+        result = SimulationResult.from_dict(data)
+        assert result.metrics is not None
+        assert result.metrics.total_turns == 5
+        # Legacy format gets merged into flat dict
+        assert result.metrics.metrics["completeness"] == 0.8
+        assert result.metrics.metrics["latency_avg_ms"] == 150.0
