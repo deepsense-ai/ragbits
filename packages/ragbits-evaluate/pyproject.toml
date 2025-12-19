@@ -40,7 +40,6 @@ dependencies = [
  "datasets>=3.0.1,<4.0.0",
  "ragbits-core==1.4.0.dev202512110238",
  "deepeval>=2.0.0,<3.0.0",
- "loguru>=0.7.3",
 ]
 
 [project.urls]
