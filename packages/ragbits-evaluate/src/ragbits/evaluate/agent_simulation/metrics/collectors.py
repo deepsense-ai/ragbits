@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, Any
+
+from ragbits.chat.interface.types import ChatResponseUnion
 
 if TYPE_CHECKING:
     from ragbits.evaluate.agent_simulation.results import TurnResult
 
 
-@runtime_checkable
-class MetricCollector(Protocol):
+class MetricCollector(ABC):
     """Protocol for collecting metrics during conversation simulation.
 
     Implement this protocol to create custom metric collectors that can
@@ -31,7 +33,7 @@ class MetricCollector(Protocol):
         ...         pass
     """
 
-    def on_turn_start(self, turn_index: int, task_index: int, user_message: str) -> None:
+    def on_turn_start(self, turn_index: int, task_index: int, user_message: str) -> None:  # noqa: PLR6301
         """Called before agent processes a turn.
 
         Args:
@@ -39,16 +41,30 @@ class MetricCollector(Protocol):
             task_index: 0-based index of the current task.
             user_message: The user message being sent to the agent.
         """
-        ...
+        return
 
-    def on_turn_end(self, turn_result: TurnResult) -> None:
+    def on_streamed_response(  # noqa: PLR6301
+        self, turn_index: int, task_index: int, user_message: str, response: ChatResponseUnion
+    ) -> None:
+        """Called after receiving chunk from chat interface.
+
+        Args:
+            turn_index: 1-based index of the current turn.
+            task_index: 0-based index of the current task.
+            user_message: The user message being sent to the agent.
+            response: Response yielded from chat, usually command or text chunk.
+        """
+        return
+
+    def on_turn_end(self, turn_result: TurnResult) -> None:  # noqa: PLR6301
         """Called after a turn completes.
 
         Args:
             turn_result: The result of the completed turn.
         """
-        ...
+        return
 
+    @abstractmethod
     def on_conversation_end(self, all_turns: list[TurnResult]) -> dict[str, Any]:
         """Called when the conversation ends, returns computed metrics.
 
@@ -58,11 +74,6 @@ class MetricCollector(Protocol):
         Returns:
             Dictionary of metric names to values.
         """
-        ...
-
-    def reset(self) -> None:
-        """Reset collector state for a new conversation."""
-        ...
 
 
 class CompositeMetricCollector:
@@ -112,6 +123,20 @@ class CompositeMetricCollector:
         for collector in self._collectors:
             collector.on_turn_start(turn_index, task_index, user_message)
 
+    def on_streamed_response(
+        self, turn_index: int, task_index: int, user_message: str, response: ChatResponseUnion
+    ) -> None:
+        """Delegate to all child collectors.
+
+        Args:
+            turn_index: 1-based index of the current turn.
+            task_index: 0-based index of the current task.
+            user_message: The user message being sent to the agent.
+            response: Response yielded from chat, usually command or text chunk.
+        """
+        for collector in self._collectors:
+            collector.on_streamed_response(turn_index, task_index, user_message, response)
+
     def on_turn_end(self, turn_result: TurnResult) -> None:
         """Delegate to all child collectors.
 
@@ -135,8 +160,3 @@ class CompositeMetricCollector:
             metrics = collector.on_conversation_end(all_turns)
             combined.update(metrics)
         return combined
-
-    def reset(self) -> None:
-        """Reset all child collectors."""
-        for collector in self._collectors:
-            collector.reset()
