@@ -7,7 +7,14 @@ import json
 from config import config
 from fixtures.hotel.hotel_chat import HotelChat
 
-from ragbits.evaluate.agent_simulation import load_personalities, load_scenarios, run_simulation
+from ragbits.evaluate.agent_simulation import (
+    LatencyMetricCollector,
+    TokenUsageMetricCollector,
+    ToolUsageMetricCollector,
+    load_personalities,
+    load_scenarios,
+    run_simulation,
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -15,10 +22,8 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Two-agent terminal chat (ragbits hotel agent + simulated user)")
     parser.add_argument("--scenario-id", type=int, required=True, help="Scenario ID (1-based index)")
     parser.add_argument("--scenarios-file", type=str, default="scenarios.json", help="Path to scenarios file")
-    parser.add_argument("--personality-id", type=int, help="Personality ID (1-based index, optional)")
-    parser.add_argument(
-        "--personalities-file", type=str, default="personalities.json", help="Path to personalities file"
-    )
+    parser.add_argument("--persona-id", type=int, help="Persona ID (1-based index, optional)")
+    parser.add_argument("--personas-file", type=str, default="personas.json", help="Path to personas file")
     parser.add_argument(
         "--max-turns-scenario", type=int, default=15, help="Max number of conversation turns for the entire scenario"
     )
@@ -28,6 +33,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sim-user-model-name", type=str, help="Override simulated user LLM model name")
     parser.add_argument("--checker-model-name", type=str, help="Override goal checker LLM model name")
     parser.add_argument("--output-json", type=str, help="Path to output JSON file for structured results")
+    parser.add_argument(
+        "--enable-metrics",
+        action="store_true",
+        help="Enable custom metric collectors (latency, token usage, tool usage)",
+    )
     return parser.parse_args()
 
 
@@ -41,19 +51,30 @@ def main() -> None:
         raise ValueError(f"Scenario ID {args.scenario_id} out of range. Available: 1-{len(scenarios)}")
     scenario = scenarios[args.scenario_id - 1]
 
-    # Load and validate personality (if provided)
-    personality = None
-    if args.personality_id is not None:
-        personalities = load_personalities(args.personalities_file)
-        if args.personality_id < 1 or args.personality_id > len(personalities):
-            raise ValueError(f"Personality ID {args.personality_id} out of range. Available: 1-{len(personalities)}")
-        personality = personalities[args.personality_id - 1]
+    # Load and validate persona (if provided)
+    persona = None
+    if args.persona_id is not None:
+        personas = load_personalities(args.personas_file)
+        if args.persona_id < 1 or args.persona_id > len(personas):
+            raise ValueError(f"Persona ID {args.persona_id} out of range. Available: 1-{len(personas)}")
+        persona = personas[args.persona_id - 1]
 
     # Hotel-specific message prefix
     message_prefix = (
         "[STYLE]\nAnswer helpfully and clearly. "
         "Provide specific details when available (hotel names, room types, prices, dates). "
         "If information is unavailable, explain why briefly.\n\n"
+    )
+
+    # Initialize metric collectors if enabled
+    metric_collectors = (
+        [
+            LatencyMetricCollector(),
+            TokenUsageMetricCollector(),
+            ToolUsageMetricCollector(),
+        ]
+        if args.enable_metrics
+        else None
     )
 
     hotel_chat = HotelChat(args.agent_model_name or config.llm_model, config.openai_api_key)
@@ -70,7 +91,8 @@ def main() -> None:
             default_model=config.llm_model,
             api_key=config.openai_api_key,
             user_message_prefix=message_prefix,
-            personality=personality,
+            personality=persona,
+            metric_collectors=metric_collectors,
         )
     )
 
@@ -80,6 +102,27 @@ def main() -> None:
     print(f"Tasks completed: {result.metrics.tasks_completed}/{result.metrics.total_tasks}")
     print(f"Success rate: {result.metrics.success_rate:.1%}")
     print(f"Total turns: {result.metrics.total_turns}")
+
+    # Print custom metrics if enabled
+    if result.metrics.custom:
+        print("\n=== Custom Metrics ===")
+        custom = result.metrics.custom
+
+        # Latency metrics
+        if "latency_avg_ms" in custom:
+            print(f"Latency (avg): {custom['latency_avg_ms']:.1f}ms")
+            print(f"Latency (min/max): {custom['latency_min_ms']:.1f}ms / {custom['latency_max_ms']:.1f}ms")
+
+        # Token usage metrics
+        if "tokens_total" in custom:
+            print(f"Tokens (total): {custom['tokens_total']}")
+            print(f"Tokens (avg/turn): {custom['tokens_avg_per_turn']:.1f}")
+
+        # Tool usage metrics
+        if "tools_total_calls" in custom:
+            print(f"Tool calls (total): {custom['tools_total_calls']}")
+            print(f"Unique tools used: {', '.join(custom['tools_unique'])}")
+            print(f"Turns with tools: {custom['turns_with_tools']}")
 
     # Save to JSON if requested
     if args.output_json:

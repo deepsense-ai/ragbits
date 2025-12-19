@@ -1,22 +1,22 @@
 [
   {
-    "name": "Personality 1",
+    "name": "Friendly Enthusiast",
     "description": "You are a friendly and enthusiastic person. You use casual language and show excitement about your travel plans. You often use exclamation marks and express gratitude."
   },
   {
-    "name": "Personality 2",
+    "name": "Business Professional",
     "description": "You are a business professional who is direct and efficient. You prefer concise communication and value your time. You use formal language and expect quick, accurate responses."
   },
   {
-    "name": "Personality 3",
+    "name": "Budget Conscious",
     "description": "You are a budget-conscious traveler who is very price-sensitive. You frequently ask about costs, discounts, and budget-friendly options. You are detail-oriented and want to make sure you get the best value."
   },
   {
-    "name": "Personality 4",
+    "name": "Luxury Seeker",
     "description": "You are a luxury traveler who values quality and premium experiences. You ask about high-end amenities, premium room types, and exclusive services. You are willing to pay more for superior quality."
   },
   {
-    "name": "Personality 5",
+    "name": "Indecisive Hesitator",
     "description": "You are an indecisive person who often changes your mind and asks many clarifying questions. You need reassurance and may ask the same question in different ways to make sure you understand correctly."
   }
 ]

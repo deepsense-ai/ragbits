@@ -1,5 +1,6 @@
 from collections.abc import AsyncGenerator
 from logging import getLogger
+from pathlib import Path
 
 from ragbits.agents import Agent
 from ragbits.agents.tool import ToolCallResult
@@ -10,6 +11,7 @@ from ragbits.core.llms.base import Usage
 from ragbits.core.prompt import ChatFormat
 
 from .prompt import HotelPrompt, HotelPromptInput
+from .service import HotelService
 from .tools import (
     cancel_reservation,
     create_reservation,
@@ -19,15 +21,32 @@ from .tools import (
     list_hotels,
     list_reservations,
     search_available_rooms,
+    set_service,
 )
 
 logger = getLogger(__name__)
 
 
 class HotelChat(ChatInterface):
-    """A simple example implementation of the ChatInterface for hotel booking agent."""
+    """A simple example implementation of the ChatInterface for hotel booking agent.
 
-    def __init__(self, model_name: str, api_key: str) -> None:
+    This implementation uses an in-memory SQLite database populated from a JSON
+    configuration file. No external HTTP API server is required.
+    """
+
+    def __init__(self, model_name: str, api_key: str, config_path: Path | str | None = None) -> None:
+        """Initialize the hotel chat agent.
+
+        Args:
+            model_name: The name of the LLM model to use.
+            api_key: The API key for the LLM provider.
+            config_path: Optional path to the hotel configuration JSON file.
+                        If None, uses the default config path.
+        """
+        # Initialize the in-memory hotel service
+        self._service = HotelService(config_path)
+        set_service(self._service)
+
         self.llm = LiteLLM(model_name=model_name, use_structured_output=True, api_key=api_key)
         self.agent = Agent(
             llm=self.llm,
@@ -77,7 +96,4 @@ class HotelChat(ChatInterface):
 
     async def generate_conversation_summary(self, message: str, history: ChatFormat, context: ChatContext) -> str:
         """Delegate to the configured summary generator."""
-        if not self.summary_generator:
-            return "Dummy summary: No summary generator configured."
-
         return await self.summary_generator.generate(message, history, context)

@@ -48,7 +48,7 @@ uv run python examples/evaluate/agent-scenarios/duet_cli.py \
   --scenarios-file examples/evaluate/agent-scenarios/scenarios.json
 ```
 
-To use a specific personality for the simulated user:
+To use a specific persona for the simulated user:
 
 ```bash
 uv run python examples/evaluate/agent-scenarios/duet_cli.py \
@@ -60,22 +60,23 @@ uv run python examples/evaluate/agent-scenarios/duet_cli.py \
   --checker-model-name gpt-4o-mini \
   --log-file examples/evaluate/agent-scenarios/duet_conversation.log \
   --scenarios-file examples/evaluate/agent-scenarios/scenarios.json \
-  --personality-id 1 \
-  --personalities-file examples/evaluate/agent-scenarios/personalities.json
+  --persona-id 1 \
+  --personas-file examples/evaluate/agent-scenarios/personas.json
 ```
 
 ## Command-Line Options
 
 - `--scenario-id` (required): Select a scenario from scenarios.json (1, 2, 3, or 4)
 - `--scenarios-file`: Path to scenarios file (default: `scenarios.json`)
-- `--personality-id` (optional): Select a personality from personalities.json (1-based index). If not provided, no specific personality is used
-- `--personalities-file`: Path to personalities file (default: `personalities.json`)
+- `--persona-id` (optional): Select a persona from personas.json (1-based index). If not provided, no specific persona is used
+- `--personas-file`: Path to personas file (default: `personas.json`)
 - `--max-turns-scenario`: Maximum number of conversation turns for the entire scenario (default: 15). If exceeded, the conversation exits
 - `--max-turns-task`: Maximum number of conversation turns per task (default: 4). If exceeded, the conversation exits (same behavior as max_turns_scenario)
 - `--log-file`: Path to log file for conversation history (default: `duet_conversations.log`)
 - `--agent-model-name`: LLM model for the hotel booking agent (defaults to `config.llm_model`)
 - `--sim-user-model-name`: LLM model for the simulated user (defaults to `config.llm_model`)
 - `--checker-model-name`: LLM model for the goal checker (defaults to `config.llm_model`)
+- `--enable-metrics`: Enable custom metric collectors (latency, token usage, tool usage) for detailed performance analysis
 
 ## Scenarios
 
@@ -117,22 +118,22 @@ When `expected_tools` is specified, the system will:
 - Use an LLM to evaluate if the tool usage was appropriate for the task
 - Log the results and display feedback in the console
 
-## Personalities
+## Personas
 
-Personalities are defined in `personalities.json` and allow you to customize the behavior and communication style of the simulated user. Each personality has:
+Personas are defined in `personas.json` and allow you to customize the behavior and communication style of the simulated user. Each persona has:
 
-- **name**: Descriptive name for the personality
+- **name**: Descriptive name for the persona
 - **description**: Instructions that modify how the simulated user communicates (e.g., formal vs. casual, budget-conscious vs. luxury-focused)
 
-Example personality:
+Example persona:
 ```json
 {
-  "name": "Personality 1",
+  "name": "Friendly Enthusiast",
   "description": "You are a friendly and enthusiastic person. You use casual language and show excitement about your travel plans. You often use exclamation marks and express gratitude."
 }
 ```
 
-When a personality is selected via `--personality-id`, the personality description is included in the system prompt for the simulated user, influencing how they phrase their messages and interact with the agent. If no personality is specified, the simulated user uses default behavior without any personality-specific instructions.
+When a persona is selected via `--persona-id`, the persona description is included in the system prompt for the simulated user, influencing how they phrase their messages and interact with the agent. If no persona is specified, the simulated user uses default behavior without any persona-specific instructions.
 
 Available hotel booking tools:
 - `list_cities` - Get a list of all available cities
@@ -146,16 +147,16 @@ Available hotel booking tools:
 
 ## How It Works
 
-1. **Initialization**: The hotel booking agent is created with hotel booking tools from the shared `fixtures.hotel` module. If a personality is specified, it is loaded and will influence the simulated user's communication style.
+1. **Initialization**: The hotel booking agent is created with hotel booking tools from the shared `fixtures.hotel` module. If a persona is specified, it is loaded and will influence the simulated user's communication style.
 2. **Task Selection**: The simulated user selects the first task from the scenario
 3. **Conversation Loop**:
-   - Simulated user generates a message based on the current task (and personality, if specified)
+   - Simulated user generates a message based on the current task (and persona, if specified)
    - Hotel booking agent processes the message and may call tools
    - Tool usage checker verifies expected tools were used (if `expected_tools` is specified)
    - Goal checker evaluates if the task is complete
    - If complete, move to the next task; otherwise, continue the conversation
    - The conversation stops when all tasks are completed, the per-task turn limit (`max_turns_task`) is exceeded, or the scenario turn limit (`max_turns_scenario`) is reached
-4. **Logging**: All turns, tool calls, tool usage checks, task completions, and the selected personality (if any) are logged to a file
+4. **Logging**: All turns, tool calls, tool usage checks, task completions, and the selected persona (if any) are logged to a file
 
 ## Architecture
 
@@ -170,7 +171,7 @@ This modular design allows the hotel booking functionality to be reused across d
 
 - `duet_cli.py` - Main CLI application for running conversations
 - `scenarios.json` - Task scenarios for testing
-- `personalities.json` - Personality definitions for the simulated user
+- `personas.json` - Persona definitions for the simulated user
 - `config.py` - Configuration settings (LLM model, API keys, etc.)
 - `README.md` - This file
 
