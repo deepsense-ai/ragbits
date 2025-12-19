@@ -188,5 +188,3 @@ class MemoryTraceHandler(TraceHandler[TraceSpan]):
         if session is not None:
             session.root_spans.clear()
             session.current_root = None
-
-

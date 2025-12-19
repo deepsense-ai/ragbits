@@ -70,8 +70,7 @@ class PostgresConnection(DatabaseConnection["asyncpg.Connection"]):
             import asyncpg
         except ImportError as e:
             raise ImportError(
-                "asyncpg is required for PostgreSQL support. "
-                "Install it with: pip install ragbits-core[postgres]"
+                "asyncpg is required for PostgreSQL support. " "Install it with: pip install ragbits-core[postgres]"
             ) from e
 
         self._pool = await asyncpg.create_pool(

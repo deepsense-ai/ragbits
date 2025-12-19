@@ -1,0 +1,1005 @@
+import { immer } from "zustand/middleware/immer";
+import { createStore } from "zustand";
+import type {
+  EvalConfig,
+  Scenario,
+  ScenarioExecution,
+  ScenarioRun,
+  SimulationConfig,
+  ProgressUpdate,
+  ViewMode,
+  EvalView,
+  ExecutionProgress,
+  SimulationRun,
+  TurnUpdate,
+  RunHistoryEntry,
+  ResponseChunk,
+} from "../types";
+
+// Helper to check if a scenario is a persona (not runnable directly)
+// Personas have 0 tasks, scenarios have 1 or more tasks
+export const isPersonaScenario = (numTasks: number): boolean => {
+  return numTasks === 0;
+};
+
+export interface EvalStore {
+  // Configuration
+  config: EvalConfig | null;
+  isConfigLoading: boolean;
+  configError: string | null;
+
+  // Scenarios
+  scenarios: Record<string, Scenario>;
+  selectedScenarioName: string | null;
+  selectedForRun: string[]; // Scenarios selected for running
+  selectedPersonas: string[]; // Personas selected for matrix runs
+
+  // Execution state
+  executions: Record<string, ScenarioExecution>;
+  currentRunId: string | null;
+  isExecuting: boolean;
+  simulationConfig: SimulationConfig;
+
+  // Simulation runs (batch runs containing multiple scenarios)
+  simulationRuns: SimulationRun[];
+  isSimulationRunsLoading: boolean;
+
+  // UI state
+  viewMode: ViewMode;
+  evalView: EvalView;
+
+  // Run history - keyed by scenarioName, contains list of runs
+  runHistory: Record<string, RunHistoryEntry[]>;
+  selectedRunId: string | null;
+
+  // Actions
+  actions: {
+    // Config
+    setConfig: (config: EvalConfig) => void;
+    setConfigLoading: (loading: boolean) => void;
+    setConfigError: (error: string | null) => void;
+
+    // Scenarios
+    setScenario: (name: string, scenario: Scenario) => void;
+    selectScenario: (name: string | null) => void;
+    updateScenarioTask: (
+      scenarioName: string,
+      taskIndex: number,
+      updates: Partial<Scenario["tasks"][0]>,
+    ) => void;
+
+    // Selection for running
+    toggleScenarioForRun: (name: string) => void;
+    selectAllScenariosForRun: () => void;
+    clearScenariosForRun: () => void;
+    selectScenariosForRun: (names: string[]) => void;
+    deselectScenariosForRun: (names: string[]) => void;
+
+    // Persona selection for matrix runs
+    togglePersonaForRun: (name: string) => void;
+    selectPersonasForRun: (names: string[]) => void;
+    clearPersonasForRun: () => void;
+
+    // Execution
+    startExecution: (runId: string, scenarioNames: string[]) => void;
+    handleProgressUpdate: (update: ProgressUpdate) => void;
+    stopExecution: () => void;
+    clearExecutions: () => void;
+    setSimulationConfig: (config: Partial<SimulationConfig>) => void;
+
+    // Simulation runs
+    setSimulationRuns: (runs: SimulationRun[]) => void;
+    setSimulationRunsLoading: (loading: boolean) => void;
+    addSimulationRun: (run: SimulationRun) => void;
+    updateSimulationRun: (runId: string, updates: Partial<SimulationRun>) => void;
+    updateScenarioRunInSimulation: (
+      runId: string,
+      scenarioRunId: string,
+      updates: Partial<ScenarioRun>,
+    ) => void;
+    addResponseChunkToScenarioRun: (
+      runId: string,
+      scenarioRunId: string,
+      chunk: ResponseChunk,
+    ) => void;
+
+    // UI
+    setViewMode: (mode: ViewMode) => void;
+    setEvalView: (view: EvalView) => void;
+    navigateToScenarioDetail: (scenarioName: string) => void;
+    navigateToRunner: (scenarioName: string) => void;
+    navigateBack: () => void;
+
+    // Run history
+    selectRun: (runId: string | null) => void;
+    addToRunHistory: (scenarioName: string, entry: RunHistoryEntry) => void;
+
+    // Dev/Testing
+    loadMockData: () => void;
+  };
+}
+
+const DEFAULT_SIMULATION_CONFIG: SimulationConfig = {
+  max_turns_scenario: 15,
+  max_turns_task: 4,
+  sim_user_model_name: null,
+  checker_model_name: null,
+  default_model: "gpt-4o-mini",
+  persona: null,
+};
+
+export const createEvalStore = () =>
+  createStore<EvalStore>()(
+    immer((set, _get) => ({
+      // Initial state
+      config: null,
+      isConfigLoading: false,
+      configError: null,
+      scenarios: {},
+      selectedScenarioName: null,
+      selectedForRun: [],
+      selectedPersonas: [],
+      executions: {},
+      currentRunId: null,
+      isExecuting: false,
+      simulationConfig: DEFAULT_SIMULATION_CONFIG,
+      simulationRuns: [],
+      isSimulationRunsLoading: false,
+      viewMode: "summary" as ViewMode,
+      evalView: "scenarios" as EvalView,
+      runHistory: {},
+      selectedRunId: null,
+
+      actions: {
+        setConfig: (config) => {
+          set((state) => {
+            state.config = config;
+            state.isConfigLoading = false;
+            state.configError = null;
+          });
+        },
+
+        setConfigLoading: (loading) => {
+          set((state) => {
+            state.isConfigLoading = loading;
+          });
+        },
+
+        setConfigError: (error) => {
+          set((state) => {
+            state.configError = error;
+            state.isConfigLoading = false;
+          });
+        },
+
+        setScenario: (name, scenario) => {
+          set((state) => {
+            state.scenarios[name] = scenario;
+          });
+        },
+
+        selectScenario: (name) => {
+          set((state) => {
+            state.selectedScenarioName = name;
+          });
+        },
+
+        updateScenarioTask: (scenarioName, taskIndex, updates) => {
+          set((state) => {
+            const scenario = state.scenarios[scenarioName];
+            if (scenario && scenario.tasks[taskIndex]) {
+              Object.assign(scenario.tasks[taskIndex], updates);
+            }
+          });
+        },
+
+        toggleScenarioForRun: (name) => {
+          set((state) => {
+            const index = state.selectedForRun.indexOf(name);
+            if (index === -1) {
+              state.selectedForRun.push(name);
+            } else {
+              state.selectedForRun.splice(index, 1);
+            }
+          });
+        },
+
+        selectAllScenariosForRun: () => {
+          set((state) => {
+            if (!state.config) return;
+            // Select all non-persona scenarios
+            state.selectedForRun = state.config.available_scenarios
+              .filter((s) => !isPersonaScenario(s.num_tasks))
+              .map((s) => s.name);
+          });
+        },
+
+        clearScenariosForRun: () => {
+          set((state) => {
+            state.selectedForRun = [];
+          });
+        },
+
+        selectScenariosForRun: (names) => {
+          set((state) => {
+            // Add names that aren't already selected
+            for (const name of names) {
+              if (!state.selectedForRun.includes(name)) {
+                state.selectedForRun.push(name);
+              }
+            }
+          });
+        },
+
+        deselectScenariosForRun: (names) => {
+          set((state) => {
+            state.selectedForRun = state.selectedForRun.filter(
+              (name) => !names.includes(name)
+            );
+          });
+        },
+
+        togglePersonaForRun: (name) => {
+          set((state) => {
+            const idx = state.selectedPersonas.indexOf(name);
+            if (idx >= 0) {
+              state.selectedPersonas.splice(idx, 1);
+            } else {
+              state.selectedPersonas.push(name);
+            }
+          });
+        },
+
+        selectPersonasForRun: (names) => {
+          set((state) => {
+            for (const name of names) {
+              if (!state.selectedPersonas.includes(name)) {
+                state.selectedPersonas.push(name);
+              }
+            }
+          });
+        },
+
+        clearPersonasForRun: () => {
+          set((state) => {
+            state.selectedPersonas = [];
+          });
+        },
+
+        startExecution: (runId, scenarioNames) => {
+          set((state) => {
+            state.currentRunId = runId;
+            state.isExecuting = true;
+
+            // Initialize executions for each scenario
+            for (const name of scenarioNames) {
+              state.executions[name] = {
+                scenarioName: name,
+                status: "queued",
+                startTime: Date.now(),
+                currentTurn: 0,
+                currentTaskIndex: 0,
+                currentTask: null,
+                turns: [],
+                responseChunks: [],
+                error: null,
+              };
+            }
+          });
+        },
+
+        handleProgressUpdate: (update) => {
+          set((state) => {
+            const execution = state.executions[update.scenario_name];
+            if (!execution) return;
+
+            switch (update.type) {
+              case "status":
+                execution.status = update.status;
+                execution.currentTurn = update.current_turn ?? 0;
+                execution.currentTaskIndex = update.current_task_index ?? 0;
+                execution.currentTask = update.current_task ?? null;
+                break;
+
+              case "turn": {
+                const turnUpdate: TurnUpdate = {
+                  turn_index: update.turn_index,
+                  task_index: update.task_index,
+                  user_message: update.user_message,
+                  assistant_message: update.assistant_message,
+                  tool_calls: update.tool_calls,
+                  task_completed: update.task_completed,
+                  task_completed_reason: update.task_completed_reason,
+                  checkers: update.checkers,
+                  checker_mode: update.checker_mode,
+                };
+                execution.turns.push(turnUpdate);
+                execution.currentTurn = update.turn_index;
+                execution.currentTaskIndex = update.task_index;
+                break;
+              }
+
+              case "task_complete":
+                // Task completion is tracked via turn updates
+                break;
+
+              case "complete":
+                execution.status = update.status;
+                // Check if all executions are complete
+                const allComplete = Object.values(state.executions).every(
+                  (e) =>
+                    e.status === "completed" ||
+                    e.status === "failed" ||
+                    e.status === "timeout",
+                );
+                if (allComplete) {
+                  state.isExecuting = false;
+                }
+                break;
+
+              case "error":
+                execution.status = "failed";
+                execution.error = update.error;
+                // Check if all executions are complete
+                const allDone = Object.values(state.executions).every(
+                  (e) =>
+                    e.status === "completed" ||
+                    e.status === "failed" ||
+                    e.status === "timeout",
+                );
+                if (allDone) {
+                  state.isExecuting = false;
+                }
+                break;
+
+              case "response_chunk": {
+                const chunk: ResponseChunk = {
+                  turn_index: update.turn_index,
+                  task_index: update.task_index,
+                  chunk_index: execution.responseChunks.length,
+                  chunk_type: update.chunk_type,
+                  chunk_data: update.chunk_data,
+                  timestamp: Date.now(),
+                };
+                execution.responseChunks.push(chunk);
+                break;
+              }
+            }
+          });
+        },
+
+        stopExecution: () => {
+          set((state) => {
+            state.isExecuting = false;
+            // Mark running executions as failed
+            for (const execution of Object.values(state.executions)) {
+              if (
+                execution.status === "running" ||
+                execution.status === "queued"
+              ) {
+                execution.status = "failed";
+                execution.error = "Stopped by user";
+              }
+            }
+          });
+        },
+
+        clearExecutions: () => {
+          set((state) => {
+            state.executions = {};
+            state.currentRunId = null;
+            state.isExecuting = false;
+          });
+        },
+
+        setSimulationConfig: (config) => {
+          set((state) => {
+            Object.assign(state.simulationConfig, config);
+          });
+        },
+
+        setSimulationRuns: (runs) => {
+          set((state) => {
+            state.simulationRuns = runs;
+            state.isSimulationRunsLoading = false;
+          });
+        },
+
+        setSimulationRunsLoading: (loading) => {
+          set((state) => {
+            state.isSimulationRunsLoading = loading;
+          });
+        },
+
+        addSimulationRun: (run) => {
+          set((state) => {
+            // Add to the beginning of the list
+            state.simulationRuns.unshift(run);
+          });
+        },
+
+        updateSimulationRun: (runId, updates) => {
+          set((state) => {
+            const runIndex = state.simulationRuns.findIndex((r) => r.id === runId);
+            if (runIndex !== -1) {
+              Object.assign(state.simulationRuns[runIndex], updates);
+            }
+          });
+        },
+
+        updateScenarioRunInSimulation: (runId, scenarioRunId, updates) => {
+          set((state) => {
+            const run = state.simulationRuns.find((r) => r.id === runId);
+            if (!run) return;
+            const scenarioRun = run.scenarioRuns.find((sr) => sr.id === scenarioRunId);
+            if (scenarioRun) {
+              Object.assign(scenarioRun, updates);
+            }
+          });
+        },
+
+        addResponseChunkToScenarioRun: (runId, scenarioRunId, chunk) => {
+          set((state) => {
+            const run = state.simulationRuns.find((r) => r.id === runId);
+            if (!run) return;
+            const scenarioRun = run.scenarioRuns.find((sr) => sr.id === scenarioRunId);
+            if (scenarioRun) {
+              if (!scenarioRun.responseChunks) {
+                scenarioRun.responseChunks = [];
+              }
+              scenarioRun.responseChunks.push(chunk);
+            }
+          });
+        },
+
+        setViewMode: (mode) => {
+          set((state) => {
+            state.viewMode = mode;
+          });
+        },
+
+        setEvalView: (view) => {
+          set((state) => {
+            state.evalView = view;
+          });
+        },
+
+        navigateToScenarioDetail: (scenarioName) => {
+          set((state) => {
+            state.selectedScenarioName = scenarioName;
+            state.evalView = "scenario-detail";
+          });
+        },
+
+        navigateToRunner: (scenarioName) => {
+          set((state) => {
+            state.selectedScenarioName = scenarioName;
+            state.evalView = "runner";
+            state.selectedRunId = null;
+          });
+        },
+
+        navigateBack: () => {
+          set((state) => {
+            state.evalView = "scenarios";
+            state.selectedRunId = null;
+          });
+        },
+
+        selectRun: (runId) => {
+          set((state) => {
+            state.selectedRunId = runId;
+          });
+        },
+
+        addToRunHistory: (scenarioName, entry) => {
+          set((state) => {
+            if (!state.runHistory[scenarioName]) {
+              state.runHistory[scenarioName] = [];
+            }
+            // Add to the beginning (most recent first)
+            state.runHistory[scenarioName].unshift(entry);
+          });
+        },
+
+        loadMockData: () => {
+          set((state) => {
+            // Mock config
+            state.config = {
+              available_scenarios: [
+                { name: "Scenario 1", num_tasks: 3, group: "Booking" },
+                { name: "Scenario 2", num_tasks: 2, group: "Booking" },
+                { name: "Scenario 3", num_tasks: 4, group: "Weather" },
+                { name: "Scenario 4", num_tasks: 3, group: "Weather" },
+                { name: "Scenario 5", num_tasks: 2, group: null },
+                { name: "Scenario 6", num_tasks: 5, group: null },
+                { name: "Personality 1", num_tasks: 0, group: null },
+                { name: "Personality 2", num_tasks: 0, group: null },
+                { name: "Personality 3", num_tasks: 0, group: null },
+              ],
+              scenario_files: [
+                {
+                  filename: "booking.json",
+                  group: "Booking",
+                  scenarios: [
+                    { name: "Scenario 1", num_tasks: 3, group: "Booking" },
+                    { name: "Scenario 2", num_tasks: 2, group: "Booking" },
+                  ],
+                },
+                {
+                  filename: "weather.json",
+                  group: "Weather",
+                  scenarios: [
+                    { name: "Scenario 3", num_tasks: 4, group: "Weather" },
+                    { name: "Scenario 4", num_tasks: 3, group: "Weather" },
+                  ],
+                },
+                {
+                  filename: "misc.json",
+                  group: null,
+                  scenarios: [
+                    { name: "Scenario 5", num_tasks: 2, group: null },
+                    { name: "Scenario 6", num_tasks: 5, group: null },
+                  ],
+                },
+              ],
+              scenarios_dir: "/mock/scenarios",
+            };
+            state.isConfigLoading = false;
+
+            // Mock scenarios
+            state.scenarios = {
+              "Scenario 1": {
+                name: "Scenario 1",
+                tasks: [
+                  { task: "Search for available rooms in Krakow", checkers: [{ type: "tool_call", tools: ["search_rooms"] }], checker_mode: "all" },
+                  { task: "Filter by deluxe rooms", checkers: [{ type: "tool_call", tools: ["filter_rooms"] }], checker_mode: "all" },
+                  { task: "Book a room", checkers: [{ type: "tool_call", tools: ["book_room"] }], checker_mode: "all" },
+                ],
+              },
+              "Scenario 2": {
+                name: "Scenario 2",
+                tasks: [
+                  { task: "Check weather", checkers: [{ type: "tool_call", tools: ["get_weather"] }], checker_mode: "all" },
+                  { task: "Plan activities", checkers: [{ type: "llm", expected_result: "Activity list" }], checker_mode: "all" },
+                ],
+              },
+            };
+
+            // Mock executions with conversation data
+            state.executions = {
+              "Scenario 1": {
+                scenarioName: "Scenario 1",
+                status: "completed",
+                startTime: Date.now() - 60000,
+                currentTurn: 3,
+                currentTaskIndex: 2,
+                currentTask: null,
+                turns: [
+                  {
+                    turn_index: 0,
+                    task_index: 0,
+                    user_message: "Can you check for available rooms in Krakow on June 1, 2025?",
+                    assistant_message: "Here are the available rooms in Kraków on June 1, 2025:\n\n1. **Grand Hotel Kraków**\n   - Room 102 (Standard): 350 PLN/night\n   - Room 202 (Deluxe): 500 PLN/night\n\n2. **Hotel Stary Kraków**\n   - Room 12 (Standard): 320 PLN/night\n   - Room 22 (Deluxe): 480 PLN/night\n\nWould you like to book any of these rooms?",
+                    tool_calls: [{ name: "search_available_rooms", arguments: { city: "Krakow", date: "2025-06-01" }, result: {} }],
+                    task_completed: true,
+                    task_completed_reason: "Listed available rooms successfully",
+                    checkers: [{ type: "llm", completed: true, reason: "Listed available rooms successfully" }],
+                    checker_mode: "all",
+                  },
+                  {
+                    turn_index: 1,
+                    task_index: 1,
+                    user_message: "Show me only the deluxe rooms please.",
+                    assistant_message: "Here are the deluxe rooms available:\n\n1. **Grand Hotel Kraków - Room 202**\n   - Price: 500 PLN/night\n   - Capacity: 3 guests\n   - Amenities: WiFi, TV, AC, Balcony, City View\n\n2. **Hotel Stary Kraków - Room 22**\n   - Price: 480 PLN/night\n   - Capacity: 3 guests\n   - Amenities: WiFi, TV, AC, City View, Minibar",
+                    tool_calls: [{ name: "filter_rooms", arguments: { type: "deluxe" }, result: {} }],
+                    task_completed: true,
+                    task_completed_reason: "Filtered to show only deluxe rooms",
+                    checkers: [{ type: "llm", completed: true, reason: "Filtered to show only deluxe rooms" }],
+                    checker_mode: "all",
+                  },
+                  {
+                    turn_index: 2,
+                    task_index: 2,
+                    user_message: "I'd like to book Room 22 at Hotel Stary for John Doe.",
+                    assistant_message: "Your reservation has been confirmed!\n\n**Booking Details:**\n- Guest: John Doe\n- Hotel: Hotel Stary Kraków\n- Room: 22 (Deluxe)\n- Date: June 1, 2025\n- Total: 480 PLN\n\nConfirmation number: HSK-2025-1234",
+                    tool_calls: [{ name: "book_room", arguments: { hotel: "Hotel Stary", room: 22, guest: "John Doe" }, result: { confirmation: "HSK-2025-1234" } }],
+                    task_completed: true,
+                    task_completed_reason: "Room booked successfully",
+                    checkers: [{ type: "llm", completed: true, reason: "Room booked successfully" }],
+                    checker_mode: "all",
+                  },
+                ],
+                responseChunks: [],
+                error: null,
+              },
+              "Scenario 2": {
+                scenarioName: "Scenario 2",
+                status: "completed",
+                startTime: Date.now() - 30000,
+                currentTurn: 2,
+                currentTaskIndex: 1,
+                currentTask: null,
+                turns: [
+                  {
+                    turn_index: 0,
+                    task_index: 0,
+                    user_message: "What's the weather like in Warsaw today?",
+                    assistant_message: "The weather in Warsaw today:\n\n- Temperature: 22°C\n- Conditions: Partly cloudy\n- Humidity: 65%\n- Wind: 10 km/h NW\n\nIt's a pleasant day for outdoor activities!",
+                    tool_calls: [{ name: "get_weather", arguments: { city: "Warsaw" }, result: {} }],
+                    task_completed: true,
+                    task_completed_reason: "Weather information provided",
+                    checkers: [{ type: "llm", completed: true, reason: "Weather information provided" }],
+                    checker_mode: "all",
+                  },
+                  {
+                    turn_index: 1,
+                    task_index: 1,
+                    user_message: "What activities do you recommend?",
+                    assistant_message: "Based on the weather, here are some recommendations:\n\n1. Visit the Old Town and Royal Castle\n2. Walk through Łazienki Park\n3. Explore the Warsaw Uprising Museum\n4. Enjoy a riverbank cafe by the Vistula\n\nThe partly cloudy weather is perfect for sightseeing!",
+                    tool_calls: [],
+                    task_completed: true,
+                    task_completed_reason: "Activities recommended",
+                    checkers: [{ type: "llm", completed: true, reason: "Activities recommended" }],
+                    checker_mode: "all",
+                  },
+                ],
+                responseChunks: [],
+                error: null,
+              },
+              "Scenario 3": {
+                scenarioName: "Scenario 3",
+                status: "timeout",
+                startTime: Date.now() - 120000,
+                currentTurn: 2,
+                currentTaskIndex: 1,
+                currentTask: "Complete task 2",
+                turns: [
+                  {
+                    turn_index: 0,
+                    task_index: 0,
+                    user_message: "Start the process",
+                    assistant_message: "Starting the process now...",
+                    tool_calls: [],
+                    task_completed: true,
+                    task_completed_reason: "Process started",
+                    checkers: [{ type: "llm", completed: true, reason: "Process started" }],
+                    checker_mode: "all",
+                  },
+                ],
+                responseChunks: [],
+                error: "Scenario timed out after 15 turns",
+              },
+            };
+
+            state.selectedScenarioName = "Scenario 1";
+
+            // Mock run history
+            state.runHistory = {
+              "Scenario 1": [
+                {
+                  runId: "run-001",
+                  scenarioName: "Scenario 1",
+                  timestamp: Date.now() - 60000,
+                  status: "completed",
+                  execution: state.executions["Scenario 1"],
+                },
+                {
+                  runId: "run-002",
+                  scenarioName: "Scenario 1",
+                  timestamp: Date.now() - 3600000,
+                  status: "failed",
+                  execution: {
+                    scenarioName: "Scenario 1",
+                    status: "failed",
+                    startTime: Date.now() - 3600000,
+                    currentTurn: 1,
+                    currentTaskIndex: 0,
+                    currentTask: null,
+                    turns: [
+                      {
+                        turn_index: 0,
+                        task_index: 0,
+                        user_message: "Can you check for available rooms?",
+                        assistant_message: "I encountered an error while searching.",
+                        tool_calls: [],
+                        task_completed: false,
+                        task_completed_reason: "API error",
+                        checkers: [{ type: "llm", completed: false, reason: "API error" }],
+                        checker_mode: "all",
+                      },
+                    ],
+                    responseChunks: [],
+                    error: "Connection timeout",
+                  },
+                },
+              ],
+            };
+
+            // Mock simulation runs (batch runs)
+            state.simulationRuns = [
+              {
+                id: "sim-run-001",
+                timestamp: new Date(Date.now() - 60000).toISOString(),
+                version: "v1.2.0",
+                status: "completed",
+                config: DEFAULT_SIMULATION_CONFIG,
+                group: "Booking",
+                totalScenarios: 3,
+                completedScenarios: 2,
+                failedScenarios: 1,
+                totalTokens: 15420,
+                totalCostUsd: 0.0234,
+                overallSuccessRate: 0.67,
+                scenarioRuns: [
+                  {
+                    id: "sr_scenario_1_001",
+                    scenarioName: "Scenario 1",
+                    persona: null,
+                    status: "completed",
+                    startTime: new Date(Date.now() - 60000).toISOString(),
+                    endTime: new Date(Date.now() - 45000).toISOString(),
+                    error: null,
+                    turns: [
+                      {
+                        turn_index: 0,
+                        task_index: 0,
+                        user_message: "Can you check for available rooms in Krakow on June 1, 2025?",
+                        assistant_message: "Here are the available rooms in Kraków on June 1, 2025:\n\n1. **Grand Hotel Kraków**\n   - Room 102 (Standard): 350 PLN/night\n   - Room 202 (Deluxe): 500 PLN/night\n\n2. **Hotel Stary Kraków**\n   - Room 12 (Standard): 320 PLN/night\n   - Room 22 (Deluxe): 480 PLN/night",
+                        tool_calls: [{ name: "search_available_rooms", arguments: { city: "Krakow", date: "2025-06-01" }, result: {} }],
+                        task_completed: true,
+                        task_completed_reason: "Listed available rooms successfully",
+                        token_usage: { total: 450, prompt: 120, completion: 330 },
+                        latency_ms: 1200,
+                      },
+                      {
+                        turn_index: 1,
+                        task_index: 1,
+                        user_message: "Show me only the deluxe rooms please.",
+                        assistant_message: "Here are the deluxe rooms available:\n\n1. **Grand Hotel Kraków - Room 202** - 500 PLN/night\n2. **Hotel Stary Kraków - Room 22** - 480 PLN/night",
+                        tool_calls: [{ name: "filter_rooms", arguments: { type: "deluxe" }, result: {} }],
+                        task_completed: true,
+                        task_completed_reason: "Filtered to show only deluxe rooms",
+                        token_usage: { total: 320, prompt: 100, completion: 220 },
+                        latency_ms: 890,
+                      },
+                      {
+                        turn_index: 2,
+                        task_index: 2,
+                        user_message: "I'd like to book Room 22 at Hotel Stary for John Doe.",
+                        assistant_message: "Your reservation has been confirmed!\n\n**Booking Details:**\n- Guest: John Doe\n- Hotel: Hotel Stary Kraków\n- Room: 22 (Deluxe)\n- Total: 480 PLN\n\nConfirmation number: HSK-2025-1234",
+                        tool_calls: [{ name: "book_room", arguments: { hotel: "Hotel Stary", room: 22, guest: "John Doe" }, result: { confirmation: "HSK-2025-1234" } }],
+                        task_completed: true,
+                        task_completed_reason: "Room booked successfully",
+                        token_usage: { total: 380, prompt: 150, completion: 230 },
+                        latency_ms: 1100,
+                      },
+                    ],
+                    tasks: [
+                      { task_index: 0, description: "Search for available rooms in Krakow", completed: true, turns_taken: 1, final_reason: "Listed available rooms successfully" },
+                      { task_index: 1, description: "Filter by deluxe rooms", completed: true, turns_taken: 1, final_reason: "Filtered to show only deluxe rooms" },
+                      { task_index: 2, description: "Book a room", completed: true, turns_taken: 1, final_reason: "Room booked successfully" },
+                    ],
+                    metrics: {
+                      total_turns: 3,
+                      total_tasks: 3,
+                      tasks_completed: 3,
+                      success_rate: 1.0,
+                      total_tokens: 1150,
+                      prompt_tokens: 370,
+                      completion_tokens: 780,
+                      estimated_usd: 0.0089,
+                      deepeval_scores: {},
+                      custom: {},
+                    },
+                  },
+                  {
+                    id: "sr_scenario_2_001",
+                    scenarioName: "Scenario 2",
+                    persona: null,
+                    status: "completed",
+                    startTime: new Date(Date.now() - 44000).toISOString(),
+                    endTime: new Date(Date.now() - 30000).toISOString(),
+                    error: null,
+                    turns: [
+                      {
+                        turn_index: 0,
+                        task_index: 0,
+                        user_message: "What's the weather like in Warsaw today?",
+                        assistant_message: "The weather in Warsaw today:\n\n- Temperature: 22°C\n- Conditions: Partly cloudy\n- Humidity: 65%\n- Wind: 10 km/h NW",
+                        tool_calls: [{ name: "get_weather", arguments: { city: "Warsaw" }, result: {} }],
+                        task_completed: true,
+                        task_completed_reason: "Weather information provided",
+                        token_usage: { total: 280, prompt: 80, completion: 200 },
+                        latency_ms: 750,
+                      },
+                      {
+                        turn_index: 1,
+                        task_index: 1,
+                        user_message: "What activities do you recommend?",
+                        assistant_message: "Based on the weather, here are some recommendations:\n\n1. Visit the Old Town\n2. Walk through Łazienki Park\n3. Explore the Warsaw Uprising Museum",
+                        tool_calls: [],
+                        task_completed: true,
+                        task_completed_reason: "Activities recommended",
+                        token_usage: { total: 250, prompt: 90, completion: 160 },
+                        latency_ms: 680,
+                      },
+                    ],
+                    tasks: [
+                      { task_index: 0, description: "Check weather", completed: true, turns_taken: 1, final_reason: "Weather information provided" },
+                      { task_index: 1, description: "Plan activities", completed: true, turns_taken: 1, final_reason: "Activities recommended" },
+                    ],
+                    metrics: {
+                      total_turns: 2,
+                      total_tasks: 2,
+                      tasks_completed: 2,
+                      success_rate: 1.0,
+                      total_tokens: 530,
+                      prompt_tokens: 170,
+                      completion_tokens: 360,
+                      estimated_usd: 0.0045,
+                      deepeval_scores: {},
+                      custom: {},
+                    },
+                  },
+                  {
+                    id: "sr_scenario_3_001",
+                    scenarioName: "Scenario 3",
+                    persona: null,
+                    status: "timeout",
+                    startTime: new Date(Date.now() - 29000).toISOString(),
+                    endTime: new Date(Date.now() - 10000).toISOString(),
+                    error: "Scenario timed out after 15 turns",
+                    turns: [
+                      {
+                        turn_index: 0,
+                        task_index: 0,
+                        user_message: "Start the process",
+                        assistant_message: "Starting the process now...",
+                        tool_calls: [],
+                        task_completed: true,
+                        task_completed_reason: "Process started",
+                        token_usage: { total: 100, prompt: 40, completion: 60 },
+                        latency_ms: 500,
+                      },
+                    ],
+                    tasks: [
+                      { task_index: 0, description: "Start the process", completed: true, turns_taken: 1, final_reason: "Process started" },
+                      { task_index: 1, description: "Complete task 2", completed: false, turns_taken: 14, final_reason: "Timeout" },
+                    ],
+                    metrics: {
+                      total_turns: 15,
+                      total_tasks: 4,
+                      tasks_completed: 1,
+                      success_rate: 0.25,
+                      total_tokens: 13740,
+                      prompt_tokens: 4500,
+                      completion_tokens: 9240,
+                      estimated_usd: 0.01,
+                      deepeval_scores: {},
+                      custom: {},
+                    },
+                  },
+                ],
+              },
+              {
+                id: "sim-run-002",
+                timestamp: new Date(Date.now() - 3600000).toISOString(),
+                version: "v1.1.0",
+                status: "completed",
+                config: DEFAULT_SIMULATION_CONFIG,
+                group: null,
+                totalScenarios: 2,
+                completedScenarios: 2,
+                failedScenarios: 0,
+                totalTokens: 8500,
+                totalCostUsd: 0.012,
+                overallSuccessRate: 1.0,
+                scenarioRuns: [
+                  {
+                    id: "sr_scenario_1_002",
+                    scenarioName: "Scenario 1",
+                    persona: null,
+                    status: "completed",
+                    startTime: new Date(Date.now() - 3600000).toISOString(),
+                    endTime: new Date(Date.now() - 3590000).toISOString(),
+                    error: null,
+                    turns: [
+                      {
+                        turn_index: 0,
+                        task_index: 0,
+                        user_message: "Find me a room in Krakow",
+                        assistant_message: "I found several rooms available in Krakow.",
+                        tool_calls: [{ name: "search_rooms", arguments: { city: "Krakow" }, result: {} }],
+                        task_completed: true,
+                        task_completed_reason: "Rooms found",
+                        token_usage: { total: 200, prompt: 60, completion: 140 },
+                        latency_ms: 600,
+                      },
+                    ],
+                    tasks: [
+                      { task_index: 0, description: "Search for rooms", completed: true, turns_taken: 1, final_reason: "Rooms found" },
+                    ],
+                    metrics: {
+                      total_turns: 1,
+                      total_tasks: 1,
+                      tasks_completed: 1,
+                      success_rate: 1.0,
+                      total_tokens: 200,
+                      prompt_tokens: 60,
+                      completion_tokens: 140,
+                      estimated_usd: 0.002,
+                      deepeval_scores: {},
+                      custom: {},
+                    },
+                  },
+                  {
+                    id: "sr_scenario_2_002",
+                    scenarioName: "Scenario 2",
+                    persona: null,
+                    status: "completed",
+                    startTime: new Date(Date.now() - 3589000).toISOString(),
+                    endTime: new Date(Date.now() - 3580000).toISOString(),
+                    error: null,
+                    turns: [
+                      {
+                        turn_index: 0,
+                        task_index: 0,
+                        user_message: "What's the weather?",
+                        assistant_message: "It's sunny and 25°C.",
+                        tool_calls: [{ name: "get_weather", arguments: {}, result: {} }],
+                        task_completed: true,
+                        task_completed_reason: "Weather provided",
+                        token_usage: { total: 150, prompt: 50, completion: 100 },
+                        latency_ms: 450,
+                      },
+                    ],
+                    tasks: [
+                      { task_index: 0, description: "Check weather", completed: true, turns_taken: 1, final_reason: "Weather provided" },
+                    ],
+                    metrics: {
+                      total_turns: 1,
+                      total_tasks: 1,
+                      tasks_completed: 1,
+                      success_rate: 1.0,
+                      total_tokens: 150,
+                      prompt_tokens: 50,
+                      completion_tokens: 100,
+                      estimated_usd: 0.0015,
+                      deepeval_scores: {},
+                      custom: {},
+                    },
+                  },
+                ],
+              },
+            ];
+          });
+        },
+      },
+    })),
+  );
+
+export type EvalStoreApi = ReturnType<typeof createEvalStore>;
+
+// Selector helpers - use these with useEvalStore
+export const selectProgress = (state: EvalStore): ExecutionProgress => {
+  const all = Object.values(state.executions);
+  const total = all.length;
+  const completed = all.filter((e) => e.status === "completed").length;
+  const failed = all.filter(
+    (e) => e.status === "failed" || e.status === "timeout",
+  ).length;
+  const running = all.filter(
+    (e) => e.status === "running" || e.status === "queued",
+  ).length;
+  const percentage = total > 0 ? ((completed + failed) / total) * 100 : 0;
+
+  return { total, completed, failed, running, percentage };
+};
+
+export const selectSelectedExecution = (
+  state: EvalStore,
+): ScenarioExecution | null => {
+  if (!state.selectedScenarioName) return null;
+  return state.executions[state.selectedScenarioName] ?? null;
+};

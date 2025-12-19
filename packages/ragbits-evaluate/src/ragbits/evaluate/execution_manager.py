@@ -253,9 +253,7 @@ class ExecutionManager:
             except asyncio.CancelledError:
                 return
 
-    async def save_result(
-        self, run_id: str, scenario_run_id: str, scenario_name: str, result: SimulationResult
-    ) -> str:
+    async def save_result(self, run_id: str, scenario_run_id: str, scenario_name: str, result: SimulationResult) -> str:
         """Save a simulation result.
 
         Args:

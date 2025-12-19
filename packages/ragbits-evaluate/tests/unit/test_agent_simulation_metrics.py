@@ -84,6 +84,7 @@ class TestLatencyMetricCollector:
         assert result["latency_max_ms"] == max(result["latency_per_turn_ms"])
         assert result["latency_min_ms"] == min(result["latency_per_turn_ms"])
 
+
 class TestTokenUsageMetricCollector:
     """Tests for TokenUsageMetricCollector."""
 
@@ -146,6 +147,7 @@ class TestTokenUsageMetricCollector:
 
         assert result["tokens_total"] == 0
         assert result["tokens_per_turn"] == [0]
+
 
 class TestToolUsageMetricCollector:
     """Tests for ToolUsageMetricCollector."""
@@ -221,6 +223,7 @@ class TestToolUsageMetricCollector:
         assert result["tools_per_turn"] == [["search"], [], ["search", "calculate"]]
         assert result["turns_with_tools"] == 2
 
+
 class TestCompositeMetricCollector:
     """Tests for CompositeMetricCollector."""
 
@@ -282,6 +285,7 @@ class TestCompositeMetricCollector:
 
         result = composite.on_conversation_end([turn])
         assert result["tokens_total"] == 50
+
 
 class TestMetricCollectorProtocol:
     """Tests for MetricCollector protocol compliance."""

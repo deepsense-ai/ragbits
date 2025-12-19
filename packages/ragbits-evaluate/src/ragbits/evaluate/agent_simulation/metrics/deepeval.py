@@ -63,9 +63,7 @@ class DeepEvalCompletenessMetricCollector(MetricCollector):
             from deepeval.metrics import ConversationCompletenessMetric  # type: ignore[attr-defined]
             from deepeval.test_case import ConversationalTestCase, LLMTestCase  # type: ignore[attr-defined]
 
-            deepeval_turns = [
-                LLMTestCase(input=user, actual_output=assistant) for user, assistant in self._turns
-            ]
+            deepeval_turns = [LLMTestCase(input=user, actual_output=assistant) for user, assistant in self._turns]
             test_case = ConversationalTestCase(turns=deepeval_turns)
             metric = ConversationCompletenessMetric()
             metric.measure(test_case)
@@ -137,9 +135,7 @@ class DeepEvalRelevancyMetricCollector(MetricCollector):
             from deepeval.metrics import ConversationRelevancyMetric  # type: ignore[attr-defined]
             from deepeval.test_case import ConversationalTestCase, LLMTestCase  # type: ignore[attr-defined]
 
-            deepeval_turns = [
-                LLMTestCase(input=user, actual_output=assistant) for user, assistant in self._turns
-            ]
+            deepeval_turns = [LLMTestCase(input=user, actual_output=assistant) for user, assistant in self._turns]
             test_case = ConversationalTestCase(turns=deepeval_turns)
             metric = ConversationRelevancyMetric()
             metric.measure(test_case)
@@ -212,9 +208,7 @@ class DeepEvalKnowledgeRetentionMetricCollector(MetricCollector):
             from deepeval.metrics import KnowledgeRetentionMetric  # type: ignore[attr-defined]
             from deepeval.test_case import ConversationalTestCase, LLMTestCase  # type: ignore[attr-defined]
 
-            deepeval_turns = [
-                LLMTestCase(input=user, actual_output=assistant) for user, assistant in self._turns
-            ]
+            deepeval_turns = [LLMTestCase(input=user, actual_output=assistant) for user, assistant in self._turns]
             test_case = ConversationalTestCase(turns=deepeval_turns)
             metric = KnowledgeRetentionMetric()
             metric.measure(test_case)

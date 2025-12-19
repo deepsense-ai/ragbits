@@ -63,6 +63,7 @@
 - Change auth backend from jwt to http-only cookie based authentication, add support for OAuth2 authentication (#867)
 - Add Google OAuth2 provider and refactor providers to use `OAuth2Providers` namespace (e.g., `OAuth2Providers.GOOGLE`) (#915)
 - Make `SummaryGenerator` optional in `ChatInterface` by providing a default Heuristic implementation.
+- Feat: add response adapter system for transforming chat response streams (`ResponseAdapter` protocol, `AdapterPipeline`, `ChatResponseAdapter`, `ToolResultTextAdapter`, `FilterAdapter`, and more)
 - Refactor ragbits-client types to remove excessive use of any (#881)
 - Split params into path params, query params in API client (#871)
 - Fix bug causing conversation not to be selected when navigating to it from url(#872)

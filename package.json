@@ -18,5 +18,9 @@
     "lint": "npm run lint --workspaces --if-present",
     "format": "npm run format --workspaces --if-present",
     "generate:types": "uv run python scripts/generate_typescript_from_json_schema.py"
+  },
+  "overrides": {
+    "lodash": ">=4.18.0",
+    "lodash-es": ">=4.18.0"
   }
 }

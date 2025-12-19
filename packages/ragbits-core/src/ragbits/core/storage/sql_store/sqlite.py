@@ -23,13 +23,8 @@ class SQLiteSQLStore(SQLStore["aiosqlite.Connection"]):
 
         async with store:
             # Execute queries
-            await store.execute(
-                "INSERT INTO app_items (key, value) VALUES (?, ?)",
-                "foo", "bar"
-            )
-            result = await store.fetch_one(
-                "SELECT * FROM app_items WHERE key = ?", "foo"
-            )
+            await store.execute("INSERT INTO app_items (key, value) VALUES (?, ?)", "foo", "bar")
+            result = await store.fetch_one("SELECT * FROM app_items WHERE key = ?", "foo")
         ```
     """
 
@@ -93,7 +88,5 @@ class SQLiteSQLStore(SQLStore["aiosqlite.Connection"]):
         await self._ensure_schema()
         await self._connection.execute(query, *args)
         # Get the last inserted rowid
-        row = await self._connection.fetch_one(
-            "SELECT * FROM sqlite_master WHERE type='table' LIMIT 1"
-        )
+        row = await self._connection.fetch_one("SELECT * FROM sqlite_master WHERE type='table' LIMIT 1")
         return row

@@ -212,13 +212,15 @@ class KVEvalReportStore(EvalReportStore):
             await self._kv.set(self._RUNS_INDEX_KEY, runs_index)
 
         # Add result to run
-        run["results"].append({
-            "result_id": result_id,
-            "scenario_name": result_data.get("scenario_name"),
-            "persona": result_data.get("persona"),
-            "status": result_data.get("status"),
-            "metrics": result_data.get("metrics"),
-        })
+        run["results"].append(
+            {
+                "result_id": result_id,
+                "scenario_name": result_data.get("scenario_name"),
+                "persona": result_data.get("persona"),
+                "status": result_data.get("status"),
+                "metrics": result_data.get("metrics"),
+            }
+        )
 
         # Update stats
         run["total_scenarios"] = len(run["results"])
@@ -355,7 +357,9 @@ class KVEvalReportStore(EvalReportStore):
                 ResultSummary(
                     result_id=item["id"],
                     scenario_name=item.get("scenario_name", ""),
-                    timestamp=datetime.fromisoformat(item["start_time"]) if item.get("start_time") else datetime.now(timezone.utc),
+                    timestamp=datetime.fromisoformat(item["start_time"])
+                    if item.get("start_time")
+                    else datetime.now(timezone.utc),
                     status=SimulationStatus(item.get("status", "unknown")),
                     tasks_completed=metrics.get("tasks_completed", 0),
                     total_tasks=metrics.get("total_tasks", 0),
