@@ -2,10 +2,14 @@
 
 This module provides reusable hotel booking tools and prompts that can be used
 across different evaluation examples and agent scenarios.
+
+The hotel booking functionality uses an in-memory SQLite database populated
+from a JSON configuration file. No external HTTP API server is required.
 """
 
 from . import prompt, tools
 from .hotel_chat import HotelChat
+from .service import HotelService
 
 # Re-export prompt classes
 HotelPrompt = prompt.HotelPrompt
@@ -26,6 +30,7 @@ __all__ = [
     "HotelChat",
     "HotelPrompt",
     "HotelPromptInput",
+    "HotelService",
     "cancel_reservation",
     "create_reservation",
     "get_hotel_details",
