@@ -144,10 +144,7 @@ markdown_extensions:
           class: mermaid
   - admonition
   - pymdownx.superfences
-  - pymdownx.snippets:
-      base_path:
-        - docs
-        - .
+  - pymdownx.snippets
   - pymdownx.inlinehilite
   - attr_list
   - md_in_html
@@ -207,5 +204,3 @@ validation:
   absolute_links: warn
   unrecognized_links: warn
   anchors: warn
-not_in_nav: |
-  _shared/
