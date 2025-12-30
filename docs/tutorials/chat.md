@@ -14,7 +14,7 @@ Let's build a **sophisticated chatbot interface** with **Ragbits Chat and Agents
 - How to debug and optimize tool-powered chat systems
 - How to build production-ready intelligent assistants with real capabilities
 
-Install the latest Ragbits via `pip install -U ragbits[agents]` and follow along.
+Install the latest Ragbits via `pip install -U ragbits` and follow along.
 
 ## Configuring the environment
 
