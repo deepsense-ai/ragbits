@@ -41,6 +41,7 @@ dev = [
 ]
 
 [tool.uv.sources]
+ragbits = { workspace = true }
 ragbits-cli = { workspace = true }
 ragbits-core = { workspace = true }
 ragbits-document-search = { workspace = true }
@@ -51,6 +52,7 @@ ragbits-agents = { workspace = true }
 
 [tool.uv.workspace]
 members = [
+    "packages/ragbits",
     "packages/ragbits-cli",
     "packages/ragbits-core",
     "packages/ragbits-document-search",

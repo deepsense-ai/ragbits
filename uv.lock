@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version < '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
@@ -26,6 +26,7 @@ resolution-markers = [
 
 [manifest]
 members = [
+    "ragbits",
     "ragbits-agents",
     "ragbits-chat",
     "ragbits-cli",
@@ -5048,16 +5049,163 @@ wheels = [
 
 [[package]]
 name = "ragbits"
-version = "0.0.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/21/f7/4dfc757e4d7adff14a8fad9989f47a88c063ca88456d0525d0d5d3593f54/ragbits-0.0.1.tar.gz", hash = "sha256:673b663730ee2ef0d2813ffe1d1619f3ce5042748a4c02c094c787f499f4c886", size = 1378, upload-time = "2024-09-13T15:27:07.347Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/96/e1/2cef0ba62827617ebcd183ebe3a7b3ca7cfee8d45f99c953b4db005b9a88/ragbits-0.0.1-py2.py3-none-any.whl", hash = "sha256:101ef35803f4b78b600b7381cf8f3c86f18018fa54156055d9b6e95f708475bf", size = 1354, upload-time = "2024-09-13T15:27:05.758Z" },
+version = "1.4.0.dev202512160238"
+source = { editable = "packages/ragbits" }
+dependencies = [
+    { name = "ragbits-agents" },
+    { name = "ragbits-chat" },
+    { name = "ragbits-cli" },
+    { name = "ragbits-core" },
+    { name = "ragbits-document-search" },
+    { name = "ragbits-evaluate" },
+    { name = "ragbits-guardrails" },
 ]
+
+[package.optional-dependencies]
+a2a = [
+    { name = "a2a-sdk" },
+    { name = "fastapi" },
+    { name = "uvicorn" },
+]
+azure = [
+    { name = "azure-core" },
+    { name = "azure-identity" },
+    { name = "azure-storage-blob" },
+]
+chroma = [
+    { name = "chromadb" },
+]
+cli = [
+    { name = "textual" },
+]
+fastembed = [
+    { name = "fastembed", version = "0.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
+    { name = "fastembed", version = "0.5.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
+]
+fastembed-gpu = [
+    { name = "fastembed-gpu", version = "0.4.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.13'" },
+    { name = "fastembed-gpu", version = "0.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.13'" },
+]
+gcs = [
+    { name = "gcloud-aio-storage" },
+]
+google-drive = [
+    { name = "google-api-core" },
+    { name = "google-api-python-client" },
+    { name = "google-auth" },
+    { name = "google-auth-httplib2" },
+    { name = "google-auth-oauthlib" },
+    { name = "google-oauth2-tool" },
+    { name = "googleapis-common-protos" },
+]
+hf = [
+    { name = "datasets" },
+]
+local = [
+    { name = "accelerate" },
+    { name = "numpy" },
+    { name = "sentence-transformers" },
+    { name = "torch", version = "2.2.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11' or platform_machine != 'x86_64' or sys_platform != 'darwin'" },
+    { name = "torch", version = "2.6.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin'" },
+    { name = "transformers" },
+]
+logfire = [
+    { name = "logfire", extra = ["system-metrics"] },
+    { name = "opentelemetry-api" },
+]
+mcp = [
+    { name = "mcp" },
+]
+openai = [
+    { name = "openai" },
+]
+otel = [
+    { name = "opentelemetry-api" },
+]
+pgvector = [
+    { name = "asyncpg" },
+]
+promptfoo = [
+    { name = "pyyaml" },
+]
+qdrant = [
+    { name = "qdrant-client" },
+]
+ray = [
+    { name = "ray", extra = ["data"] },
+]
+relari = [
+    { name = "continuous-eval" },
+]
+s3 = [
+    { name = "boto3" },
+]
+sql = [
+    { name = "sqlalchemy" },
+]
+unstructured = [
+    { name = "unstructured" },
+    { name = "unstructured-client" },
+]
+weaviate = [
+    { name = "weaviate-client" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "a2a-sdk", marker = "extra == 'a2a'", specifier = ">=0.2.9,<1.0.0" },
+    { name = "accelerate", marker = "extra == 'local'", specifier = ">=1.7.0" },
+    { name = "asyncpg", marker = "extra == 'pgvector'", specifier = ">=0.30.0,<1.0.0" },
+    { name = "azure-core", marker = "extra == 'azure'", specifier = ">=1.32.0,<2.0.0" },
+    { name = "azure-identity", marker = "extra == 'azure'", specifier = ">=1.19.0,<2.0.0" },
+    { name = "azure-storage-blob", marker = "extra == 'azure'", specifier = ">=12.24.1,<13.0.0" },
+    { name = "boto3", marker = "extra == 's3'", specifier = ">=1.35.42,<2.0.0" },
+    { name = "chromadb", marker = "extra == 'chroma'", specifier = ">=1.0.0,<2.0.0" },
+    { name = "continuous-eval", marker = "extra == 'relari'", specifier = ">=0.3.12,<1.0.0" },
+    { name = "datasets", marker = "extra == 'hf'", specifier = ">=3.0.1,<4.0.0" },
+    { name = "fastapi", marker = "extra == 'a2a'", specifier = ">=0.115.0,<1.0.0" },
+    { name = "fastembed", marker = "extra == 'fastembed'", specifier = ">=0.4.2,<1.0.0" },
+    { name = "fastembed-gpu", marker = "extra == 'fastembed-gpu'", specifier = ">=0.4.2,<1.0.0" },
+    { name = "gcloud-aio-storage", marker = "extra == 'gcs'", specifier = ">=9.3.0,<10.0.0" },
+    { name = "google-api-core", marker = "extra == 'google-drive'", specifier = ">=2.25.1,<3.0.0" },
+    { name = "google-api-python-client", marker = "extra == 'google-drive'", specifier = ">=2.174.0,<3.0.0" },
+    { name = "google-auth", marker = "extra == 'google-drive'", specifier = ">=2.40.3,<3.0.0" },
+    { name = "google-auth-httplib2", marker = "extra == 'google-drive'", specifier = ">=0.2.0,<1.0.0" },
+    { name = "google-auth-oauthlib", marker = "extra == 'google-drive'", specifier = ">=1.2.2,<2.0.0" },
+    { name = "google-oauth2-tool", marker = "extra == 'google-drive'", specifier = ">=0.0.3,<1.0.0" },
+    { name = "googleapis-common-protos", marker = "extra == 'google-drive'", specifier = ">=1.70.0,<2.0.0" },
+    { name = "logfire", marker = "extra == 'logfire'", specifier = ">=3.19.0,<4.0.0" },
+    { name = "logfire", extras = ["system-metrics"], marker = "extra == 'logfire'", specifier = ">=3.19.0,<4.0.0" },
+    { name = "mcp", marker = "extra == 'mcp'", specifier = ">=1.9.4,<2.0.0" },
+    { name = "numpy", marker = "extra == 'local'", specifier = ">=1.26.0,<2.0.0" },
+    { name = "openai", marker = "extra == 'openai'", specifier = ">=1.91.0,<2.0.0" },
+    { name = "opentelemetry-api", marker = "extra == 'logfire'", specifier = ">=1.27.0,<2.0.0" },
+    { name = "opentelemetry-api", marker = "extra == 'otel'", specifier = ">=1.27.0,<2.0.0" },
+    { name = "pyyaml", marker = "extra == 'promptfoo'", specifier = ">=6.0.2,<7.0.0" },
+    { name = "qdrant-client", marker = "extra == 'qdrant'", specifier = ">=1.12.1,<2.0.0" },
+    { name = "ragbits-agents", editable = "packages/ragbits-agents" },
+    { name = "ragbits-chat", editable = "packages/ragbits-chat" },
+    { name = "ragbits-cli", editable = "packages/ragbits-cli" },
+    { name = "ragbits-core", editable = "packages/ragbits-core" },
+    { name = "ragbits-document-search", editable = "packages/ragbits-document-search" },
+    { name = "ragbits-evaluate", editable = "packages/ragbits-evaluate" },
+    { name = "ragbits-guardrails", editable = "packages/ragbits-guardrails" },
+    { name = "ray", extras = ["data"], marker = "extra == 'ray'", specifier = ">=2.43.0,<3.0.0" },
+    { name = "sentence-transformers", marker = "extra == 'local'", specifier = ">=4.0.2,<5.0.0" },
+    { name = "sqlalchemy", marker = "extra == 'sql'", specifier = ">=2.0.39,<3.0.0" },
+    { name = "textual", marker = "extra == 'cli'", specifier = ">=0.85.2,<1.0.0" },
+    { name = "torch", marker = "extra == 'local'", specifier = ">=2.2.1,<3.0.0" },
+    { name = "transformers", marker = "extra == 'local'", specifier = ">=4.44.2,<5.0.0" },
+    { name = "unstructured", marker = "extra == 'unstructured'", specifier = ">=0.16.9,<1.0.0" },
+    { name = "unstructured-client", marker = "extra == 'unstructured'", specifier = ">=0.26.0,<1.0.0" },
+    { name = "uvicorn", marker = "extra == 'a2a'", specifier = ">=0.31.0,<1.0.0" },
+    { name = "weaviate-client", marker = "extra == 'weaviate'", specifier = ">=4.15.4,<5.0.0" },
+]
+provides-extras = ["chroma", "hf", "s3", "gcs", "azure", "local", "openai", "otel", "logfire", "promptfoo", "qdrant", "relari", "fastembed", "fastembed-gpu", "pgvector", "ray", "unstructured", "sql", "a2a", "mcp", "weaviate", "google-drive", "cli"]
 
 [[package]]
 name = "ragbits-agents"
-version = "1.4.0.dev202512100237"
+version = "1.4.0.dev202512160238"
 source = { editable = "packages/ragbits-agents" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5093,7 +5241,7 @@ provides-extras = ["a2a", "mcp", "openai", "cli"]
 
 [[package]]
 name = "ragbits-chat"
-version = "1.4.0.dev202512100237"
+version = "1.4.0.dev202512160238"
 source = { editable = "packages/ragbits-chat" }
 dependencies = [
     { name = "bcrypt" },
@@ -5141,7 +5289,7 @@ dev = [
 
 [[package]]
 name = "ragbits-cli"
-version = "1.4.0.dev202512100237"
+version = "1.4.0.dev202512160238"
 source = { editable = "packages/ragbits-cli" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5156,7 +5304,7 @@ requires-dist = [
 
 [[package]]
 name = "ragbits-core"
-version = "1.4.0.dev202512100237"
+version = "1.4.0.dev202512160238"
 source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "aiohttp" },
@@ -5294,7 +5442,7 @@ dev = [
 
 [[package]]
 name = "ragbits-document-search"
-version = "1.4.0.dev202512100237"
+version = "1.4.0.dev202512160238"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
     { name = "docling" },
@@ -5321,7 +5469,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
-    { name = "ragbits" },
+    { name = "ragbits", extra = ["local"] },
 ]
 
 [package.metadata]
@@ -5345,12 +5493,12 @@ dev = [
     { name = "pytest", specifier = "~=8.3.3" },
     { name = "pytest-asyncio", specifier = "~=0.24.0" },
     { name = "pytest-cov", specifier = "~=5.0.0" },
-    { name = "ragbits", extras = ["local"] },
+    { name = "ragbits", extras = ["local"], editable = "packages/ragbits" },
 ]
 
 [[package]]
 name = "ragbits-evaluate"
-version = "1.4.0.dev202512100237"
+version = "1.4.0.dev202512160238"
 source = { editable = "packages/ragbits-evaluate" }
 dependencies = [
     { name = "datasets" },
@@ -5400,7 +5548,7 @@ dev = [
 
 [[package]]
 name = "ragbits-guardrails"
-version = "1.4.0.dev202512100237"
+version = "1.4.0.dev202512160238"
 source = { editable = "packages/ragbits-guardrails" }
 dependencies = [
     { name = "ragbits-core" },
