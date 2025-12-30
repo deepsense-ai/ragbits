@@ -232,3 +232,112 @@ jobs:
           # A custom title that can be added to the code
           # coverage summary in the PR comment.
           coverage-summary-title: "Code Coverage Summary"
+
+
+  tests-built-packages:
+    name: Test built packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ "3.10", "3.11", "3.12" ]
+
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.0-pg17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tests
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      weaviate:
+        image: cr.weaviate.io/semitechnologies/weaviate:1.30.6
+        env:
+          QUERY_DEFAULTS_LIMIT: 25
+          AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: true
+          PERSISTENCE_DATA_PATH: /var/lib/weaviate
+          ENABLE_API_BASED_MODULES: true
+          CLUSTER_HOSTNAME: node1
+        ports:
+          - 8080:8080
+          - 50051:50051
+        options: >-
+          --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:8080/v1/.well-known/ready || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+        with:
+          version: ${{ vars.UV_VERSION || '0.6.9' }}
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Build packages
+        run: |
+          for dir in packages/*/; do
+            echo "Building $dir"
+            uv build "$dir" --out-dir dist
+          done
+
+      - name: Create fresh virtual environment
+        run: |
+          uv venv .venv-test --python ${{ matrix.python-version }}
+
+      - name: Install built packages
+        run: |
+          source .venv-test/bin/activate
+          # Install all built packages
+          uv pip install dist/*.whl
+          # Install test dependencies
+          uv pip install pytest pytest-asyncio pytest-postgresql coverage
+
+      - name: Cache NLTK data
+        uses: actions/cache@v3
+        with:
+          path: ~/nltk_data
+          key: nltk-${{ runner.os }}
+
+      - name: Run tests against built packages
+        run: |
+          source .venv-test/bin/activate
+          pytest --postgresql-password postgres -v -p no:warnings --junitxml=report-built.xml
+        env:
+          GOOGLE_DRIVE_CLIENTID_JSON: ${{ secrets.GOOGLE_DRIVE_CLIENTID_JSON }}
+          GOOGLE_SOURCE_UNIT_TEST_FOLDER: ${{ secrets.GOOGLE_SOURCE_UNIT_TEST_FOLDER }}
+          GOOGLE_DRIVE_TARGET_EMAIL: ${{ secrets.GOOGLE_DRIVE_TARGET_EMAIL }}
+
+      - name: Test Report
+        uses: mikepenz/action-junit-report@v4
+        continue-on-error: true
+        if: always()
+        with:
+          report_paths: 'report-built.xml'
+          check_name: 'Test Results (Built Packages - Python ${{ matrix.python-version }})'
+
+      - name: Publish Test Report
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        if: always()
+        with:
+          name: test-report-built-${{ matrix.python-version }}
+          path: report-built.xml
+          retention-days: 10
