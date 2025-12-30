@@ -4,14 +4,6 @@ from asyncio import AbstractEventLoop
 from itertools import chain
 from typing import Generic, TypeVar
 
-from continuous_eval.llm_factory import LLMInterface
-from continuous_eval.metrics.base import LLMBasedMetric
-from continuous_eval.metrics.generation.text import (
-    LLMBasedAnswerCorrectness,
-    LLMBasedAnswerRelevance,
-    LLMBasedFaithfulness,
-    LLMBasedStyleConsistency,
-)
 from typing_extensions import Self
 
 from ragbits.agents.types import QuestionAnswerPromptOutputT
@@ -19,6 +11,31 @@ from ragbits.core.llms.base import LLM
 from ragbits.core.utils.helpers import batched
 from ragbits.evaluate.metrics.base import Metric
 from ragbits.evaluate.pipelines.question_answer import QuestionAnswerResult
+
+try:
+    from continuous_eval.llm_factory import LLMInterface
+    from continuous_eval.metrics.base import LLMBasedMetric
+    from continuous_eval.metrics.generation.text import (
+        LLMBasedAnswerCorrectness,
+        LLMBasedAnswerRelevance,
+        LLMBasedFaithfulness,
+        LLMBasedStyleConsistency,
+    )
+except ModuleNotFoundError:
+    from continuous_eval.llms.base import LLMInterface
+    from continuous_eval.metrics import Metric as LLMBasedMetric
+    from continuous_eval.metrics.generation.text import (
+        AnswerCorrectness as LLMBasedAnswerCorrectness,
+    )
+    from continuous_eval.metrics.generation.text import (
+        AnswerRelevance as LLMBasedAnswerRelevance,
+    )
+    from continuous_eval.metrics.generation.text import (
+        Faithfulness as LLMBasedFaithfulness,
+    )
+    from continuous_eval.metrics.generation.text import (
+        StyleConsistency as LLMBasedStyleConsistency,
+    )
 
 MetricT = TypeVar("MetricT", bound=LLMBasedMetric)
 
