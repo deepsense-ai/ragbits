@@ -4,9 +4,10 @@ import {
     FeedbackResponse,
     ChatRequest,
     ChatResponse,
-    LogoutRequest,
     LoginRequest,
     LoginResponse,
+    User,
+    OAuth2AuthorizeResponse,
 } from './autogen.types'
 
 export interface GenericResponse {
@@ -21,6 +22,7 @@ export interface ClientConfig {
     auth?: {
         getToken?: () => string
         onUnauthorized?: () => Promise<void> | void
+        credentials?: RequestCredentials
     }
 }
 
@@ -55,7 +57,13 @@ export interface BaseApiEndpoints {
     '/api/config': EndpointDefinition<never, ConfigResponse>
     '/api/feedback': EndpointDefinition<FeedbackRequest, FeedbackResponse>
     '/api/auth/login': EndpointDefinition<LoginRequest, LoginResponse>
-    '/api/auth/logout': EndpointDefinition<LogoutRequest, GenericResponse>
+    '/api/auth/logout': EndpointDefinition<never, GenericResponse>
+    '/api/auth/authorize/:provider': EndpointDefinition<
+        never,
+        OAuth2AuthorizeResponse,
+        { provider: string }
+    >
+    '/api/user': EndpointDefinition<never, User>
     '/api/theme': EndpointDefinition<never, string>
 }
 

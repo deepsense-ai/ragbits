@@ -1,24 +1,27 @@
+import asyncio
 import importlib
 import json
 import logging
+import os
 import re
 import time
 from collections.abc import AsyncGenerator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import Any, cast
 
 import uvicorn
-from fastapi import Depends, FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, StreamingResponse
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from ragbits.chat.auth import AuthenticationBackend, User
-from ragbits.chat.auth.types import LoginRequest, LoginResponse, LogoutRequest
+from ragbits.chat.auth.backends import MultiAuthenticationBackend, OAuth2AuthenticationBackend
+from ragbits.chat.auth.provider_config import get_provider_visual_config
+from ragbits.chat.auth.types import LoginRequest, LoginResponse, OAuth2Credentials
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import (
     AuthenticationConfig,
@@ -33,6 +36,7 @@ from ragbits.chat.interface.types import (
     FeedbackRequest,
     Image,
     ImageResponse,
+    OAuth2ProviderConfig,
 )
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
@@ -41,6 +45,12 @@ from ragbits.core.audit.traces import trace
 from .metrics import ChatCounterMetric, ChatHistogramMetric
 
 logger = logging.getLogger(__name__)
+
+# Environment-aware cookie security: only require HTTPS in production
+IS_PRODUCTION = os.getenv("ENVIRONMENT", "").lower() == "production"
+
+# Session cookie name - used for storing session ID in HTTP-only cookie
+SESSION_COOKIE_NAME = "ragbits_session"
 
 # Chunk size for large base64 images to prevent SSE message size issues
 # Keep chunks extremely small to avoid JSON string length limits in browsers and SSE parsing issues
@@ -79,13 +89,33 @@ class RagbitsAPI:
         self.cors_origins = cors_origins or []
         self.debug_mode = debug_mode
         self.auth_backend = self._load_auth_backend(auth_backend)
-        self.security = HTTPBearer(auto_error=False) if auth_backend else None
         self.theme_path = Path(theme_path) if theme_path else None
+
+        # get frontend base URL from environment variable or use default
+        frontend_base_url = os.getenv("FRONTEND_BASE_URL", "http://localhost:8000")
+        # remove trailing slash from frontend base URL
+        frontend_base_url = frontend_base_url.rstrip("/")
+        # set frontend base URL on the API
+        self.frontend_base_url = frontend_base_url
 
         @asynccontextmanager
         async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             await self.chat_interface.setup()
+
+            # Start background cleanup tasks for session and OAuth state management
+            cleanup_tasks: list[asyncio.Task] = []
+
+            if self.auth_backend:
+                cleanup_tasks.append(asyncio.create_task(self._session_cleanup_loop()))
+                cleanup_tasks.append(asyncio.create_task(self._oauth_state_cleanup_loop()))
+
             yield
+
+            # Cancel all cleanup tasks on shutdown
+            for task in cleanup_tasks:
+                task.cancel()
+                with suppress(asyncio.CancelledError):
+                    await task
 
         self.app = FastAPI(lifespan=lifespan)
 
@@ -122,51 +152,126 @@ class RagbitsAPI:
                 content={"detail": exc.errors(), "body": exc.body},
             )
 
-    def setup_routes(self) -> None:
+    def setup_routes(self) -> None:  # noqa: PLR0915
         """Defines API routes."""
         # Authentication routes
         if self.auth_backend:
-            # Create security dependency variable to avoid B008 linting error
-            security_dependency = Depends(self.security)
 
             @self.app.post("/api/auth/login", response_class=JSONResponse)
             async def login(request: LoginRequest) -> JSONResponse:
                 return await self._handle_login(request)
 
             @self.app.post("/api/auth/logout", response_class=JSONResponse)
-            async def logout(request: LogoutRequest) -> JSONResponse:
+            async def logout(request: Request) -> JSONResponse:
                 return await self._handle_logout(request)
+
+            # OAuth2 routes (if OAuth2 backend is configured)
+            oauth2_backends = []
+            if isinstance(self.auth_backend, MultiAuthenticationBackend):
+                oauth2_backends = self.auth_backend.get_oauth2_backends()
+            elif isinstance(self.auth_backend, OAuth2AuthenticationBackend):
+                oauth2_backends = [self.auth_backend]
+
+            if oauth2_backends:
+                # Create a mapping of provider name to backend for quick lookup
+                oauth2_backend_map = {backend.provider.name: backend for backend in oauth2_backends}
+
+                @self.app.get("/api/auth/authorize/{provider}", response_class=JSONResponse)
+                async def oauth2_authorize(provider: str) -> JSONResponse:
+                    """Generate OAuth2 authorization URL for specified provider."""
+                    backend = oauth2_backend_map.get(provider)
+                    if not backend:
+                        raise HTTPException(status_code=404, detail=f"OAuth2 provider '{provider}' not found")
+
+                    authorize_url, state = backend.generate_authorize_url()
+                    return JSONResponse(content={"authorize_url": authorize_url, "state": state})
+
+                @self.app.get("/api/auth/callback/{provider}", response_class=RedirectResponse)
+                async def oauth2_callback(
+                    provider: str, code: str | None = None, state: str | None = None
+                ) -> RedirectResponse:
+                    """Handle OAuth2 callback from provider."""
+                    backend = oauth2_backend_map.get(provider)
+                    if not backend:
+                        raise HTTPException(status_code=404, detail=f"OAuth2 provider '{provider}' not found")
+
+                    return await self._handle_oauth2_callback(code, state, backend)
 
             @self.app.post("/api/chat", response_class=StreamingResponse)
             async def chat_message(
-                request: ChatMessageRequest,
-                credentials: HTTPAuthorizationCredentials | None = security_dependency,
+                request: Request,
+                chat_request: ChatMessageRequest,
             ) -> StreamingResponse:
-                return await self._handle_chat_message(request, credentials)
+                return await self._handle_chat_message(chat_request, request)
 
             @self.app.post("/api/feedback", response_class=JSONResponse)
             async def feedback(
-                request: FeedbackRequest,
-                credentials: HTTPAuthorizationCredentials | None = security_dependency,
+                request: Request,
+                feedback_request: FeedbackRequest,
             ) -> JSONResponse:
-                return await self._handle_feedback(request, credentials)
+                return await self._handle_feedback(feedback_request, request)
         else:
 
             @self.app.post("/api/chat", response_class=StreamingResponse)
             async def chat_message(
-                request: ChatMessageRequest,
+                request: Request,
+                chat_request: ChatMessageRequest,
             ) -> StreamingResponse:
-                return await self._handle_chat_message(request, None)
+                return await self._handle_chat_message(chat_request, request)
 
             @self.app.post("/api/feedback", response_class=JSONResponse)
             async def feedback(
-                request: FeedbackRequest,
+                request: Request,
+                feedback_request: FeedbackRequest,
             ) -> JSONResponse:
-                return await self._handle_feedback(request, None)
+                return await self._handle_feedback(feedback_request, request)
 
         @self.app.get("/api/config", response_class=JSONResponse)
         async def config() -> JSONResponse:
             feedback_config = self.chat_interface.feedback_config
+
+            # Determine available auth types and OAuth2 providers based on backend
+            auth_types = []
+            oauth2_providers = []
+
+            if self.auth_backend:
+                if isinstance(self.auth_backend, MultiAuthenticationBackend):
+                    # Multi backend: check what types are available
+                    if self.auth_backend.get_credentials_backends():
+                        auth_types.append(AuthType.CREDENTIALS)
+
+                    oauth2_backends = self.auth_backend.get_oauth2_backends()
+                    if oauth2_backends:
+                        auth_types.append(AuthType.OAUTH2)
+                        for backend in oauth2_backends:
+                            visual_config = get_provider_visual_config(backend.provider.name)
+                            oauth2_providers.append(
+                                OAuth2ProviderConfig(
+                                    name=backend.provider.name,
+                                    display_name=backend.provider.display_name,
+                                    color=visual_config.color,
+                                    button_color=visual_config.button_color,
+                                    text_color=visual_config.text_color,
+                                    icon_svg=visual_config.icon_svg,
+                                )
+                            )
+                elif isinstance(self.auth_backend, OAuth2AuthenticationBackend):
+                    # Single OAuth2 backend
+                    auth_types = [AuthType.OAUTH2]
+                    visual_config = get_provider_visual_config(self.auth_backend.provider.name)
+                    oauth2_providers = [
+                        OAuth2ProviderConfig(
+                            name=self.auth_backend.provider.name,
+                            display_name=self.auth_backend.provider.display_name,
+                            color=visual_config.color,
+                            button_color=visual_config.button_color,
+                            text_color=visual_config.text_color,
+                            icon_svg=visual_config.icon_svg,
+                        )
+                    ]
+                else:
+                    # Single credentials backend
+                    auth_types = [AuthType.CREDENTIALS]
 
             config_response = ConfigResponse(
                 feedback=FeedbackConfig(
@@ -186,11 +291,21 @@ class RagbitsAPI:
                 show_usage=self.chat_interface.show_usage,
                 authentication=AuthenticationConfig(
                     enabled=self.auth_backend is not None,
-                    auth_types=[AuthType.CREDENTIALS],
+                    auth_types=auth_types,
+                    oauth2_providers=oauth2_providers,
                 ),
             )
 
             return JSONResponse(content=config_response.model_dump())
+
+        # User info endpoint - returns current authenticated user
+        @self.app.get("/api/user", response_class=JSONResponse)
+        async def get_user(request: Request) -> JSONResponse:
+            """Get current authenticated user from session cookie."""
+            user = await self.get_current_user_from_cookie(request)
+            if user:
+                return JSONResponse(content=user.model_dump())
+            return JSONResponse(content=None, status_code=401)
 
         # Theme CSS endpoint - always available, returns 404 if no theme configured
         @self.app.get("/api/theme", response_class=PlainTextResponse)
@@ -217,41 +332,18 @@ class RagbitsAPI:
             with open(str(index_file)) as file:
                 return HTMLResponse(content=file.read())
 
-    async def _validate_authentication(self, credentials: HTTPAuthorizationCredentials | None) -> User | None:
-        """Validate authentication credentials and return user if valid."""
-        if not self.auth_backend:
-            return None
-
-        if not credentials:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Authentication required",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-
-        # The jwt_token should be the session_id
-        auth_result = await self.auth_backend.validate_token(credentials.credentials)
-        if not auth_result.success:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=auth_result.error_message or "Invalid session",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-
-        return auth_result.user
-
     @staticmethod
     def _prepare_chat_context(
         request: ChatMessageRequest,
         authenticated_user: User | None,
-        credentials: HTTPAuthorizationCredentials | None,
+        session_id: str | None,
     ) -> ChatContext:
         """Prepare and validate chat context from request."""
         chat_context = ChatContext(**request.context)
 
         # Add session_id to context if authenticated
-        if authenticated_user and credentials:
-            chat_context.session_id = credentials.credentials
+        if authenticated_user and session_id:
+            chat_context.session_id = session_id
             chat_context.user = authenticated_user
 
         # Verify state signature if provided
@@ -275,9 +367,7 @@ class RagbitsAPI:
 
         return chat_context
 
-    async def _handle_chat_message(
-        self, request: ChatMessageRequest, credentials: HTTPAuthorizationCredentials | None = None
-    ) -> StreamingResponse:  # noqa: PLR0915
+    async def _handle_chat_message(self, chat_request: ChatMessageRequest, request: Request) -> StreamingResponse:  # noqa: PLR0915
         """Handle chat message requests with metrics tracking."""
         start_time = time.time()
 
@@ -287,8 +377,8 @@ class RagbitsAPI:
         )
 
         try:
-            # Validate authentication if required
-            authenticated_user = await self._validate_authentication(credentials)
+            # Validate authentication if required using cookies
+            authenticated_user = await self.require_authenticated_user(request)
 
             if not self.chat_interface:
                 record_metric(
@@ -302,12 +392,13 @@ class RagbitsAPI:
                 raise HTTPException(status_code=500, detail="Chat implementation is not initialized")
 
             # Prepare chat context
-            chat_context = RagbitsAPI._prepare_chat_context(request, authenticated_user, credentials)
+            session_id = request.cookies.get(SESSION_COOKIE_NAME)
+            chat_context = RagbitsAPI._prepare_chat_context(chat_request, authenticated_user, session_id)
 
             # Get the response generator from the chat interface
             response_generator = self.chat_interface.chat(
-                message=request.message,
-                history=[msg.model_dump() for msg in request.history],
+                message=chat_request.message,
+                history=[msg.model_dump() for msg in chat_request.history],
                 context=chat_context,
             )
 
@@ -318,8 +409,8 @@ class RagbitsAPI:
                 state_update_text = ""
 
                 with trace(
-                    message=request.message,
-                    history=[msg.model_dump() for msg in request.history],
+                    message=chat_request.message,
+                    history=[msg.model_dump() for msg in chat_request.history],
                     context=chat_context,
                 ) as outputs:
                     async for chunk in RagbitsAPI._chat_response_to_sse(response_generator):
@@ -406,9 +497,7 @@ class RagbitsAPI:
             )
             raise HTTPException(status_code=500, detail="Internal server error") from None
 
-    async def _handle_feedback(
-        self, request: FeedbackRequest, credentials: HTTPAuthorizationCredentials | None = None
-    ) -> JSONResponse:
+    async def _handle_feedback(self, feedback_request: FeedbackRequest, request: Request) -> JSONResponse:
         """Handle feedback requests with metrics tracking."""
         start_time = time.time()
 
@@ -422,8 +511,8 @@ class RagbitsAPI:
         )
 
         try:
-            # Validate authentication if required
-            await self._validate_authentication(credentials)
+            # Validate authentication if required using cookies
+            await self.require_authenticated_user(request)
 
             if not self.chat_interface:
                 record_metric(
@@ -437,9 +526,9 @@ class RagbitsAPI:
                 raise HTTPException(status_code=500, detail="Chat implementation is not initialized")
 
             await self.chat_interface.save_feedback(
-                message_id=request.message_id,
-                feedback=request.feedback,
-                payload=request.payload,
+                message_id=feedback_request.message_id,
+                feedback=feedback_request.feedback,
+                payload=feedback_request.payload,
             )
 
             # Track successful request duration
@@ -496,26 +585,109 @@ class RagbitsAPI:
             )
             raise HTTPException(status_code=500, detail="Internal server error") from None
 
+    async def get_current_user_from_cookie(self, request: Request) -> User | None:
+        """
+        Get current user from session cookie.
+
+        Args:
+            request: FastAPI request object
+
+        Returns:
+            User object if authenticated, None otherwise
+        """
+        if not self.auth_backend:
+            return None
+
+        session_id = request.cookies.get(SESSION_COOKIE_NAME)
+        if not session_id:
+            return None
+
+        result = await self.auth_backend.validate_session(session_id)
+        if result.success:
+            return result.user
+
+        return None
+
+    async def require_authenticated_user(self, request: Request) -> User | None:
+        """
+        Get current user from session cookie and raise HTTPException if authentication
+        is required but user is not authenticated.
+
+        This is a reusable dependency for handlers that require authentication.
+
+        Args:
+            request: FastAPI request object
+
+        Returns:
+            User object if authenticated (or if no auth is required), None if no auth backend
+
+        Raises:
+            HTTPException: 401 Unauthorized if authentication is required but user is not authenticated
+        """
+        authenticated_user = await self.get_current_user_from_cookie(request)
+        if self.auth_backend and not authenticated_user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication required",
+            )
+        return authenticated_user
+
+    def get_session_expiry_seconds(self) -> int:
+        """
+        Get session expiry time in seconds from the auth backend configuration.
+
+        Returns:
+            Session expiry time in seconds (default: 24 hours if not configured)
+        """
+        # Default to 24 hours
+        default_expiry_hours = 24
+
+        if not self.auth_backend:
+            return default_expiry_hours * 3600
+
+        # Check if the backend has session_expiry_hours attribute
+        if hasattr(self.auth_backend, "session_expiry_hours"):
+            return self.auth_backend.session_expiry_hours * 3600
+
+        # For MultiAuthenticationBackend, try to get from first backend that has it
+        if isinstance(self.auth_backend, MultiAuthenticationBackend):
+            for backend in self.auth_backend.backends:
+                if hasattr(backend, "session_expiry_hours"):
+                    return backend.session_expiry_hours * 3600
+
+        return default_expiry_hours * 3600
+
     async def _handle_login(self, request: LoginRequest) -> JSONResponse:
-        """Handle user login requests."""
+        """Handle user login requests with credentials."""
         if not self.auth_backend:
             raise HTTPException(status_code=500, detail="Authentication not configured")
 
         try:
-            from .auth.types import UserCredentials
+            # LoginRequest is UserCredentials
+            auth_result = await self.auth_backend.authenticate_with_credentials(request)
 
-            credentials = UserCredentials(username=request.username, password=request.password)
-            auth_result = await self.auth_backend.authenticate_with_credentials(credentials)
-
-            if auth_result.success and auth_result.jwt_token:
-                return JSONResponse(
+            if auth_result.success and auth_result.session_id:
+                response = JSONResponse(
                     content=LoginResponse(
                         success=True,
                         user=auth_result.user if auth_result.user else None,
                         error_message=None,
-                        jwt_token=auth_result.jwt_token,
                     ).model_dump()
                 )
+
+                # Set secure HTTP-only cookie using backend's session expiry configuration
+                session_expiry_seconds = self.get_session_expiry_seconds()
+                response.set_cookie(
+                    key=SESSION_COOKIE_NAME,
+                    value=auth_result.session_id,
+                    httponly=True,
+                    secure=IS_PRODUCTION,  # Only require HTTPS in production
+                    samesite="lax",
+                    max_age=session_expiry_seconds,
+                    path="/",
+                )
+
+                return response
             else:
                 return JSONResponse(
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -523,7 +695,6 @@ class RagbitsAPI:
                         success=False,
                         user=None,
                         error_message=auth_result.error_message or "Invalid credentials",
-                        jwt_token=None,
                     ).model_dump(),
                 )
         except Exception as e:
@@ -534,24 +705,99 @@ class RagbitsAPI:
                     success=False,
                     user=None,
                     error_message="Internal server error",
-                    jwt_token=None,
                 ).model_dump(),
             )
 
-    async def _handle_logout(self, request: LogoutRequest) -> JSONResponse:
+    async def _handle_logout(self, request: Request) -> JSONResponse:
         """Handle user logout requests."""
         if not self.auth_backend:
             raise HTTPException(status_code=500, detail="Authentication not configured")
 
         try:
-            success = await self.auth_backend.revoke_token(request.token)
-            return JSONResponse(content={"success": success})
+            # Get session ID from cookie
+            session_id = request.cookies.get(SESSION_COOKIE_NAME)
+
+            if not session_id:
+                # No session cookie, just return success
+                response = JSONResponse(content={"success": True})
+                response.delete_cookie(key=SESSION_COOKIE_NAME, path="/")
+                return response
+
+            # Delete the session from store
+            success = await self.auth_backend.revoke_session(session_id)
+
+            response = JSONResponse(content={"success": success})
+            # Clear the session cookie
+            response.delete_cookie(key=SESSION_COOKIE_NAME, path="/")
+            return response
+
         except Exception as e:
             logger.error(f"Logout error: {e}")
             return JSONResponse(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                content={"success": False, "error_message": "Internal server error"},
+                content={"success": False, "error": "Internal server error"},
             )
+
+    async def _handle_oauth2_callback(  # noqa: PLR6301
+        self, code: str | None, state: str | None, backend: OAuth2AuthenticationBackend
+    ) -> RedirectResponse:
+        """
+        Handle OAuth2 callback from provider.
+
+        This endpoint receives the authorization code from the OAuth2 provider,
+        exchanges it for an access token, authenticates the user, creates a session,
+        and redirects to the frontend with a secure HTTP-only cookie.
+
+        Args:
+            code: Authorization code from OAuth2 provider
+            state: CSRF protection state parameter
+            backend: The specific OAuth2 backend for this provider
+        """
+        # Verify required parameters
+        if not code:
+            # Redirect to login with error
+            return RedirectResponse(url=f"{self.frontend_base_url}/login?error=missing_code", status_code=302)
+
+        # Verify state parameter for CSRF protection
+        if not state or not backend.verify_state(state):
+            return RedirectResponse(url=f"{self.frontend_base_url}/login?error=invalid_state", status_code=302)
+
+        try:
+            # Exchange code for access token
+            access_token = await backend.exchange_code_for_token(code)
+            if not access_token:
+                return RedirectResponse(
+                    url=f"{self.frontend_base_url}/login?error=token_exchange_failed", status_code=302
+                )
+
+            # Authenticate with the access token
+            oauth_credentials = OAuth2Credentials(access_token=access_token, token_type="Bearer")  # noqa: S106
+            auth_result = await backend.authenticate_with_oauth2(oauth_credentials)
+
+            if not auth_result.success or not auth_result.session_id:
+                error_msg = auth_result.error_message or "Authentication failed"
+                return RedirectResponse(url=f"{self.frontend_base_url}/login?error={error_msg}", status_code=302)
+
+            # Success! Create redirect response with session cookie
+            response = RedirectResponse(url=f"{self.frontend_base_url}/", status_code=302)
+
+            # Set secure HTTP-only cookie
+            session_expiry_seconds = backend.session_expiry_hours * 3600
+            response.set_cookie(
+                key=SESSION_COOKIE_NAME,
+                value=auth_result.session_id,
+                httponly=True,
+                secure=IS_PRODUCTION,  # Only require HTTPS in production
+                samesite="lax",
+                max_age=session_expiry_seconds,
+                path="/",
+            )
+
+            return response
+
+        except Exception as e:
+            logger.error(f"OAuth2 callback error: {e}")
+            return RedirectResponse(url=f"{self.frontend_base_url}/login?error=internal_error", status_code=302)
 
     @staticmethod
     async def _chat_response_to_sse(
@@ -776,3 +1022,42 @@ class RagbitsAPI:
                 css_lines.append(f"  --heroui-{color_name}: {color_value};")
 
         return css_lines
+
+    async def _session_cleanup_loop(self) -> None:
+        if (
+            not self.auth_backend
+            or not hasattr(self.auth_backend, "session_store")
+            or not hasattr(self.auth_backend.session_store, "cleanup_expired_sessions")
+        ):
+            return
+
+        while True:
+            await asyncio.sleep(3600)  # Run every hour
+            try:
+                removed = self.auth_backend.session_store.cleanup_expired_sessions()  # type: ignore
+                if removed > 0:
+                    logger.info(f"Cleaned up {removed} expired sessions")
+            except Exception as e:
+                logger.exception(f"Error during session cleanup: {e}")
+
+    async def _oauth_state_cleanup_loop(self) -> None:
+        oauth2_backends = []
+        if isinstance(self.auth_backend, MultiAuthenticationBackend):
+            oauth2_backends = self.auth_backend.get_oauth2_backends()
+        elif isinstance(self.auth_backend, OAuth2AuthenticationBackend):
+            oauth2_backends = [self.auth_backend]
+
+        if not oauth2_backends:
+            return
+
+        while True:
+            await asyncio.sleep(600)  # Run every 10 minutes
+            try:
+                total_removed = 0
+                for backend in oauth2_backends:
+                    removed = backend.cleanup_expired_states()
+                    total_removed += removed
+                if total_removed > 0:
+                    logger.info(f"Cleaned up {total_removed} expired OAuth2 state tokens")
+            except Exception as e:
+                logger.exception(f"Error during OAuth state cleanup: {e}")

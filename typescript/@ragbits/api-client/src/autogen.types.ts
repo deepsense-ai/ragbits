@@ -58,6 +58,7 @@ export type TaskStatus = TypeFrom<typeof TaskStatus>
  */
 export const AuthType = {
     Credentials: 'credentials',
+    Oauth2: 'oauth2',
 } as const
 
 export type AuthType = TypeFrom<typeof AuthType>
@@ -363,6 +364,50 @@ export interface FeedbackResponse {
 }
 
 /**
+ * Response for OAuth2 authorization URL request
+ */
+export interface OAuth2AuthorizeResponse {
+    /**
+     * URL to redirect user to for OAuth2 authorization
+     */
+    authorize_url: string
+    /**
+     * State parameter for CSRF protection
+     */
+    state: string
+}
+
+/**
+ * Configuration for an OAuth2 provider including visual configuration.
+ */
+export interface OAuth2ProviderConfig {
+    /**
+     * Provider name (e.g., 'discord')
+     */
+    name: string
+    /**
+     * Display name for the provider (e.g., 'Discord')
+     */
+    display_name: string | null
+    /**
+     * Brand color for the provider (e.g., '#5865F2')
+     */
+    color: string | null
+    /**
+     * Button background color (defaults to color)
+     */
+    button_color: string | null
+    /**
+     * Button text color (defaults to white)
+     */
+    text_color: string | null
+    /**
+     * SVG icon as string
+     */
+    icon_svg: string | null
+}
+
+/**
  * Client-side chat request interface.
  */
 export interface ChatRequest {
@@ -414,49 +459,33 @@ export interface AuthenticationConfig {
      * List of available authentication types
      */
     auth_types: AuthType[]
+    /**
+     * List of available OAuth2 providers
+     */
+    oauth2_providers: OAuth2ProviderConfig[]
 }
 
 /**
- * Request body for user login
+ * Represents user login credentials.
  */
-export interface CredentialsLoginRequest {
-    /**
-     * Username
-     */
+export interface UserCredentials {
     username: string
-    /**
-     * Password
-     */
     password: string
 }
 
 /**
- * Represents a JWT authentication jwt_token.
- */
-export interface JWTToken {
-    access_token: string
-    token_type: string
-    expires_in: number
-    refresh_token: string | null
-    user: User
-}
-
-/**
- * Request body for user login
+ * Represents user login credentials.
  */
 export interface LoginRequest {
-    /**
-     * Username
-     */
     username: string
-    /**
-     * Password
-     */
     password: string
 }
 
 /**
- * Response body for successful login
+ * Response body for login with session-based authentication.
+ *
+ * The session ID is set as an HTTP-only cookie by the backend.
+ * Frontend only receives user information.
  */
 export interface LoginResponse {
     /**
@@ -471,20 +500,6 @@ export interface LoginResponse {
      * Error message if login failed
      */
     error_message: string | null
-    /**
-     * Access jwt_token
-     */
-    jwt_token: JWTToken | null
-}
-
-/**
- * Request body for user logout
- */
-export interface LogoutRequest {
-    /**
-     * Session ID to logout
-     */
-    token: string
 }
 
 /**

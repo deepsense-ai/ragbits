@@ -26,6 +26,12 @@ vi.mock("../../../../src/plugins/AuthPlugin/components/AuthWatcher", () => ({
   AuthWatcher: () => <div data-testid="auth-watcher" />,
 }));
 
+vi.mock("@ragbits/api-client-react", () => ({
+  RagbitsContextProvider: ({ children }: { children: React.ReactNode }) => (
+    <div data-testid="ragbits-context-provider">{children}</div>
+  ),
+}));
+
 let mockPathname = "/";
 vi.mock("react-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("react-router")>();
@@ -83,7 +89,6 @@ describe("AuthGuard", () => {
     );
 
     expect(screen.getByTestId("child")).toBeInTheDocument();
-    expect(screen.queryByTestId("auth-watcher")).not.toBeInTheDocument();
     expect(screen.queryByTestId("navigate")).not.toBeInTheDocument();
   });
 
@@ -93,9 +98,6 @@ describe("AuthGuard", () => {
       selector({
         hasHydrated: true,
         isAuthenticated: true,
-        token: {
-          access_token: "token",
-        },
       }),
     );
 
@@ -107,7 +109,7 @@ describe("AuthGuard", () => {
 
     expect(screen.getByTestId("child")).toBeInTheDocument();
     expect(screen.getByTestId("auth-store-context")).toBeInTheDocument();
-    expect(screen.getByTestId("auth-watcher")).toBeInTheDocument();
+    expect(screen.getByTestId("ragbits-context-provider")).toBeInTheDocument();
     expect(screen.queryByTestId("navigate")).not.toBeInTheDocument();
   });
 

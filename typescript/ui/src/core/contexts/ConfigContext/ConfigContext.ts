@@ -8,3 +8,6 @@ export interface IConfigContext {
 export const ConfigContext = createContext<IConfigContext | undefined>(
   undefined,
 );
+
+// Re-export useConfigContext as useConfig for convenience
+export { useConfigContext as useConfig } from "./useConfigContext";
