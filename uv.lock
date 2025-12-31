@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version < '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
@@ -5057,7 +5057,7 @@ wheels = [
 
 [[package]]
 name = "ragbits-agents"
-version = "1.4.0.dev202512090236"
+version = "1.4.0.dev202512100237"
 source = { editable = "packages/ragbits-agents" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5093,7 +5093,7 @@ provides-extras = ["a2a", "mcp", "openai", "cli"]
 
 [[package]]
 name = "ragbits-chat"
-version = "1.4.0.dev202512090236"
+version = "1.4.0.dev202512100237"
 source = { editable = "packages/ragbits-chat" }
 dependencies = [
     { name = "bcrypt" },
@@ -5141,7 +5141,7 @@ dev = [
 
 [[package]]
 name = "ragbits-cli"
-version = "1.4.0.dev202512090236"
+version = "1.4.0.dev202512100237"
 source = { editable = "packages/ragbits-cli" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5156,7 +5156,7 @@ requires-dist = [
 
 [[package]]
 name = "ragbits-core"
-version = "1.4.0.dev202512090236"
+version = "1.4.0.dev202512100237"
 source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "aiohttp" },
@@ -5294,7 +5294,7 @@ dev = [
 
 [[package]]
 name = "ragbits-document-search"
-version = "1.4.0.dev202512090236"
+version = "1.4.0.dev202512100237"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
     { name = "docling" },
@@ -5350,7 +5350,7 @@ dev = [
 
 [[package]]
 name = "ragbits-evaluate"
-version = "1.4.0.dev202512090236"
+version = "1.4.0.dev202512100237"
 source = { editable = "packages/ragbits-evaluate" }
 dependencies = [
     { name = "datasets" },
@@ -5400,7 +5400,7 @@ dev = [
 
 [[package]]
 name = "ragbits-guardrails"
-version = "1.4.0.dev202512090236"
+version = "1.4.0.dev202512100237"
 source = { editable = "packages/ragbits-guardrails" }
 dependencies = [
     { name = "ragbits-core" },

@@ -2,11 +2,12 @@
 
 import argparse
 import asyncio
+import json
 
 from config import config
 from fixtures.hotel.hotel_chat import HotelChat
 
-from ragbits.evaluate.agent_simulation import load_personalities, load_scenarios, run_duet
+from ragbits.evaluate.agent_simulation import load_personalities, load_scenarios, run_simulation
 
 
 def parse_args() -> argparse.Namespace:
@@ -26,11 +27,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--agent-model-name", type=str, help="Override agent LLM model name")
     parser.add_argument("--sim-user-model-name", type=str, help="Override simulated user LLM model name")
     parser.add_argument("--checker-model-name", type=str, help="Override goal checker LLM model name")
+    parser.add_argument("--output-json", type=str, help="Path to output JSON file for structured results")
     return parser.parse_args()
 
 
 def main() -> None:
-    """Main entry point for the duet CLI application."""
+    """Main entry point for the simulation CLI application."""
     args = parse_args()
 
     # Load and validate scenario
@@ -55,8 +57,8 @@ def main() -> None:
     )
 
     hotel_chat = HotelChat(args.agent_model_name or config.llm_model, config.openai_api_key)
-    asyncio.run(
-        run_duet(
+    result = asyncio.run(
+        run_simulation(
             scenario=scenario,
             chat=hotel_chat,
             max_turns_scenario=args.max_turns_scenario,
@@ -71,6 +73,19 @@ def main() -> None:
             personality=personality,
         )
     )
+
+    # Print summary
+    print("\n=== Simulation Summary ===")
+    print(f"Status: {result.status.value}")
+    print(f"Tasks completed: {result.metrics.tasks_completed}/{result.metrics.total_tasks}")
+    print(f"Success rate: {result.metrics.success_rate:.1%}")
+    print(f"Total turns: {result.metrics.total_turns}")
+
+    # Save to JSON if requested
+    if args.output_json:
+        with open(args.output_json, "w") as f:
+            json.dump(result.to_dict(), f, indent=2)
+        print(f"\nResults saved to: {args.output_json}")
 
 
 if __name__ == "__main__":

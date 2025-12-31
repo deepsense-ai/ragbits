@@ -3,6 +3,8 @@
 ## Unreleased
 - Change auth backend from jwt to http-only cookie based authentication, add support for OAuth2 authentication (#867)
 
+- Make `SummaryGenerator` optional in `ChatInterface` by providing a default Heuristic implementation.
+- Refactor ragbits-client types to remove excessive use of any (#881)
 - Split params into path params, query params in API client (#871)
 - Fix bug causing conversation not to be selected when navigating to it from url(#872)
 - CI/CD for nightly npm builds, update ragbits-api-client-react deps to install latest version of the @ragbits/api-client (#873)
@@ -15,6 +17,7 @@
 
 ### Added
 
+- Make `SummaryGenerator` optional in `ChatInterface` by providing a default no-op implementation.
 - Add automatic topic extraction to be used as conversation title with ability to edit in the client side (#840)
 - Add todo list component to the UI, add support for todo events in API (#827)
 - Add custom response type to the chat interface with full type safety and validation (#849)

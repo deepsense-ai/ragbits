@@ -1,7 +1,6 @@
 import logging
 import secrets
 import uuid
-from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, timezone
 from typing import Any, cast
 from urllib.parse import urlencode
@@ -10,7 +9,7 @@ import bcrypt
 import httpx
 
 from ragbits.chat.auth.base import AuthenticationBackend, AuthenticationResponse, AuthOptions
-from ragbits.chat.auth.oauth2_providers import DiscordOAuth2Provider, OAuth2Provider
+from ragbits.chat.auth.oauth2_providers import OAuth2Provider
 from ragbits.chat.auth.types import OAuth2Credentials, Session, SessionStore, User, UserCredentials
 
 logger = logging.getLogger(__name__)
@@ -289,6 +288,7 @@ class OAuth2AuthenticationBackend(AuthenticationBackend):
 
             ```python
             import asyncio
+
 
             async def cleanup_loop():
                 while True:

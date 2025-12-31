@@ -36,10 +36,8 @@ export interface StreamCallbacks<T, E = Error> {
 }
 
 export interface EndpointDefinition<
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Req = any,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    Res = any,
+    Req = unknown,
+    Res = unknown,
     PathParams = never,
     QueryParams = never,
 > {
@@ -74,25 +72,29 @@ export interface BaseStreamingEndpoints {
     '/api/chat': EndpointDefinition<ChatRequest, ChatResponse>
 }
 
+type AnyEndpointDefinition = EndpointDefinition<
+    unknown,
+    unknown,
+    unknown,
+    unknown
+>
+
+export type AnyEndpoints<T> = {
+    [K in keyof T]: AnyEndpointDefinition
+}
+
 /**
  * Extract endpoint paths as a union type
  */
-export type EndpointPath<
-    Endpoints extends {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
-    },
-> = keyof Endpoints
+export type EndpointPath<Endpoints extends AnyEndpoints<Endpoints>> =
+    keyof Endpoints
 
 /**
  * Extract request type for a specific API endpoint
  */
 export type EndpointRequest<
     URL extends keyof Endpoints,
-    Endpoints extends {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
-    },
+    Endpoints extends AnyEndpoints<Endpoints>,
 > = Endpoints[URL]['request']
 
 /**
@@ -100,10 +102,7 @@ export type EndpointRequest<
  */
 export type EndpointResponse<
     URL extends keyof Endpoints,
-    Endpoints extends {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
-    },
+    Endpoints extends AnyEndpoints<Endpoints>,
 > = Endpoints[URL]['response']
 
 /**
@@ -111,10 +110,7 @@ export type EndpointResponse<
  */
 export type EndpointMethod<
     URL extends keyof Endpoints,
-    Endpoints extends {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
-    },
+    Endpoints extends AnyEndpoints<Endpoints>,
 > = Endpoints[URL]['method']
 
 /**
@@ -124,8 +120,7 @@ export type EndpointMethod<
  */
 export type HasRequiredKeys<T> = [T] extends [never]
     ? false
-    : // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-      {} extends T
+    : NonNullable<unknown> extends T
       ? false
       : true
 
@@ -139,10 +134,7 @@ export type HasRequiredKeys<T> = [T] extends [never]
  */
 export type RequestOptions<
     URL extends keyof Endpoints,
-    Endpoints extends {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
-    },
+    Endpoints extends AnyEndpoints<Endpoints>,
 > = {
     method?: Endpoints[URL]['method']
     headers?: Record<string, string>
@@ -179,10 +171,7 @@ export type IsRequired<T> = [T] extends [never]
  */
 export type HasRequiredParams<
     URL extends keyof Endpoints,
-    Endpoints extends {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
-    },
+    Endpoints extends AnyEndpoints<Endpoints>,
 > = Endpoints[URL]['pathParams'] extends never
     ? HasRequiredKeys<Endpoints[URL]['queryParams']> extends true
         ? true
@@ -199,10 +188,7 @@ export type HasRequiredParams<
  */
 export type MakeRequestOptions<
     URL extends keyof Endpoints,
-    Endpoints extends {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        [K in keyof Endpoints]: EndpointDefinition<any, any, any, any>
-    },
+    Endpoints extends AnyEndpoints<Endpoints>,
 > =
     HasRequiredParams<URL, Endpoints> extends true
         ? [options: RequestOptions<URL, Endpoints>]

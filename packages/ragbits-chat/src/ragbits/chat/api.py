@@ -105,49 +105,9 @@ class RagbitsAPI:
             # Start background cleanup tasks for session and OAuth state management
             cleanup_tasks: list[asyncio.Task] = []
 
-            # Session cleanup task
-            if (
-                self.auth_backend
-                and hasattr(self.auth_backend, "session_store")
-                and hasattr(self.auth_backend.session_store, "cleanup_expired_sessions")
-            ):
-
-                async def session_cleanup_loop() -> None:
-                    while True:
-                        await asyncio.sleep(3600)  # Run every hour
-                        try:
-                            removed = self.auth_backend.session_store.cleanup_expired_sessions()  # type: ignore
-                            if removed > 0:
-                                logger.info(f"Cleaned up {removed} expired sessions")
-                        except Exception as e:
-                            logger.exception(f"Error during session cleanup: {e}")
-
-                cleanup_tasks.append(asyncio.create_task(session_cleanup_loop()))
-
-            # OAuth state cleanup task
             if self.auth_backend:
-                oauth2_backends = []
-                if isinstance(self.auth_backend, MultiAuthenticationBackend):
-                    oauth2_backends = self.auth_backend.get_oauth2_backends()
-                elif isinstance(self.auth_backend, OAuth2AuthenticationBackend):
-                    oauth2_backends = [self.auth_backend]
-
-                if oauth2_backends:
-
-                    async def oauth_state_cleanup_loop() -> None:
-                        while True:
-                            await asyncio.sleep(600)  # Run every 10 minutes
-                            try:
-                                total_removed = 0
-                                for backend in oauth2_backends:
-                                    removed = backend.cleanup_expired_states()
-                                    total_removed += removed
-                                if total_removed > 0:
-                                    logger.info(f"Cleaned up {total_removed} expired OAuth2 state tokens")
-                            except Exception as e:
-                                logger.exception(f"Error during OAuth state cleanup: {e}")
-
-                    cleanup_tasks.append(asyncio.create_task(oauth_state_cleanup_loop()))
+                cleanup_tasks.append(asyncio.create_task(self._session_cleanup_loop()))
+                cleanup_tasks.append(asyncio.create_task(self._oauth_state_cleanup_loop()))
 
             yield
 
@@ -1062,3 +1022,42 @@ class RagbitsAPI:
                 css_lines.append(f"  --heroui-{color_name}: {color_value};")
 
         return css_lines
+
+    async def _session_cleanup_loop(self) -> None:
+        if (
+            not self.auth_backend
+            or not hasattr(self.auth_backend, "session_store")
+            or not hasattr(self.auth_backend.session_store, "cleanup_expired_sessions")
+        ):
+            return
+
+        while True:
+            await asyncio.sleep(3600)  # Run every hour
+            try:
+                removed = self.auth_backend.session_store.cleanup_expired_sessions()  # type: ignore
+                if removed > 0:
+                    logger.info(f"Cleaned up {removed} expired sessions")
+            except Exception as e:
+                logger.exception(f"Error during session cleanup: {e}")
+
+    async def _oauth_state_cleanup_loop(self) -> None:
+        oauth2_backends = []
+        if isinstance(self.auth_backend, MultiAuthenticationBackend):
+            oauth2_backends = self.auth_backend.get_oauth2_backends()
+        elif isinstance(self.auth_backend, OAuth2AuthenticationBackend):
+            oauth2_backends = [self.auth_backend]
+
+        if not oauth2_backends:
+            return
+
+        while True:
+            await asyncio.sleep(600)  # Run every 10 minutes
+            try:
+                total_removed = 0
+                for backend in oauth2_backends:
+                    removed = backend.cleanup_expired_states()
+                    total_removed += removed
+                if total_removed > 0:
+                    logger.info(f"Cleaned up {total_removed} expired OAuth2 state tokens")
+            except Exception as e:
+                logger.exception(f"Error during OAuth state cleanup: {e}")
