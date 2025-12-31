@@ -13,26 +13,25 @@ export default function LogoutButton() {
     },
     method: "POST",
   });
-  const logut = useStore(authStore, (s) => s.logout);
-  const token = useStore(authStore, (s) => s.token?.access_token);
+  const logout = useStore(authStore, (s) => s.logout);
+  const isAuthenticated = useStore(authStore, (s) => s.isAuthenticated);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
-    if (!token) {
+    if (!isAuthenticated) {
       navigate("/login");
       return;
     }
 
     try {
-      const response = await logoutRequestFactory.call({
-        body: { token },
-      });
+      // No body needed - session is in HTTP-only cookie
+      const response = await logoutRequestFactory.call();
 
       if (!response.success) {
         return;
       }
 
-      logut();
+      logout();
       navigate("/login");
     } catch (e) {
       console.error("Failed to logout", e);

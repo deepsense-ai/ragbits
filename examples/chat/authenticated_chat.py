@@ -1,16 +1,49 @@
-"""
+r"""
 Ragbits Chat Example: Authenticated Chat Interface
 
 This example demonstrates how to use the `AuthenticatedChatInterface` to create a chat application
 with user authentication. It showcases different response types while ensuring only authenticated
 users can access the chat functionality.
 
-To run the script using preferred components run:
+## Running with Credentials Authentication (ListAuthenticationBackend)
+
+To run with username/password authentication:
 
     ```bash
     uv run ragbits api run examples.chat.authenticated_chat:MyAuthenticatedChat
      --auth examples.chat.authenticated_chat:get_auth_backend
     ```
+
+Test users:
+- Username: admin, Password: admin123
+- Username: alice, Password: alice123
+
+## Running with Discord OAuth2 Authentication
+
+To run with Discord OAuth2 authentication:
+
+    ```bash
+    export DISCORD_CLIENT_ID="your_client_id_here"
+    export DISCORD_CLIENT_SECRET="your_client_secret_here"
+    uv run ragbits api run examples.chat.authenticated_chat:MyAuthenticatedChat \\
+     --auth examples.chat.authenticated_chat:get_discord_auth_backend
+    ```
+
+## Running with Multiple Authentication Methods
+
+To run with both credentials and Discord OAuth2:
+
+    ```bash
+    export DISCORD_CLIENT_ID="your_client_id_here"
+    export DISCORD_CLIENT_SECRET="your_client_secret_here"
+    uv run ragbits api run examples.chat.authenticated_chat:MyAuthenticatedChat \\
+     --auth examples.chat.authenticated_chat:get_multi_auth_backend
+    ```
+
+Prerequisites for OAuth2:
+1. Create a Discord application at https://discord.com/developers/applications
+2. Add redirect URI: http://localhost:8000/api/auth/callback/discord
+3. Set environment variables DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET
 
 The preferred components approach allows the CLI to automatically use your configured authentication
 backend while keeping the ChatInterface class focused on its core functionality.
@@ -27,6 +60,9 @@ import asyncio
 from collections.abc import AsyncGenerator
 
 from ragbits.chat.auth import ListAuthenticationBackend
+from ragbits.chat.auth.backends import MultiAuthenticationBackend, OAuth2AuthenticationBackend
+from ragbits.chat.auth.oauth2_providers import DiscordOAuth2Provider
+from ragbits.chat.auth.session_store import InMemorySessionStore
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
 from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
@@ -232,4 +268,57 @@ def get_auth_backend() -> ListAuthenticationBackend:
         },
     ]
 
-    return ListAuthenticationBackend(users)
+    return ListAuthenticationBackend(
+        users=users,
+        session_store=InMemorySessionStore(),
+    )
+
+
+def get_discord_auth_backend() -> OAuth2AuthenticationBackend:
+    """
+    Factory function to create Discord OAuth2 authentication backend.
+
+    This backend uses Discord OAuth2 for authentication. Users sign in with their Discord account.
+
+    Prerequisites:
+    1. Create a Discord application at https://discord.com/developers/applications
+    2. Set redirect URI to: http://localhost:8000/api/auth/callback/discord
+    3. Set environment variables:
+       - DISCORD_CLIENT_ID: Your Discord application client ID
+       - DISCORD_CLIENT_SECRET: Your Discord application client secret
+
+    OAuth2 Flow:
+    1. User clicks "Sign in with Discord" button
+    2. User is redirected to Discord to authorize
+    3. Discord redirects back to /api/auth/callback/discord with authorization code
+    4. Backend exchanges code for access token
+    5. Backend fetches user info from Discord API
+    6. Backend creates session and authenticates user
+
+    Note: The redirect_uri is automatically set to the provider-specific endpoint.
+    If you need a custom redirect_uri, you can pass it explicitly or set OAUTH2_REDIRECT_URI env var.
+    """
+    # Credentials and redirect_uri are automatically read from environment variables:
+    # DISCORD_CLIENT_ID, DISCORD_CLIENT_SECRET, and optionally OAUTH2_REDIRECT_URI
+    # If not set, redirect_uri defaults to http://localhost:8000/api/auth/callback/discord
+    return OAuth2AuthenticationBackend(
+        session_store=InMemorySessionStore(),
+        provider=DiscordOAuth2Provider(),
+    )
+
+
+def get_multi_auth_backend() -> MultiAuthenticationBackend:
+    """
+    Factory function to create a multi-authentication backend.
+
+    This backend supports both credentials-based authentication and Discord OAuth2,
+    allowing users to choose their preferred login method.
+
+    The frontend will automatically show both login options based on the backend configuration.
+    """
+    return MultiAuthenticationBackend(
+        backends=[
+            get_auth_backend(),  # Credentials-based authentication
+            get_discord_auth_backend(),  # Discord OAuth2 authentication
+        ]
+    )
