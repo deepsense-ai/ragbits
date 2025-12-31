@@ -2,6 +2,7 @@ import { Button } from "@heroui/react";
 import { useRagbitsCall } from "@ragbits/api-client-react";
 import { useCallback, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import DOMPurify from "isomorphic-dompurify";
 import type { OAuth2VisualConfig } from "../plugins/OAuth2LoginPlugin";
 
 interface OAuth2LoginProps {
@@ -56,11 +57,14 @@ export default function OAuth2Login({
   // Render icon from SVG string provided by backend
   const renderIcon = useMemo(() => {
     if (isLoading || !visualConfig?.iconSvg) return null;
-    // Render the SVG string from the backend
+    // Sanitize the SVG string from the backend to prevent XSS attacks
+    const sanitizedSvg = DOMPurify.sanitize(visualConfig.iconSvg, {
+      USE_PROFILES: { svg: true },
+    });
     return (
       <span
         className="flex items-center justify-center"
-        dangerouslySetInnerHTML={{ __html: visualConfig.iconSvg }}
+        dangerouslySetInnerHTML={{ __html: sanitizedSvg }}
       />
     );
   }, [isLoading, visualConfig?.iconSvg]);

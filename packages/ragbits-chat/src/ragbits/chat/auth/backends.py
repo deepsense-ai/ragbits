@@ -10,6 +10,7 @@ import bcrypt
 import httpx
 
 from ragbits.chat.auth.base import AuthenticationBackend, AuthenticationResponse, AuthOptions
+from ragbits.chat.auth.oauth2_providers import DiscordOAuth2Provider, OAuth2Provider
 from ragbits.chat.auth.types import OAuth2Credentials, Session, SessionStore, User, UserCredentials
 
 logger = logging.getLogger(__name__)
@@ -157,108 +158,6 @@ class ListAuthenticationBackend(AuthenticationBackend):
         return success
 
 
-class OAuth2Provider(ABC):
-    """Abstract base class for OAuth2 providers."""
-
-    @property
-    @abstractmethod
-    def name(self) -> str:
-        """Provider name (e.g., 'discord')."""
-        pass
-
-    @property
-    @abstractmethod
-    def display_name(self) -> str:
-        """Provider display name (e.g., 'Discord')."""
-        pass
-
-    @property
-    @abstractmethod
-    def authorize_url(self) -> str:
-        """OAuth2 authorization endpoint."""
-        pass
-
-    @property
-    @abstractmethod
-    def token_url(self) -> str:
-        """OAuth2 token exchange endpoint."""
-        pass
-
-    @property
-    @abstractmethod
-    def user_info_url(self) -> str:
-        """User info endpoint."""
-        pass
-
-    @property
-    @abstractmethod
-    def scope(self) -> str:
-        """OAuth2 scopes to request."""
-        pass
-
-    @abstractmethod
-    def create_user_from_data(self, user_data: dict[str, Any]) -> User:
-        """
-        Create a User object from provider-specific user data.
-
-        Args:
-            user_data: Raw user data from the provider
-
-        Returns:
-            User object
-        """
-        pass
-
-
-class DiscordOAuth2Provider(OAuth2Provider):
-    """Discord OAuth2 provider implementation."""
-
-    @property
-    def name(self) -> str:
-        """Return the provider name."""
-        return "discord"
-
-    @property
-    def display_name(self) -> str:
-        """Return the provider display name."""
-        return "Discord"
-
-    @property
-    def authorize_url(self) -> str:
-        """Return the OAuth2 authorization URL."""
-        return "https://discord.com/api/oauth2/authorize"
-
-    @property
-    def token_url(self) -> str:
-        """Return the OAuth2 token exchange URL."""
-        return "https://discord.com/api/oauth2/token"
-
-    @property
-    def user_info_url(self) -> str:
-        """Return the user info API URL."""
-        return "https://discord.com/api/users/@me"
-
-    @property
-    def scope(self) -> str:
-        """Return the OAuth2 scope to request."""
-        return "identify email"
-
-    def create_user_from_data(self, user_data: dict[str, Any]) -> User:  # noqa: PLR6301
-        """Create User object from Discord data."""
-        return User(
-            user_id=f"discord_{user_data['id']}",
-            username=user_data.get("username", ""),
-            email=user_data.get("email"),
-            full_name=user_data.get("global_name"),
-            roles=["user"],
-            metadata={
-                "provider": "discord",
-                "avatar": user_data.get("avatar"),
-                "discriminator": user_data.get("discriminator"),
-            },
-        )
-
-
 class OAuth2AuthenticationBackend(AuthenticationBackend):
     """Generic OAuth2 authentication backend supporting multiple providers."""
 
@@ -374,6 +273,47 @@ class OAuth2AuthenticationBackend(AuthenticationBackend):
         del self.pending_states[state]
         logger.debug("OAuth2 state verified successfully")
         return True
+
+    def cleanup_expired_states(self) -> int:
+        """
+        Remove expired state tokens from storage.
+
+        This method removes state tokens that are older than 10 minutes to prevent
+        memory leaks from abandoned OAuth2 flows.
+
+        Returns:
+            Number of state tokens removed
+
+        Example:
+            To schedule periodic cleanup:
+
+            ```python
+            import asyncio
+
+            async def cleanup_loop():
+                while True:
+                    await asyncio.sleep(600)  # Run every 10 minutes
+                    removed = oauth2_backend.cleanup_expired_states()
+                    if removed > 0:
+                        logger.info(f"Cleaned up {removed} expired OAuth2 states")
+            ```
+        """
+        now = datetime.now(timezone.utc)
+        states_to_remove = []
+
+        # Find expired states (older than 10 minutes)
+        for state, created_at in list(self.pending_states.items()):
+            if now - created_at > timedelta(minutes=10):
+                states_to_remove.append(state)
+
+        # Remove expired states
+        for state in states_to_remove:
+            self.pending_states.pop(state, None)
+
+        if states_to_remove:
+            logger.info("Cleaned up %d expired OAuth2 state tokens", len(states_to_remove))
+
+        return len(states_to_remove)
 
     async def exchange_code_for_token(self, code: str) -> str | None:
         """
