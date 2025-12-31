@@ -35,7 +35,7 @@ describe("LogoutButton", () => {
     (useRagbitsCall as Mock).mockReturnValue({ call: callMock });
     (useStore as Mock).mockImplementation(
       (_: unknown, selector: (...args: unknown[]) => unknown) =>
-        selector({ logout: logoutMock, token: { access_token: "token-123" } }),
+        selector({ logout: logoutMock, isAuthenticated: true }),
     );
     (useNavigate as Mock).mockReturnValue(navigateMock);
   });
@@ -51,23 +51,23 @@ describe("LogoutButton", () => {
     expect(screen.getByLabelText("Logout")).toBeInTheDocument();
   });
 
-  it("calls API, logout, and navigates when token exists", async () => {
+  it("calls API, logout, and navigates when authenticated", async () => {
     render(<LogoutButton />);
     const button = screen.getByTestId("logout-button");
 
     await user.click(button);
 
     await waitFor(() => {
-      expect(callMock).toHaveBeenCalledWith({ body: { token: "token-123" } });
+      expect(callMock).toHaveBeenCalledWith();
       expect(logoutMock).toHaveBeenCalled();
       expect(navigateMock).toHaveBeenCalledWith("/login");
     });
   });
 
-  it("navigates directly when no token", async () => {
+  it("navigates directly when not authenticated", async () => {
     (useStore as Mock).mockImplementation(
       (_: unknown, selector: (...args: unknown[]) => unknown) =>
-        selector({ logout: logoutMock, token: null }),
+        selector({ logout: logoutMock, isAuthenticated: false }),
     );
 
     render(<LogoutButton />);
@@ -81,27 +81,35 @@ describe("LogoutButton", () => {
     });
   });
 
-  it("does not logout or navigate if API returns success=false", async () => {
+  it("does not logout locally if API returns success=false", async () => {
     callMock.mockResolvedValueOnce({ success: false });
     render(<LogoutButton />);
     const button = screen.getByTestId("logout-button");
     await user.click(button);
 
     await waitFor(() => {
-      expect(logoutMock).not.toHaveBeenCalled();
-      expect(navigateMock).not.toHaveBeenCalled();
+      expect(callMock).toHaveBeenCalled();
     });
+
+    // Wait a bit more to ensure logout/navigate are not called
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(logoutMock).not.toHaveBeenCalled();
+    expect(navigateMock).not.toHaveBeenCalled();
   });
 
-  it("handles API failure without throwing", async () => {
+  it("does not logout locally if API fails", async () => {
     callMock.mockRejectedValueOnce(new Error("API failed"));
     render(<LogoutButton />);
     const button = screen.getByTestId("logout-button");
     await user.click(button);
 
     await waitFor(() => {
-      expect(logoutMock).not.toHaveBeenCalled();
-      expect(navigateMock).not.toHaveBeenCalled();
+      expect(callMock).toHaveBeenCalled();
     });
+
+    // Wait a bit more to ensure logout/navigate are not called
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    expect(logoutMock).not.toHaveBeenCalled();
+    expect(navigateMock).not.toHaveBeenCalled();
   });
 });

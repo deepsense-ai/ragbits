@@ -16,6 +16,7 @@
     "test": "npm run test:run --workspaces --if-present",
     "test:integration": "npm run test:integration --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
-    "format": "npm run format --workspaces --if-present"
+    "format": "npm run format --workspaces --if-present",
+    "generate:types": "uv run python scripts/generate_typescript_from_json_schema.py"
   }
 }

@@ -14,6 +14,7 @@ export interface Plugin<
   components: T;
   routes?: PluginRoute[];
   routeWrappers?: PluginRouteWrapper[];
+  metadata?: Record<string, unknown>;
 }
 
 export interface PluginRoute {
