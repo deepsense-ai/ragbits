@@ -62,38 +62,13 @@ members = [
     "packages/ragbits-agents",
 ]
 
-[tool.pytest]
-norecursedirs = [
-    '.git',
-    '.tox',
-    '.env',
-    'dist',
-    'build',
-    'migrations',
-    'docker',
-    'config',
-    'notebooks',
-    'research',
-]
-python_files = ['test_*.py']
-addopts = [
-    '-ra',
-    '--showlocals',
-    '--strict-markers',
-    '--ignore=docs/conf.py',
-    '--ignore=setup.py',
-    '--ignore=ci',
-    '--ignore=.eggs',
-    '--doctest-modules',
-    '--doctest-glob=\*.rst',
-    '--tb=short',
-]
-
 [tool.pytest.ini_options]
-addopts = "--import-mode=importlib"
+norecursedirs = ".git .tox .env dist build migrations docker config notebooks research scripts examples"
+python_files = "test_*.py"
+addopts = "--import-mode=importlib -ra --showlocals --strict-markers --ignore=docs/conf.py --ignore=setup.py --ignore=ci --ignore=.eggs --doctest-modules --doctest-glob=*.rst --tb=short "
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-pythonpath = ["./"]
+pythonpath = "./"
 
 [tool.coverage.run]
 omit = [
