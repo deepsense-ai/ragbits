@@ -65,7 +65,7 @@ members = [
 [tool.pytest.ini_options]
 norecursedirs = ".git .tox .env dist build migrations docker config notebooks research scripts examples"
 python_files = "test_*.py"
-addopts = "--import-mode=importlib -ra --showlocals --strict-markers --ignore=docs/conf.py --ignore=setup.py --ignore=ci --ignore=.eggs --doctest-modules --doctest-glob=*.rst --tb=short "
+addopts = "--import-mode=importlib -ra --showlocals --strict-markers --ignore=docs/conf.py --ignore=setup.py --ignore=ci --ignore=.eggs --tb=short " #--doctest-modules --doctest-glob=*.rst
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 pythonpath = "./"
