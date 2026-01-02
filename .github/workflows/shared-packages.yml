@@ -154,7 +154,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v2
         with:
-          version: "0.4.20"
+          version: ${{ vars.UV_VERSION || '0.6.9' }}
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
