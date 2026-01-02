@@ -74,9 +74,14 @@ logfire = [
     "opentelemetry-api>=1.27.0,<2.0.0",
 ]
 phoenix = [
+<<<<<<< HEAD
     "arize-phoenix>=12.0.0",
     "openinference-instrumentation>=0.1.41",
     "openinference-semantic-conventions>=0.1.25",
+=======
+    "arize-phoenix>=4.0.0,<5.0.0",
+    "openinference-instrumentation>=0.1.0,<1.0.0",
+>>>>>>> 2477c2433 (feat: add Arize Phoenix tracing integration)
 ]
 qdrant = [
     "qdrant-client>=1.12.1,<2.0.0",
