@@ -25,13 +25,13 @@ def test_no_object():
     Args:
         cli_runner: A CLI runner fixture.
     """
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(ds_app, ["search"])
     assert "You need to provide the document search instance to be used" in result.stderr
 
 
 def test_search():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(
         ds_app,
         ["--factory-path", factory_path, "search", "example query"],
@@ -43,7 +43,7 @@ def test_search():
 
 
 def test_search_limit():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(
         ds_app,
         ["--factory-path", factory_path, "search", "--k", "2", "example query"],
@@ -55,7 +55,7 @@ def test_search_limit():
 
 
 def test_search_columns():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(
         ds_app,
         ["--factory-path", factory_path, "search", "example query", "--columns", "document_meta,location"],
@@ -70,7 +70,7 @@ def test_search_columns():
 
 
 def test_search_nested_columns():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(
         ds_app,
         [
@@ -93,7 +93,7 @@ def test_search_nested_columns():
 
 
 def test_search_columns_non_existent():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(
         ds_app,
         [
@@ -110,7 +110,7 @@ def test_search_columns_non_existent():
 
 
 def test_search_nested_columns_non_existent():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(
         ds_app,
         [
@@ -128,7 +128,7 @@ def test_search_nested_columns_non_existent():
 
 def test_search_json():
     autoregister()
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(
         root_app,
         [

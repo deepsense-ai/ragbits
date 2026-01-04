@@ -20,16 +20,14 @@ def get_flight_info(departure: str, arrival: str) -> str:
         A JSON string with mock flight details.
     """
     if "new york" in departure.lower() and "paris" in arrival.lower():
-        return json.dumps(
-            {
-                "from": "New York",
-                "to": "Paris",
-                "flights": [
-                    {"airline": "British Airways", "departure": "10:00 AM", "arrival": "10:00 PM"},
-                    {"airline": "Delta", "departure": "1:00 PM", "arrival": "1:00 AM"},
-                ],
-            }
-        )
+        return json.dumps({
+            "from": "New York",
+            "to": "Paris",
+            "flights": [
+                {"airline": "British Airways", "departure": "10:00 AM", "arrival": "10:00 PM"},
+                {"airline": "Delta", "departure": "1:00 PM", "arrival": "1:00 AM"},
+            ],
+        })
 
     return json.dumps({"from": departure, "to": arrival, "flights": "No flight data available"})
 

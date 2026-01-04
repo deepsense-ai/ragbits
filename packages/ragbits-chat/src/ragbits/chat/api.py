@@ -146,16 +146,17 @@ class RagbitsAPI:
                 credentials: HTTPAuthorizationCredentials | None = security_dependency,
             ) -> JSONResponse:
                 return await self._handle_feedback(request, credentials)
+
         else:
 
             @self.app.post("/api/chat", response_class=StreamingResponse)
-            async def chat_message(
+            async def chat_message(  # type: ignore[misc]
                 request: ChatMessageRequest,
             ) -> StreamingResponse:
                 return await self._handle_chat_message(request, None)
 
             @self.app.post("/api/feedback", response_class=JSONResponse)
-            async def feedback(
+            async def feedback(  # type: ignore[misc]
                 request: FeedbackRequest,
             ) -> JSONResponse:
                 return await self._handle_feedback(request, None)
@@ -566,14 +567,12 @@ class RagbitsAPI:
                 # Normal processing for:
                 # - Non-image responses
                 # - Regular URL images (https://..., http://..., /path/to/image.jpg)
-                data = json.dumps(
-                    {
-                        "type": response.type.value,
-                        "content": response_to_send.model_dump()
-                        if isinstance(response_to_send, BaseModel)
-                        else response_to_send,
-                    }
-                )
+                data = json.dumps({
+                    "type": response.type.value,
+                    "content": response_to_send.model_dump()
+                    if isinstance(response_to_send, BaseModel)
+                    else response_to_send,
+                })
                 yield f"data: {data}\n\n"
         finally:
             # Track streaming metrics

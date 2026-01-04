@@ -56,20 +56,14 @@ class DocumentSearchMetric(Metric[DocumentSearchResult], ABC):
         Returns:
             The computed metric.
         """
-        return self.metric.aggregate(
-            [
-                self.metric(
-                    [
-                        element.text_representation
-                        for element in result.predicted_elements
-                        if element.text_representation
-                    ],
-                    result.reference_passages,
-                )
-                for result in results
-                if result.reference_passages is not None
-            ]
-        )
+        return self.metric.aggregate([
+            self.metric(
+                [element.text_representation for element in result.predicted_elements if element.text_representation],
+                result.reference_passages,
+            )
+            for result in results
+            if result.reference_passages is not None
+        ])
 
 
 class DocumentSearchPrecisionRecallF1(DocumentSearchMetric):

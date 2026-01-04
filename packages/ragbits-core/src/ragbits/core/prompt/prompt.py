@@ -79,7 +79,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         env = Environment(autoescape=True)
         ast = env.parse(template)
         template_variables = meta.find_undeclared_variables(ast)
-        input_fields = cls.input_type.model_fields.keys() if cls.input_type else set()
+        input_fields = cls.input_type.model_fields.keys() if cls.input_type else set()  # type: ignore[attr-defined]
         additional_variables = template_variables - input_fields
         if additional_variables:
             raise ValueError(f"Template uses variables that are not present in the input type: {additional_variables}")
@@ -104,12 +104,10 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
             for field in image_input_fields:
                 if image_for_field := getattr(input_data, field):
                     iter_image = [image_for_field] if isinstance(image_for_field, (str | bytes)) else image_for_field
-                    attachments.extend(
-                        [
-                            Attachment(url=image) if isinstance(image, str) else Attachment(data=image)
-                            for image in iter_image
-                        ]
-                    )
+                    attachments.extend([
+                        Attachment(url=image) if isinstance(image, str) else Attachment(data=image)
+                        for image in iter_image
+                    ])
             for value in input_data.__dict__.values():
                 if isinstance(value, Attachment):
                     attachments.append(value)

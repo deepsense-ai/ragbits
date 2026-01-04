@@ -20,32 +20,26 @@ def get_hotel_recommendations(city: str) -> str:
     city_lower = city.lower()
 
     if "paris" in city_lower:
-        return json.dumps(
-            {
-                "city": "Paris",
-                "hotels": [
-                    {"name": "Hotel Le Meurice", "rating": 5, "price_per_night": 450},
-                    {"name": "Hotel Regina Louvre", "rating": 4, "price_per_night": 300},
-                ],
-            }
-        )
+        return json.dumps({
+            "city": "Paris",
+            "hotels": [
+                {"name": "Hotel Le Meurice", "rating": 5, "price_per_night": 450},
+                {"name": "Hotel Regina Louvre", "rating": 4, "price_per_night": 300},
+            ],
+        })
     elif "rome" in city_lower:
-        return json.dumps(
-            {
-                "city": "Rome",
-                "hotels": [
-                    {"name": "Hotel Eden", "rating": 5, "price_per_night": 400},
-                    {"name": "Hotel Artemide", "rating": 4, "price_per_night": 250},
-                ],
-            }
-        )
+        return json.dumps({
+            "city": "Rome",
+            "hotels": [
+                {"name": "Hotel Eden", "rating": 5, "price_per_night": 400},
+                {"name": "Hotel Artemide", "rating": 4, "price_per_night": 250},
+            ],
+        })
     else:
-        return json.dumps(
-            {
-                "city": city,
-                "hotels": "No hotel data available",
-            }
-        )
+        return json.dumps({
+            "city": city,
+            "hotels": "No hotel data available",
+        })
 
 
 class HotelPromptInput(BaseModel):

@@ -113,13 +113,11 @@ class AgentOrchestrator(Agent):
         tasks = json.loads(response)
         self._current_tasks = [RemoteAgentTask(**task) for task in tasks]
 
-        return json.dumps(
-            {
-                "status": "success",
-                "task_count": len(self._current_tasks),
-                "tasks": [task.dict() for task in self._current_tasks],
-            }
-        )
+        return json.dumps({
+            "status": "success",
+            "task_count": len(self._current_tasks),
+            "tasks": [task.dict() for task in self._current_tasks],
+        })
 
     async def execute_agent_task(self, task_index: int) -> str:
         """
@@ -142,13 +140,11 @@ class AgentOrchestrator(Agent):
         if result.tool_calls:
             tool_calls = [{"name": tc.name, "arguments": tc.arguments, "output": tc.result} for tc in result.tool_calls]
 
-        return json.dumps(
-            {
-                "status": "success",
-                "agent_url": task.agent_url,
-                "result": {"content": result.content, "metadata": result.metadata, "tool_calls": tool_calls},
-            }
-        )
+        return json.dumps({
+            "status": "success",
+            "agent_url": task.agent_url,
+            "result": {"content": result.content, "metadata": result.metadata, "tool_calls": tool_calls},
+        })
 
     async def summarize_agent_results(self, message: str) -> str:
         """

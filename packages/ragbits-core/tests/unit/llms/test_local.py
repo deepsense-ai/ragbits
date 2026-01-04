@@ -35,15 +35,16 @@ def mock_tokenizer():
     tokenizer.eos_token_id = 2
     tokenizer._pad_token_type_id = PADDING_VALUE
 
-    def _apply_chat_template(template: list[dict], **kwargs) -> dict[str, torch.Tensor]:
+    def _apply_chat_template(template: list[dict], **kwargs) -> BatchEncoding:
         output: dict[str, list[list[int]]] = {"input_ids": [], "attention_mask": []}
         n_rows = len(template)
         for idx in range(1, n_rows + 1):
             output["input_ids"].append([INPUT_VALUE] * idx + [PADDING_VALUE] * (n_rows - idx))
             output["attention_mask"].append([1] * idx + [0] * (n_rows - idx))
-        return BatchEncoding(
-            {"input_ids": torch.tensor(output["input_ids"]), "attention_mask": torch.tensor(output["attention_mask"])}
-        )
+        return BatchEncoding({
+            "input_ids": torch.tensor(output["input_ids"]),
+            "attention_mask": torch.tensor(output["attention_mask"]),
+        })
 
     tokenizer.apply_chat_template = MagicMock(side_effect=_apply_chat_template)
     tokenizer.get_chat_template = MagicMock()

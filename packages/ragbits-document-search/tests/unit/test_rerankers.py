@@ -31,42 +31,36 @@ def test_custom_reranker_from_config() -> None:
 
 
 def test_litellm_reranker_from_config() -> None:
-    reranker = LiteLLMReranker.from_config(
-        {
-            "model": "test-provder/test-model",
-            "default_options": {
-                "top_n": 2,
-                "max_chunks_per_doc": None,
-            },
-        }
-    )
+    reranker = LiteLLMReranker.from_config({
+        "model": "test-provder/test-model",
+        "default_options": {
+            "top_n": 2,
+            "max_chunks_per_doc": None,
+        },
+    })
 
     assert reranker.model == "test-provder/test-model"  # type: ignore
     assert reranker.default_options == LiteLLMRerankerOptions(top_n=2, max_chunks_per_doc=None)
 
 
 def test_aswerdotai_reranker_from_config() -> None:
-    reranker = AnswerAIReranker.from_config(
-        {
-            "model": "cross-encoder",
-            "default_options": {
-                "top_n": 2,
-            },
-        }
-    )
+    reranker = AnswerAIReranker.from_config({
+        "model": "cross-encoder",
+        "default_options": {
+            "top_n": 2,
+        },
+    })
 
     assert reranker.model == "cross-encoder"  # type: ignore
     assert reranker.default_options == RerankerOptions(top_n=2)
 
 
 def test_reciprocal_rank_fusion_reranker_from_config() -> None:
-    reranker = ReciprocalRankFusionReranker.from_config(
-        {
-            "default_options": {
-                "top_n": 2,
-            },
-        }
-    )
+    reranker = ReciprocalRankFusionReranker.from_config({
+        "default_options": {
+            "top_n": 2,
+        },
+    })
 
     assert reranker.default_options == RerankerOptions(top_n=2)
 
@@ -192,16 +186,14 @@ async def test_reciprocal_rank_fusion_reranker_rerank() -> None:
 
 
 def test_subclass_from_config() -> None:
-    config = ObjectConstructionConfig.model_validate(
-        {
-            "type": "ragbits.document_search.retrieval.rerankers:NoopReranker",
-            "config": {
-                "default_options": {
-                    "top_n": 12,
-                },
+    config = ObjectConstructionConfig.model_validate({
+        "type": "ragbits.document_search.retrieval.rerankers:NoopReranker",
+        "config": {
+            "default_options": {
+                "top_n": 12,
             },
-        }
-    )
+        },
+    })
     reranker: Reranker = Reranker.subclass_from_config(config)
     assert isinstance(reranker, NoopReranker)
     assert isinstance(reranker.default_options, RerankerOptions)
@@ -215,18 +207,16 @@ def test_subclass_from_config_default_path() -> None:
 
 
 def test_subclass_from_config_litellm() -> None:
-    config = ObjectConstructionConfig.model_validate(
-        {
-            "type": "ragbits.document_search.retrieval.rerankers.litellm:LiteLLMReranker",
-            "config": {
-                "model": "some_model",
-                "default_options": {
-                    "top_n": 12,
-                    "max_chunks_per_doc": 42,
-                },
+    config = ObjectConstructionConfig.model_validate({
+        "type": "ragbits.document_search.retrieval.rerankers.litellm:LiteLLMReranker",
+        "config": {
+            "model": "some_model",
+            "default_options": {
+                "top_n": 12,
+                "max_chunks_per_doc": 42,
             },
-        }
-    )
+        },
+    })
     reranker: Reranker = Reranker.subclass_from_config(config)
     assert isinstance(reranker, LiteLLMReranker)
     assert isinstance(reranker.default_options, LiteLLMRerankerOptions)

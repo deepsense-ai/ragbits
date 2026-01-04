@@ -31,7 +31,7 @@ class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, str]):
     """
 ```
 
-In order to run this prompt, initilize [`LLM`][ragbits.core.llms.base.LLM] client and call [`generate`][ragbits.core.llms.base.LLM.generate] method.
+In order to run this prompt, initilize [`LLM`][ragbits.core.llms.LLM] client and call [`generate`][ragbits.core.llms.LLM.generate] method.
 
 ```python
 import asyncio

@@ -105,6 +105,7 @@ class DocumentMeta(BaseModel):
         """
         with tempfile.NamedTemporaryFile(delete=False) as temp_file:
             temp_file.write(content.encode())
+            temp_file.flush()
 
         return cls(
             document_type=DocumentType.TXT,

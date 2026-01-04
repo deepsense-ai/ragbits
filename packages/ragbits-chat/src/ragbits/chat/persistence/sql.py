@@ -257,7 +257,8 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
 
         async with AsyncSession(self.sqlalchemy_engine) as session:
             result = await session.execute(
-                sqlalchemy.select(self.ChatInteraction)
+                sqlalchemy
+                .select(self.ChatInteraction)
                 .filter_by(conversation_id=conversation_id)
                 .order_by(self.ChatInteraction.timestamp)
             )

@@ -95,12 +95,10 @@ class QuestionAnswerMetric(Generic[MetricT], Metric[QuestionAnswerResult], ABC):
             The computed metric.
         """
         metric = self.metric_cls(_MetricLMM(self.llm, loop=asyncio.get_running_loop()))
-        metric_results = chain.from_iterable(
-            [
-                await asyncio.gather(*[asyncio.to_thread(self._call_metric, metric, result) for result in batch])
-                for batch in batched(results, self.batch_size)
-            ]
-        )
+        metric_results = chain.from_iterable([
+            await asyncio.gather(*[asyncio.to_thread(self._call_metric, metric, result) for result in batch])
+            for batch in batched(results, self.batch_size)
+        ])
         return metric.aggregate(list(metric_results))
 
     @staticmethod

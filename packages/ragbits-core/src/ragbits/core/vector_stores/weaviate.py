@@ -360,14 +360,10 @@ class WeaviateVectorStore(VectorStoreWithEmbedder[WeaviateVectorStoreOptions]):
         """
         where = flatten_dict(where)  # type: ignore
 
-        filters = Filter.all_of(
-            [
-                Filter.by_property(f"metadata{separator}{key.replace('.', separator)}").equal(
-                    cast(str | int | bool, value)
-                )
-                for key, value in where.items()
-            ]
-        )
+        filters = Filter.all_of([
+            Filter.by_property(f"metadata{separator}{key.replace('.', separator)}").equal(cast(str | int | bool, value))
+            for key, value in where.items()
+        ])
 
         return filters
 

@@ -10,15 +10,15 @@ from ragbits.document_search.ingestion.parsers.unstructured import UnstructuredD
 
 def test_parser_router_from_config() -> None:
     config = {
-        "txt": ObjectConstructionConfig.model_validate(
-            {"type": "ragbits.document_search.ingestion.parsers.base:TextDocumentParser"}
-        ),
-        "png": ObjectConstructionConfig.model_validate(
-            {"type": "ragbits.document_search.ingestion.parsers.base:ImageDocumentParser"}
-        ),
-        "pdf": ObjectConstructionConfig.model_validate(
-            {"type": "ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDocumentParser"}
-        ),
+        "txt": ObjectConstructionConfig.model_validate({
+            "type": "ragbits.document_search.ingestion.parsers.base:TextDocumentParser"
+        }),
+        "png": ObjectConstructionConfig.model_validate({
+            "type": "ragbits.document_search.ingestion.parsers.base:ImageDocumentParser"
+        }),
+        "pdf": ObjectConstructionConfig.model_validate({
+            "type": "ragbits.document_search.ingestion.parsers.unstructured:UnstructuredDocumentParser"
+        }),
     }
     router = DocumentParserRouter.from_config(config)
 

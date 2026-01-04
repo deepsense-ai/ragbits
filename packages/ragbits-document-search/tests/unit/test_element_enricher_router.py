@@ -9,12 +9,12 @@ from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRo
 
 def test_enricher_router_from_config() -> None:
     config = {
-        "TextElement": ObjectConstructionConfig.model_validate(
-            {"type": "ragbits.document_search.ingestion.enrichers.image:ImageElementEnricher"}
-        ),
-        "ImageElement": ObjectConstructionConfig.model_validate(
-            {"type": "ragbits.document_search.ingestion.enrichers.image:ImageElementEnricher"}
-        ),
+        "TextElement": ObjectConstructionConfig.model_validate({
+            "type": "ragbits.document_search.ingestion.enrichers.image:ImageElementEnricher"
+        }),
+        "ImageElement": ObjectConstructionConfig.model_validate({
+            "type": "ragbits.document_search.ingestion.enrichers.image:ImageElementEnricher"
+        }),
     }
     router = ElementEnricherRouter.from_config(config)
 

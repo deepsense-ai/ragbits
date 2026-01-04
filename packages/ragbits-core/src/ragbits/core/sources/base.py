@@ -132,12 +132,10 @@ class SourceDiscriminator:
 
         return core_schema.json_or_python_schema(
             json_schema=create_instance_validator,
-            python_schema=core_schema.union_schema(
-                [
-                    core_schema.is_instance_schema(Source),
-                    create_instance_validator,
-                ]
-            ),
+            python_schema=core_schema.union_schema([
+                core_schema.is_instance_schema(Source),
+                create_instance_validator,
+            ]),
         )
 
 

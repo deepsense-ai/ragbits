@@ -1,11 +1,17 @@
 from docling.chunking import HierarchicalChunker
 from docling.datamodel.base_models import InputFormat
-from docling.datamodel.pipeline_options import AcceleratorOptions, EasyOcrOptions, PdfPipelineOptions, PipelineOptions
+from docling.datamodel.pipeline_options import (
+    AcceleratorOptions,
+    ConvertPipelineOptions,
+    EasyOcrOptions,
+    PdfPipelineOptions,
+)
 from docling.document_converter import (
     DocumentConverter,
     ExcelFormatOption,
     FormatOption,
     HTMLFormatOption,
+    ImageFormatOption,
     MarkdownFormatOption,
     PdfFormatOption,
     PowerpointFormatOption,
@@ -91,7 +97,7 @@ class DoclingDocumentParser(DocumentParser):
         else:
             # Build default format options
             accelerator_options = AcceleratorOptions(num_threads=self.num_threads)
-            pipeline_options = PipelineOptions(accelerator_options=accelerator_options)
+            pipeline_options = ConvertPipelineOptions(accelerator_options=accelerator_options)
             pdf_pipeline_options = PdfPipelineOptions(
                 images_scale=2,
                 generate_page_images=True,
@@ -106,7 +112,7 @@ class DoclingDocumentParser(DocumentParser):
                     InputFormat.PPTX: PowerpointFormatOption(pipeline_options=pipeline_options),
                     InputFormat.HTML: HTMLFormatOption(pipeline_options=pipeline_options),
                     InputFormat.MD: MarkdownFormatOption(pipeline_options=pipeline_options),
-                    InputFormat.IMAGE: PdfFormatOption(pipeline_options=pdf_pipeline_options),
+                    InputFormat.IMAGE: ImageFormatOption(pipeline_options=pdf_pipeline_options),
                     InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_pipeline_options),
                 },
             )

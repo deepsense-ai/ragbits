@@ -98,29 +98,27 @@ class BasePrompt(metaclass=ABCMeta):
         if not hasattr(self, "_conversation_history"):
             self._conversation_history = []
 
-        self._conversation_history.extend(
-            [
-                {
-                    "role": "assistant",
-                    "content": None,
-                    "tool_calls": [
-                        {
-                            "id": id,
-                            "type": "function",
-                            "function": {
-                                "name": name,
-                                "arguments": json.dumps(arguments),
-                            },
-                        }
-                    ],
-                },
-                {
-                    "role": "tool",
-                    "tool_call_id": id,
-                    "content": str(result),
-                },
-            ]
-        )
+        self._conversation_history.extend([
+            {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [
+                    {
+                        "id": id,
+                        "type": "function",
+                        "function": {
+                            "name": name,
+                            "arguments": json.dumps(arguments),
+                        },
+                    }
+                ],
+            },
+            {
+                "role": "tool",
+                "tool_call_id": id,
+                "content": str(result),
+            },
+        ])
 
         return self
 

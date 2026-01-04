@@ -99,58 +99,46 @@ class MyAuthenticatedChat(ChatInterface):
         )
 
         # Create user-specific state update
-        yield self.create_state_update(
-            {
-                "session_context": context.session_id if context.session_id else "unknown",
-                "user_roles": user_roles,
-                "chat_timestamp": asyncio.get_event_loop().time(),
-            }
-        )
+        yield self.create_state_update({
+            "session_context": context.session_id if context.session_id else "unknown",
+            "user_roles": user_roles,
+            "chat_timestamp": asyncio.get_event_loop().time(),
+        })
 
         # Role-specific live updates
         role_updates = []
         if "admin" in user_roles:
-            role_updates.extend(
-                [
-                    self.create_live_update("admin_0", LiveUpdateType.START, "🔧 [ADMIN] Accessing admin resources..."),
-                    self.create_live_update(
-                        "admin_0",
-                        LiveUpdateType.FINISH,
-                        "🔧 [ADMIN] Admin resources loaded",
-                        "Full system access granted.",
-                    ),
-                ]
-            )
+            role_updates.extend([
+                self.create_live_update("admin_0", LiveUpdateType.START, "🔧 [ADMIN] Accessing admin resources..."),
+                self.create_live_update(
+                    "admin_0",
+                    LiveUpdateType.FINISH,
+                    "🔧 [ADMIN] Admin resources loaded",
+                    "Full system access granted.",
+                ),
+            ])
 
         if "moderator" in user_roles:
-            role_updates.extend(
-                [
-                    self.create_live_update(
-                        "mod_1", LiveUpdateType.START, "🛡️ [MODERATOR] Checking content policies..."
-                    ),
-                    self.create_live_update(
-                        "mod_1",
-                        LiveUpdateType.FINISH,
-                        "🛡️ [MODERATOR] Content policy check complete",
-                        "All content meets guidelines.",
-                    ),
-                ]
-            )
+            role_updates.extend([
+                self.create_live_update("mod_1", LiveUpdateType.START, "🛡️ [MODERATOR] Checking content policies..."),
+                self.create_live_update(
+                    "mod_1",
+                    LiveUpdateType.FINISH,
+                    "🛡️ [MODERATOR] Content policy check complete",
+                    "All content meets guidelines.",
+                ),
+            ])
 
         # Standard user updates
-        role_updates.extend(
-            [
-                self.create_live_update(
-                    "user_2", LiveUpdateType.START, f"🤖 [CHAT] Processing message for {username}..."
-                ),
-                self.create_live_update(
-                    "user_2",
-                    LiveUpdateType.FINISH,
-                    "🤖 [CHAT] Message processed",
-                    f"Generating personalized response for {full_name}.",
-                ),
-            ]
-        )
+        role_updates.extend([
+            self.create_live_update("user_2", LiveUpdateType.START, f"🤖 [CHAT] Processing message for {username}..."),
+            self.create_live_update(
+                "user_2",
+                LiveUpdateType.FINISH,
+                "🤖 [CHAT] Message processed",
+                f"Generating personalized response for {full_name}.",
+            ),
+        ])
 
         for live_update in role_updates:
             yield live_update

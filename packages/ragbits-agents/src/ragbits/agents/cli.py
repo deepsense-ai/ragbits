@@ -346,25 +346,28 @@ def run_interactive_agent(agent: Agent, agent_path: str) -> None:
         📍 Agent Path: {self.agent_path}
 
         🧠 LLM Configuration:
-          • Model: {self.metadata['llm']['model']}
-          • Type: {self.metadata['llm']['type']}
+          • Model: {self.metadata["llm"]["model"]}
+          • Type: {self.metadata["llm"]["type"]}
 
         📝 Prompt Configuration:
-          • Type: {self.metadata['prompt']['type']}
-          • Has System Prompt: {self.metadata['prompt']['has_system_prompt']}
+          • Type: {self.metadata["prompt"]["type"]}
+          • Has System Prompt: {self.metadata["prompt"]["has_system_prompt"]}
 
         🔧 Tools:
-          • Count: {self.metadata['tools']['count']}
-          • Names: {', '.join(self.metadata['tools']['names']) if self.metadata['tools']['names'] else 'None'}
+          • Count: {self.metadata["tools"]["count"]}
+          • Names: {", ".join(self.metadata["tools"]["names"]) if self.metadata["tools"]["names"] else "None"}
 
         🌐 MCP Servers:
-          • Count: {self.metadata['mcp_servers']['count']}
-          • Types: {', '.join(self.metadata['mcp_servers']['types'])
-                     if self.metadata['mcp_servers']['types'] else 'None'}
+          • Count: {self.metadata["mcp_servers"]["count"]}
+          • Types: {
+                    ", ".join(self.metadata["mcp_servers"]["types"])
+                    if self.metadata["mcp_servers"]["types"]
+                    else "None"
+                }
 
         💾 History:
-          • Enabled: {self.metadata['history']['enabled']}
-          • Current Length: {self.metadata['history']['length']}
+          • Enabled: {self.metadata["history"]["enabled"]}
+          • Current Length: {self.metadata["history"]["length"]}
         """
                 return info
 

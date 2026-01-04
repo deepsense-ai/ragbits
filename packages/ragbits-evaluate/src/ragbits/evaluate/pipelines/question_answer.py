@@ -74,17 +74,15 @@ class QuestionAnswerPipeline(
         Returns:
             The evaluation result batch.
         """
-        results = await asyncio.gather(
-            *[
-                self.evaluation_target.run(
-                    QuestionAnswerPromptInput(
-                        question=row.question,
-                        context=row.reference_context,
-                    )
+        results = await asyncio.gather(*[
+            self.evaluation_target.run(
+                QuestionAnswerPromptInput(
+                    question=row.question,
+                    context=row.reference_context,
                 )
-                for row in data
-            ]
-        )
+            )
+            for row in data
+        ])
         return [
             QuestionAnswerResult(
                 question=row.question,

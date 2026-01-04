@@ -3,6 +3,7 @@ from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import MagicMock
+from uuid import UUID
 
 import pytest
 
@@ -221,7 +222,7 @@ def test_get_function_inputs(func: Callable, args: tuple, kwargs: dict, expected
             {
                 "vector": [0.01, 0.02, 0.03, 0.04] * 1534,
                 "vcs": VectorStoreEntry(
-                    id="9c7d6b27-4ef1-537c-ad7c-676edb8bc8a8",
+                    id=UUID("9c7d6b27-4ef1-537c-ad7c-676edb8bc8a8"),
                     text="Some text",
                     image_bytes=None,
                     metadata={

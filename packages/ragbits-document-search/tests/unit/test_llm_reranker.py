@@ -44,42 +44,38 @@ def sample_elements() -> Sequence[Sequence[TextElement]]:
 
 
 async def test_llm_reranker_from_config() -> None:
-    reranker = LLMReranker.from_config(
-        {
-            "llm": {
-                "type": "ragbits.core.llms.litellm:LiteLLM",
-                "config": {
-                    "model_name": "gpt-4o",
-                },
+    reranker = LLMReranker.from_config({
+        "llm": {
+            "type": "ragbits.core.llms.litellm:LiteLLM",
+            "config": {
+                "model_name": "gpt-4o",
             },
-            "default_options": {
-                "top_n": 2,
-            },
-        }
-    )
+        },
+        "default_options": {
+            "top_n": 2,
+        },
+    })
 
     assert reranker.default_options == LLMRerankerOptions(top_n=2)
     assert reranker._llm.model_name == "gpt-4o"
 
 
 def test_llm_reranker_subclass_from_config() -> None:
-    config = ObjectConstructionConfig.model_validate(
-        {
-            "type": "ragbits.document_search.retrieval.rerankers.llm:LLMReranker",
-            "config": {
-                "llm": {
-                    "type": "ragbits.core.llms.litellm:LiteLLM",
-                    "config": {
-                        "model_name": "gpt-4o",
-                    },
-                },
-                "prompt": "ragbits.document_search.retrieval.rerankers.llm:RerankerPrompt",
-                "default_options": {
-                    "top_n": 12,
+    config = ObjectConstructionConfig.model_validate({
+        "type": "ragbits.document_search.retrieval.rerankers.llm:LLMReranker",
+        "config": {
+            "llm": {
+                "type": "ragbits.core.llms.litellm:LiteLLM",
+                "config": {
+                    "model_name": "gpt-4o",
                 },
             },
-        }
-    )
+            "prompt": "ragbits.document_search.retrieval.rerankers.llm:RerankerPrompt",
+            "default_options": {
+                "top_n": 12,
+            },
+        },
+    })
     reranker: Reranker = Reranker.subclass_from_config(config)
 
     assert isinstance(reranker, LLMReranker)

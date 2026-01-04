@@ -21,12 +21,9 @@ for url, port in [("127.0.0.1", "8000"), ("127.0.0.1", "8001")]:
     agent_card = fetch_agent(url, port)
     AGENTS_CARDS[agent_card["name"]] = agent_card
 
-AGENTS_INFO = "\n".join(
-    [
-        f"name: {name}, description: {card['description']}, skills: {card['skills']}"
-        for name, card in AGENTS_CARDS.items()
-    ]
-)
+AGENTS_INFO = "\n".join([
+    f"name: {name}, description: {card['description']}, skills: {card['skills']}" for name, card in AGENTS_CARDS.items()
+])
 
 
 class OrchestratorPromptInput(BaseModel):
@@ -79,17 +76,15 @@ def execute_agent(agent_name: str, query: str) -> str:
         for call in result_data.get("tool_calls", [])
     ] or None
 
-    return json.dumps(
-        {
-            "status": "success",
-            "agent_name": agent_name,
-            "result": {
-                "content": result_data["content"],
-                "metadata": result_data.get("metadata", {}),
-                "tool_calls": tool_calls,
-            },
-        }
-    )
+    return json.dumps({
+        "status": "success",
+        "agent_name": agent_name,
+        "result": {
+            "content": result_data["content"],
+            "metadata": result_data.get("metadata", {}),
+            "tool_calls": tool_calls,
+        },
+    })
 
 
 async def main() -> None:

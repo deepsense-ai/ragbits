@@ -297,16 +297,16 @@ async def test_document_search_ingest_from_uri_with_wildcard(
         document_search: DocumentSearch = DocumentSearch.from_config(CONFIG)
 
         # Use the parametrized glob pattern
-        dir_pattern = f"{str(Path(temp_dir).parent)}/{dir_pattern}" if dir_pattern is not None else temp_dir
-        await document_search.ingest(f"local://{dir_pattern}/{pattern}")
+        search_path = f"{temp_dir}/{dir_pattern}/{pattern}" if dir_pattern is not None else f"{temp_dir}/{pattern}"
+        await document_search.ingest(f"local://{search_path}")
 
         # Perform the search
         results = await document_search.search(search_query)
 
         # Check that we have the expected number of results
-        assert len(results) == len(
-            expected_contents
-        ), f"Expected {len(expected_contents)} result(s) but got {len(results)}"
+        assert len(results) == len(expected_contents), (
+            f"Expected {len(expected_contents)} result(s) but got {len(results)}"
+        )
 
         # Verify each result is a TextElement
         assert all(isinstance(result, TextElement) for result in results)

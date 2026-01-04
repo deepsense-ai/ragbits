@@ -15,8 +15,8 @@ dependencies = [
     "mike>=2.1.3",
 ]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "aiosqlite>=0.21.0",
     "pre-commit~=3.8.0",
     "pytest~=8.3.3",
@@ -125,8 +125,6 @@ disallow_untyped_defs = true
 exclude = [".venv"]
 extend-include = ["*.ipynb"]
 line-length = 120
-
-[tool.ruff.lint]
 preview = true
 explicit-preview-rules = true
 select = [
@@ -169,15 +167,17 @@ ignore = [
     "ANN102",
     "ANN204",
     "PLR0913",
+    "PLC0415",  # import-outside-toplevel - intentional for optional deps
+    "S105",     # hardcoded-password-string - false positives
 ]
 
-[tool.ruff.lint.pydocstyle]
+[tool.ruff.pydocstyle]
 convention = "google"
 
-[tool.ruff.lint.flake8-annotations]
+[tool.ruff.flake8-annotations]
 allow-star-arg-any = true
 
-[tool.ruff.lint.per-file-ignores]
+[tool.ruff.per-file-ignores]
 "*.ipynb" = [
     "PLR2004",
     "W293",
@@ -200,7 +200,7 @@ allow-star-arg-any = true
 docstring-code-format = true
 docstring-code-line-length = 120
 
-[tool.ruff.lint.isort]
+[tool.ruff.isort]
 known-first-party = ["ragbits"]
 known-third-party = [
     "IPython", "PIL", "cv2", "dotenv", "editdistance", "fastapi", "fire", "hydra",

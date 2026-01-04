@@ -124,9 +124,10 @@ class MyChat(ChatInterface):
             url="https://example.com/offline-reference",
         )
 
-        yield self.create_state_update(
-            {"example_state_key": "example_state_value", "example_state_key_2": "example_state_value_2"}
-        )
+        yield self.create_state_update({
+            "example_state_key": "example_state_value",
+            "example_state_key_2": "example_state_value_2",
+        })
 
         example_live_updates = [
             self.create_live_update("0", LiveUpdateType.START, "[EXAMPLE] Searching for examples in the web..."),

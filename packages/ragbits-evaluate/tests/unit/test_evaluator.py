@@ -175,15 +175,17 @@ async def test_parallel_batches_performance() -> None:
 async def test_run_from_config() -> None:
     config = {
         "evaluation": {
-            "dataloader": ObjectConstructionConfig.model_validate(
-                {"type": f"{__name__}:MockDataLoader", "config": {"dataset_size": 6}}
-            ),
+            "dataloader": ObjectConstructionConfig.model_validate({
+                "type": f"{__name__}:MockDataLoader",
+                "config": {"dataset_size": 6},
+            }),
             "pipeline": {
                 "type": f"{__name__}:MockEvaluationPipeline",
                 "config": {
-                    "evaluation_target": ObjectConstructionConfig.model_validate(
-                        {"type": f"{__name__}:MockEvaluationTarget", "config": {"model_name": "config_model"}}
-                    )
+                    "evaluation_target": ObjectConstructionConfig.model_validate({
+                        "type": f"{__name__}:MockEvaluationTarget",
+                        "config": {"model_name": "config_model"},
+                    })
                 },
             },
             "metrics": {

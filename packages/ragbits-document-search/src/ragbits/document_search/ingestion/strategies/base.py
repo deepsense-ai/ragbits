@@ -228,12 +228,10 @@ class IngestStrategy(WithConstructionConfig, ABC):
 
         # Enrich elements that have enrichers
         if elements_to_enrich:
-            grouped_enriched_elements = await asyncio.gather(
-                *[
-                    enricher_router.get(element_type).enrich(elements_of_type)
-                    for element_type, elements_of_type in elements_to_enrich
-                ]
-            )
+            grouped_enriched_elements = await asyncio.gather(*[
+                enricher_router.get(element_type).enrich(elements_of_type)
+                for element_type, elements_of_type in elements_to_enrich
+            ])
             enriched_elements = [element for enriched_group in grouped_enriched_elements for element in enriched_group]
         else:
             enriched_elements = []

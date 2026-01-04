@@ -127,14 +127,12 @@ class ChromaVectorStore(VectorStoreWithDenseEmbedder[VectorStoreOptions]):
                 ids.append(str(entry.id))
                 documents.append(entry.text or "")
                 metadatas.append(
-                    self._flatten_metadata(
-                        {
-                            **entry.metadata,
-                            **{
-                                "__image": entry.image_bytes.hex() if entry.image_bytes else None,
-                            },
-                        }
-                    )
+                    self._flatten_metadata({
+                        **entry.metadata,
+                        **{
+                            "__image": entry.image_bytes.hex() if entry.image_bytes else None,
+                        },
+                    })
                 )
 
             self._collection.add(

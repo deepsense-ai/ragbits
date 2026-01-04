@@ -42,17 +42,15 @@ def test_enricher_validates_supported_document_union_types() -> None:
     ],
 )
 def test_enricher_subclass_from_config(enricher_type: str, expected_enricher: type[ImageElementEnricher]) -> None:
-    config = ObjectConstructionConfig.model_validate(
-        {
-            "type": enricher_type,
-            "config": {
-                "llm": {
-                    "type": "LiteLLM",
-                    "prompt": "ragbits.document_search.ingestion.enrichers.image:ImageDescriberPrompt",
-                },
+    config = ObjectConstructionConfig.model_validate({
+        "type": enricher_type,
+        "config": {
+            "llm": {
+                "type": "LiteLLM",
+                "prompt": "ragbits.document_search.ingestion.enrichers.image:ImageDescriberPrompt",
             },
-        }
-    )
+        },
+    })
     enricher = ElementEnricher.subclass_from_config(config)  # type: ignore
 
     assert isinstance(enricher, expected_enricher)

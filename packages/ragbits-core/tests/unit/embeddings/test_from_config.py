@@ -9,18 +9,16 @@ from ragbits.core.utils.config_handling import ObjectConstructionConfig
 
 
 def test_subclass_from_config_litellm():
-    config = ObjectConstructionConfig.model_validate(
-        {
-            "type": "ragbits.core.embeddings.dense:LiteLLMEmbedder",
-            "config": {
-                "model_name": "some_model",
-                "default_options": {
-                    "option1": "value1",
-                    "option2": "value2",
-                },
+    config = ObjectConstructionConfig.model_validate({
+        "type": "ragbits.core.embeddings.dense:LiteLLMEmbedder",
+        "config": {
+            "model_name": "some_model",
+            "default_options": {
+                "option1": "value1",
+                "option2": "value2",
             },
-        }
-    )
+        },
+    })
     embedder: DenseEmbedder = DenseEmbedder.subclass_from_config(config)
     assert isinstance(embedder, LiteLLMEmbedder)
     assert embedder.model_name == "some_model"
@@ -41,18 +39,16 @@ def test_subclass_from_config_default_path_litellm():
 
 
 def test_subclass_from_config_bag_of_tokens():
-    config = ObjectConstructionConfig.model_validate(
-        {
-            "type": "ragbits.core.embeddings.sparse:BagOfTokens",
-            "config": {
-                "model_name": "gpt-4o",
-                "default_options": {
-                    "option1": "value1",
-                    "option2": "value2",
-                },
+    config = ObjectConstructionConfig.model_validate({
+        "type": "ragbits.core.embeddings.sparse:BagOfTokens",
+        "config": {
+            "model_name": "gpt-4o",
+            "default_options": {
+                "option1": "value1",
+                "option2": "value2",
             },
-        }
-    )
+        },
+    })
     embedder: SparseEmbedder = SparseEmbedder.subclass_from_config(config)
     assert isinstance(embedder, BagOfTokens)
     assert embedder.default_options == BagOfTokensOptions(
@@ -63,19 +59,17 @@ def test_subclass_from_config_bag_of_tokens():
 
 
 def test_subclass_from_config_bag_of_tokens_both_specified():
-    config = ObjectConstructionConfig.model_validate(
-        {
-            "type": "ragbits.core.embeddings.sparse:BagOfTokens",
-            "config": {
-                "model_name": "gpt-4o",
-                "encoding_name": "cl100k_base",
-                "default_options": {
-                    "option1": "value1",
-                    "option2": "value2",
-                },
+    config = ObjectConstructionConfig.model_validate({
+        "type": "ragbits.core.embeddings.sparse:BagOfTokens",
+        "config": {
+            "model_name": "gpt-4o",
+            "encoding_name": "cl100k_base",
+            "default_options": {
+                "option1": "value1",
+                "option2": "value2",
             },
-        }
-    )
+        },
+    })
     with pytest.raises(ValueError, match="Please specify only one of encoding_name or model_name"):
         SparseEmbedder.subclass_from_config(config)
 

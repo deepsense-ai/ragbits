@@ -6,9 +6,9 @@ from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
 
 
 def test_subclass_from_config():
-    config = ObjectConstructionConfig.model_validate(
-        {"type": "ragbits.document_search.retrieval.rephrasers:NoopQueryRephraser"}
-    )
+    config = ObjectConstructionConfig.model_validate({
+        "type": "ragbits.document_search.retrieval.rephrasers:NoopQueryRephraser"
+    })
     rephraser: QueryRephraser = QueryRephraser.subclass_from_config(config)
     assert isinstance(rephraser, NoopQueryRephraser)
 
@@ -20,17 +20,15 @@ def test_subclass_from_config_default_path():
 
 
 def test_subclass_from_config_llm():
-    config = ObjectConstructionConfig.model_validate(
-        {
-            "type": "ragbits.document_search.retrieval.rephrasers.llm:LLMQueryRephraser",
-            "config": {
-                "llm": {
-                    "type": "ragbits.core.llms.litellm:LiteLLM",
-                    "config": {"model_name": "some_model"},
-                },
+    config = ObjectConstructionConfig.model_validate({
+        "type": "ragbits.document_search.retrieval.rephrasers.llm:LLMQueryRephraser",
+        "config": {
+            "llm": {
+                "type": "ragbits.core.llms.litellm:LiteLLM",
+                "config": {"model_name": "some_model"},
             },
-        }
-    )
+        },
+    })
     rephraser: QueryRephraser = QueryRephraser.subclass_from_config(config)
     assert isinstance(rephraser, LLMQueryRephraser)
     assert isinstance(rephraser._llm, LiteLLM)
@@ -38,21 +36,19 @@ def test_subclass_from_config_llm():
 
 
 def test_subclass_from_config_llm_prompt():
-    config = ObjectConstructionConfig.model_validate(
-        {
-            "type": "ragbits.document_search.retrieval.rephrasers.llm:LLMQueryRephraser",
-            "config": {
-                "llm": {
-                    "type": "ragbits.core.llms.litellm:LiteLLM",
-                    "config": {"model_name": "some_model"},
-                },
-                "prompt": {"type": "ragbits.document_search.retrieval.rephrasers.llm:LLMQueryRephraserPrompt"},
-                "default_options": {
-                    "n": 4,
-                },
+    config = ObjectConstructionConfig.model_validate({
+        "type": "ragbits.document_search.retrieval.rephrasers.llm:LLMQueryRephraser",
+        "config": {
+            "llm": {
+                "type": "ragbits.core.llms.litellm:LiteLLM",
+                "config": {"model_name": "some_model"},
             },
-        }
-    )
+            "prompt": {"type": "ragbits.document_search.retrieval.rephrasers.llm:LLMQueryRephraserPrompt"},
+            "default_options": {
+                "n": 4,
+            },
+        },
+    })
     rephraser: QueryRephraser = QueryRephraser.subclass_from_config(config)
     assert isinstance(rephraser, LLMQueryRephraser)
     assert isinstance(rephraser._llm, LiteLLM)

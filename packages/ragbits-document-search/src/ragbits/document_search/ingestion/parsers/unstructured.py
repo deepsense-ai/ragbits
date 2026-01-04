@@ -235,14 +235,12 @@ class UnstructuredDocumentParser(DocumentParser):
 
         if element.metadata.coordinates and element.metadata.coordinates.points:
             buffered = BytesIO()
-            Image.open(document.local_path).convert("RGB").crop(
-                (
-                    min(element.metadata.coordinates.points[0][0], element.metadata.coordinates.points[1][0]),
-                    min(element.metadata.coordinates.points[0][1], element.metadata.coordinates.points[3][1]),
-                    max(element.metadata.coordinates.points[2][0], element.metadata.coordinates.points[3][0]),
-                    max(element.metadata.coordinates.points[1][1], element.metadata.coordinates.points[2][1]),
-                )
-            ).save(buffered, format="JPEG")
+            Image.open(document.local_path).convert("RGB").crop((
+                min(element.metadata.coordinates.points[0][0], element.metadata.coordinates.points[1][0]),
+                min(element.metadata.coordinates.points[0][1], element.metadata.coordinates.points[3][1]),
+                max(element.metadata.coordinates.points[2][0], element.metadata.coordinates.points[3][0]),
+                max(element.metadata.coordinates.points[1][1], element.metadata.coordinates.points[2][1]),
+            )).save(buffered, format="JPEG")
             return buffered.getvalue()
 
         return b""

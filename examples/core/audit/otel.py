@@ -147,9 +147,9 @@ async def process_request() -> None:
         PhilosopherPrompt(PhilosopherPromptInput(question=question, philosopher_type=philosopher_type))
         for philosopher_type in ["nihilist", "stoic", "existentialist"]
     ]
-    responses = await asyncio.gather(
-        *[llm.generate(prompt) for llm, prompt in zip(philosophers, prompts, strict=False)]
-    )
+    responses = await asyncio.gather(*[
+        llm.generate(prompt) for llm, prompt in zip(philosophers, prompts, strict=False)
+    ])
 
     assistant = LiteLLM(model_name="o3", use_structured_output=True)
     prompt = AssistantPrompt(

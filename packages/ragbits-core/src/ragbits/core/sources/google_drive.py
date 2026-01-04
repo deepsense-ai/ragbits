@@ -209,7 +209,7 @@ class GoogleDriveSource(Source):
             lower_error = error_content.lower()
             if "drive api" in lower_error and ("not enabled" in lower_error or "not been used" in lower_error):
                 raise Exception(
-                    "Google Drive API is not enabled for your project. " "Please enable it in the Google Cloud Console."
+                    "Google Drive API is not enabled for your project. Please enable it in the Google Cloud Console."
                 ) from e
             else:
                 raise Exception(f"Google Drive API unreachable for an unknown reason: {e}") from e
@@ -415,7 +415,8 @@ class GoogleDriveSource(Source):
         """
         try:
             file_meta = (
-                client.files()
+                client
+                .files()
                 .get(
                     fileId=drive_id,
                     fields="id, name, mimeType, capabilities/canListChildren",

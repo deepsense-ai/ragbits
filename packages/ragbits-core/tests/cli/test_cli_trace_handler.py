@@ -23,7 +23,7 @@ def add_numbers(a: int, b: int) -> int:
 
 
 def test_add_numbers_cli_trace_handler_with_verbose():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(root_app, ["--verbose", "mock", "add-numbers", "4", "2"])
     if os.getenv("RAGBITS_VERBOSE"):
         assert os.getenv("RAGBITS_VERBOSE") == "0", "Should run test with RAGBITS_VERBOSE=0"
@@ -36,7 +36,7 @@ def test_add_numbers_cli_trace_handler_with_verbose():
 
 def test_add_numbers_cli_trace_handler_with_set_cli():
     set_trace_handlers("cli")
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(root_app, ["mock", "add-numbers", "4", "2"])
     if os.getenv("RAGBITS_VERBOSE"):
         assert os.getenv("RAGBITS_VERBOSE") == "0", "Should run test with RAGBITS_VERBOSE=0"
@@ -49,7 +49,7 @@ def test_add_numbers_cli_trace_handler_with_set_cli():
 
 def test_no_cli_trace_handler():
     clear_trace_handlers()
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(root_app, ["mock", "add-numbers", "4", "2"])
     if os.getenv("RAGBITS_VERBOSE"):
         assert os.getenv("RAGBITS_VERBOSE") == "0", "Should run test with RAGBITS_VERBOSE=0"
