@@ -980,11 +980,14 @@ class RagbitsAPI:
             auth_backend: Path to authentication backend module
             theme_path: Path to theme configuration file
         """
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".py", delete=False, dir=".", prefix="ragbits_app_"
-        ) as temp_file:
-            temp_file.write(
-                f"""# Auto-generated file for ragbits reload mode
+        temp_file_path: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".py", delete=False, dir=".", prefix="_ragbits_app_"
+            ) as temp_file:
+                temp_file_path = Path(temp_file.name)
+                temp_file.write(
+                    f"""# Auto-generated file for ragbits reload mode - DO NOT EDIT
 from ragbits.chat.api import RagbitsAPI
 
 api = RagbitsAPI(
@@ -997,12 +1000,13 @@ api = RagbitsAPI(
 )
 app = api.app
 """
-            )
-        module_name = Path(temp_file.name).stem
-        try:
+                )
+
+            module_name = temp_file_path.stem
             uvicorn.run(f"{module_name}:app", host=host, port=port, reload=True)
         finally:
-            os.unlink(temp_file.name)
+            if temp_file_path:
+                temp_file_path.unlink(missing_ok=True)
 
     @staticmethod
     def _convert_heroui_json_to_css(json_content: str) -> str:
