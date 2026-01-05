@@ -1,6 +1,8 @@
+from importlib.metadata import version
 from pathlib import Path
 
 import pytest
+from packaging.version import Version
 
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.ingestion.parsers.docling import DoclingDocumentParser
@@ -30,7 +32,8 @@ from ragbits.document_search.ingestion.parsers.docling import DoclingDocumentPar
             DocumentMeta.from_local_path(
                 Path(__file__).parent.parent / "assets" / "pdf" / "transformers_paper_page.pdf"
             ),
-            7,
+            # Docling >= 2.66.0 merges section headings with content, producing 6 elements for PDF instead of 7
+            6 if Version(version("docling")) >= Version("2.66.0") else 7,
             id="PDFDocument",
         ),
     ],
