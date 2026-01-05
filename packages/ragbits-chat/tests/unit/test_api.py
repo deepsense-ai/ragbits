@@ -1,5 +1,6 @@
 import json
 from collections.abc import AsyncGenerator
+from pathlib import Path
 from typing import Literal
 from unittest.mock import MagicMock, mock_open, patch
 
@@ -339,7 +340,20 @@ def test_run_method() -> None:
 
 def test_run_with_reload_method() -> None:
     """Test the run_with_reload method creates temp file and starts uvicorn with reload."""
-    with patch("uvicorn.run") as mock_run, patch("os.unlink") as mock_unlink:
+
+    class TempFileCheck:
+        """Helper class to verify temp file exists when uvicorn.run is called."""
+
+        existed_at_run_time: bool = False
+        temp_file_path: Path | None = None
+
+        @classmethod
+        def check_and_record(cls, app_path: str, **kwargs: dict) -> None:
+            module_name = app_path.split(":")[0]
+            cls.temp_file_path = Path(f"./{module_name}.py")
+            cls.existed_at_run_time = cls.temp_file_path.exists()
+
+    with patch("uvicorn.run", side_effect=TempFileCheck.check_and_record) as mock_run:
         RagbitsAPI.run_with_reload(
             host="localhost",
             port=9000,
@@ -351,11 +365,19 @@ def test_run_with_reload_method() -> None:
         mock_run.assert_called_once()
         call_args = mock_run.call_args
         assert call_args[1]["reload"] is True
+        assert call_args[1]["host"] == "localhost"
+        assert call_args[1]["port"] == 9000
         assert isinstance(call_args[0][0], str)
-        assert call_args[0][0].startswith("ragbits_app_:")
+        # Module name format: _ragbits_app_<random>:app
+        assert ":app" in call_args[0][0]
+        assert "_ragbits_app_" in call_args[0][0]
 
-        # Verify cleanup was called
-        mock_unlink.assert_called_once()
+        # Verify temp file existed when uvicorn.run was called
+        assert TempFileCheck.existed_at_run_time, "Temp file was not created before uvicorn.run"
+
+        # Verify temp file was cleaned up after
+        assert TempFileCheck.temp_file_path is not None
+        assert not TempFileCheck.temp_file_path.exists(), "Temp file was not cleaned up"
 
 
 def test_login_endpoint(client: TestClient) -> None:
