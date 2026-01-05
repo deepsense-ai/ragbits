@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import re
+import tempfile
 import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, suppress
@@ -945,8 +946,63 @@ class RagbitsAPI:
     def run(self, host: str = "127.0.0.1", port: int = 8000) -> None:
         """
         Used for starting the API
+
+        Args:
+            host: Host to bind the API server to
+            port: Port to bind the API server to
         """
         uvicorn.run(self.app, host=host, port=port)
+
+    @staticmethod
+    def run_with_reload(
+        host: str,
+        port: int,
+        chat_interface: str | None = None,
+        cors_origins: list[str] | None = None,
+        ui_build_dir: str | None = None,
+        debug_mode: bool = False,
+        auth_backend: str | None = None,
+        theme_path: str | None = None,
+    ) -> None:
+        """
+        Run the API server with auto-reload enabled for development.
+
+        This method creates a temporary Python file with the API configuration
+        that uvicorn can import and reload when code changes are detected.
+
+        Args:
+            host: Host to bind the API server to
+            port: Port to bind the API server to
+            chat_interface: Path to chat interface module
+            cors_origins: List of allowed CORS origins
+            ui_build_dir: Path to custom UI build directory
+            debug_mode: Enable debug mode
+            auth_backend: Path to authentication backend module
+            theme_path: Path to theme configuration file
+        """
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".py", delete=False, dir=".", prefix="ragbits_app_"
+        ) as temp_file:
+            temp_file.write(
+                f"""# Auto-generated file for ragbits reload mode
+from ragbits.chat.api import RagbitsAPI
+
+api = RagbitsAPI(
+    chat_interface={repr(chat_interface)},
+    cors_origins={repr(cors_origins)},
+    ui_build_dir={repr(ui_build_dir)},
+    debug_mode={repr(debug_mode)},
+    auth_backend={repr(auth_backend)},
+    theme_path={repr(theme_path)},
+)
+app = api.app
+"""
+            )
+        module_name = Path(temp_file.name).stem
+        try:
+            uvicorn.run(f"{module_name}:app", host=host, port=port, reload=True)
+        finally:
+            os.unlink(temp_file.name)
 
     @staticmethod
     def _convert_heroui_json_to_css(json_content: str) -> str:

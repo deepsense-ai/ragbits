@@ -337,6 +337,27 @@ def test_run_method() -> None:
         mock_run.assert_called_once_with(api.app, host="localhost", port=9000)
 
 
+def test_run_with_reload_method() -> None:
+    """Test the run_with_reload method creates temp file and starts uvicorn with reload."""
+    with patch("uvicorn.run") as mock_run, patch("os.unlink") as mock_unlink:
+        RagbitsAPI.run_with_reload(
+            host="localhost",
+            port=9000,
+            chat_interface="test:TestChat",
+            debug_mode=True,
+        )
+
+        # Verify uvicorn.run was called with reload=True and an import string
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args
+        assert call_args[1]["reload"] is True
+        assert isinstance(call_args[0][0], str)
+        assert call_args[0][0].startswith("ragbits_app_:")
+
+        # Verify cleanup was called
+        mock_unlink.assert_called_once()
+
+
 def test_login_endpoint(client: TestClient) -> None:
     """Test the login endpoint with valid credentials sets session cookie."""
     response = client.post("/api/auth/login", json={"username": "testuser", "password": "testpass"})
