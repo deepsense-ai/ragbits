@@ -41,88 +41,71 @@ dependencies = ["ragbits-agents==1.4.0.dev202601130240", "ragbits-document-searc
 
 [project.optional-dependencies]
 chroma = [
-    "chromadb>=1.0.0,<2.0.0",
+    "ragbits-core[chroma]==1.4.0.dev202601010248",
 ]
 hf = [
-    "datasets>=3.0.1,<4.0.0",
+    "ragbits-core[hf]==1.4.0.dev202601010248",
 ]
 s3 = [
-    "boto3>=1.35.42,<2.0.0",
+    "ragbits-core[s3]==1.4.0.dev202601010248",
 ]
 gcs = [
-    "gcloud-aio-storage>=9.3.0,<10.0.0"
+    "ragbits-core[gcs]==1.4.0.dev202601010248"
 ]
 azure=[
-    "azure-storage-blob>=12.24.1,<13.0.0",
-    "azure-identity>=1.19.0,<2.0.0",
-    "azure-core>=1.32.0,<2.0.0"
+    "ragbits-core[azure]==1.4.0.dev202601010248",
 ]
 local = [
-    "sentence-transformers>=4.0.2,<5.0.0",
-    "torch>=2.2.1,<3.0.0",
-    "transformers>=4.44.2,<5.0.0",
-    "numpy>=1.26.0,<2.0.0",
-    "accelerate>=1.7.0",
+    "ragbits-core[local]==1.4.0.dev202601010248",
 ]
 openai = [
-    "openai>=1.91.0,<2.0.0",
+    "ragbits-guardrails[openai]==1.4.0.dev202601010248",
 ]
 otel = [
-    "opentelemetry-api>=1.27.0,<2.0.0",
+    "ragbits-core[otel]==1.4.0.dev202601010248",
 ]
 logfire = [
-    "logfire>=3.19.0,<4.0.0",
-    "logfire[system-metrics]>=3.19.0,<4.0.0",
-    "opentelemetry-api>=1.27.0,<2.0.0",
+    "ragbits-core[logfire]==1.4.0.dev202601010248",
 ]
 promptfoo = [
-    "PyYAML>=6.0.2,<7.0.0",
+    "ragbits-core[promptfoo]==1.4.0.dev202601010248",
 ]
 qdrant = [
-    "qdrant-client>=1.12.1,<2.0.0",
+    "ragbits-core[qdrant]==1.4.0.dev202601010248",
 ]
 relari = [
-    "continuous-eval>=0.3.12,<1.0.0",
+    "ragbits-evaluate[relari]==1.4.0.dev202601010248",
 ]
 fastembed = [
-    "fastembed>=0.4.2,<1.0.0"
+    "ragbits-core[fastembed]==1.4.0.dev202601010248"
 ]
 fastembed-gpu = [
-    "fastembed-gpu>=0.4.2,<1.0.0",
+    "ragbits-core[fastembed-gpu]==1.4.0.dev202601010248",
 ]
 pgvector = [
-    "asyncpg>=0.30.0,<1.0.0",
+    "ragbits-core[pgvector]==1.4.0.dev202601010248",
 ]
-ray = ["ray[data]>=2.43.0,<3.0.0"]
+ray = ["ragbits-document-search[ray]==1.4.0.dev202601010248"]
 unstructured = [
-    "unstructured>=0.16.9,<1.0.0",
-    "unstructured-client>=0.26.0,<1.0.0",
+    "ragbits-document-search[unstructured]==1.4.0.dev202601010248",
 ]
 sql = [
-    "sqlalchemy>=2.0.39,<3.0.0",
+    "ragbits-chat[sql]==1.4.0.dev202601010248",
 ]
 a2a = [
-    "a2a-sdk>=0.2.9,<1.0.0",
-    "fastapi>=0.115.0,<1.0.0",
-    "uvicorn>=0.31.0,<1.0.0",
+    "ragbits-agents[a2a]==1.4.0.dev202601010248",
 ]
 mcp = [
-    "mcp>=1.9.4,<2.0.0",
+    "ragbits-agents[mcp]==1.4.0.dev202601010248",
 ]
 weaviate = [
-    "weaviate-client>=4.15.4,<5.0.0",
+    "ragbits-core[weaviate]==1.4.0.dev202601010248",
 ]
 google_drive = [
-    "google-api-core>=2.25.1,<3.0.0",
-    "google-api-python-client>=2.174.0,<3.0.0",
-    "google-auth>=2.40.3,<3.0.0",
-    "google-auth-httplib2>=0.2.0,<1.0.0",
-    "google-auth-oauthlib>=1.2.2,<2.0.0",
-    "google-oauth2-tool>=0.0.3,<1.0.0",
-    "googleapis-common-protos>=1.70.0,<2.0.0"
+    "ragbits-core[google_drive]==1.4.0.dev202601010248"
 ]
 cli = [
-    "textual>=0.85.2,<1.0.0",
+    "ragbits-agents[cli]==1.4.0.dev202601010248",
 ]
 
 [build-system]

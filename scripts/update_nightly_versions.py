@@ -35,22 +35,31 @@ def update_package_version(package_dir: Path, new_version: str) -> None:
     data = tomlkit.parse(pyproject_path.read_text())
 
     # Update version
-    if "project" in data and "version" in data["project"]:
-        old_version = data["project"]["version"]
-        data["project"]["version"] = new_version
+    if (project := data.get("project")) and "version" in project:
+        old_version = project["version"]
+        project["version"] = new_version
         print(f"Updated {package_dir.name}: {old_version} → {new_version}")
     else:
         print(f"Warning: No version field found in {pyproject_path}")
         return
 
     # Update dependencies to use the same nightly version
-    if "project" in data and "dependencies" in data["project"]:
-        dependencies = data["project"]["dependencies"]
+    if dependencies := project.get("dependencies"):
         for i, dep in enumerate(dependencies):
             if dep.startswith("ragbits-") and "==" in dep:
                 package_name = dep.split("==")[0]
                 dependencies[i] = f"{package_name}=={new_version}"
                 print(f"Updated dependency in {package_dir.name}: {package_name}=={new_version}")
+
+    # Update optional-dependencies (extras) to use the same nightly version
+    if optional_deps := project.get("optional-dependencies"):
+        for extra_name, deps in optional_deps.items():
+            for i, dep in enumerate(deps):
+                if dep.startswith("ragbits-") and "==" in dep:
+                    # Extract package name with or without extras
+                    package_part = dep.split("==")[0]
+                    deps[i] = f"{package_part}=={new_version}"
+                    print(f"Updated extra '{extra_name}' in {package_dir.name}: {package_part}=={new_version}")
 
     # Write updated pyproject.toml
     pyproject_path.write_text(tomlkit.dumps(data))
