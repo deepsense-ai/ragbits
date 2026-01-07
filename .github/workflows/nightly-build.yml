@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "0 2 * * *" # Daily at 2 AM UTC
   workflow_dispatch: # Manual trigger for testing
+    inputs:
+      dry-run:
+        description: 'Dry run (skip publishing to PyPI and npm)'
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   check-for-changes:
@@ -30,12 +36,13 @@ jobs:
           python-version: "3.10"
 
       - name: Check if nightly build needed
+        if: ${{ inputs.dry-run != true }}
         id: check
         run: uv run scripts/check_nightly_build.py
 
   build:
     needs: check-for-changes
-    if: needs.check-for-changes.outputs.should-build == 'true'
+    if: inputs.dry-run == true || needs.check-for-changes.outputs.should-build == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -58,6 +65,7 @@ jobs:
           python-version: "3.10"
 
       - name: Update package versions for nightly
+        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         run: |
           uv run scripts/update_nightly_versions.py "${{ needs.check-for-changes.outputs.nightly-version }}"
           uv run scripts/update_nightly_npm_versions.py "${{ needs.check-for-changes.outputs.nightly-version }}"
@@ -81,6 +89,7 @@ jobs:
           retention-days: 3
 
       - name: Sync versions to repo and push tag
+        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         run: |
           git config user.name "ds-ragbits-robot"
           git config user.email "ds-ragbits-robot@users.noreply.github.com"
@@ -203,7 +212,13 @@ jobs:
           name: nightly-packages
           path: dist
 
+      - name: Dry run notice
+        if: ${{ inputs.dry-run == true }}
+        run: |
+          echo "::notice::🔍 DRY RUN MODE: Skipping all publishing steps (PyPI, npm, docs, git push)"
+
       - name: Publish to PyPI
+        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         run: |
           uv tool run twine upload dist/* --verbose
         env:
@@ -212,24 +227,29 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
 
       - name: Install TypeScript dependencies
+        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         run: npm ci
 
       - name: Build npm packages
+        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         run: npm run build:packages
 
       - name: Publish @ragbits/api-client (dev)
+        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         run: npm publish --provenance --access public --tag dev
         working-directory: typescript/@ragbits/api-client
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @ragbits/api-client-react (dev)
+        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         run: npm publish --provenance --access public --tag dev
         working-directory: typescript/@ragbits/api-client-react
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Deploy nightly documentation
+        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         shell: bash
         run: |
           git config user.name "ds-ragbits-robot"
