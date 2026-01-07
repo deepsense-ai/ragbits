@@ -33,13 +33,46 @@ jobs:
         id: check
         run: uv run scripts/check_nightly_build.py
 
-  build-and-publish:
+  build-test-and-publish:
     needs: check-for-changes
     if: needs.check-for-changes.outputs.should-build == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     permissions:
       contents: write
       id-token: write
+
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.0-pg17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: tests
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      weaviate:
+        image: cr.weaviate.io/semitechnologies/weaviate:1.30.6
+        env:
+          QUERY_DEFAULTS_LIMIT: 25
+          AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: true
+          PERSISTENCE_DATA_PATH: /var/lib/weaviate
+          ENABLE_API_BASED_MODULES: true
+          CLUSTER_HOSTNAME: node1
+        ports:
+          - 8080:8080
+          - 50051:50051
+        options: >-
+          --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:8080/v1/.well-known/ready || exit 1"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout develop branch
         uses: actions/checkout@v4
@@ -79,6 +112,14 @@ jobs:
             echo "Building $dir"
             uv build "$dir" --out-dir dist
           done
+
+      - name: Test built packages
+        uses: ./.github/actions/test-packages
+        with:
+          python-version: "3.10"
+          google-drive-clientid-json: ${{ secrets.GOOGLE_DRIVE_CLIENTID_JSON }}
+          google-source-unit-test-folder: ${{ secrets.GOOGLE_SOURCE_UNIT_TEST_FOLDER }}
+          google-drive-target-email: ${{ secrets.GOOGLE_DRIVE_TARGET_EMAIL }}
 
       - name: Sync versions to repo and push tag
         run: |
