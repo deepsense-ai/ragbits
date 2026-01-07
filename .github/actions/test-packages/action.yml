@@ -1,0 +1,40 @@
+name: 'Test Built Packages'
+description: 'Sets up environment from built packages and runs tests'
+inputs:
+  python-version:
+    description: 'Python version to use'
+    required: true
+  google-drive-clientid-json:
+    description: 'Google Drive client ID JSON'
+    required: false
+  google-source-unit-test-folder:
+    description: 'Google source unit test folder'
+    required: false
+  google-drive-target-email:
+    description: 'Google Drive target email'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Run Tests With Coverage (package)
+      shell: bash
+      run: |
+        # Create a fresh virtual environment
+        uv venv --python ${{ inputs.python-version }}
+
+        uv pip install --find-links dist  "$(ls dist/ragbits-*.whl)[a2a,azure,chroma,cli,fastembed,fastembed-gpu,gcs,google-drive,hf,local,logfire,mcp,openai,otel,pgvector,promptfoo,qdrant,ray,relari,s3,sql,unstructured,weaviate]"
+
+        uv pip install pyarrow==17.0.0 ray==2.43.0
+
+        # Install test dependencies
+        uv pip install pytest~=8.3.3 pytest-cov~=5.0.0 pytest-asyncio~=0.24.0 pytest-postgresql~=7.0.1 moto~=4.2.7 aiosqlite~=0.21.0
+
+        # Run tests with coverage
+        uv run --no-sync coverage run -m pytest --postgresql-password postgres -v -p no:warnings --junitxml=report.xml
+        uv run --no-sync coverage report
+        uv run --no-sync coverage xml
+      env:
+        GOOGLE_DRIVE_CLIENTID_JSON: ${{ inputs.google-drive-clientid-json }}
+        GOOGLE_SOURCE_UNIT_TEST_FOLDER: ${{ inputs.google-source-unit-test-folder }}
+        GOOGLE_DRIVE_TARGET_EMAIL: ${{ inputs.google-drive-target-email }}
