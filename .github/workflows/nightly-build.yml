@@ -33,14 +33,81 @@ jobs:
         id: check
         run: uv run scripts/check_nightly_build.py
 
-  build-test-and-publish:
+  build:
     needs: check-for-changes
     if: needs.check-for-changes.outputs.should-build == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
     permissions:
       contents: write
-      id-token: write
+    steps:
+      - name: Checkout develop branch
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+        with:
+          version: ${{ vars.UV_VERSION || '0.6.9' }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Update package versions for nightly
+        run: |
+          uv run scripts/update_nightly_versions.py "${{ needs.check-for-changes.outputs.nightly-version }}"
+          uv run scripts/update_nightly_npm_versions.py "${{ needs.check-for-changes.outputs.nightly-version }}"
+
+      - name: Install dependencies
+        run: |
+          uv sync --all-extras
+
+      - name: Build packages
+        run: |
+          for dir in packages/*/; do
+            echo "Building $dir"
+            uv build "$dir" --out-dir dist
+          done
+
+      - name: Upload built packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-packages
+          path: dist/**
+          retention-days: 3
+
+      - name: Sync versions to repo and push tag
+        run: |
+          git config user.name "ds-ragbits-robot"
+          git config user.email "ds-ragbits-robot@users.noreply.github.com"
+          git add packages/*/pyproject.toml typescript/@ragbits/*/package.json
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update package versions for nightly build ${{ env.NIGHTLY_VERSION }}"
+            git push origin develop
+          fi
+
+          git tag "${{ env.NIGHTLY_VERSION }}"
+          git push origin "${{ env.NIGHTLY_VERSION }}"
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          NIGHTLY_VERSION: ${{ needs.check-for-changes.outputs.nightly-version }}
+
+  test-packages:
+    name: Test packages (Python ${{ matrix.python-version }})
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ "3.10", "3.11", "3.12" ]
 
     services:
       postgres:
@@ -74,6 +141,39 @@ jobs:
           --health-retries 5
 
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+        with:
+          version: ${{ vars.UV_VERSION || '0.6.9' }}
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Download built packages
+        uses: actions/download-artifact@v4
+        with:
+          name: nightly-packages
+          path: dist
+
+      - name: Test built packages
+        uses: ./.github/actions/test-packages
+        with:
+          python-version: ${{ matrix.python-version }}
+          google-drive-clientid-json: ${{ secrets.GOOGLE_DRIVE_CLIENTID_JSON }}
+          google-source-unit-test-folder: ${{ secrets.GOOGLE_SOURCE_UNIT_TEST_FOLDER }}
+          google-drive-target-email: ${{ secrets.GOOGLE_DRIVE_TARGET_EMAIL }}
+
+  publish:
+    needs: [check-for-changes, test-packages]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+    steps:
       - name: Checkout develop branch
         uses: actions/checkout@v4
         with:
@@ -97,48 +197,11 @@ jobs:
           node-version: "lts/*"
           registry-url: "https://registry.npmjs.org"
 
-      - name: Update package versions for nightly
-        run: |
-          uv run scripts/update_nightly_versions.py "${{ needs.check-for-changes.outputs.nightly-version }}"
-          uv run scripts/update_nightly_npm_versions.py "${{ needs.check-for-changes.outputs.nightly-version }}"
-
-      - name: Install dependencies
-        run: |
-          uv sync --all-extras
-
-      - name: Build packages
-        run: |
-          for dir in packages/*/; do
-            echo "Building $dir"
-            uv build "$dir" --out-dir dist
-          done
-
-      - name: Test built packages
-        uses: ./.github/actions/test-packages
+      - name: Download built packages
+        uses: actions/download-artifact@v4
         with:
-          python-version: "3.10"
-          google-drive-clientid-json: ${{ secrets.GOOGLE_DRIVE_CLIENTID_JSON }}
-          google-source-unit-test-folder: ${{ secrets.GOOGLE_SOURCE_UNIT_TEST_FOLDER }}
-          google-drive-target-email: ${{ secrets.GOOGLE_DRIVE_TARGET_EMAIL }}
-
-      - name: Sync versions to repo and push tag
-        run: |
-          git config user.name "ds-ragbits-robot"
-          git config user.email "ds-ragbits-robot@users.noreply.github.com"
-          git add packages/*/pyproject.toml typescript/@ragbits/*/package.json
-
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-          else
-            git commit -m "chore: update package versions for nightly build ${{ env.NIGHTLY_VERSION }}"
-            git push origin develop
-          fi
-
-          git tag "${{ env.NIGHTLY_VERSION }}"
-          git push origin "${{ env.NIGHTLY_VERSION }}"
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-          NIGHTLY_VERSION: ${{ needs.check-for-changes.outputs.nightly-version }}
+          name: nightly-packages
+          path: dist
 
       - name: Publish to PyPI
         run: |
