@@ -2,10 +2,6 @@
 
 ## Unreleased
 
-### Fixed
-
-- fix: improve DoclingDocumentParser compatibility with docling 2.66+ and add proper file cleanup handling. The parser now correctly handles temporary file renaming for .txt files and avoids passing unnecessary pipeline options to simple format converters, preventing AttributeError with picture_description_options in newer docling versions.
-
 ## 1.3.0 (2025-09-11)
 
 ### Changed

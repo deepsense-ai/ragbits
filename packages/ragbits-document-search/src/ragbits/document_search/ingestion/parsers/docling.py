@@ -1,6 +1,6 @@
 from docling.chunking import HierarchicalChunker
 from docling.datamodel.base_models import InputFormat
-from docling.datamodel.pipeline_options import AcceleratorOptions, EasyOcrOptions, PdfPipelineOptions
+from docling.datamodel.pipeline_options import AcceleratorOptions, EasyOcrOptions, PdfPipelineOptions, PipelineOptions
 from docling.document_converter import (
     DocumentConverter,
     ExcelFormatOption,
@@ -91,6 +91,7 @@ class DoclingDocumentParser(DocumentParser):
         else:
             # Build default format options
             accelerator_options = AcceleratorOptions(num_threads=self.num_threads)
+            pipeline_options = PipelineOptions(accelerator_options=accelerator_options)
             pdf_pipeline_options = PdfPipelineOptions(
                 images_scale=2,
                 generate_page_images=True,
@@ -100,13 +101,11 @@ class DoclingDocumentParser(DocumentParser):
 
             converter = DocumentConverter(
                 format_options={
-                    # Simple formats use default pipeline options to avoid compatibility issues
-                    InputFormat.XLSX: ExcelFormatOption(),
-                    InputFormat.DOCX: WordFormatOption(),
-                    InputFormat.PPTX: PowerpointFormatOption(),
-                    InputFormat.HTML: HTMLFormatOption(),
-                    InputFormat.MD: MarkdownFormatOption(),
-                    # PDF and Image formats use specialized options with OCR and image processing
+                    InputFormat.XLSX: ExcelFormatOption(pipeline_options=pipeline_options),
+                    InputFormat.DOCX: WordFormatOption(pipeline_options=pipeline_options),
+                    InputFormat.PPTX: PowerpointFormatOption(pipeline_options=pipeline_options),
+                    InputFormat.HTML: HTMLFormatOption(pipeline_options=pipeline_options),
+                    InputFormat.MD: MarkdownFormatOption(pipeline_options=pipeline_options),
                     InputFormat.IMAGE: PdfFormatOption(pipeline_options=pdf_pipeline_options),
                     InputFormat.PDF: PdfFormatOption(pipeline_options=pdf_pipeline_options),
                 },
@@ -116,13 +115,12 @@ class DoclingDocumentParser(DocumentParser):
         if document.metadata.document_type == DocumentType.TXT:
             original_suffix = document.local_path.suffix
             document.local_path = document.local_path.rename(document.local_path.with_suffix(".md"))
-            try:
-                partitioned_document = converter.convert(document.local_path).document
-            finally:
-                # Always convert back to the original file, even if an exception occurs.
-                document.local_path = document.local_path.rename(document.local_path.with_suffix(original_suffix))
-        else:
-            partitioned_document = converter.convert(document.local_path).document
+
+        partitioned_document = converter.convert(document.local_path).document
+
+        # Convert back to the original file.
+        if document.metadata.document_type == DocumentType.TXT:
+            document.local_path = document.local_path.rename(document.local_path.with_suffix(original_suffix))
 
         return partitioned_document
 
