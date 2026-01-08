@@ -17,23 +17,94 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Run Tests With Coverage (package)
+    - name: Test Each Package Separately
       shell: bash
       run: |
-        # Create a fresh virtual environment
-        uv venv --python ${{ inputs.python-version }}
+        # Define packages and their extras
+        declare -A PACKAGE_EXTRAS=(
+          ["ragbits-core"]="chroma,hf,s3,gcs,azure,local,openai,otel,logfire,promptfoo,qdrant,fastembed,fastembed-gpu,pgvector,weaviate,google-drive"
+          ["ragbits-agents"]="a2a,mcp,cli"
+          ["ragbits-chat"]="sql"
+          ["ragbits-cli"]=""
+          ["ragbits-evaluate"]="relari"
+          ["ragbits-guardrails"]="openai"
+          ["ragbits-document-search"]="ray,unstructured"
+        )
 
-        uv pip install --find-links dist  "$(ls dist/ragbits-*.whl)[a2a,azure,chroma,cli,fastembed,fastembed-gpu,gcs,google-drive,hf,local,logfire,mcp,openai,otel,pgvector,promptfoo,qdrant,ray,relari,s3,sql,unstructured,weaviate]"
+        # Track overall success
+        FAILED_PACKAGES=()
 
-        uv pip install pyarrow==17.0.0 ray==2.43.0
+        echo "Testing packages with Python ${{ inputs.python-version }}"
 
-        # Install test dependencies
-        uv pip install pytest~=8.3.3 pytest-cov~=5.0.0 pytest-asyncio~=0.24.0 pytest-postgresql~=7.0.1 moto~=4.2.7 aiosqlite~=0.21.0
+        # Test each package
+        for package in "${!PACKAGE_EXTRAS[@]}"; do
+          echo "========================================="
+          echo "Testing $package"
+          echo "========================================="
 
-        # Run tests with coverage
-        uv run --no-sync coverage run -m pytest --postgresql-password postgres -v -p no:warnings --junitxml=report.xml
-        uv run --no-sync coverage report
-        uv run --no-sync coverage xml
+          # Remove existing venv if present
+          rm -rf .venv
+
+          # Create a fresh virtual environment
+          uv venv --python ${{ inputs.python-version }}
+
+          # Find the wheel file for this package
+          wheel_file=$(ls dist/${package}-*.whl 2>/dev/null || echo "")
+
+          if [ -z "$wheel_file" ]; then
+            echo "Warning: No wheel found for $package, skipping..."
+            continue
+          fi
+
+          # Install the package with all its extras
+          extras="${PACKAGE_EXTRAS[$package]}"
+          if [ -n "$extras" ]; then
+            echo "Installing $wheel_file with extras: $extras"
+            uv pip install --find-links dist "${wheel_file}[$extras]"
+          else
+            echo "Installing $wheel_file without extras"
+            uv pip install --find-links dist "$wheel_file"
+          fi
+
+          # Install additional dependencies for specific packages
+          if [ "$package" == "ragbits-document-search" ]; then
+            uv pip install pyarrow==17.0.0 ray==2.43.0
+          fi
+
+          # Install test dependencies
+          uv pip install pytest~=8.3.3 pytest-cov~=5.0.0 pytest-asyncio~=0.24.0 pytest-postgresql~=7.0.1 moto~=4.2.7 aiosqlite~=0.21.0
+
+          # Determine test directory
+          test_dir="packages/${package}/tests"
+
+          if [ ! -d "$test_dir" ]; then
+            echo "Warning: Test directory $test_dir not found, skipping tests for $package"
+            continue
+          fi
+
+          # Run tests for this package only
+          echo "Running tests from $test_dir"
+          if uv run --no-sync pytest "$test_dir" --postgresql-password postgres -v -p no:warnings; then
+            echo "✓ Tests passed for $package"
+          else
+            echo "✗ Tests failed for $package"
+            FAILED_PACKAGES+=("$package")
+          fi
+
+          echo ""
+        done
+
+        # Report results
+        echo "========================================="
+        echo "Test Summary"
+        echo "========================================="
+
+        if [ ${#FAILED_PACKAGES[@]} -eq 0 ]; then
+          echo "✓ All packages tested successfully!"
+        else
+          echo "✗ Failed packages: ${FAILED_PACKAGES[*]}"
+          exit 1
+        fi
       env:
         GOOGLE_DRIVE_CLIENTID_JSON: ${{ inputs.google-drive-clientid-json }}
         GOOGLE_SOURCE_UNIT_TEST_FOLDER: ${{ inputs.google-source-unit-test-folder }}
