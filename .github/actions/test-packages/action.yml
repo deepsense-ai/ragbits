@@ -25,7 +25,7 @@ runs:
 
         uv pip install --find-links dist  "$(ls dist/ragbits-*.whl)[a2a,azure,chroma,cli,fastembed,fastembed-gpu,gcs,google-drive,hf,local,logfire,mcp,openai,otel,pgvector,promptfoo,qdrant,ray,relari,s3,sql,unstructured,weaviate]"
 
-        uv pip install docling==2.15.1 torch==2.2.2 pyarrow==17.0.0 ray==2.43.0
+        uv pip install pyarrow==17.0.0 ray==2.43.0
 
         # Install test dependencies
         uv pip install pytest~=8.3.3 pytest-cov~=5.0.0 pytest-asyncio~=0.24.0 pytest-postgresql~=7.0.1 moto~=4.2.7 aiosqlite~=0.21.0
