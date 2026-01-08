@@ -48,11 +48,14 @@ runs:
           # Create a fresh virtual environment
           uv venv --python ${{ inputs.python-version }}
 
+          # Convert package name to wheel format (hyphens to underscores)
+          wheel_package_name="${package//-/_}"
+
           # Find the wheel file for this package
-          wheel_file=$(ls dist/${package}-*.whl 2>/dev/null || echo "")
+          wheel_file=$(ls dist/${wheel_package_name}-*.whl 2>/dev/null || echo "")
 
           if [ -z "$wheel_file" ]; then
-            echo "Warning: No wheel found for $package, skipping..."
+            echo "Warning: No wheel found for $package (searched for ${wheel_package_name}-*.whl), skipping..."
             continue
           fi
 
