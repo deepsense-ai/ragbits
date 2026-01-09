@@ -24,3 +24,5 @@ Unlicense
 Proprietary License
 Historical Permission Notice and Disclaimer (HPND)
 ISC
+Elastic-2.0
+zlib/libpng
