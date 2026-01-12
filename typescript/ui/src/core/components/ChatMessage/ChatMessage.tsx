@@ -174,6 +174,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
               <MarkdownContent
                 content={content}
                 classNames={classNames?.content}
+                isStreaming={isLoading}
               />
             ) : (
               <div className="flex flex-col gap-2">
@@ -216,6 +217,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
                 <MarkdownContent
                   content={content}
                   classNames={classNames?.content}
+                  isStreaming={isLoading}
                 />
                 {error && (
                   <div
