@@ -9,8 +9,11 @@ import {
   useRef,
   ReactNode,
   useState,
+  ChangeEvent,
   useEffect,
 } from "react";
+
+import { useRagbitsContext } from "@ragbits/api-client-react";
 
 import PromptInputText from "./PromptInputText";
 import { TextAreaProps } from "@heroui/react";
@@ -55,6 +58,9 @@ const PromptInput = ({
   const { isCaretInFirstLine, isCaretInLastLine } =
     useCaretLogicalLineDetection();
   const quickMessageIndex = useRef(Math.max(quickMessages.length - 1, 0));
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { client } = useRagbitsContext();
+  const [isUploading, setIsUploading] = useState(false);
 
   const setQuickMessage = useCallback(() => {
     const quickMessage = quickMessages[quickMessageIndex.current];
@@ -157,6 +163,25 @@ const PromptInput = ({
     setMessage(value);
   }, []);
 
+  const handleFileClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    try {
+      await client.uploadFile(file);
+    } catch (err) {
+      console.error("Upload failed", err);
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
   useEffect(() => {
     const newQuickMessages = (history ?? [])
       .filter((m) => m.role === MessageRole.User)
@@ -212,6 +237,28 @@ const PromptInput = ({
           {...inputProps}
         />
         <div className="flex items-center gap-2">
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            onChange={handleFileChange}
+          />
+          <Button
+            isIconOnly
+            aria-label="Upload file"
+            variant="light"
+            radius="full"
+            size="sm"
+            onPress={handleFileClick}
+            isLoading={isUploading}
+            isDisabled={isDisabled || isLoading}
+          >
+            <Icon
+              className="text-default-500"
+              icon="heroicons:paper-clip"
+              width={20}
+            />
+          </Button>
           <PluginWrapper
             plugin={ChatOptionsPlugin}
             component="ChatOptionsForm"

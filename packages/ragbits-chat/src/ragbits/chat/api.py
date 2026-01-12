@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Request, UploadFile, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, StreamingResponse
@@ -194,6 +194,10 @@ class RagbitsAPI:
                 feedback_request: FeedbackRequest,
             ) -> JSONResponse:
                 return await self._handle_feedback(feedback_request, request)
+
+            @self.app.post("/api/upload", response_class=JSONResponse)
+            async def upload_file(file: UploadFile) -> JSONResponse:
+                return await self._handle_file_upload(file)
         else:
 
             @self.app.post("/api/chat", response_class=StreamingResponse)
@@ -209,6 +213,10 @@ class RagbitsAPI:
                 feedback_request: FeedbackRequest,
             ) -> JSONResponse:
                 return await self._handle_feedback(feedback_request, request)
+
+            @self.app.post("/api/upload", response_class=JSONResponse)
+            async def upload_file(file: UploadFile) -> JSONResponse:
+                return await self._handle_file_upload(file)
 
         @self.app.get("/api/config", response_class=JSONResponse)
         async def config() -> JSONResponse:
@@ -568,6 +576,31 @@ class RagbitsAPI:
                 error_type=type(e).__name__,
             )
             raise HTTPException(status_code=500, detail="Internal server error") from None
+
+    async def _handle_file_upload(self, file: UploadFile) -> JSONResponse:
+        """
+        Handle file upload requests.
+
+        Args:
+            file: The uploaded file.
+
+        Returns:
+            JSONResponse with status.
+        """
+        if not self.chat_interface.upload_handler:
+            raise HTTPException(status_code=400, detail="File upload not supported")
+
+        try:
+            # Check if handler is async and call it
+            if asyncio.iscoroutinefunction(self.chat_interface.upload_handler):
+                await self.chat_interface.upload_handler(file)
+            else:
+                await asyncio.to_thread(self.chat_interface.upload_handler, file)
+
+            return JSONResponse(content={"status": "success", "filename": file.filename})
+        except Exception as e:
+            logger.error(f"File upload error: {e}")
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     async def get_current_user_from_cookie(self, request: Request) -> User | None:
         """

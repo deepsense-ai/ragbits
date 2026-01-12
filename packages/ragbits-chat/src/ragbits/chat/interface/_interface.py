@@ -211,6 +211,15 @@ class ChatInterface(ABC):
     ui_customization: UICustomization | None = None
     history_persistence: HistoryPersistenceStrategy | None = None
     summary_generator: SummaryGenerator = HeuristicSummaryGenerator()
+    upload_handler: Callable[[Any], Any] | None = None
+    """
+    Optional handler/callback for file uploads.
+    The handler should be an async method that accepts a single argument `file` (UploadFile).
+    Example:
+        async def upload_handler(self, file: UploadFile):
+            content = await file.read()
+            # process content
+    """
 
     def __init_subclass__(cls, **kwargs: dict) -> None:
         """Automatically apply the with_chat_metadata decorator to the chat method in subclasses."""
