@@ -245,6 +245,7 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
         if not existing_conversation:
             conversation = self.Conversation(id=conversation_id)
             session.add(conversation)
+            await session.flush()
 
     async def get_conversation_interactions(self, conversation_id: str) -> list[dict[str, Any]]:
         """
