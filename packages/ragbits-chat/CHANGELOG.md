@@ -1,8 +1,8 @@
 # CHANGELOG
 
 ## Unreleased
+- Fix PostgreSQL conversation persistence by ensuring session flush after creating new conversation in SQL storage
 - Change auth backend from jwt to http-only cookie based authentication, add support for OAuth2 authentication (#867)
-
 - Make `SummaryGenerator` optional in `ChatInterface` by providing a default Heuristic implementation.
 - Refactor ragbits-client types to remove excessive use of any (#881)
 - Split params into path params, query params in API client (#871)
