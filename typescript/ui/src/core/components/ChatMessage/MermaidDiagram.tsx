@@ -16,7 +16,9 @@ const MermaidDiagram = memo(({ chart, classNames }: MermaidDiagramProps) => {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const elementRef = useRef<HTMLDivElement>(null);
-  const idRef = useRef(`mermaid-${Math.random().toString(36).substring(2, 11)}`);
+  const idRef = useRef(
+    `mermaid-${Math.random().toString(36).substring(2, 11)}`,
+  );
 
   const handleDownload = () => {
     if (!svg) return;
@@ -51,15 +53,14 @@ const MermaidDiagram = memo(({ chart, classNames }: MermaidDiagramProps) => {
         });
 
         // Render the diagram
-        const { svg: renderedSvg } = await mermaid.render(
-          idRef.current,
-          chart,
-        );
+        const { svg: renderedSvg } = await mermaid.render(idRef.current, chart);
 
         setSvg(renderedSvg);
         setIsLoading(false);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to render diagram");
+        setError(
+          err instanceof Error ? err.message : "Failed to render diagram",
+        );
         setIsLoading(false);
       }
     };
@@ -71,7 +72,7 @@ const MermaidDiagram = memo(({ chart, classNames }: MermaidDiagramProps) => {
     return (
       <div
         className={cn(
-          "bg-danger-50 dark:bg-danger-100 border border-danger-200 dark:border-danger-300 text-danger-700 dark:text-danger-800 rounded-medium p-3 mt-2 mb-2",
+          "bg-danger-50 dark:bg-danger-100 border-danger-200 dark:border-danger-300 text-danger-700 dark:text-danger-800 rounded-medium mt-2 mb-2 border p-3",
           classNames,
         )}
       >
@@ -82,7 +83,7 @@ const MermaidDiagram = memo(({ chart, classNames }: MermaidDiagramProps) => {
           />
           <span className="font-semibold">Mermaid Syntax Error</span>
         </div>
-        <pre className="mt-2 text-sm overflow-auto whitespace-pre-wrap">
+        <pre className="mt-2 overflow-auto text-sm whitespace-pre-wrap">
           {error}
         </pre>
       </div>
@@ -93,18 +94,18 @@ const MermaidDiagram = memo(({ chart, classNames }: MermaidDiagramProps) => {
     return (
       <div
         className={cn(
-          "bg-default rounded-medium p-4 mt-2 mb-2 border border-default-200",
+          "bg-default rounded-medium border-default-200 mt-2 mb-2 border p-4",
           "relative overflow-hidden",
           classNames,
         )}
       >
-        <div className="h-32 bg-default-200 rounded flex items-center justify-center relative">
+        <div className="bg-default-200 relative flex h-32 items-center justify-center rounded">
           {/* Animated shimmer effect */}
-          <div className="absolute inset-0 -translate-x-full animate-[shimmer_2s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-default-300/50 to-transparent" />
+          <div className="via-default-300/50 absolute inset-0 -translate-x-full animate-[shimmer_2s_ease-in-out_infinite] bg-gradient-to-r from-transparent to-transparent" />
           {/* Pulsing icon */}
           <Icon
             icon="heroicons:chart-bar"
-            className="h-12 w-12 text-default-400 animate-[pulse_2s_ease-in-out_infinite]"
+            className="text-default-400 h-12 w-12 animate-[pulse_2s_ease-in-out_infinite]"
           />
         </div>
       </div>
@@ -116,7 +117,7 @@ const MermaidDiagram = memo(({ chart, classNames }: MermaidDiagramProps) => {
       <div
         ref={elementRef}
         className={cn(
-          "mermaid-container bg-default rounded-medium p-6 mt-2 mb-2 border border-default-200",
+          "mermaid-container bg-default rounded-medium border-default-200 mt-2 mb-2 border p-6",
           "overflow-x-auto overflow-y-visible",
           "animate-[fadeIn_0.5s_ease-in]",
           classNames,
@@ -133,7 +134,7 @@ const MermaidDiagram = memo(({ chart, classNames }: MermaidDiagramProps) => {
           "rounded-medium p-2",
           "transition-colors duration-200",
           "flex items-center justify-center",
-          "border border-default-300"
+          "border-default-300 border",
         )}
         aria-label="Download diagram"
         title="Download as SVG"

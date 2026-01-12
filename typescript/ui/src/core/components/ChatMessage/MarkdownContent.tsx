@@ -88,11 +88,15 @@ function parseContentChunks(content: string, isStreaming: boolean) {
   return { chunks: result, hasIncompleteMermaid: hasIncomplete };
 }
 
-const MarkdownContent = ({ content, classNames, isStreaming = false }: MarkdownContentProps) => {
+const MarkdownContent = ({
+  content,
+  classNames,
+  isStreaming = false,
+}: MarkdownContentProps) => {
   // Split content into text and mermaid chunks
   const { chunks, hasIncompleteMermaid } = useMemo(
     () => parseContentChunks(content, isStreaming),
-    [content, isStreaming]
+    [content, isStreaming],
   );
 
   return (
@@ -134,15 +138,15 @@ const MarkdownContent = ({ content, classNames, isStreaming = false }: MarkdownC
       {hasIncompleteMermaid && (
         <div
           className={cn(
-            "bg-default rounded-medium p-4 mt-2 mb-2 border border-default-200",
+            "bg-default rounded-medium border-default-200 mt-2 mb-2 border p-4",
             "relative overflow-hidden",
           )}
         >
-          <div className="h-32 bg-default-200 rounded flex items-center justify-center relative">
-            <div className="absolute inset-0 animate-[shimmer_2s_ease-in-out_infinite] bg-gradient-to-r from-transparent via-default-300/50 to-transparent" />
+          <div className="bg-default-200 relative flex h-32 items-center justify-center rounded">
+            <div className="via-default-300/50 absolute inset-0 animate-[shimmer_2s_ease-in-out_infinite] bg-gradient-to-r from-transparent to-transparent" />
             <Icon
               icon="heroicons:chart-bar"
-              className="h-12 w-12 text-default-400 animate-[pulse_2s_ease-in-out_infinite]"
+              className="text-default-400 h-12 w-12 animate-[pulse_2s_ease-in-out_infinite]"
             />
           </div>
         </div>

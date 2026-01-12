@@ -52,23 +52,27 @@ describe("MermaidDiagram", () => {
 
   it("renders valid mermaid diagram", async () => {
     const mockSvg = '<svg id="test-diagram">Test Diagram</svg>';
-    (mermaid.render as ReturnType<typeof vi.fn>).mockResolvedValue({ svg: mockSvg });
+    (mermaid.render as ReturnType<typeof vi.fn>).mockResolvedValue({
+      svg: mockSvg,
+    });
 
     render(<MermaidDiagram chart={validMermaidChart} />);
 
     await waitFor(() => {
-      expect((mermaid.initialize as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
+      expect(
+        mermaid.initialize as ReturnType<typeof vi.fn>,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           startOnLoad: false,
           theme: "default",
           securityLevel: "strict",
           fontFamily: "arial, sans-serif",
-        })
+        }),
       );
     });
 
     await waitFor(() => {
-      expect((mermaid.render as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
+      expect(mermaid.render as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
         expect.stringMatching(/^mermaid-/),
         validMermaidChart,
       );
@@ -88,27 +92,35 @@ describe("MermaidDiagram", () => {
     });
 
     const mockSvg = '<svg id="test-diagram">Dark Diagram</svg>';
-    (mermaid.render as ReturnType<typeof vi.fn>).mockResolvedValue({ svg: mockSvg });
+    (mermaid.render as ReturnType<typeof vi.fn>).mockResolvedValue({
+      svg: mockSvg,
+    });
 
     render(<MermaidDiagram chart={validMermaidChart} />);
 
     await waitFor(() => {
-      expect((mermaid.initialize as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
+      expect(
+        mermaid.initialize as ReturnType<typeof vi.fn>,
+      ).toHaveBeenCalledWith(
         expect.objectContaining({
           startOnLoad: false,
           theme: "dark",
           securityLevel: "strict",
           fontFamily: "arial, sans-serif",
-        })
+        }),
       );
     });
   });
 
   it("displays error for invalid mermaid syntax", async () => {
     const errorMessage = "Parse error on line 1";
-    (mermaid.render as ReturnType<typeof vi.fn>).mockRejectedValue(new Error(errorMessage));
+    (mermaid.render as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error(errorMessage),
+    );
 
-    const { container } = render(<MermaidDiagram chart="invalid mermaid syntax" />);
+    const { container } = render(
+      <MermaidDiagram chart="invalid mermaid syntax" />,
+    );
 
     await waitFor(() => {
       expect(screen.getByText("Mermaid Syntax Error")).toBeInTheDocument();
@@ -121,7 +133,9 @@ describe("MermaidDiagram", () => {
   });
 
   it("handles non-Error exceptions", async () => {
-    (mermaid.render as ReturnType<typeof vi.fn>).mockRejectedValue("String error");
+    (mermaid.render as ReturnType<typeof vi.fn>).mockRejectedValue(
+      "String error",
+    );
 
     render(<MermaidDiagram chart="invalid" />);
 
@@ -138,14 +152,16 @@ describe("MermaidDiagram", () => {
     });
 
     const mockSvg = '<svg id="test-diagram-dark">Dark Diagram</svg>';
-    (mermaid.render as ReturnType<typeof vi.fn>).mockResolvedValue({ svg: mockSvg });
+    (mermaid.render as ReturnType<typeof vi.fn>).mockResolvedValue({
+      svg: mockSvg,
+    });
 
     render(<MermaidDiagram chart={validMermaidChart} />);
 
     await waitFor(() => {
-      expect((mermaid.initialize as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
-        expect.objectContaining({ theme: "dark" }),
-      );
+      expect(
+        mermaid.initialize as ReturnType<typeof vi.fn>,
+      ).toHaveBeenCalledWith(expect.objectContaining({ theme: "dark" }));
     });
 
     await waitFor(() => {
@@ -157,20 +173,26 @@ describe("MermaidDiagram", () => {
 
   it("re-renders when chart content changes", async () => {
     const mockSvg = '<svg id="test-diagram">Test Diagram</svg>';
-    (mermaid.render as ReturnType<typeof vi.fn>).mockResolvedValue({ svg: mockSvg });
+    (mermaid.render as ReturnType<typeof vi.fn>).mockResolvedValue({
+      svg: mockSvg,
+    });
 
     const { rerender } = render(<MermaidDiagram chart={validMermaidChart} />);
 
     await waitFor(() => {
-      expect((mermaid.render as ReturnType<typeof vi.fn>)).toHaveBeenCalledTimes(1);
+      expect(mermaid.render as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(
+        1,
+      );
     });
 
     const newChart = "graph LR\n  A --> B";
     rerender(<MermaidDiagram chart={newChart} />);
 
     await waitFor(() => {
-      expect((mermaid.render as ReturnType<typeof vi.fn>)).toHaveBeenCalledTimes(2);
-      expect((mermaid.render as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
+      expect(mermaid.render as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(
+        2,
+      );
+      expect(mermaid.render as ReturnType<typeof vi.fn>).toHaveBeenCalledWith(
         expect.stringMatching(/^mermaid-/),
         newChart,
       );
@@ -179,18 +201,24 @@ describe("MermaidDiagram", () => {
 
   it("generates unique IDs for each instance", async () => {
     const mockSvg = '<svg id="test-diagram">Test Diagram</svg>';
-    (mermaid.render as ReturnType<typeof vi.fn>).mockResolvedValue({ svg: mockSvg });
+    (mermaid.render as ReturnType<typeof vi.fn>).mockResolvedValue({
+      svg: mockSvg,
+    });
 
     render(<MermaidDiagram chart={validMermaidChart} />);
     render(<MermaidDiagram chart={validMermaidChart} />);
 
     await waitFor(() => {
-      expect((mermaid.render as ReturnType<typeof vi.fn>)).toHaveBeenCalledTimes(2);
+      expect(mermaid.render as ReturnType<typeof vi.fn>).toHaveBeenCalledTimes(
+        2,
+      );
     });
 
     // Get the IDs passed to mermaid.render
-    const firstCallId = (mermaid.render as ReturnType<typeof vi.fn>).mock.calls[0][0];
-    const secondCallId = (mermaid.render as ReturnType<typeof vi.fn>).mock.calls[1][0];
+    const firstCallId = (mermaid.render as ReturnType<typeof vi.fn>).mock
+      .calls[0][0];
+    const secondCallId = (mermaid.render as ReturnType<typeof vi.fn>).mock
+      .calls[1][0];
 
     expect(firstCallId).toMatch(/^mermaid-/);
     expect(secondCallId).toMatch(/^mermaid-/);
@@ -199,10 +227,14 @@ describe("MermaidDiagram", () => {
 
   it("applies custom classNames", async () => {
     const mockSvg = '<svg id="test-diagram">Test Diagram</svg>';
-    (mermaid.render as ReturnType<typeof vi.fn>).mockResolvedValue({ svg: mockSvg });
+    (mermaid.render as ReturnType<typeof vi.fn>).mockResolvedValue({
+      svg: mockSvg,
+    });
     const customClass = "custom-class";
 
-    render(<MermaidDiagram chart={validMermaidChart} classNames={customClass} />);
+    render(
+      <MermaidDiagram chart={validMermaidChart} classNames={customClass} />,
+    );
 
     await waitFor(() => {
       const container = document.querySelector(".mermaid-container");
