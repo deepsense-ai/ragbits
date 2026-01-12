@@ -4,7 +4,7 @@ Ragbits Core Example: Arize Phoenix Audit
 This example demonstrates how to collect traces using Ragbits audit module with Arize Phoenix.
 We run a simple LLM generation to collect telemetry data, which is then sent to the Phoenix server.
 
-The script exports traces to the local Phoenix server running on http://localhost:6006.
+1. The script exports traces to the local Phoenix server running on http://localhost:6006.
 You need to have Phoenix running locally:
 
     ```bash
@@ -12,13 +12,13 @@ You need to have Phoenix running locally:
     python -m phoenix.server.main serve
     ```
 
-To run the script, execute the following command:
+2. To run the script, execute the following command:
 
     ```bash
     uv run examples/core/audit/phoenix.py
     ```
 
-To visualize the traces:
+3. To visualize the traces:
     1. Open your browser and navigate to http://localhost:6006.
     2. Check the Projects tab (default project).
 """
