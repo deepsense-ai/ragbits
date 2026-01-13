@@ -175,12 +175,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pip-
 
-      - name: Cache NLTK data
-        uses: actions/cache@v3
-        with:
-          path: ~/nltk_data
-          key: nltk-${{ runner.os }}
-
       - name: Download built packages
         if: matrix.install-method == 'package'
         uses: actions/download-artifact@v4
