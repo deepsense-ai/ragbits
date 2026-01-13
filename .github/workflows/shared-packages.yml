@@ -2,10 +2,31 @@ name: Shared packages checks
 
 on:
   workflow_call:
+    inputs:
+      install-methods:
+        description: 'JSON array of install methods to test'
+        type: string
+        default: '["source", "package"]'
+
+      artifact-name:
+        description: 'Name of the packages artifact to download'
+        type: string
+        default: 'packages'
+
+      skip-build:
+        description: 'Skip the build job (use when artifact is provided externally)'
+        type: boolean
+        default: false
+
+      skip-lints:
+        description: 'Skip the lints job'
+        type: boolean
+        default: false
 
 jobs:
   lints:
     name: Run linters
+    if: ${{ !inputs.skip-lints }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -82,6 +103,7 @@ jobs:
 
   build:
     name: Run build
+    if: ${{ !inputs.skip-build }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -111,6 +133,7 @@ jobs:
   tests:
     name: Run tests
     needs: build
+    if: ${{ !cancelled() && (inputs.skip-build || needs.build.result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -121,7 +144,7 @@ jobs:
       fail-fast: false # do not stop all jobs if one fails
       matrix:
         python-version: [ "3.10", "3.11", "3.12" ]
-        install-method: [ "source", "package" ]
+        install-method: ${{ fromJson(inputs.install-methods) }}
 
     services:
       postgres:
@@ -185,7 +208,7 @@ jobs:
         if: matrix.install-method == 'package'
         uses: actions/download-artifact@v4
         with:
-          name: packages
+          name: ${{ inputs.artifact-name }}
           path: dist
 
       - name: Run Tests With Coverage
