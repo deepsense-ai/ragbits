@@ -89,6 +89,14 @@ jobs:
           path: report.xml
           retention-days: 10
 
+  build:
+    name: Run build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      checks: write
+      contents: read
+    steps:
       - name: Validate package build
         run: |
           for dir in packages/*/; do uv build "$dir" --out-dir dist; done
@@ -102,11 +110,9 @@ jobs:
           path: dist/**
           retention-days: 3
 
-
-
   tests:
-    name: Run tests (${{ matrix.install-method }}, Python ${{ matrix.python-version }})
-    needs: lints
+    name: Run tests
+    needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -190,8 +196,8 @@ jobs:
             uv venv --python ${{ matrix.python-version }}
             uv pip install --find-links dist \
               "$(ls dist/ragbits-*.whl)[a2a,azure,chroma,cli,fastembed,fastembed-gpu,gcs,google-drive,hf,local,logfire,mcp,openai,otel,pgvector,promptfoo,qdrant,ray,relari,s3,sql,unstructured,weaviate]" \
-              docling==2.15.1 torch==2.2.2 pyarrow==17.0.0 ray==2.43.0 \
-              pytest~=8.3.3 pytest-cov~=5.0.0 pytest-asyncio~=0.24.0 pytest-postgresql~=7.0.1 moto~=4.2.7 aiosqlite~=0.21.0
+              docling==2.15.1 torch==2.2.2 pyarrow==17.0.0 ray==2.43.0
+            uv pip install --group dev
             UV_FLAGS="--no-sync"
           fi
           uv run $UV_FLAGS coverage run -m pytest --postgresql-password postgres -v -p no:warnings --junitxml=report.xml
