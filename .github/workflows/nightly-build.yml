@@ -120,6 +120,7 @@ jobs:
 
   publish:
     needs: [check-for-changes, test-packages]
+    if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -154,13 +155,7 @@ jobs:
           name: nightly-packages
           path: dist
 
-      - name: Dry run notice
-        if: ${{ inputs.dry-run == true }}
-        run: |
-          echo "::notice::🔍 DRY RUN MODE: Skipping all publishing steps (PyPI, npm, docs, git push)"
-
       - name: Publish to PyPI
-        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         run: |
           uv tool run twine upload dist/* --verbose
         env:
@@ -169,29 +164,24 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
 
       - name: Install TypeScript dependencies
-        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         run: npm ci
 
       - name: Build npm packages
-        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         run: npm run build:packages
 
       - name: Publish @ragbits/api-client (dev)
-        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         run: npm publish --provenance --access public --tag dev
         working-directory: typescript/@ragbits/api-client
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @ragbits/api-client-react (dev)
-        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         run: npm publish --provenance --access public --tag dev
         working-directory: typescript/@ragbits/api-client-react
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Deploy nightly documentation
-        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         shell: bash
         run: |
           git config user.name "ds-ragbits-robot"
