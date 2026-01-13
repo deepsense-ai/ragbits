@@ -211,16 +211,20 @@ jobs:
           name: ${{ inputs.artifact-name }}
           path: dist
 
+      - name: Install built packages
+        if: matrix.install-method == 'package'
+        run: |
+          uv sync --only-group dev
+          uv pip install --find-links dist \
+            "$(ls dist/ragbits-*.whl)[a2a,azure,chroma,cli,fastembed,fastembed-gpu,gcs,google-drive,hf,local,logfire,mcp,openai,otel,pgvector,promptfoo,qdrant,ray,relari,s3,sql,unstructured,weaviate]" \
+            docling==2.15.1 torch==2.2.2 pyarrow==17.0.0 ray==2.43.0
+
       - name: Run Tests With Coverage
         run: |
-          if [ "${{ matrix.install-method }}" == "package" ]; then
-            uv sync --only-group dev
-            uv pip install --find-links dist \
-              "$(ls dist/ragbits-*.whl)[a2a,azure,chroma,cli,fastembed,fastembed-gpu,gcs,google-drive,hf,local,logfire,mcp,openai,otel,pgvector,promptfoo,qdrant,ray,relari,s3,sql,unstructured,weaviate]" \
-              docling==2.15.1 torch==2.2.2 pyarrow==17.0.0 ray==2.43.0
-            UV_FLAGS="--no-sync"
-          fi
-          uv run $UV_FLAGS pytest --postgresql-password postgres --dist loadscope -v -p no:warnings --junitxml=report.xml --cov --cov-report=term --cov-report=xml
+          UV_FLAGS="${{ matrix.install-method == 'package' && '--no-sync' || '' }}"
+          uv run $UV_FLAGS coverage run -m pytest --postgresql-password postgres -v -p no:warnings --junitxml=report.xml
+          uv run $UV_FLAGS coverage report
+          uv run $UV_FLAGS coverage xml
         env:
           GOOGLE_DRIVE_CLIENTID_JSON: ${{ secrets.GOOGLE_DRIVE_CLIENTID_JSON }}
           GOOGLE_SOURCE_UNIT_TEST_FOLDER: ${{ secrets.GOOGLE_SOURCE_UNIT_TEST_FOLDER }}
