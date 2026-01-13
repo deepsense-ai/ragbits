@@ -31,6 +31,14 @@ vi.mock("../../src/core/utils/useTextAreaCaretDetection.tsx", () => ({
   }),
 }));
 
+vi.mock("@ragbits/api-client-react", () => ({
+  useRagbitsContext: () => ({
+    apiClient: {
+      uploadFile: vi.fn(),
+    },
+  }),
+}));
+
 const MOCK_HISTORY: ChatMessage[] = [
   {
     role: MessageRole.User,
