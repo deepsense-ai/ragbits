@@ -184,20 +184,19 @@ jobs:
           name: packages
           path: dist
 
-      - name: Run Tests With Coverage (package)
-        if: matrix.install-method == 'package'
-        uses: ./.github/actions/test-packages
-        with:
-          python-version: ${{ matrix.python-version }}
-          google-drive-clientid-json: ${{ secrets.GOOGLE_DRIVE_CLIENTID_JSON }}
-          google-source-unit-test-folder: ${{ secrets.GOOGLE_SOURCE_UNIT_TEST_FOLDER }}
-          google-drive-target-email: ${{ secrets.GOOGLE_DRIVE_TARGET_EMAIL }}
-      - name: Run Tests With Coverage (source)
-        if: matrix.install-method == 'source'
+      - name: Run Tests With Coverage
         run: |
-          uv run coverage run -m pytest --postgresql-password postgres -v -p no:warnings --junitxml=report.xml
-          uv run coverage report
-          uv run coverage xml
+          if [ "${{ matrix.install-method }}" == "package" ]; then
+            uv venv --python ${{ matrix.python-version }}
+            uv pip install --find-links dist \
+              "$(ls dist/ragbits-*.whl)[a2a,azure,chroma,cli,fastembed,fastembed-gpu,gcs,google-drive,hf,local,logfire,mcp,openai,otel,pgvector,promptfoo,qdrant,ray,relari,s3,sql,unstructured,weaviate]" \
+              docling==2.15.1 torch==2.2.2 pyarrow==17.0.0 ray==2.43.0 \
+              pytest~=8.3.3 pytest-cov~=5.0.0 pytest-asyncio~=0.24.0 pytest-postgresql~=7.0.1 moto~=4.2.7 aiosqlite~=0.21.0
+            UV_FLAGS="--no-sync"
+          fi
+          uv run $UV_FLAGS coverage run -m pytest --postgresql-password postgres -v -p no:warnings --junitxml=report.xml
+          uv run $UV_FLAGS coverage report
+          uv run $UV_FLAGS coverage xml
         env:
           GOOGLE_DRIVE_CLIENTID_JSON: ${{ secrets.GOOGLE_DRIVE_CLIENTID_JSON }}
           GOOGLE_SOURCE_UNIT_TEST_FOLDER: ${{ secrets.GOOGLE_SOURCE_UNIT_TEST_FOLDER }}
