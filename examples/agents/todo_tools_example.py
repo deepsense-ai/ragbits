@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 from ragbits.agents import Agent, ToolCallResult
 from ragbits.agents._main import DownstreamAgentResult
-from ragbits.agents.tools.todo import TodoOrchestrator, TodoResult
+from ragbits.agents.tools.todo import ToDoPlanner, TodoResult
 from ragbits.core.llms import LiteLLM, ToolCall
 from ragbits.core.llms.base import Usage
 from ragbits.core.prompt.base import BasePrompt
@@ -54,7 +54,7 @@ async def hiking_guide() -> None:
     """
 
     # Create generic orchestrator with hiking domain context
-    todo_orchestrator = TodoOrchestrator(domain_context="hiking guide")
+    todo_orchestrator = ToDoPlanner(domain_context="hiking guide")
 
     # Create a simple agent - orchestrator handles the workflow
     agent: Agent = Agent(
@@ -92,7 +92,7 @@ async def software_architecture_example() -> None:
     - Implementation roadmap with timelines
     """
 
-    todo_orchestrator = TodoOrchestrator(domain_context="software architect")
+    todo_orchestrator = ToDoPlanner(domain_context="software architect")
 
     agent: Agent = Agent(
         llm=LiteLLM("gpt-4o-mini"),

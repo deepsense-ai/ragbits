@@ -24,7 +24,7 @@ To run the script, execute the following command:
 from collections.abc import AsyncGenerator
 
 from ragbits.agents import Agent
-from ragbits.agents.tools.todo import TodoOrchestrator, TodoResult
+from ragbits.agents.tools.todo import ToDoPlanner, TodoResult
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
 from ragbits.chat.interface.ui_customization import HeaderCustomization, PageMetaCustomization, UICustomization
@@ -50,14 +50,14 @@ class MyChat(ChatInterface):
 
     def __init__(self) -> None:
         self.llm = LiteLLM(model_name="gpt-4o-mini")
-        self.todo_orchestrator = TodoOrchestrator()
-        self.agent = Agent(
-            llm=self.llm,
-            prompt="""
+        self.todo_orchestrator = ToDoPlanner(agent_initial_prompt="""
             You are an expert hiking guide. Provide detailed, comprehensive information
             about hiking routes, gear, transportation, and safety considerations.
-            """,
-        )
+            """, llm=self.llm)
+        # self.agent = Agent(
+        #     llm=self.llm,
+        #     prompt=,
+        # )
 
     async def chat(
         self,
@@ -80,9 +80,7 @@ class MyChat(ChatInterface):
         """
         live_update_counter = 0
 
-        async for response in self.todo_orchestrator.run_todo_workflow_streaming(
-            self.agent, [*history, {"role": "user", "content": message}]
-        ):
+        async for response in self.todo_orchestrator.run_todo_workflow_streaming(message):
             match response:
                 case str():
                     yield self.create_text_response(response)
@@ -92,11 +90,15 @@ class MyChat(ChatInterface):
                             str(live_update_counter), LiveUpdateType.FINISH, response.message or ""
                         )
                         live_update_counter += 1
+                    
                     elif response.type in ("task_list"):
                         for task in response.tasks:
                             yield self.create_todo_item_response(task)
+                        yield self.create_followup_messages(self.todo_orchestrator.task_feedback_options)
+
                     elif response.type in ("start_task"):
                         yield self.create_todo_item_response(response.current_task)
+
                     elif response.type in ("task_summary_start", "final_summary_start"):
                         yield self.create_live_update(
                             str(live_update_counter), LiveUpdateType.START, response.message or ""
@@ -107,6 +109,7 @@ class MyChat(ChatInterface):
                         )
                         yield self.create_todo_item_response(response.current_task)
                         live_update_counter += 1
+                    
                     elif response.type in ("final_summary_end"):
                         yield self.create_live_update(
                             str(live_update_counter), LiveUpdateType.FINISH, response.message or ""

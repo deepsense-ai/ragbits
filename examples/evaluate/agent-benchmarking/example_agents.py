@@ -17,7 +17,7 @@ from typing import Any, cast
 from ragbits.agents import Agent, AgentOptions, AgentResult
 from ragbits.agents.tool import ToolCallResult
 from ragbits.agents.tools.openai import get_web_search_tool
-from ragbits.agents.tools.todo import TodoOrchestrator, TodoResult
+from ragbits.agents.tools.todo import ToDoPlanner, TodoResult
 from ragbits.core.llms import LiteLLM
 from ragbits.core.llms.base import LLMClientOptionsT, Usage
 from ragbits.core.prompt.base import BasePrompt
@@ -41,7 +41,7 @@ class TodoAgent(Agent[LLMClientOptionsT, None, str]):
         )
         self._inner_agent = agent
         self._domain_context = domain_context
-        self._orchestrator = TodoOrchestrator(domain_context=domain_context)
+        self._orchestrator = ToDoPlanner(domain_context=domain_context)
 
     def __getattr__(self, name: str) -> object:
         """Proxy missing attributes to the wrapped inner agent."""

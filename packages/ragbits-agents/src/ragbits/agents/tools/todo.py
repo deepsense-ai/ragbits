@@ -1,19 +1,22 @@
 """Todo list management tool for agents."""
 
 import uuid
+import json
 from collections.abc import AsyncGenerator
 from enum import Enum
 from types import SimpleNamespace
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from ragbits.agents import Agent
 from ragbits.agents._main import DownstreamAgentResult
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.tool import ToolCallResult
-from ragbits.core.llms import ToolCall
+from ragbits.core.llms import ToolCall, LLM
 from ragbits.core.llms.base import Usage
 from ragbits.core.prompt.base import BasePrompt
+from typing import Any, Optional
+
 
 # Constants
 MAX_SUMMARY_LENGTH = 300
@@ -167,23 +170,92 @@ class TodoList(BaseModel):
         return "Previous completed tasks:\n" + "\n".join(context_parts)
 
 
-class TodoOrchestrator(BaseModel):
+class ToDoPlanner(BaseModel):
     """High-level orchestrator for managing todo workflow with context passing."""
 
     todo_list: TodoList = Field(default_factory=TodoList)
-    domain_context: str = ""
+    task_feedback_options: list[str] = ["OK", "NOT OK", ]
+    llm: Optional[LLM] = None
+    depth_tasks: int = 1
+    agent_initial_prompt: Optional[str] = ""
+    agent: Optional[Agent] = None
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def __init__(self, domain_context: str = "") -> None:
-        """
-        Initialize TodoOrchestrator with domain-specific prompts.
+    def model_post_init(self, __context: Any) -> None:
 
-        Args:
-            domain_context: Additional context about the domain (e.g., "hiking guide", "software architect", etc.)
+        if self.agent is None:
+            self.agent = Agent(
+                llm=self.llm, 
+                prompt=self.agent_initial_prompt, 
+                keep_history=True
+            )
+
+    async def handle_simple_query(self, input_message):
+        # Create a focused prompt for direct answering
+        direct_prompt = f"""
+        Answer this query directly and comprehensively:
+
+        "{input_message}"
+
+        {f"Context: You are working as a {self.agent_initial_prompt}." if self.agent_initial_prompt else ""}
+
+        Provide a clear, complete answer without unnecessary complexity.
         """
-        super().__init__(domain_context=domain_context)
+
+        # Stream the direct answer
+
+        async for response in self.agent.run_streaming(direct_prompt):
+            print("handel simple query")
+            print(type(response))
+            print(response)
+            if isinstance(response, str):
+                return response
+            else:
+                return response  # Pass through tool calls, etc.
+    async def handle_feedback(self, input_message):
+        current_tasks_json = [t.model_dump_json() for t in self.todo_list.tasks]
+        # TODO need to upgrade this prompt to better classify the response
+        prompt4 = """
+        ### ROLE
+        You are a high-precision Feedback Classifier. Your primary goal is to distinguish between "Simple Approval" and "Request for Change". 
+
+        ### CRITICAL LOGIC RULES (Strict Adherence Required):
+        1. **NEVER classify as "OK" if the user mentions ANY specific task ID or specific technical change.** 2. **"OK" is ONLY for total, passive agreement** (e.g., "Yes", "Go", "Perfect"). 
+        3. **"IMPROVE"** is for partial edits: "Change X in Task 1", "Add Y to Task 2", "Recreate task 1", "Recreate task 1 and 3".
+        4. **"RECREATE"** is for total rejection or a complete pivot: "This is useless, start over", "Actually, let's do a mobile app instead of a web app".
+        5. **"RECREATE" also applies if the user wants to fundamentally restart a specific level.**
+
+        ### CLASSIFICATION FLOW:
+        - Does the message contain a command to change or recreate something? -> **IMPROVE**
+        - Does the message suggest the plan is fundamentally wrong? -> **RECREATE**
+        - Does the message only contain agreement? -> **OK**
+        - Does the message ask for more details/sub-tasks? -> **NEXT_LVL**
+
+        ### INPUT DATA:
+        --- CURRENT TASK LIST (JSON) ---
+        {current_tasks_json}
+
+        --- USER FEEDBACK ---
+        "{input_message}"
+
+        ### OUTPUT FORMAT:
+        Return ONLY a valid JSON object. 
+
+        {
+        "classification": "OK" | "IMPROVE" | "RECREATE" | "NEXT_LVL",
+        "reasoning": "Explain your choice. Mention if you detected a command to change a specific task.",
+        "updated_tasks": [ 
+            /* If IMPROVE: return full list with edits. If RECREATE: return empty list []. Else: return original. */
+        ]
+        }
+        """
+
+        message = await self.agent.run(prompt4)
+
+        return json.dumps(message.content)
 
     async def run_todo_workflow_streaming(
-        self, agent: Agent, initial_query: str
+        self, input_message: str
     ) -> AsyncGenerator[StreamingResponseType, None]:
         """
         Run complete todo workflow with streaming responses.
@@ -191,41 +263,60 @@ class TodoOrchestrator(BaseModel):
         Yields:
             Various response types: str, ToolCall, ToolResult, dict (status updates)
         """
-        yield TodoResult(type="status", message="🚀 Starting todo workflow...")
 
-        # Step 1: Analyze complexity and create tasks if needed
-        yield TodoResult(type="status", message="🔍 Analyzing query complexity...")
+        if not self.todo_list.tasks:
 
-        tasks = await self._create_tasks_simple(agent, initial_query)
+            yield TodoResult(type="status", message="🚀 Starting todo workflow...")
+            yield TodoResult(type="status", message="🔍 Analyzing query complexity...")
+            
+            is_simple_query = await self._analyze_query_complexity(query=input_message)
+            
+            if is_simple_query:
 
-        if not tasks:
-            # Query is simple - answer directly without task breakdown
-            yield TodoResult(type="status", message="💡 Simple query detected - providing direct answer...")
+                yield TodoResult(type="status", message="💡 Simple query detected - providing direct answer...")
+                response = await self.handle_simple_query(input_message=input_message)
+                yield response
+                yield TodoResult(type="status", message="💡 Simple query detected - providing direct answer...")
+                yield TodoResult(type="status", message="\n🎯 Direct answer completed!")
 
-            # Create a focused prompt for direct answering
-            direct_prompt = f"""
-            Answer this query directly and comprehensively:
+                return
+            else:
+                yield TodoResult(type="status", message="Working on tasks...")
+                tasks = await self._create_tasks_simple(input_message)
+                yield TodoResult(type="status", message="Your turn! What do you think about tasks?")
+                yield TodoResult(type="task_list", tasks=tasks)
+                # self.todo_list.tasks = []
+                return
+        
+        if len(self.todo_list.tasks) > 1:
+            print(f"input_message {type(input_message)}")
+            print(f"input_message {input_message}")
+            response = input_message if input_message in self.task_feedback_options else await self.handle_feedback(input_message)
+            # if input_message not in self.task_feedback_options:
+            # Parse feedback
+                # message = await self.handle_feedback(input_message)
+                # parsed_feedback = json.loads(message.content)
 
-            "{initial_query}"
+            print(f"response {response}")
+            
+            # if parsed_feedback["classification"] == "OK" or message.content == "OK":
+            if input_message == "OK":
+                yield TodoResult(type="status", message=f"📋 Complex query - created {len(self.todo_list.tasks)} tasks:")
+                async for response in self.run_tasks(input_message):
+                    if isinstance(response, str):
+                        yield response
+                    else:
+                        yield response  # Pass through tool calls, etc.
+            elif response == "NOT OK":
+                self.todo_list.tasks = []
+                yield "Let's start again. Describe the expected outcomes..."
+            else:
+                pass
 
-            {f"Context: You are working as a {self.domain_context}." if self.domain_context else ""}
-
-            Provide a clear, complete answer without unnecessary complexity.
-            """
-
-            # Stream the direct answer
-            async for response in agent.run_streaming(direct_prompt):
-                if isinstance(response, str):
-                    yield response
-                else:
-                    yield response  # Pass through tool calls, etc.
-
-            yield TodoResult(type="status", message="\n🎯 Direct answer completed!")
-            return
-
+    async def run_tasks(self, input_message):
         # Complex query - proceed with task breakdown
-        yield TodoResult(type="status", message=f"📋 Complex query - created {len(tasks)} tasks:")
-        yield TodoResult(type="task_list", tasks=tasks, tasks_count=len(tasks))
+        yield TodoResult(type="status", message=f"📋 Complex query - created {len(self.todo_list.tasks)} tasks:")
+        yield TodoResult(type="task_list", tasks=self.todo_list.tasks, tasks_count=len(self.todo_list.tasks))
 
         # Step 2: Execute each task with context from previous tasks
         task_summaries = []
@@ -245,7 +336,7 @@ class TodoOrchestrator(BaseModel):
             context = self.todo_list.get_completed_context()
 
             # Execute single task with focused context and stream summary
-            async for task_response in self._execute_single_task_focused(agent, current_task, context, initial_query):
+            async for task_response in self._execute_single_task_focused(current_task, context, input_message):
                 yield task_response
             yield "\n\n"
 
@@ -262,19 +353,18 @@ class TodoOrchestrator(BaseModel):
         yield TodoResult(type="status", message="📝 Generating comprehensive final summary...")
         yield TodoResult(
             type="final_summary_start",
-            message=f"\n📊 Comprehensive {self.domain_context} summary:\n",
+            message=f"\n📊 Comprehensive {self.agent_initial_prompt} summary:\n",
         )
 
         async for summary_response in self._generate_comprehensive_summary_streaming(
-            agent, initial_query, task_summaries
+            input_message, task_summaries
         ):
             yield summary_response
 
         yield TodoResult(type="final_summary_end", message="\n")
         yield TodoResult(type="status", message="🎉 All tasks completed!")
 
-    @staticmethod
-    async def _analyze_query_complexity(agent: Agent, query: str) -> bool:
+    async def _analyze_query_complexity(self, query: str) -> bool:
         """
         Analyze if the query requires task breakdown or can be answered directly.
         Returns True if complex (needs tasks), False if simple (direct answer).
@@ -295,20 +385,14 @@ class TodoOrchestrator(BaseModel):
         Respond with ONLY one word: "SIMPLE" or "COMPLEX"
         """
 
-        agent_result = await agent.run(complexity_prompt)
+        agent_result = await self.agent.run(complexity_prompt)
         response = agent_result.content.strip().upper()
 
         # Default to COMPLEX if we can't determine (safer approach)
-        return response != "SIMPLE"
+        return response == "SIMPLE"
 
-    async def _create_tasks_simple(self, agent: Agent, initial_query: str) -> list[Task]:
+    async def _create_tasks_simple(self, initial_query: str) -> list[Task]:
         """Create tasks based on initial query - simple, non-streaming."""
-        # First, analyze if the query actually needs task breakdown
-        is_complex = await TodoOrchestrator._analyze_query_complexity(agent, initial_query)
-
-        if not is_complex:
-            # Query is simple enough to answer directly - return empty task list
-            return []
 
         task_creation_prompt = f"""
         Based on this query: "{initial_query}"
@@ -316,25 +400,26 @@ class TodoOrchestrator(BaseModel):
         Create 3-5 specific, actionable tasks that will comprehensively address this query.
         Each task should be clear and focused on one specific aspect.
 
-        {f"Context: You are working as a {self.domain_context}." if self.domain_context else ""}
+        {f"Context: You are working as a {self.agent_initial_prompt}." if self.agent_initial_prompt else ""}
 
         CRITICAL: Respond with ONLY a Python list of task descriptions, nothing else:
         ["Task 1: Specific description", "Task 2: Specific description", "Task 3: Specific description"]
         """
 
-        agent_result = await agent.run(task_creation_prompt)
+        agent_result = await self.agent.run(task_creation_prompt)
         response = agent_result.content
 
         # Parse tasks from the response
         tasks = self._parse_tasks_from_response(response)
+
         if tasks:
             self.todo_list.create_tasks(tasks)
             return self.todo_list.tasks  # Return the actual Task objects
-
+        
         return []
 
     async def _execute_single_task_focused(
-        self, agent: Agent, current_task: Task, context: str, original_query: str
+        self, current_task: Task, context: str, original_query: str
     ) -> AsyncGenerator[StreamingResponseType, None]:
         """Execute a single task with focused context - stream only essential info."""
         task_prompt = f"""
@@ -366,7 +451,7 @@ class TodoOrchestrator(BaseModel):
         last_summary_length = 0
 
         # Stream the task execution but only show summary parts
-        async for response in agent.run_streaming(task_prompt):
+        async for response in self.agent.run_streaming(task_prompt):
             if isinstance(response, str):
                 full_response += response
                 # Only stream text that comes after "TASK SUMMARY:" marker
@@ -393,7 +478,7 @@ class TodoOrchestrator(BaseModel):
         self.todo_list.complete_current_task(summary)
 
     async def _generate_comprehensive_summary_streaming(
-        self, agent: Agent, original_query: str, task_summaries: list[str | None]
+        self, original_query: str, task_summaries: list[str | None]
     ) -> AsyncGenerator[StreamingResponseType, None]:
         """Generate a comprehensive final summary with streaming."""
         # Get full responses from completed tasks
@@ -404,9 +489,9 @@ class TodoOrchestrator(BaseModel):
 
         # Create domain-specific summary instructions
         domain_instructions = ""
-        if self.domain_context:
+        if self.agent_initial_prompt:
             domain_instructions = (
-                f"Format as a comprehensive {self.domain_context} response that someone "
+                f"Format as a comprehensive {self.agent_initial_prompt} response that someone "
                 "could use to address their needs."
             )
         else:
@@ -430,7 +515,7 @@ class TodoOrchestrator(BaseModel):
         """
 
         # Stream the comprehensive summary generation
-        async for response in agent.run_streaming(summary_prompt):
+        async for response in self.agent.run_streaming(summary_prompt):
             if isinstance(response, str):
                 yield response  # Stream each character as it comes
             else:
