@@ -80,15 +80,6 @@ jobs:
             trivy-scanning-results.txt
           retention-days: 30
 
-      - name: Publish Test Report
-        uses: actions/upload-artifact@v4
-        if: always()
-        continue-on-error: true
-        with:
-          name: test-report
-          path: report.xml
-          retention-days: 10
-
   build:
     name: Run build
     runs-on: ubuntu-latest
@@ -202,7 +193,8 @@ jobs:
           if [ "${{ matrix.install-method }}" == "package" ]; then
             uv sync --only-group dev
             uv pip install --find-links dist \
-              "$(ls dist/ragbits-*.whl)[a2a,azure,chroma,cli,fastembed,fastembed-gpu,gcs,google-drive,hf,local,logfire,mcp,openai,otel,pgvector,promptfoo,qdrant,ray,relari,s3,sql,unstructured,weaviate]"
+              "$(ls dist/ragbits-*.whl)[a2a,azure,chroma,cli,fastembed,fastembed-gpu,gcs,google-drive,hf,local,logfire,mcp,openai,otel,pgvector,promptfoo,qdrant,ray,relari,s3,sql,unstructured,weaviate]" \
+              docling==2.15.1 torch==2.2.2 pyarrow==17.0.0 ray==2.43.0
             UV_FLAGS="--no-sync"
           fi
           uv run $UV_FLAGS coverage run -m pytest --postgresql-password postgres -v -p no:warnings --junitxml=report.xml
