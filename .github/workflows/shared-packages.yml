@@ -197,7 +197,7 @@ jobs:
               docling==2.15.1 torch==2.2.2 pyarrow==17.0.0 ray==2.43.0
             UV_FLAGS="--no-sync"
           fi
-          uv run $UV_FLAGS pytest --postgresql-password postgres -n auto --dist loadscope -v -p no:warnings --junitxml=report.xml --cov --cov-report=term --cov-report=xml
+          uv run $UV_FLAGS pytest --postgresql-password postgres --dist loadscope -v -p no:warnings --junitxml=report.xml --cov --cov-report=term --cov-report=xml
         env:
           GOOGLE_DRIVE_CLIENTID_JSON: ${{ secrets.GOOGLE_DRIVE_CLIENTID_JSON }}
           GOOGLE_SOURCE_UNIT_TEST_FOLDER: ${{ secrets.GOOGLE_SOURCE_UNIT_TEST_FOLDER }}

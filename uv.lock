@@ -5584,7 +5584,6 @@ dev = [
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
     { name = "pytest-postgresql" },
-    { name = "pytest-xdist" },
     { name = "ruff" },
     { name = "types-pyyaml" },
 ]
@@ -5622,7 +5621,6 @@ dev = [
     { name = "pytest-asyncio", specifier = "~=0.24.0" },
     { name = "pytest-cov", specifier = "~=5.0.0" },
     { name = "pytest-postgresql", specifier = ">=7.0.1" },
-    { name = "pytest-xdist", specifier = "~=3.8.0" },
     { name = "ruff", specifier = ">=0.6.8" },
     { name = "types-pyyaml", specifier = ">=6.0.2" },
 ]
