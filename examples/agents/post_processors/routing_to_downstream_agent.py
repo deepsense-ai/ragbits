@@ -108,12 +108,19 @@ async def main() -> None:
     # Create the post-processor
     summarizer_processor = SummarizerPostProcessor(summarizer_agent)
 
+    # Create agent with post-processor
+    main_agent_with_processor = Agent(
+        name="content_agent_with_processor",
+        llm=llm,
+        prompt="You are a helpful assistant that provides detailed explanations.",
+        post_processors=[summarizer_processor],
+    )
+
     # Run the main agent with post-processing
-    result = await main_agent.run(
+    result = await main_agent_with_processor.run(
         "Explain the concept of machine learning in detail, including supervised learning, "
         "unsupervised learning, and reinforcement learning. Describe each type with examples "
         "and their real-world applications.",
-        post_processors=[summarizer_processor],
     )
 
     print(f"Final output:\n {result.content}")

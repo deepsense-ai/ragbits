@@ -78,13 +78,16 @@ async def main() -> None:
     Run the example.
     """
     llm = LiteLLM("gpt-4.1-mini")
-    agent: Agent = Agent(llm=llm, prompt="You are a helpful assistant.")
-    stream_result = agent.run_streaming(
-        "What is Python?",
+    agent: Agent = Agent(
+        llm=llm,
+        prompt="You are a helpful assistant.",
         post_processors=[
             CustomStreamingPostProcessor(forbidden_words=["python"]),
             CustomPostProcessor(max_length=200),
         ],
+    )
+    stream_result = agent.run_streaming(
+        "What is Python?",
         allow_non_streaming=True,
     )
     async for chunk in stream_result:

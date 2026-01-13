@@ -376,6 +376,7 @@ class Agent(
         tools: list[Callable] | None = None,
         mcp_servers: list[MCPServer] | None = None,
         default_options: AgentOptions[LLMClientOptionsT] | None = None,
+        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> None:
         """
         Initialize the agent instance.
@@ -395,6 +396,7 @@ class Agent(
             tools: The tools available to the agent.
             mcp_servers: The MCP servers available to the agent.
             default_options: The default options for the agent run.
+            post_processors: List of post-processors to apply to the agent's responses in order.
         """
         super().__init__(default_options)
         self.id = uuid.uuid4().hex[:8]
@@ -416,6 +418,7 @@ class Agent(
         self.mcp_servers = mcp_servers or []
         self.history = history or []
         self.keep_history = keep_history
+        self.post_processors = post_processors or []
 
         if getattr(self, "system_prompt", None) and not getattr(self, "input_type", None):
             raise ValueError(
@@ -430,7 +433,6 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     @overload
@@ -440,7 +442,6 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     async def run(
@@ -449,7 +450,6 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]:
         """
         Run the agent. The method is experimental, inputs and outputs may change in the future.
@@ -466,7 +466,6 @@ class Agent(
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - Callable: one of provided tools
-            post_processors: List of post-processors to apply to the response in order.
 
         Returns:
             The result of the agent run.
@@ -480,8 +479,8 @@ class Agent(
         """
         result = await self._run_without_post_processing(input, options, context, tool_choice)
 
-        if post_processors:
-            for processor in post_processors:
+        if self.post_processors:
+            for processor in self.post_processors:
                 result = await processor.process(result, self, options, context)
 
         return result
@@ -571,7 +570,6 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
         *,
         allow_non_streaming: bool = False,
     ) -> AgentResultStreaming: ...
@@ -583,7 +581,6 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
         *,
         allow_non_streaming: Literal[True],
     ) -> AgentResultStreaming: ...
@@ -595,7 +592,6 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
         *,
         allow_non_streaming: bool = False,
     ) -> AgentResultStreaming: ...
@@ -607,7 +603,6 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
         *,
         allow_non_streaming: Literal[True],
     ) -> AgentResultStreaming: ...
@@ -618,11 +613,6 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: (
-            list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
-            | list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
-            | None
-        ) = None,
         *,
         allow_non_streaming: bool = False,
     ) -> AgentResultStreaming:
@@ -639,7 +629,6 @@ class Agent(
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - Callable: one of provided tools
-            post_processors: List of post-processors to apply to the response in order.
             allow_non_streaming: Whether to allow non-streaming post-processors.
 
         Returns:
@@ -660,8 +649,8 @@ class Agent(
             tool_choice=tool_choice,
         )
 
-        if post_processors:
-            if not allow_non_streaming and any(not p.supports_streaming for p in post_processors):
+        if self.post_processors:
+            if not allow_non_streaming and any(not p.supports_streaming for p in self.post_processors):
                 raise AgentInvalidPostProcessorError(
                     reason="Non-streaming post-processors are not allowed when allow_non_streaming is False"
                 )
@@ -670,7 +659,7 @@ class Agent(
                 _AG[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage | ConfirmationRequest],
                 generator,
             )
-            generator = stream_with_post_processing(generator, post_processors, self)
+            generator = stream_with_post_processing(generator, self.post_processors, self)
 
         return AgentResultStreaming(generator)
 

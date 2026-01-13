@@ -33,8 +33,6 @@ def agent_llm() -> MockLLM:
 
 @pytest.mark.asyncio
 async def test_supervisor_accepts_valid_response_and_attaches_metadata(agent_llm: MockLLM) -> None:
-    agent: Agent = Agent(llm=agent_llm, prompt="System prompt for agent")
-
     validation_llm = MockLLM(
         default_options=MockLLMOptions(response='{"is_valid": true, "reasoning": "ok", "suggestion": ""}')
     )
@@ -45,7 +43,9 @@ async def test_supervisor_accepts_valid_response_and_attaches_metadata(agent_llm
         max_retries=2,
     )
 
-    result = await agent.run("What is the weather in Tokyo?", post_processors=[supervisor])
+    agent: Agent = Agent(llm=agent_llm, prompt="System prompt for agent", post_processors=[supervisor])
+
+    result = await agent.run("What is the weather in Tokyo?")
 
     assert result.content == "Agent answer"
     assert "post_processors" in result.metadata
@@ -59,8 +59,6 @@ async def test_supervisor_accepts_valid_response_and_attaches_metadata(agent_llm
 
 @pytest.mark.asyncio
 async def test_supervisor_returns_after_retry_limit_when_fail_on_exceed_false(agent_llm: MockLLM) -> None:
-    agent: Agent = Agent(llm=agent_llm, prompt="System prompt for agent")
-
     validation_llm = MockLLM(
         default_options=MockLLMOptions(response='{"is_valid": false, "reasoning": "bad", "suggestion": "fix"}')
     )
@@ -73,7 +71,9 @@ async def test_supervisor_returns_after_retry_limit_when_fail_on_exceed_false(ag
         history_strategy=HistoryStrategy.REMOVE,
     )
 
-    result = await agent.run("Q?", post_processors=[supervisor])
+    agent: Agent = Agent(llm=agent_llm, prompt="System prompt for agent", post_processors=[supervisor])
+
+    result = await agent.run("Q?")
 
     assert "post_processors" in result.metadata
     validations = result.metadata["post_processors"]["supervisor"]
@@ -84,8 +84,6 @@ async def test_supervisor_returns_after_retry_limit_when_fail_on_exceed_false(ag
 
 @pytest.mark.asyncio
 async def test_supervisor_raises_after_retry_limit_when_fail_on_exceed_true(agent_llm: MockLLM) -> None:
-    agent: Agent = Agent(llm=agent_llm, prompt="System prompt for agent")
-
     validation_llm = MockLLM(
         default_options=MockLLMOptions(response='{"is_valid": false, "reasoning": "bad", "suggestion": "fix"}')
     )
@@ -97,8 +95,10 @@ async def test_supervisor_raises_after_retry_limit_when_fail_on_exceed_true(agen
         fail_on_exceed=True,
     )
 
+    agent: Agent = Agent(llm=agent_llm, prompt="System prompt for agent", post_processors=[supervisor])
+
     with pytest.raises(SupervisorMaxRetriesExceededError) as exc:
-        await agent.run("Q?", post_processors=[supervisor])
+        await agent.run("Q?")
 
     err = exc.value
     assert err.max_retries == 2
@@ -108,8 +108,6 @@ async def test_supervisor_raises_after_retry_limit_when_fail_on_exceed_true(agen
 
 @pytest.mark.asyncio
 async def test_supervisor_history_remove_prunes_invalid_and_correction_user(agent_llm: MockLLM) -> None:
-    agent: Agent = Agent(llm=agent_llm, prompt="System prompt for agent")
-
     validation_llm = MockLLM(
         default_options=MockLLMOptions(response='{"is_valid": false, "reasoning": "bad", "suggestion": "fix"}')
     )
@@ -122,7 +120,9 @@ async def test_supervisor_history_remove_prunes_invalid_and_correction_user(agen
         history_strategy=HistoryStrategy.REMOVE,
     )
 
-    result = await agent.run("Q?", post_processors=[supervisor])
+    agent: Agent = Agent(llm=agent_llm, prompt="System prompt for agent", post_processors=[supervisor])
+
+    result = await agent.run("Q?")
 
     history = result.history
     assert len(history) == 3
@@ -135,8 +135,6 @@ async def test_supervisor_history_remove_prunes_invalid_and_correction_user(agen
 
 @pytest.mark.asyncio
 async def test_supervisor_history_preserve_keeps_invalid_and_correction_user(agent_llm: MockLLM) -> None:
-    agent: Agent = Agent(llm=agent_llm, prompt="System prompt for agent")
-
     validation_llm = MockLLM(
         default_options=MockLLMOptions(response='{"is_valid": false, "reasoning": "bad", "suggestion": "fix"}')
     )
@@ -149,7 +147,9 @@ async def test_supervisor_history_preserve_keeps_invalid_and_correction_user(age
         history_strategy=HistoryStrategy.PRESERVE,
     )
 
-    result = await agent.run("Q?", post_processors=[supervisor])
+    agent: Agent = Agent(llm=agent_llm, prompt="System prompt for agent", post_processors=[supervisor])
+
+    result = await agent.run("Q?")
 
     history = result.history
     assert len(history) == 5
@@ -179,8 +179,6 @@ class MyValidationPrompt(Prompt[ValidationInput, MyValidationOutput]):
 
 @pytest.mark.asyncio
 async def test_supervisor_custom_validation_and_correction_prompt_preserve_history(agent_llm: MockLLM) -> None:
-    agent: Agent = Agent(llm=agent_llm, prompt="You are a professional weather reporter.")
-
     validation_llm = MockLLM(
         default_options=MockLLMOptions(
             response=(
@@ -207,7 +205,9 @@ async def test_supervisor_custom_validation_and_correction_prompt_preserve_histo
         history_strategy=HistoryStrategy.PRESERVE,
     )
 
-    result = await agent.run("What is the weather in Tokyo?", post_processors=[supervisor])
+    agent: Agent = Agent(llm=agent_llm, prompt="You are a professional weather reporter.", post_processors=[supervisor])
+
+    result = await agent.run("What is the weather in Tokyo?")
 
     validations = result.metadata["post_processors"]["supervisor"]
     assert isinstance(validations, list)
@@ -236,8 +236,6 @@ async def test_supervisor_custom_validation_and_correction_prompt_preserve_histo
 
 @pytest.mark.asyncio
 async def test_supervisor_raises_when_correction_prompt_has_missing_fields(agent_llm: MockLLM) -> None:
-    agent: Agent = Agent(llm=agent_llm, prompt="System prompt for agent")
-
     validation_llm = MockLLM(
         default_options=MockLLMOptions(response='{"is_valid": false, "reasoning": "bad", "suggestion": "fix"}')
     )
@@ -253,8 +251,10 @@ async def test_supervisor_raises_when_correction_prompt_has_missing_fields(agent
         history_strategy=HistoryStrategy.PRESERVE,
     )
 
+    agent: Agent = Agent(llm=agent_llm, prompt="System prompt for agent", post_processors=[supervisor])
+
     with pytest.raises(SupervisorCorrectionPromptFormatError) as exc:
-        await agent.run("Q?", post_processors=[supervisor])
+        await agent.run("Q?")
 
     err = exc.value
     msg = str(err)

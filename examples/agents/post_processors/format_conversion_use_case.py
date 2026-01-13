@@ -66,8 +66,6 @@ async def main() -> None:
     """
     llm = LiteLLM("gpt-4o-mini")
 
-    agent = Agent(llm=llm, prompt="You are a helpful assistant that provides structured information.")
-
     markdown_template = """
 # Agent Response Report
 
@@ -83,7 +81,13 @@ async def main() -> None:
 
     markdown_formatter = MarkdownTemplateFormatter(template=markdown_template)
 
-    result = await agent.run("Explain what neural networks are in simple terms.", post_processors=[markdown_formatter])
+    agent = Agent(
+        llm=llm,
+        prompt="You are a helpful assistant that provides structured information.",
+        post_processors=[markdown_formatter],
+    )
+
+    result = await agent.run("Explain what neural networks are in simple terms.")
 
     print("Markdown Formatted Output:")
     print(result.content)

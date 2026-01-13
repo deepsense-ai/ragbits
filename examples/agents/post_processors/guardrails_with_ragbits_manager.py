@@ -156,7 +156,6 @@ class CustomPIIGuardrail(Guardrail):
 async def main() -> None:
     """Demonstrate guardrail post-processors with Ragbits GuardrailManager."""
     llm = LiteLLM("gpt-4o-mini")
-    agent = Agent(llm=llm, prompt="You are a helpful assistant.")
 
     combined_guardrail = GuardrailPostProcessor(
         guardrails=[
@@ -166,14 +165,17 @@ async def main() -> None:
         fail_on_violation=False,
     )
 
+    agent = Agent(
+        llm=llm,
+        prompt="You are a helpful assistant.",
+        post_processors=[combined_guardrail],
+    )
+
     prompt = (
         "Create a sample contact card with email john.doe@example.com and phone 555-123-4567. "
         "Add at the end 'I hate John!!!'"
     )
-    result = await agent.run(
-        prompt,
-        post_processors=[combined_guardrail],
-    )
+    result = await agent.run(prompt)
 
     print(f"Output: \n{result.content}")
 

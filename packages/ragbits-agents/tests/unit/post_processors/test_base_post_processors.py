@@ -47,20 +47,20 @@ def mock_llm() -> MockLLM:
 
 @pytest.mark.asyncio
 async def test_non_streaming_post_processor(mock_llm: MockLLM):
-    agent: Agent = Agent(llm=mock_llm, prompt="Test prompt")
     post_processor = MockPostProcessor()
+    agent: Agent = Agent(llm=mock_llm, prompt="Test prompt", post_processors=[post_processor])
 
-    result = await agent.run(post_processors=[post_processor])
+    result = await agent.run()
 
     assert result.content == "Initial response - processed"
 
 
 @pytest.mark.asyncio
 async def test_streaming_post_processor(mock_llm: MockLLM):
-    agent: Agent = Agent(llm=mock_llm, prompt="Test prompt")
     post_processor = MockStreamingPostProcessor()
+    agent: Agent = Agent(llm=mock_llm, prompt="Test prompt", post_processors=[post_processor])
 
-    result = agent.run_streaming(post_processors=[post_processor])
+    result = agent.run_streaming()
     async for chunk in result:
         if isinstance(chunk, str):
             assert chunk.endswith(" - streamed")
@@ -68,19 +68,19 @@ async def test_streaming_post_processor(mock_llm: MockLLM):
 
 @pytest.mark.asyncio
 async def test_non_streaming_processor_in_streaming_mode_raises_error(mock_llm: MockLLM):
-    agent: Agent = Agent(llm=mock_llm, prompt="Test prompt")
     post_processor = MockPostProcessor()
+    agent: Agent = Agent(llm=mock_llm, prompt="Test prompt", post_processors=[post_processor])
 
     with pytest.raises(AgentInvalidPostProcessorError):
-        await anext(agent.run_streaming(post_processors=[post_processor]))  # type: ignore  # ignore type-checking to test raising the error
+        await anext(agent.run_streaming())  # type: ignore  # ignore type-checking to test raising the error
 
 
 @pytest.mark.asyncio
 async def test_non_streaming_processor_in_streaming_mode_with_allow_non_streaming(mock_llm: MockLLM):
-    agent: Agent = Agent(llm=mock_llm, prompt="Test prompt")
     post_processor = MockPostProcessor()
+    agent: Agent = Agent(llm=mock_llm, prompt="Test prompt", post_processors=[post_processor])
 
-    result = agent.run_streaming(post_processors=[post_processor], allow_non_streaming=True)
+    result = agent.run_streaming(allow_non_streaming=True)
 
     async for _ in result:
         pass
@@ -90,13 +90,13 @@ async def test_non_streaming_processor_in_streaming_mode_with_allow_non_streamin
 
 @pytest.mark.asyncio
 async def test_streaming_and_non_streaming_processors(mock_llm: MockLLM):
-    agent: Agent = Agent(llm=mock_llm, prompt="Test prompt")
     non_streaming_processor = MockPostProcessor()
     streaming_processor = MockStreamingPostProcessor()
-
-    result = agent.run_streaming(
-        post_processors=[streaming_processor, non_streaming_processor], allow_non_streaming=True
+    agent: Agent = Agent(
+        llm=mock_llm, prompt="Test prompt", post_processors=[streaming_processor, non_streaming_processor]
     )
+
+    result = agent.run_streaming(allow_non_streaming=True)
 
     async for _ in result:
         pass
@@ -106,21 +106,22 @@ async def test_streaming_and_non_streaming_processors(mock_llm: MockLLM):
 
 @pytest.mark.asyncio
 async def test_streaming_processor_always_runs_before_non_streaming_processor(mock_llm: MockLLM):
-    agent: Agent = Agent(llm=mock_llm, prompt="Test prompt")
     non_streaming_processor = MockPostProcessor()
     streaming_processor = MockStreamingPostProcessor()
 
-    result = agent.run_streaming(
-        post_processors=[streaming_processor, non_streaming_processor], allow_non_streaming=True
+    agent1: Agent = Agent(
+        llm=mock_llm, prompt="Test prompt", post_processors=[streaming_processor, non_streaming_processor]
     )
+    result = agent1.run_streaming(allow_non_streaming=True)
     async for _ in result:
         pass
 
     assert result.content == "Initial response - streamed - processed"
 
-    result = agent.run_streaming(
-        post_processors=[non_streaming_processor, streaming_processor], allow_non_streaming=True
+    agent2: Agent = Agent(
+        llm=mock_llm, prompt="Test prompt", post_processors=[non_streaming_processor, streaming_processor]
     )
+    result = agent2.run_streaming(allow_non_streaming=True)
     async for _ in result:
         pass
 
@@ -129,24 +130,26 @@ async def test_streaming_processor_always_runs_before_non_streaming_processor(mo
 
 @pytest.mark.asyncio
 async def test_multiple_non_streaming_processors_order(mock_llm: MockLLM):
-    agent: Agent = Agent(llm=mock_llm, prompt="Test prompt")
     non_streaming_processor_1 = MockPostProcessor(append_content=" - processed 1")
     non_streaming_processor_2 = MockPostProcessor(append_content=" - processed 2")
+    agent: Agent = Agent(
+        llm=mock_llm, prompt="Test prompt", post_processors=[non_streaming_processor_2, non_streaming_processor_1]
+    )
 
-    result = await agent.run(post_processors=[non_streaming_processor_2, non_streaming_processor_1])
+    result = await agent.run()
 
     assert result.content == "Initial response - processed 2 - processed 1"
 
 
 @pytest.mark.asyncio
 async def test_multiple_streaming_processors_order(mock_llm: MockLLM):
-    agent: Agent = Agent(llm=mock_llm, prompt="Test prompt")
     streaming_processor_1 = MockStreamingPostProcessor(append_content=" - streamed 1")
     streaming_processor_2 = MockStreamingPostProcessor(append_content=" - streamed 2")
-
-    result = agent.run_streaming(
-        post_processors=[streaming_processor_2, streaming_processor_1],
+    agent: Agent = Agent(
+        llm=mock_llm, prompt="Test prompt", post_processors=[streaming_processor_2, streaming_processor_1]
     )
+
+    result = agent.run_streaming()
     async for _ in result:
         pass
 
@@ -155,21 +158,23 @@ async def test_multiple_streaming_processors_order(mock_llm: MockLLM):
 
 @pytest.mark.asyncio
 async def test_multiple_streaming_and_non_streaming_processors_order(mock_llm: MockLLM):
-    agent: Agent = Agent(llm=mock_llm, prompt="Test prompt")
     streaming_processor_1 = MockStreamingPostProcessor(append_content=" - streamed 1")
     streaming_processor_2 = MockStreamingPostProcessor(append_content=" - streamed 2")
     non_streaming_processor_1 = MockPostProcessor(append_content=" - processed 1")
     non_streaming_processor_2 = MockPostProcessor(append_content=" - processed 2")
 
-    result = agent.run_streaming(
+    agent: Agent = Agent(
+        llm=mock_llm,
+        prompt="Test prompt",
         post_processors=[
             non_streaming_processor_2,
             streaming_processor_1,
             non_streaming_processor_1,
             streaming_processor_2,
         ],
-        allow_non_streaming=True,
     )
+
+    result = agent.run_streaming(allow_non_streaming=True)
     async for _ in result:
         pass
 

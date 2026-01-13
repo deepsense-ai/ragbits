@@ -48,19 +48,21 @@ class UpperCaseStreamingProcessor(StreamingPostProcessor):
 
 ## Using Post-Processors
 
-To use post-processors, pass them to the `run` or `run_streaming` methods of the `Agent` class. If you pass a non-streaming processor to `run_streaming`, set `allow_non_streaming=True`. This allows streaming processors to handle content piece by piece during generation, while non-streaming processors apply transformations after the entire output is generated.
+To use post-processors, pass them to the `Agent` constructor during initialization. If you use a non-streaming processor with `run_streaming`, set `allow_non_streaming=True`. This allows streaming processors to handle content piece by piece during generation, while non-streaming processors apply transformations after the entire output is generated.
 
 ```python
 async def main() -> None:
     llm = LiteLLM("gpt-4.1-mini")
-    agent = Agent(llm=llm, prompt="You are a helpful assistant.")
-    post_processors = [
-        UpperCaseStreamingProcessor(),
-        TruncateProcessor(max_length=50),
-    ]
+    agent = Agent(
+        llm=llm,
+        prompt="You are a helpful assistant.",
+        post_processors=[
+            UpperCaseStreamingProcessor(),
+            TruncateProcessor(max_length=50),
+        ],
+    )
     stream_result = agent.run_streaming(
         "Tell me about the history of AI.",
-        post_processors=post_processors,
         allow_non_streaming=True
     )
     async for chunk in stream_result:
@@ -103,12 +105,10 @@ supervisor = SupervisorPostProcessor(
 agent = Agent(
     llm=llm,
     prompt="You are a helpful assistant.",
-)
-
-result = await agent.run(
-    "What is the weather in Tokyo?",
     post_processors=[supervisor],
 )
+
+result = await agent.run("What is the weather in Tokyo?")
 ```
 
 #### Configuration
