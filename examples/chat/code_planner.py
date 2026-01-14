@@ -35,7 +35,6 @@ def project_desctiption() -> None:
     """Get the project description."""
 
 
-
 class CodePlannerChat(ChatInterface):
     """File explorer agent with confirmation for destructive actions."""
 
@@ -43,9 +42,7 @@ class CodePlannerChat(ChatInterface):
         header=HeaderCustomization(
             title="Code planner Agent", subtitle="secure file management with confirmation", logo="📂"
         ),
-        welcome_message=(
-            "Hello! I'm your file code planner.\n\n"
-        ),
+        welcome_message=("Hello! I'm your file code planner.\n\n"),
     )
 
     conversation_history = True
@@ -59,18 +56,22 @@ class CodePlannerChat(ChatInterface):
             # no confirmation
             project_desctiption,
             # require confirmation
-            self.planner
+            self.planner,
         ]
+
     async def planner(self, message: str, context: ChatContext) -> None:
         """Run the planner workflow for the given message."""
         print(f"message {message}")
         print(f"context {context}")
         print(f"self.conversation_history: {self.conversation_history}")
         llm = LiteLLM(model_name="gpt-4o-mini")
-        todo_orchestrator = ToDoPlanner(agent_initial_prompt="""
+        todo_orchestrator = ToDoPlanner(
+            agent_initial_prompt="""
             You are an expert hiking guide. Provide detailed, comprehensive information
             about hiking routes, gear, transportation, and safety considerations.
-            """, llm=llm)
+            """,
+            llm=llm,
+        )
         async for response in todo_orchestrator.run_todo_workflow_streaming(message):
             print(response)
 

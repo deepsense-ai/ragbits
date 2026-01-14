@@ -49,10 +49,13 @@ class MyChat(ChatInterface):
 
     def __init__(self) -> None:
         self.llm = LiteLLM(model_name="gpt-4o-mini")
-        self.todo_orchestrator = ToDoPlanner(agent_initial_prompt="""
+        self.todo_orchestrator = ToDoPlanner(
+            agent_initial_prompt="""
             You are an expert hiking guide. Provide detailed, comprehensive information
             about hiking routes, gear, transportation, and safety considerations.
-            """, llm=self.llm)
+            """,
+            llm=self.llm,
+        )
         # self.agent = Agent(
         #     llm=self.llm,
         #     prompt=,

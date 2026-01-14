@@ -172,7 +172,10 @@ class ToDoPlanner(BaseModel):
     """High-level orchestrator for managing todo workflow with context passing."""
 
     todo_list: TodoList = Field(default_factory=TodoList)
-    task_feedback_options: list[str] = ["OK", "NOT OK", ]
+    task_feedback_options: list[str] = [
+        "OK",
+        "NOT OK",
+    ]
     llm: LLM | None = None
     depth_tasks: int = 1
     agent_initial_prompt: str | None = ""
@@ -184,11 +187,7 @@ class ToDoPlanner(BaseModel):
         if self.agent is None:
             if self.llm is None:
                 raise ValueError("llm must be provided if agent is not provided")
-            self.agent = Agent(
-                llm=self.llm,
-                prompt=self.agent_initial_prompt,
-                keep_history=True
-            )
+            self.agent = Agent(llm=self.llm, prompt=self.agent_initial_prompt, keep_history=True)
 
     async def handle_simple_query(self, input_message: str) -> StreamingResponseType:
         """Handle a simple query that doesn't require task breakdown."""
@@ -259,9 +258,7 @@ class ToDoPlanner(BaseModel):
 
         return json.dumps(message.content)
 
-    async def run_todo_workflow_streaming(
-        self, input_message: str
-    ) -> AsyncGenerator[StreamingResponseType, None]:
+    async def run_todo_workflow_streaming(self, input_message: str) -> AsyncGenerator[StreamingResponseType, None]:
         """
         Run complete todo workflow with streaming responses.
 
@@ -269,14 +266,12 @@ class ToDoPlanner(BaseModel):
             Various response types: str, ToolCall, ToolResult, dict (status updates)
         """
         if not self.todo_list.tasks:
-
             yield TodoResult(type="status", message="🚀 Starting todo workflow...")
             yield TodoResult(type="status", message="🔍 Analyzing query complexity...")
 
             is_simple_query = await self._analyze_query_complexity(query=input_message)
 
             if is_simple_query:
-
                 yield TodoResult(type="status", message="💡 Simple query detected - providing direct answer...")
                 response = await self.handle_simple_query(input_message=input_message)
                 yield response
@@ -301,8 +296,8 @@ class ToDoPlanner(BaseModel):
                 response = await self.handle_feedback(input_message)
             # if input_message not in self.task_feedback_options:
             # Parse feedback
-                # message = await self.handle_feedback(input_message)
-                # parsed_feedback = json.loads(message.content)
+            # message = await self.handle_feedback(input_message)
+            # parsed_feedback = json.loads(message.content)
 
             print(f"response {response}")
 
@@ -366,9 +361,7 @@ class ToDoPlanner(BaseModel):
             message=f"\n📊 Comprehensive {self.agent_initial_prompt} summary:\n",
         )
 
-        async for summary_response in self._generate_comprehensive_summary_streaming(
-            input_message, task_summaries
-        ):
+        async for summary_response in self._generate_comprehensive_summary_streaming(input_message, task_summaries):
             yield summary_response
 
         yield TodoResult(type="final_summary_end", message="\n")
