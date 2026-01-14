@@ -858,6 +858,18 @@ class AuthType(str, Enum):
     """Defines the available authentication types."""
 
     CREDENTIALS = "credentials"
+    OAUTH2 = "oauth2"
+
+
+class OAuth2ProviderConfig(BaseModel):
+    """Configuration for an OAuth2 provider including visual configuration."""
+
+    name: str = Field(..., description="Provider name (e.g., 'discord')")
+    display_name: str | None = Field(None, description="Display name for the provider (e.g., 'Discord')")
+    color: str | None = Field(None, description="Brand color for the provider (e.g., '#5865F2')")
+    button_color: str | None = Field(None, description="Button background color (defaults to color)")
+    text_color: str | None = Field(None, description="Button text color (defaults to white)")
+    icon_svg: str | None = Field(None, description="SVG icon as string")
 
 
 class AuthenticationConfig(BaseModel):
@@ -865,6 +877,9 @@ class AuthenticationConfig(BaseModel):
 
     enabled: bool = Field(default=False, description="Enable/disable authentication")
     auth_types: list[AuthType] = Field(default=[], description="List of available authentication types")
+    oauth2_providers: list[OAuth2ProviderConfig] = Field(
+        default_factory=list, description="List of available OAuth2 providers"
+    )
 
 
 class ConfigResponse(BaseModel):

@@ -7,14 +7,13 @@ from pydantic import BaseModel
 from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ConfigurableComponent
 
-from .types import JWTToken, OAuth2Credentials, User, UserCredentials
+from .types import OAuth2Credentials, User, UserCredentials
 
 
 class AuthOptions(Options):
     """Options for authentication backends."""
 
-    jwt_algorithm: str = "HS256"
-    token_expiry_minutes: int = 24 * 60
+    pass
 
 
 class AuthenticationResponse(BaseModel):
@@ -22,7 +21,7 @@ class AuthenticationResponse(BaseModel):
 
     success: bool
     user: User | None = None
-    jwt_token: JWTToken | None = None
+    session_id: str | None = None
     error_message: str | None = None
 
 
@@ -60,26 +59,25 @@ class AuthenticationBackend(ConfigurableComponent[AuthOptions], ABC):
         pass
 
     @abstractmethod
-    async def validate_token(self, token: str) -> AuthenticationResponse:
+    async def validate_session(self, session_id: str) -> AuthenticationResponse:
         """
-        Validate a JWT jwt_token.
+        Validate a session.
 
         Args:
-            token: The JWT jwt_token to validate
+            session_id: The session ID to validate
 
         Returns:
             AuthenticationResult with user if valid
         """
-        # Default implementation for backward compatibility
         pass
 
     @abstractmethod
-    async def revoke_token(self, token: str) -> bool:
+    async def revoke_session(self, session_id: str) -> bool:
         """
         Revoke/logout a session.
 
         Args:
-            token: The jwt_token to revoke
+            session_id: The session ID to revoke
 
         Returns:
             True if successfully revoked

@@ -71,6 +71,7 @@ def mock_chat_interface() -> type[MockChatInterface]:
 def api(mock_chat_interface: type[MockChatInterface]) -> RagbitsAPI:
     """Fixture providing a RagbitsAPI instance with the mock interface."""
     from ragbits.chat.auth.backends import ListAuthenticationBackend
+    from ragbits.chat.auth.session_store import InMemorySessionStore
 
     # Set up authentication backend with test users
     test_users = [
@@ -82,7 +83,8 @@ def api(mock_chat_interface: type[MockChatInterface]) -> RagbitsAPI:
             "roles": ["user"],
         }
     ]
-    auth_backend = ListAuthenticationBackend(users=test_users)
+    session_store = InMemorySessionStore()
+    auth_backend = ListAuthenticationBackend(users=test_users, session_store=session_store)
 
     api = RagbitsAPI(mock_chat_interface, auth_backend=auth_backend)
     return api
@@ -94,13 +96,13 @@ def client(api: RagbitsAPI) -> TestClient:
     return TestClient(api.app)
 
 
-def authenticate_user(client: TestClient, username: str = "testuser", password: str = "testpass") -> str:  # noqa: S107
-    """Helper function to authenticate a user and return the JWT token."""
+def authenticate_user(client: TestClient, username: str = "testuser", password: str = "testpass") -> None:  # noqa: S107
+    """Helper function to authenticate a user. Session cookie is automatically stored by TestClient."""
     login_response = client.post("/api/auth/login", json={"username": username, "password": password})
     assert login_response.status_code == 200
     login_data = login_response.json()
     assert login_data["success"] is True
-    return login_data["jwt_token"]["access_token"]
+    # TestClient automatically handles cookies, so we don't need to return anything
 
 
 @pytest.mark.asyncio
@@ -141,9 +143,9 @@ def test_root_endpoint(client: TestClient) -> None:
 
 
 def test_chat_endpoint(client: TestClient) -> None:
-    """Test the chat endpoint returns streaming response."""
-    # Authenticate first
-    token = authenticate_user(client)
+    """Test the chat endpoint returns streaming response with session cookie authentication."""
+    # Authenticate first - TestClient automatically stores the session cookie
+    authenticate_user(client)
 
     request_data = {
         "message": "Hello",
@@ -151,7 +153,8 @@ def test_chat_endpoint(client: TestClient) -> None:
         "context": {"user_id": "test_user"},
     }
 
-    response = client.post("/api/chat", json=request_data, headers={"Authorization": f"Bearer {token}"})
+    # TestClient automatically sends cookies from previous requests
+    response = client.post("/api/chat", json=request_data)
     assert response.status_code == 200
     # Check only the main part of the content type, ignoring charset
     assert response.headers["content-type"].startswith("text/event-stream")
@@ -274,8 +277,8 @@ def test_load_chat_interface_from_string(mock_import: MagicMock) -> None:
 
 def test_state_verification_successful(client: TestClient, api: RagbitsAPI) -> None:
     """Test state verification succeeds with valid signature."""
-    # Authenticate first
-    token = authenticate_user(client)
+    # Authenticate first - TestClient automatically stores the session cookie
+    authenticate_user(client)
 
     state = {"user_data": "test_value"}
     signature = api.chat_interface._sign_state(state)
@@ -286,15 +289,16 @@ def test_state_verification_successful(client: TestClient, api: RagbitsAPI) -> N
         "context": {"state": state, "signature": signature},
     }
 
-    response = client.post("/api/chat", json=request_data, headers={"Authorization": f"Bearer {token}"})
+    # TestClient automatically sends cookies from previous requests
+    response = client.post("/api/chat", json=request_data)
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/event-stream")
 
 
 def test_state_verification_failed(client: TestClient, api: RagbitsAPI) -> None:
     """Test state verification fails with invalid signature."""
-    # Authenticate first
-    token = authenticate_user(client)
+    # Authenticate first - TestClient automatically stores the session cookie
+    authenticate_user(client)
 
     state = {"user_data": "test_value"}
     invalid_signature = "invalid-signature"
@@ -305,7 +309,8 @@ def test_state_verification_failed(client: TestClient, api: RagbitsAPI) -> None:
         "context": {"state": state, "signature": invalid_signature},
     }
 
-    response = client.post("/api/chat", json=request_data, headers={"Authorization": f"Bearer {token}"})
+    # TestClient automatically sends cookies from previous requests
+    response = client.post("/api/chat", json=request_data)
     assert response.status_code == 400
     assert response.json()["detail"] == "Invalid state signature"
 
@@ -333,13 +338,14 @@ def test_run_method() -> None:
 
 
 def test_login_endpoint(client: TestClient) -> None:
-    """Test the login endpoint with valid credentials."""
+    """Test the login endpoint with valid credentials sets session cookie."""
     response = client.post("/api/auth/login", json={"username": "testuser", "password": "testpass"})
     assert response.status_code == 200
     data = response.json()
     assert data["success"] is True
     assert data["user"]["username"] == "testuser"
-    assert data["jwt_token"]["access_token"] is not None
+    # Check that session cookie is set
+    assert "ragbits_session" in response.cookies
 
 
 def test_login_endpoint_invalid_credentials(client: TestClient) -> None:
@@ -352,12 +358,65 @@ def test_login_endpoint_invalid_credentials(client: TestClient) -> None:
 
 
 def test_logout_endpoint(client: TestClient) -> None:
-    """Test the logout endpoint."""
-    # First login to get a token
-    token = authenticate_user(client)
+    """Test the logout endpoint clears session cookie."""
+    # First login to get a session cookie
+    authenticate_user(client)
 
     # Then logout
-    response = client.post("/api/auth/logout", json={"token": token})
-    assert response.status_code == 500
+    response = client.post("/api/auth/logout")
+    assert response.status_code == 200
     data = response.json()
-    assert data["success"] is False
+    assert data["success"] is True
+
+
+def test_user_endpoint_authenticated(client: TestClient) -> None:
+    """Test the /api/user endpoint returns user info when authenticated."""
+    # Authenticate first
+    authenticate_user(client)
+
+    # Call /api/user endpoint
+    response = client.get("/api/user")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["username"] == "testuser"
+    assert data["email"] == "test@example.com"
+
+
+def test_user_endpoint_unauthenticated(client: TestClient) -> None:
+    """Test the /api/user endpoint returns 401 when not authenticated."""
+    response = client.get("/api/user")
+    assert response.status_code == 401
+
+
+def test_feedback_endpoint_authenticated(client: TestClient, api: RagbitsAPI) -> None:
+    """Test the feedback endpoint with authentication."""
+    # Set up feedback config
+    api.chat_interface.feedback_config = FeedbackConfig(like_enabled=True, dislike_enabled=True)
+
+    # Authenticate first
+    authenticate_user(client)
+
+    feedback_data = {
+        "message_id": "test-message-id",
+        "feedback": "like",
+        "payload": {"like_reason": "Very helpful"},
+    }
+
+    response = client.post("/api/feedback", json=feedback_data)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "success"
+
+
+def test_feedback_endpoint_unauthenticated(client: TestClient) -> None:
+    """Test the feedback endpoint rejects unauthenticated requests."""
+    feedback_data = {
+        "message_id": "test-message-id",
+        "feedback": "like",
+        "payload": {"like_reason": "Very helpful"},
+    }
+
+    response = client.post("/api/feedback", json=feedback_data)
+    assert response.status_code == 401
+    data = response.json()
+    assert data["detail"] == "Authentication required"
