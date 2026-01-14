@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add Arize Phoenix tracing integration
+- Enhance Phoenix handler with OpenInference semantic conventions
 - Add Support for Thinking in agents (#837)
 - Add support for confirmation requests in chat (#853)
 - Add name parameter and slightly refactor HuggingFace dataloder (#829)
