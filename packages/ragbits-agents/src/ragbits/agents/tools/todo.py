@@ -1,22 +1,20 @@
 """Todo list management tool for agents."""
 
-import uuid
 import json
+import uuid
 from collections.abc import AsyncGenerator
 from enum import Enum
 from types import SimpleNamespace
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.agents import Agent
 from ragbits.agents._main import DownstreamAgentResult
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.tool import ToolCallResult
-from ragbits.core.llms import ToolCall, LLM
+from ragbits.core.llms import LLM, ToolCall
 from ragbits.core.llms.base import Usage
 from ragbits.core.prompt.base import BasePrompt
-from typing import Any, Optional
-
 
 # Constants
 MAX_SUMMARY_LENGTH = 300
@@ -175,22 +173,25 @@ class ToDoPlanner(BaseModel):
 
     todo_list: TodoList = Field(default_factory=TodoList)
     task_feedback_options: list[str] = ["OK", "NOT OK", ]
-    llm: Optional[LLM] = None
+    llm: LLM | None = None
     depth_tasks: int = 1
-    agent_initial_prompt: Optional[str] = ""
-    agent: Optional[Agent] = None
+    agent_initial_prompt: str | None = ""
+    agent: Agent | None = None
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def model_post_init(self, __context: Any) -> None:
-
+    def model_post_init(self, __context: object) -> None:
+        """Initialize the agent if not provided."""
         if self.agent is None:
+            if self.llm is None:
+                raise ValueError("llm must be provided if agent is not provided")
             self.agent = Agent(
-                llm=self.llm, 
-                prompt=self.agent_initial_prompt, 
+                llm=self.llm,
+                prompt=self.agent_initial_prompt,
                 keep_history=True
             )
 
-    async def handle_simple_query(self, input_message):
+    async def handle_simple_query(self, input_message: str) -> StreamingResponseType:
+        """Handle a simple query that doesn't require task breakdown."""
         # Create a focused prompt for direct answering
         direct_prompt = f"""
         Answer this query directly and comprehensively:
@@ -203,7 +204,8 @@ class ToDoPlanner(BaseModel):
         """
 
         # Stream the direct answer
-
+        if self.agent is None:
+            raise RuntimeError("Agent not initialized")
         async for response in self.agent.run_streaming(direct_prompt):
             print("handel simple query")
             print(type(response))
@@ -212,17 +214,21 @@ class ToDoPlanner(BaseModel):
                 return response
             else:
                 return response  # Pass through tool calls, etc.
-    async def handle_feedback(self, input_message):
-        current_tasks_json = [t.model_dump_json() for t in self.todo_list.tasks]
+        return ""
+
+    async def handle_feedback(self, input_message: str) -> str:
+        """Handle user feedback on the task list."""
         # TODO need to upgrade this prompt to better classify the response
         prompt4 = """
         ### ROLE
-        You are a high-precision Feedback Classifier. Your primary goal is to distinguish between "Simple Approval" and "Request for Change". 
+        You are a high-precision Feedback Classifier.
+        Your goal is to distinguish between "Simple Approval" and "Request for Change".
 
         ### CRITICAL LOGIC RULES (Strict Adherence Required):
-        1. **NEVER classify as "OK" if the user mentions ANY specific task ID or specific technical change.** 2. **"OK" is ONLY for total, passive agreement** (e.g., "Yes", "Go", "Perfect"). 
-        3. **"IMPROVE"** is for partial edits: "Change X in Task 1", "Add Y to Task 2", "Recreate task 1", "Recreate task 1 and 3".
-        4. **"RECREATE"** is for total rejection or a complete pivot: "This is useless, start over", "Actually, let's do a mobile app instead of a web app".
+        1. **NEVER classify as "OK" if the user mentions ANY specific task ID or specific change.**
+        2. **"OK" is ONLY for total, passive agreement** (e.g., "Yes", "Go", "Perfect").
+        3. **"IMPROVE"** is for partial edits: "Change X in Task 1", "Add Y to Task 2".
+        4. **"RECREATE"** is for total rejection or a complete pivot: "This is useless, start over".
         5. **"RECREATE" also applies if the user wants to fundamentally restart a specific level.**
 
         ### CLASSIFICATION FLOW:
@@ -239,17 +245,16 @@ class ToDoPlanner(BaseModel):
         "{input_message}"
 
         ### OUTPUT FORMAT:
-        Return ONLY a valid JSON object. 
+        Return ONLY a valid JSON object.
 
-        {
+        {{
         "classification": "OK" | "IMPROVE" | "RECREATE" | "NEXT_LVL",
-        "reasoning": "Explain your choice. Mention if you detected a command to change a specific task.",
-        "updated_tasks": [ 
-            /* If IMPROVE: return full list with edits. If RECREATE: return empty list []. Else: return original. */
-        ]
-        }
+        "reasoning": "Explain your choice.",
+        "updated_tasks": [/* If IMPROVE: full list with edits. If RECREATE: []. Else: original. */]
+        }}
         """
-
+        if self.agent is None:
+            raise RuntimeError("Agent not initialized")
         message = await self.agent.run(prompt4)
 
         return json.dumps(message.content)
@@ -263,14 +268,13 @@ class ToDoPlanner(BaseModel):
         Yields:
             Various response types: str, ToolCall, ToolResult, dict (status updates)
         """
-
         if not self.todo_list.tasks:
 
             yield TodoResult(type="status", message="🚀 Starting todo workflow...")
             yield TodoResult(type="status", message="🔍 Analyzing query complexity...")
-            
+
             is_simple_query = await self._analyze_query_complexity(query=input_message)
-            
+
             if is_simple_query:
 
                 yield TodoResult(type="status", message="💡 Simple query detected - providing direct answer...")
@@ -287,21 +291,25 @@ class ToDoPlanner(BaseModel):
                 yield TodoResult(type="task_list", tasks=tasks)
                 # self.todo_list.tasks = []
                 return
-        
+
         if len(self.todo_list.tasks) > 1:
             print(f"input_message {type(input_message)}")
             print(f"input_message {input_message}")
-            response = input_message if input_message in self.task_feedback_options else await self.handle_feedback(input_message)
+            if input_message in self.task_feedback_options:
+                response = input_message
+            else:
+                response = await self.handle_feedback(input_message)
             # if input_message not in self.task_feedback_options:
             # Parse feedback
                 # message = await self.handle_feedback(input_message)
                 # parsed_feedback = json.loads(message.content)
 
             print(f"response {response}")
-            
+
             # if parsed_feedback["classification"] == "OK" or message.content == "OK":
             if input_message == "OK":
-                yield TodoResult(type="status", message=f"📋 Complex query - created {len(self.todo_list.tasks)} tasks:")
+                tasks_count = len(self.todo_list.tasks)
+                yield TodoResult(type="status", message=f"📋 Complex query - created {tasks_count} tasks:")
                 async for response in self.run_tasks(input_message):
                     if isinstance(response, str):
                         yield response
@@ -313,9 +321,11 @@ class ToDoPlanner(BaseModel):
             else:
                 pass
 
-    async def run_tasks(self, input_message):
+    async def run_tasks(self, input_message: str) -> AsyncGenerator[StreamingResponseType, None]:
+        """Execute all tasks in the todo list sequentially."""
         # Complex query - proceed with task breakdown
-        yield TodoResult(type="status", message=f"📋 Complex query - created {len(self.todo_list.tasks)} tasks:")
+        tasks_count = len(self.todo_list.tasks)
+        yield TodoResult(type="status", message=f"📋 Complex query - created {tasks_count} tasks:")
         yield TodoResult(type="task_list", tasks=self.todo_list.tasks, tasks_count=len(self.todo_list.tasks))
 
         # Step 2: Execute each task with context from previous tasks
@@ -384,7 +394,8 @@ class ToDoPlanner(BaseModel):
 
         Respond with ONLY one word: "SIMPLE" or "COMPLEX"
         """
-
+        if self.agent is None:
+            raise RuntimeError("Agent not initialized")
         agent_result = await self.agent.run(complexity_prompt)
         response = agent_result.content.strip().upper()
 
@@ -393,7 +404,6 @@ class ToDoPlanner(BaseModel):
 
     async def _create_tasks_simple(self, initial_query: str) -> list[Task]:
         """Create tasks based on initial query - simple, non-streaming."""
-
         task_creation_prompt = f"""
         Based on this query: "{initial_query}"
 
@@ -405,7 +415,8 @@ class ToDoPlanner(BaseModel):
         CRITICAL: Respond with ONLY a Python list of task descriptions, nothing else:
         ["Task 1: Specific description", "Task 2: Specific description", "Task 3: Specific description"]
         """
-
+        if self.agent is None:
+            raise RuntimeError("Agent not initialized")
         agent_result = await self.agent.run(task_creation_prompt)
         response = agent_result.content
 
@@ -415,7 +426,7 @@ class ToDoPlanner(BaseModel):
         if tasks:
             self.todo_list.create_tasks(tasks)
             return self.todo_list.tasks  # Return the actual Task objects
-        
+
         return []
 
     async def _execute_single_task_focused(
@@ -451,6 +462,8 @@ class ToDoPlanner(BaseModel):
         last_summary_length = 0
 
         # Stream the task execution but only show summary parts
+        if self.agent is None:
+            raise RuntimeError("Agent not initialized")
         async for response in self.agent.run_streaming(task_prompt):
             if isinstance(response, str):
                 full_response += response
@@ -515,6 +528,8 @@ class ToDoPlanner(BaseModel):
         """
 
         # Stream the comprehensive summary generation
+        if self.agent is None:
+            raise RuntimeError("Agent not initialized")
         async for response in self.agent.run_streaming(summary_prompt):
             if isinstance(response, str):
                 yield response  # Stream each character as it comes

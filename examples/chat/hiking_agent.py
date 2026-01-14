@@ -23,10 +23,9 @@ To run the script, execute the following command:
 
 from collections.abc import AsyncGenerator
 
-from ragbits.agents import Agent
 from ragbits.agents.tools.todo import ToDoPlanner, TodoResult
 from ragbits.chat.interface import ChatInterface
-from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
+from ragbits.chat.interface.types import ChatContext, ChatResponseUnion, LiveUpdateType
 from ragbits.chat.interface.ui_customization import HeaderCustomization, PageMetaCustomization, UICustomization
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import ChatFormat
@@ -64,7 +63,7 @@ class MyChat(ChatInterface):
         message: str,
         history: ChatFormat,
         context: ChatContext,
-    ) -> AsyncGenerator[ChatResponse, None]:
+    ) -> AsyncGenerator[ChatResponseUnion, None]:
         """
         Example implementation of the ChatInterface.
 
@@ -90,14 +89,15 @@ class MyChat(ChatInterface):
                             str(live_update_counter), LiveUpdateType.FINISH, response.message or ""
                         )
                         live_update_counter += 1
-                    
+
                     elif response.type in ("task_list"):
                         for task in response.tasks:
                             yield self.create_todo_item_response(task)
                         yield self.create_followup_messages(self.todo_orchestrator.task_feedback_options)
 
                     elif response.type in ("start_task"):
-                        yield self.create_todo_item_response(response.current_task)
+                        if response.current_task is not None:
+                            yield self.create_todo_item_response(response.current_task)
 
                     elif response.type in ("task_summary_start", "final_summary_start"):
                         yield self.create_live_update(
@@ -107,9 +107,10 @@ class MyChat(ChatInterface):
                         yield self.create_live_update(
                             str(live_update_counter), LiveUpdateType.FINISH, response.message or ""
                         )
-                        yield self.create_todo_item_response(response.current_task)
+                        if response.current_task is not None:
+                            yield self.create_todo_item_response(response.current_task)
                         live_update_counter += 1
-                    
+
                     elif response.type in ("final_summary_end"):
                         yield self.create_live_update(
                             str(live_update_counter), LiveUpdateType.FINISH, response.message or ""

@@ -1,14 +1,23 @@
+"""
+Ragbits Chat Example: Code Planner
 
+This example demonstrates how to use the ChatInterface to create a simple chat application with agent capabilities.
+It showcases different response types, including text responses, live updates, and reference documents, as well as
+the use of todo lists to help agents handle complex tasks.
 
-import json
-import os
+To run the script, execute the following command:
+
+    ```bash
+    uv run ragbits api run examples.chat.code_planner:CodePlannerChat
+    ```
+"""
+
 from collections.abc import AsyncGenerator
-from pathlib import Path
 
 from ragbits.agents import Agent, ToolCallResult
 from ragbits.agents._main import AgentRunContext
 from ragbits.agents.confirmation import ConfirmationRequest
-from ragbits.agents.tool import requires_confirmation
+from ragbits.agents.tools.todo import ToDoPlanner
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import (
     ChatContext,
@@ -19,16 +28,15 @@ from ragbits.chat.interface.types import (
 )
 from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
 from ragbits.core.llms import LiteLLM, ToolCall
-from ragbits.core.llms.base import Usage
 from ragbits.core.prompt import ChatFormat
-from ragbits.agents.tools.todo import Task, ToDoPlanner, TodoResult
-
-def project_desctiption():
-    pass
 
 
+def project_desctiption() -> None:
+    """Get the project description."""
 
-class CodePlanner(ChatInterface):
+
+
+class CodePlannerChat(ChatInterface):
     """File explorer agent with confirmation for destructive actions."""
 
     ui_customization = UICustomization(
@@ -53,7 +61,8 @@ class CodePlanner(ChatInterface):
             # require confirmation
             self.planner
         ]
-    async def planner(self, message, context):
+    async def planner(self, message: str, context: ChatContext) -> None:
+        """Run the planner workflow for the given message."""
         print(f"message {message}")
         print(f"context {context}")
         print(f"self.conversation_history: {self.conversation_history}")
@@ -128,7 +137,7 @@ class CodePlanner(ChatInterface):
 
                     elif response.type == "planner":
                         print("type: planner")
-                        self.create_text_response()
+                        yield self.create_text_response("Planning...")
 
                 case ConfirmationRequest():
                     # Confirmation needed - send to frontend and wait for user response
