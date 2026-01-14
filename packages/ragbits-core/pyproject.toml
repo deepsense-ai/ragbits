@@ -110,15 +110,6 @@ weaviate = [
     "weaviate-client>=4.15.4,<5.0.0",
 ]
 
-[dependency-groups]
-dev = [
-    "pre-commit~=3.8.0",
-    "pytest~=8.3.3",
-    "pytest-cov~=5.0.0",
-    "pytest-asyncio~=0.24.0",
-    "pip-licenses>=4.0.0,<5.0.0"
-]
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

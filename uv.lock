@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version < '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
@@ -5221,15 +5221,6 @@ sql = [
     { name = "sqlalchemy" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "pip-licenses" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "bcrypt", specifier = ">=4.2.0" },
@@ -5241,15 +5232,6 @@ requires-dist = [
     { name = "uvicorn", specifier = ">=0.31.0,<1.0.0" },
 ]
 provides-extras = ["sql"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
-    { name = "pre-commit", specifier = "~=3.8.0" },
-    { name = "pytest", specifier = "~=8.3.3" },
-    { name = "pytest-asyncio", specifier = "~=0.24.0" },
-    { name = "pytest-cov", specifier = "~=5.0.0" },
-]
 
 [[package]]
 name = "ragbits-cli"
@@ -5344,15 +5326,6 @@ weaviate = [
     { name = "weaviate-client" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "pip-licenses" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "accelerate", marker = "extra == 'local'", specifier = ">=1.7.0" },
@@ -5395,15 +5368,6 @@ requires-dist = [
 ]
 provides-extras = ["chroma", "local", "fastembed", "promptfoo", "otel", "logfire", "qdrant", "pgvector", "fastembed-gpu", "azure", "gcs", "hf", "s3", "google-drive", "weaviate"]
 
-[package.metadata.requires-dev]
-dev = [
-    { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
-    { name = "pre-commit", specifier = "~=3.8.0" },
-    { name = "pytest", specifier = "~=8.3.3" },
-    { name = "pytest-asyncio", specifier = "~=0.24.0" },
-    { name = "pytest-cov", specifier = "~=5.0.0" },
-]
-
 [[package]]
 name = "ragbits-document-search"
 version = "1.4.0.dev202601130240"
@@ -5426,16 +5390,6 @@ unstructured = [
     { name = "unstructured-client" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "pip-licenses" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "ragbits", extra = ["local"] },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "docling", extras = ["easyocr"], specifier = ">=2.15.1,<3.0.0" },
@@ -5449,16 +5403,6 @@ requires-dist = [
     { name = "unstructured-client", marker = "extra == 'unstructured'", specifier = ">=0.26.0,<1.0.0" },
 ]
 provides-extras = ["unstructured", "ray"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
-    { name = "pre-commit", specifier = "~=3.8.0" },
-    { name = "pytest", specifier = "~=8.3.3" },
-    { name = "pytest-asyncio", specifier = "~=0.24.0" },
-    { name = "pytest-cov", specifier = "~=5.0.0" },
-    { name = "ragbits", extras = ["local"], editable = "packages/ragbits" },
-]
 
 [[package]]
 name = "ragbits-evaluate"
@@ -5479,15 +5423,6 @@ relari = [
     { name = "continuous-eval" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "pip-licenses" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "continuous-eval", marker = "extra == 'relari'", specifier = ">=0.3.12,<1.0.0" },
@@ -5500,15 +5435,6 @@ requires-dist = [
     { name = "ragbits-core", editable = "packages/ragbits-core" },
 ]
 provides-extras = ["relari"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
-    { name = "pre-commit", specifier = "~=3.8.0" },
-    { name = "pytest", specifier = "~=8.3.3" },
-    { name = "pytest-asyncio", specifier = "~=0.24.0" },
-    { name = "pytest-cov", specifier = "~=5.0.0" },
-]
 
 [[package]]
 name = "ragbits-guardrails"
@@ -5523,30 +5449,12 @@ openai = [
     { name = "openai" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "pip-licenses" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.91.0,<2.0.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
 ]
 provides-extras = ["openai"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
-    { name = "pre-commit", specifier = "~=3.8.0" },
-    { name = "pytest", specifier = "~=8.3.3" },
-    { name = "pytest-asyncio", specifier = "~=0.24.0" },
-    { name = "pytest-cov", specifier = "~=5.0.0" },
-]
 
 [[package]]
 name = "ragbits-workspace"
