@@ -1,123 +1,89 @@
-"""Example demonstrating the new orchestrator-based todo functionality with streaming."""
+"""
+Ragbits Agents Example: Planning Tools
 
+This example demonstrates how to use planning tools with an agent.
+The agent breaks down complex requests into tasks, works through them sequentially,
+and builds context from completed tasks to generate comprehensive answers.
+
+To run the script, execute the following command:
+
+    ```bash
+    uv run examples/agents/planning.py
+    ```
+"""
+
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ragbits-core",
+#     "ragbits-agents",
+# ]
+# ///
 import asyncio
-from types import SimpleNamespace
 
-from ragbits.agents import Agent, ToolCallResult
-from ragbits.agents._main import DownstreamAgentResult
-from ragbits.agents.tools.planning import ToDoPlanner, TodoResult
-from ragbits.core.llms import LiteLLM, ToolCall
-from ragbits.core.llms.base import Usage
-from ragbits.core.prompt.base import BasePrompt
+from pydantic import BaseModel
 
-# Type alias for response types
-ResponseType = (
-    str | ToolCall | ToolCallResult | TodoResult | BasePrompt | Usage | SimpleNamespace | DownstreamAgentResult
-)
+from ragbits.agents import Agent, AgentOptions, ToolCall, ToolCallResult
+from ragbits.agents.tools.planning import PlanningState, create_planning_tools
+from ragbits.core.llms import LiteLLM
+from ragbits.core.prompt import Prompt
 
 
-def _handle_response(response: ResponseType) -> None:
-    """Handle different types of responses from the orchestrator."""
-    match response:
-        case str():
-            if response.strip():
-                print(response, end="", flush=True)
-        case ToolCall():
-            print(f"\n🔧 Tool Call: {response.name}")
-            if response.arguments:
-                print(f"   Arguments: {response.arguments}")
-        case ToolCallResult():
-            print(f"🔧 Tool Result: {response.result}")
-        case TodoResult():
-            _handle_streaming_response(response)
-
-
-def _handle_streaming_response(response: TodoResult) -> None:
-    """Handle TodoResult from the orchestrator."""
-    if response.type in ("status"):
-        print(response.message or "")
-    elif response.type in ("task_list"):
-        for index, task in enumerate(response.tasks, 1):
-            print(f"{index}. {task.description}")
-    elif response.type in ("task_summary_start", "final_summary_start"):
-        print(response.message or "", end="", flush=True)
-    elif response.type in ("task_completed", "final_summary_end"):
-        print(response.message or "")
-
-
-async def hiking_guide() -> None:
-    """Demonstrate the new orchestrator-based todo approach with streaming."""
-    # Define the system prompt for hiking guide
-    hiking_system_prompt = """
-    You are an expert hiking guide. Provide detailed, comprehensive information
-    about hiking routes, gear, transportation, and safety considerations.
+class CodePlannerInput(BaseModel):
+    """
+    Input format for the CodePlannerPrompt.
     """
 
-    # Create generic orchestrator with hiking domain context
-    todo_orchestrator = ToDoPlanner(domain_context="hiking guide")
-
-    # Create a simple agent - orchestrator handles the workflow
-    agent: Agent = Agent(
-        llm=LiteLLM("gpt-4o-mini"),
-        prompt=hiking_system_prompt,
-    )
-
-    # Test queries
-    query = (
-        "Plan a 1-day hiking trip for 2 people in Tatra Mountains, Poland. "
-        "Focus on scenic routes under 15km, avoiding crowds."
-    )
-    # query = "How long is hike to Giewont from Kuźnice?"
-
-    print("=== Generic Todo Orchestrator - Hiking Example ===\n")
-
-    # Run the complete workflow with orchestrator streaming
-    async for response in todo_orchestrator.run_todo_workflow_streaming(query):
-        _handle_response(response)
-
-    print("\n🎯 Workflow completed successfully!")
+    query: str
 
 
-async def software_architecture_example() -> None:
-    """Example showing the orchestrator used for software architecture."""
-    software_system_prompt = """
-    You are an expert software architect. Provide detailed technical analysis,
-    system design recommendations, and implementation guidance.
-
-    Always be specific with:
-    - Technology stack recommendations with versions
-    - Architecture patterns and design principles
-    - Performance and scalability considerations
-    - Security best practices
-    - Implementation roadmap with timelines
+class CodePlannerPrompt(Prompt[CodePlannerInput, str]):
+    """
+    Prompt for a code planner agent.
     """
 
-    todo_orchestrator = ToDoPlanner(domain_context="software architect")
+    system_prompt = """
+    You are an expert software architect with planning capabilities.
 
-    agent: Agent = Agent(
-        llm=LiteLLM("gpt-4o-mini"),
-        prompt=software_system_prompt,
+    For complex design requests:
+    1. Use create_plan to break down the architecture task into focused subtasks
+    2. Work through each task using get_current_task and complete_task
+    3. Build on context from completed tasks
+
+    Cover: technology stack, architecture patterns, scalability, and security.
+    """
+    user_prompt = "{{ query }}"
+
+
+async def main() -> None:
+    """
+    Run the example.
+    """
+    planning_state = PlanningState()
+    agent = Agent(
+        llm=LiteLLM("gpt-4.1-mini"),
+        prompt=CodePlannerPrompt,
+        tools=create_planning_tools(planning_state),
+        default_options=AgentOptions(max_turns=50),
     )
-
     query = (
         "Design a scalable e-commerce platform for 100k+ users with "
         "real-time inventory management and payment processing."
     )
-
-    print("\n" + "=" * 60)
-    print("=== Generic Todo Orchestrator - Software Architecture Example ===\n")
-
-    async for response in todo_orchestrator.run_todo_workflow_streaming(agent, query):
-        _handle_response(response)
-
-    print("\n🎯 Software architecture workflow completed!")
-
-
-async def demonstrate_both() -> None:
-    """Demonstrate both hiking and software architecture examples."""
-    await hiking_guide()
-    # await software_architecture_example()
+    async for result in agent.run_streaming(CodePlannerInput(query=query)):
+        match result:
+            case str():
+                print(result, end="", flush=True)
+            case ToolCall():
+                if result.arguments:
+                    print(
+                        f">>> TOOL CALL: {result.name}({', '.join(f'{k}={v!r}' for k, v in result.arguments.items())})"
+                    )
+                else:
+                    print(f">>> TOOL CALL: {result.name}()")
+            case ToolCallResult():
+                print(f"<<< TOOL RESULT ({result.name}): {result.result}\n")
 
 
 if __name__ == "__main__":
-    asyncio.run(demonstrate_both())
+    asyncio.run(main())
