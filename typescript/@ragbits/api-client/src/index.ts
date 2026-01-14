@@ -108,7 +108,9 @@ export class RagbitsClient {
      * Upload a file to the backend
      * @param file - File to upload
      */
-    async uploadFile(file: File): Promise<{ status: string; filename: string }> {
+    async uploadFile(
+        file: File
+    ): Promise<{ status: string; filename: string }> {
         const formData = new FormData()
         formData.append('file', file)
 
@@ -134,7 +136,9 @@ export class RagbitsClient {
 
         if (!response.ok) {
             const error = await response.json().catch(() => ({}))
-            throw new Error(error.detail || `Upload failed with status ${response.status}`)
+            throw new Error(
+                error.detail || `Upload failed with status ${response.status}`
+            )
         }
 
         return response.json()
