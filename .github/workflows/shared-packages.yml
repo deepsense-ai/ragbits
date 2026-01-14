@@ -126,7 +126,7 @@ jobs:
         continue-on-error: true
         if: success()
         with:
-          name: packages
+          name: ${{ inputs.artifact-name }}
           path: dist/**
           retention-days: 3
 
@@ -216,7 +216,8 @@ jobs:
         run: |
           uv sync --only-group dev
           uv pip install --find-links dist \
-            "$(ls dist/ragbits-*.whl)[a2a,azure,chroma,cli,fastembed,fastembed-gpu,gcs,google-drive,hf,local,logfire,mcp,openai,otel,pgvector,promptfoo,qdrant,ray,relari,s3,sql,unstructured,weaviate]"
+            "$(ls dist/ragbits-*.whl)[a2a,azure,chroma,cli,fastembed,fastembed-gpu,gcs,google-drive,hf,local,logfire,mcp,openai,otel,pgvector,promptfoo,qdrant,ray,relari,s3,sql,unstructured,weaviate]" \
+            docling==2.15.1 torch==2.2.2 pyarrow==17.0.0 ray==2.43.0
 
       - name: Run Tests With Coverage
         run: |
