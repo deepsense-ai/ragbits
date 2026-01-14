@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 from ragbits.agents import Agent, ToolCallResult
 from ragbits.agents._main import DownstreamAgentResult
-from ragbits.agents.tools.todo import ToDoPlanner, TodoResult
+from ragbits.agents.tools.planning import ToDoPlanner, TodoResult
 from ragbits.core.llms import LiteLLM, ToolCall
 from ragbits.core.llms.base import Usage
 from ragbits.core.prompt.base import BasePrompt
@@ -72,7 +72,7 @@ async def hiking_guide() -> None:
     print("=== Generic Todo Orchestrator - Hiking Example ===\n")
 
     # Run the complete workflow with orchestrator streaming
-    async for response in todo_orchestrator.run_todo_workflow_streaming(agent, query):
+    async for response in todo_orchestrator.run_todo_workflow_streaming(query):
         _handle_response(response)
 
     print("\n🎯 Workflow completed successfully!")

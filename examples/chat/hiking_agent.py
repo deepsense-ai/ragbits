@@ -23,7 +23,7 @@ To run the script, execute the following command:
 
 from collections.abc import AsyncGenerator
 
-from ragbits.agents.tools.todo import ToDoPlanner, TodoResult
+from ragbits.agents.tools.planning import ToDoPlanner, TodoResult
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponseUnion, LiveUpdateType
 from ragbits.chat.interface.ui_customization import HeaderCustomization, PageMetaCustomization, UICustomization

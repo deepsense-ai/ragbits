@@ -11,7 +11,7 @@ from typing import cast
 from pydantic import BaseModel
 
 from ragbits.agents.confirmation import ConfirmationRequest
-from ragbits.agents.tools.todo import Task, TaskStatus
+from ragbits.agents.tools.planning import Task, TaskStatus
 from ragbits.chat.interface.types import AuthType, ConfirmationRequestContent
 
 

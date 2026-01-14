@@ -17,7 +17,7 @@ from collections.abc import AsyncGenerator
 from ragbits.agents import Agent, ToolCallResult
 from ragbits.agents._main import AgentRunContext
 from ragbits.agents.confirmation import ConfirmationRequest
-from ragbits.agents.tools.todo import ToDoPlanner
+from ragbits.agents.tools.planning import ToDoPlanner
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import (
     ChatContext,

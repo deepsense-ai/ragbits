@@ -6,7 +6,7 @@ from typing import Any, Generic, TypeVar, cast
 from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.agents.confirmation import ConfirmationRequest
-from ragbits.agents.tools.todo import Task
+from ragbits.agents.tools.planning import Task
 from ragbits.chat.auth.types import User
 from ragbits.chat.interface.forms import UserSettings
 from ragbits.chat.interface.ui_customization import UICustomization

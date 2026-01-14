@@ -17,7 +17,7 @@ from typing import Any, cast
 from ragbits.agents import Agent, AgentOptions, AgentResult
 from ragbits.agents.tool import ToolCallResult
 from ragbits.agents.tools.openai import get_web_search_tool
-from ragbits.agents.tools.todo import ToDoPlanner, TodoResult
+from ragbits.agents.tools.planning import ToDoPlanner, TodoResult
 from ragbits.core.llms import LiteLLM
 from ragbits.core.llms.base import LLMClientOptionsT, Usage
 from ragbits.core.prompt.base import BasePrompt
