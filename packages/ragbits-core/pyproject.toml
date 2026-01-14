@@ -54,7 +54,7 @@ chroma = [
 ]
 local = [
     "sentence-transformers>=4.0.2,<5.0.0",
-    "torch>=2.2.1,<3.0.0",
+    "torch>=2.2.2,<3.0.0",
     "transformers>=4.44.2,<5.0.0",
     "numpy>=1.26.0,<2.0.0",
     "accelerate>=1.7.0",

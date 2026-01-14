@@ -109,75 +109,18 @@ jobs:
           NIGHTLY_VERSION: ${{ needs.check-for-changes.outputs.nightly-version }}
 
   test-packages:
-    name: Test packages (Python ${{ matrix.python-version }})
+    name: Test packages
     needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: [ "3.10", "3.11", "3.12" ]
-
-    services:
-      postgres:
-        image: pgvector/pgvector:0.8.0-pg17
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: tests
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      weaviate:
-        image: cr.weaviate.io/semitechnologies/weaviate:1.30.6
-        env:
-          QUERY_DEFAULTS_LIMIT: 25
-          AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: true
-          PERSISTENCE_DATA_PATH: /var/lib/weaviate
-          ENABLE_API_BASED_MODULES: true
-          CLUSTER_HOSTNAME: node1
-        ports:
-          - 8080:8080
-          - 50051:50051
-        options: >-
-          --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:8080/v1/.well-known/ready || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@v2
-        with:
-          version: ${{ vars.UV_VERSION || '0.6.9' }}
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Download built packages
-        uses: actions/download-artifact@v4
-        with:
-          name: nightly-packages
-          path: dist
-
-      - name: Test built packages
-        uses: ./.github/actions/test-packages
-        with:
-          python-version: ${{ matrix.python-version }}
-          google-drive-clientid-json: ${{ secrets.GOOGLE_DRIVE_CLIENTID_JSON }}
-          google-source-unit-test-folder: ${{ secrets.GOOGLE_SOURCE_UNIT_TEST_FOLDER }}
-          google-drive-target-email: ${{ secrets.GOOGLE_DRIVE_TARGET_EMAIL }}
+    uses: ./.github/workflows/shared-packages.yml
+    with:
+      artifact-name: nightly-packages
+      skip-build: true
+      skip-lints: true
+      install-methods: '["package"]'
 
   publish:
     needs: [check-for-changes, test-packages]
+    if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -212,13 +155,7 @@ jobs:
           name: nightly-packages
           path: dist
 
-      - name: Dry run notice
-        if: ${{ inputs.dry-run == true }}
-        run: |
-          echo "::notice::🔍 DRY RUN MODE: Skipping all publishing steps (PyPI, npm, docs, git push)"
-
       - name: Publish to PyPI
-        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         run: |
           uv tool run twine upload dist/* --verbose
         env:
@@ -227,29 +164,24 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
 
       - name: Install TypeScript dependencies
-        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         run: npm ci
 
       - name: Build npm packages
-        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         run: npm run build:packages
 
       - name: Publish @ragbits/api-client (dev)
-        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         run: npm publish --provenance --access public --tag dev
         working-directory: typescript/@ragbits/api-client
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @ragbits/api-client-react (dev)
-        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         run: npm publish --provenance --access public --tag dev
         working-directory: typescript/@ragbits/api-client-react
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Deploy nightly documentation
-        if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         shell: bash
         run: |
           git config user.name "ds-ragbits-robot"
