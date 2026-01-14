@@ -92,10 +92,10 @@ async def stream_with_post_processing(
     generator: AsyncGenerator[
         str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage | ConfirmationRequest, None
     ],
-    post_processors: (
-        list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
-        | list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
-    ),
+    post_processors: list[
+        PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]
+        | StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]
+    ],
     agent: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
 ) -> AsyncGenerator[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage | ConfirmationRequest, None]:
     """

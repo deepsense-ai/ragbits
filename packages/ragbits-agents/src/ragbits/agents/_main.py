@@ -35,7 +35,6 @@ from ragbits.agents.exceptions import (
 from ragbits.agents.mcp.server import MCPServer, MCPServerStdio, MCPServerStreamableHttp
 from ragbits.agents.mcp.utils import get_tools
 from ragbits.agents.post_processors.base import (
-    BasePostProcessor,
     PostProcessor,
     StreamingPostProcessor,
     stream_with_post_processing,
@@ -376,7 +375,11 @@ class Agent(
         tools: list[Callable] | None = None,
         mcp_servers: list[MCPServer] | None = None,
         default_options: AgentOptions[LLMClientOptionsT] | None = None,
-        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+        post_processors: list[
+            PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]
+            | StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]
+        ]
+        | None = None,
     ) -> None:
         """
         Initialize the agent instance.
@@ -476,12 +479,21 @@ class Agent(
             AgentToolNotAvailableError: If the selected tool is not available.
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
             AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
+            AgentInvalidPostProcessorError: If streaming-only post-processors are used in non-streaming mode.
         """
         result = await self._run_without_post_processing(input, options, context, tool_choice)
 
         if self.post_processors:
             for processor in self.post_processors:
-                result = await processor.process(result, self, options, context)
+                if processor.supports_streaming:
+                    raise AgentInvalidPostProcessorError(
+                        reason="Streaming-only post-processors are not supported in non-streaming run(). Use "
+                        "run_streaming() instead."
+                    )
+                # Type checker: after checking supports_streaming is False, we know it's PostProcessor
+                result = await cast(PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT], processor).process(
+                    result, self, options, context
+                )
 
         return result
 
@@ -571,7 +583,7 @@ class Agent(
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
         *,
-        allow_non_streaming: bool = False,
+        allow_non_streaming: Literal[False] = False,
     ) -> AgentResultStreaming: ...
 
     @overload
@@ -593,7 +605,7 @@ class Agent(
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
         *,
-        allow_non_streaming: bool = False,
+        allow_non_streaming: Literal[False] = False,
     ) -> AgentResultStreaming: ...
 
     @overload

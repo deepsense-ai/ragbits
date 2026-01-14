@@ -86,13 +86,6 @@ async def main() -> None:
     """Demonstrate routing agent output to downstream agents for post-processing."""
     llm = LiteLLM("gpt-4o-mini")
 
-    # Create the main content agent
-    main_agent = Agent(
-        name="content_agent",
-        llm=llm,
-        prompt="You are a helpful assistant that provides detailed explanations.",
-    )
-
     # Create the summarizer agent with specific instructions
     summarizer_agent = Agent(
         name="summarizer_agent",
