@@ -15,8 +15,8 @@ dependencies = [
     "mike>=2.1.3",
 ]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "aiosqlite>=0.21.0",
     "pre-commit~=3.8.0",
     "pytest~=8.3.3",
@@ -41,6 +41,7 @@ dev-dependencies = [
 ]
 
 [tool.uv.sources]
+ragbits = { workspace = true }
 ragbits-cli = { workspace = true }
 ragbits-core = { workspace = true }
 ragbits-document-search = { workspace = true }
@@ -51,6 +52,7 @@ ragbits-agents = { workspace = true }
 
 [tool.uv.workspace]
 members = [
+    "packages/ragbits",
     "packages/ragbits-cli",
     "packages/ragbits-core",
     "packages/ragbits-document-search",
@@ -60,37 +62,13 @@ members = [
     "packages/ragbits-agents",
 ]
 
-[tool.pytest]
-norecursedirs = [
-    '.git',
-    '.tox',
-    '.env',
-    'dist',
-    'build',
-    'migrations',
-    'docker',
-    'config',
-    'notebooks',
-    'research',
-]
-python_files = ['test_*.py']
-addopts = [
-    '-ra',
-    '--showlocals',
-    '--strict-markers',
-    '--ignore=docs/conf.py',
-    '--ignore=setup.py',
-    '--ignore=ci',
-    '--ignore=.eggs',
-    '--doctest-modules',
-    '--doctest-glob=\*.rst',
-    '--tb=short',
-]
-
 [tool.pytest.ini_options]
-addopts = "--import-mode=importlib"
+norecursedirs = ".git .tox .env dist build migrations docker config notebooks research scripts examples"
+python_files = "test_*.py"
+addopts = "--import-mode=importlib -ra --showlocals --strict-markers --ignore=docs/conf.py --ignore=setup.py --ignore=ci --ignore=.eggs --tb=short " #--doctest-modules --doctest-glob=*.rst
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+pythonpath = "./"
 
 [tool.coverage.run]
 omit = [

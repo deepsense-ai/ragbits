@@ -44,15 +44,6 @@ sql = [
     "sqlalchemy>=2.0.39,<3.0.0",
 ]
 
-[tool.uv]
-dev-dependencies = [
-    "pre-commit~=3.8.0",
-    "pytest~=8.3.3",
-    "pytest-cov~=5.0.0",
-    "pytest-asyncio~=0.24.0",
-    "pip-licenses>=4.0.0,<5.0.0"
-]
-
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

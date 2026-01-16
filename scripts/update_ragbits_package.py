@@ -226,29 +226,27 @@ def _update_ts_packages_version(new_version: str) -> None:
             pprint(f"[green]Updated {package_json_path} version from {old_version} to {new_version}.[/green]")
 
 
-def _update_ragbits_extras(packages: list[str]) -> None:
+def _update_ragbits_extras(packages: list[str], new_version: str) -> None:
     subpackages = [pkg for pkg in packages if pkg != "ragbits"]
+    ragbits_pyproject_path = PACKAGES_DIR / "ragbits" / "pyproject.toml"
+    ragbits_pyproject_data = tomlkit.parse(ragbits_pyproject_path.read_text())
 
-    extras = {}
+    new_extras: dict[str, tomlkit.items.Array] = {}
+
     for pkg in subpackages:
         pkg_pyproject_path = PACKAGES_DIR / pkg / "pyproject.toml"
         pkg_pyproject = tomlkit.parse(pkg_pyproject_path.read_text())
 
         if "optional-dependencies" in pkg_pyproject["project"]:
-            for extra, deps in pkg_pyproject["project"]["optional-dependencies"].items():
-                if extra in extras and extras[extra] != deps:
-                    raise Exception(
-                        f"Duplicate extras: '{extra}' exists in multiple packages with different dependencies."
-                    )
-                extras[extra] = deps
+            for extra in pkg_pyproject["project"]["optional-dependencies"]:
+                if extra not in new_extras:
+                    arr = tomlkit.array()
+                    arr.multiline(True)
+                    new_extras[extra] = arr
 
-    extras = dict(sorted(extras.items()))
+                new_extras[extra].append(f"{pkg}[{extra}]=={new_version}")
 
-    ragbits_pyproject_path = PACKAGES_DIR / "ragbits" / "pyproject.toml"
-    ragbits_pyproject_data = tomlkit.parse(ragbits_pyproject_path.read_text())
-
-    for extra, deps in extras.items():
-        ragbits_pyproject_data["project"]["optional-dependencies"][extra] = deps
+    ragbits_pyproject_data["project"]["optional-dependencies"] = new_extras
 
     ragbits_pyproject_path.write_text(tomlkit.dumps(ragbits_pyproject_data))
 
@@ -292,7 +290,7 @@ def run(
 
     if pkg_name == "ragbits":
         version, new_version = _update_pkg_version(pkg_name, update_type=casted_update_type, base_version=base_version)
-        _update_ragbits_extras(packages)
+        _update_ragbits_extras(packages, new_version)
         _update_ts_packages_version(new_version)
 
     elif pkg_name == "ragbits-core":
@@ -303,11 +301,11 @@ def run(
             is_continue = True
 
         if is_continue:
-            _update_ragbits_extras(packages)
             version, new_version = _update_pkg_version(
                 pkg_name, update_type=casted_update_type, base_version=base_version
             )
             casted_update_type = _check_update_type(version, new_version)
+            _update_ragbits_extras(packages, new_version)
             _update_ts_packages_version(new_version)
 
             for pkg in sorted([pkg for pkg in packages if pkg != "ragbits-core"], reverse=True):
