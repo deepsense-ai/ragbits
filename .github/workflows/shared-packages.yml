@@ -2,10 +2,31 @@ name: Shared packages checks
 
 on:
   workflow_call:
+    inputs:
+      install-methods:
+        description: 'JSON array of install methods to test'
+        type: string
+        default: '["source", "package"]'
+
+      artifact-name:
+        description: 'Name of the packages artifact to download'
+        type: string
+        default: 'packages'
+
+      skip-build:
+        description: 'Skip the build job (use when artifact is provided externally)'
+        type: boolean
+        default: false
+
+      skip-lints:
+        description: 'Skip the lints job'
+        type: boolean
+        default: false
 
 jobs:
   lints:
     name: Run linters
+    if: ${{ !inputs.skip-lints }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -80,14 +101,21 @@ jobs:
             trivy-scanning-results.txt
           retention-days: 30
 
-      - name: Publish Test Report
-        uses: actions/upload-artifact@v4
-        if: always()
-        continue-on-error: true
+  build:
+    name: Run build
+    if: ${{ !inputs.skip-build }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      checks: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
         with:
-          name: test-report
-          path: report.xml
-          retention-days: 10
+          version: ${{ vars.UV_VERSION || '0.6.9' }}
 
       - name: Validate package build
         run: |
@@ -98,14 +126,14 @@ jobs:
         continue-on-error: true
         if: success()
         with:
-          name: packages
+          name: ${{ inputs.artifact-name }}
           path: dist/**
           retention-days: 3
 
-
-
   tests:
     name: Run tests
+    needs: build
+    if: ${{ !cancelled() && (inputs.skip-build || needs.build.result == 'success') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -116,6 +144,7 @@ jobs:
       fail-fast: false # do not stop all jobs if one fails
       matrix:
         python-version: [ "3.10", "3.11", "3.12" ]
+        install-method: ${{ fromJson(inputs.install-methods) }}
 
     services:
       postgres:
@@ -154,7 +183,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v2
         with:
-          version: "0.4.20"
+          version: ${{ vars.UV_VERSION || '0.6.9' }}
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v4
@@ -175,12 +204,27 @@ jobs:
           path: ~/nltk_data
           key: nltk-${{ runner.os }}
 
+      - name: Download built packages
+        if: matrix.install-method == 'package'
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.artifact-name }}
+          path: dist
+
+      - name: Install built packages
+        if: matrix.install-method == 'package'
+        run: |
+          uv sync --only-group dev
+          uv pip install --find-links dist \
+            "$(ls dist/ragbits-*.whl)[a2a,azure,chroma,cli,fastembed,fastembed-gpu,gcs,google-drive,hf,local,logfire,mcp,openai,otel,pgvector,promptfoo,qdrant,ray,relari,s3,sql,unstructured,weaviate]" \
+            docling==2.15.1 torch==2.2.2 pyarrow==17.0.0 ray==2.43.0
+
       - name: Run Tests With Coverage
         run: |
-          # run with coverage to not execute tests twice
-          uv run coverage run -m pytest --postgresql-password postgres -v -p no:warnings --junitxml=report.xml
-          uv run coverage report
-          uv run coverage xml
+          UV_FLAGS="${{ matrix.install-method == 'package' && '--no-sync' || '' }}"
+          uv run $UV_FLAGS coverage run -m pytest --postgresql-password postgres -v -p no:warnings --junitxml=report.xml
+          uv run $UV_FLAGS coverage report
+          uv run $UV_FLAGS coverage xml
         env:
           GOOGLE_DRIVE_CLIENTID_JSON: ${{ secrets.GOOGLE_DRIVE_CLIENTID_JSON }}
           GOOGLE_SOURCE_UNIT_TEST_FOLDER: ${{ secrets.GOOGLE_SOURCE_UNIT_TEST_FOLDER }}
@@ -192,17 +236,19 @@ jobs:
         if: always()
         with:
           report_paths: 'report.xml'
+          check_name: 'Test Results (${{ matrix.install-method }}, Python ${{ matrix.python-version }})'
 
       - name: Publish Test Report
         uses: actions/upload-artifact@v4
         continue-on-error: true
         if: always()
         with:
-          name: test-report
+          name: test-report-${{ matrix.install-method }}-py${{ matrix.python-version }}
           path: report.xml
           retention-days: 10
 
       - name: Produce the coverage report
+        if: matrix.install-method == 'source'
         uses: insightsengineering/coverage-action@v2
         continue-on-error: true
         with:
