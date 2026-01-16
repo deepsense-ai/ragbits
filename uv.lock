@@ -31,6 +31,7 @@ resolution-markers = [
 
 [manifest]
 members = [
+    "ragbits",
     "ragbits-agents",
     "ragbits-chat",
     "ragbits-cli",
@@ -4913,22 +4914,22 @@ wheels = [
 
 [[package]]
 name = "pypdfium2"
-version = "4.30.1"
+version = "4.30.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/55/d4/905e621c62598a08168c272b42fc00136c8861cfce97afb2a1ecbd99487a/pypdfium2-4.30.1.tar.gz", hash = "sha256:5f5c7c6d03598e107d974f66b220a49436aceb191da34cda5f692be098a814ce", size = 164854, upload-time = "2024-12-19T19:28:11.459Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a1/14/838b3ba247a0ba92e4df5d23f2bea9478edcfd72b78a39d6ca36ccd84ad2/pypdfium2-4.30.0.tar.gz", hash = "sha256:48b5b7e5566665bc1015b9d69c1ebabe21f6aee468b509531c3c8318eeee2e16", size = 140239, upload-time = "2024-05-09T18:33:17.552Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/30/8e/3ce0856b3af0f058dd3655ce57d31d1dbde4d4bd0e172022ffbf1b58a4b9/pypdfium2-4.30.1-py3-none-macosx_10_13_x86_64.whl", hash = "sha256:e07c47633732cc18d890bb7e965ad28a9c5a932e548acb928596f86be2e5ae37", size = 2889836, upload-time = "2024-12-19T19:27:39.531Z" },
-    { url = "https://files.pythonhosted.org/packages/c2/6a/f6995b21f9c6c155487ce7df70632a2df1ba49efcb291b9943ea45f28b15/pypdfium2-4.30.1-py3-none-macosx_11_0_arm64.whl", hash = "sha256:5ea2d44e96d361123b67b00f527017aa9c847c871b5714e013c01c3eb36a79fe", size = 2769232, upload-time = "2024-12-19T19:27:43.227Z" },
-    { url = "https://files.pythonhosted.org/packages/53/91/79060923148e6d380b8a299b32bba46d70aac5fe1cd4f04320bcbd1a48d3/pypdfium2-4.30.1-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:1de7a3a36803171b3f66911131046d65a732f9e7834438191cb58235e6163c4e", size = 2847531, upload-time = "2024-12-19T19:27:46.372Z" },
-    { url = "https://files.pythonhosted.org/packages/a8/6c/93507f87c159e747eaab54352c0fccbaec3f1b3749d0bb9085a47899f898/pypdfium2-4.30.1-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:b8a4231efb13170354f568c722d6540b8d5b476b08825586d48ef70c40d16e03", size = 2636266, upload-time = "2024-12-19T19:27:49.767Z" },
-    { url = "https://files.pythonhosted.org/packages/24/dc/d56f74a092f2091e328d6485f16562e2fc51cffb0ad6d5c616d80c1eb53c/pypdfium2-4.30.1-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:6f434a4934e8244aa95343ffcf24e9ad9f120dbb4785f631bb40a88c39292493", size = 2919296, upload-time = "2024-12-19T19:27:51.767Z" },
-    { url = "https://files.pythonhosted.org/packages/be/d9/a2f1ee03d47fbeb48bcfde47ed7155772739622cfadf7135a84ba6a97824/pypdfium2-4.30.1-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f454032a0bc7681900170f67d8711b3942824531e765f91c2f5ce7937f999794", size = 2866119, upload-time = "2024-12-19T19:27:53.561Z" },
-    { url = "https://files.pythonhosted.org/packages/01/47/6aa019c32aa39d3f33347c458c0c5887e84096cbe444456402bc97e66704/pypdfium2-4.30.1-py3-none-musllinux_1_1_aarch64.whl", hash = "sha256:bbf9130a72370ee9d602e39949b902db669a2a1c24746a91e5586eb829055d9f", size = 6228684, upload-time = "2024-12-19T19:27:56.781Z" },
-    { url = "https://files.pythonhosted.org/packages/4c/07/2954c15b3f7c85ceb80cad36757fd41b3aba0dd14e68f4bed9ce3f2e7e74/pypdfium2-4.30.1-py3-none-musllinux_1_1_i686.whl", hash = "sha256:5cb52884b1583b96e94fd78542c63bb42e06df5e8f9e52f8f31f5ad5a1e53367", size = 6231815, upload-time = "2024-12-19T19:28:00.351Z" },
-    { url = "https://files.pythonhosted.org/packages/b4/9b/b4667e95754624f4af5a912001abba90c046e1c80d4a4e887f0af664ffec/pypdfium2-4.30.1-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:1a9e372bd4867ff223cc8c338e33fe11055dad12f22885950fc27646cc8d9122", size = 6313429, upload-time = "2024-12-19T19:28:02.536Z" },
-    { url = "https://files.pythonhosted.org/packages/43/38/f9e77cf55ba5546a39fa659404b78b97de2ca344848271e7731efb0954cd/pypdfium2-4.30.1-py3-none-win32.whl", hash = "sha256:421f1cf205e213e07c1f2934905779547f4f4a2ff2f59dde29da3d511d3fc806", size = 2834989, upload-time = "2024-12-19T19:28:04.657Z" },
-    { url = "https://files.pythonhosted.org/packages/a4/f3/8d3a350efb4286b5ebdabcf6736f51d8e3b10dbe68804c6930b00f5cf329/pypdfium2-4.30.1-py3-none-win_amd64.whl", hash = "sha256:598a7f20264ab5113853cba6d86c4566e4356cad037d7d1f849c8c9021007e05", size = 2960157, upload-time = "2024-12-19T19:28:07.772Z" },
-    { url = "https://files.pythonhosted.org/packages/e1/6b/2706497c86e8d69fb76afe5ea857fe1794621aa0f3b1d863feb953fe0f22/pypdfium2-4.30.1-py3-none-win_arm64.whl", hash = "sha256:c2b6d63f6d425d9416c08d2511822b54b8e3ac38e639fc41164b1d75584b3a8c", size = 2814810, upload-time = "2024-12-19T19:28:09.857Z" },
+    { url = "https://files.pythonhosted.org/packages/c7/9a/c8ff5cc352c1b60b0b97642ae734f51edbab6e28b45b4fcdfe5306ee3c83/pypdfium2-4.30.0-py3-none-macosx_10_13_x86_64.whl", hash = "sha256:b33ceded0b6ff5b2b93bc1fe0ad4b71aa6b7e7bd5875f1ca0cdfb6ba6ac01aab", size = 2837254, upload-time = "2024-05-09T18:32:48.653Z" },
+    { url = "https://files.pythonhosted.org/packages/21/8b/27d4d5409f3c76b985f4ee4afe147b606594411e15ac4dc1c3363c9a9810/pypdfium2-4.30.0-py3-none-macosx_11_0_arm64.whl", hash = "sha256:4e55689f4b06e2d2406203e771f78789bd4f190731b5d57383d05cf611d829de", size = 2707624, upload-time = "2024-05-09T18:32:51.458Z" },
+    { url = "https://files.pythonhosted.org/packages/11/63/28a73ca17c24b41a205d658e177d68e198d7dde65a8c99c821d231b6ee3d/pypdfium2-4.30.0-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:4e6e50f5ce7f65a40a33d7c9edc39f23140c57e37144c2d6d9e9262a2a854854", size = 2793126, upload-time = "2024-05-09T18:32:53.581Z" },
+    { url = "https://files.pythonhosted.org/packages/d1/96/53b3ebf0955edbd02ac6da16a818ecc65c939e98fdeb4e0958362bd385c8/pypdfium2-4.30.0-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:3d0dd3ecaffd0b6dbda3da663220e705cb563918249bda26058c6036752ba3a2", size = 2591077, upload-time = "2024-05-09T18:32:55.99Z" },
+    { url = "https://files.pythonhosted.org/packages/ec/ee/0394e56e7cab8b5b21f744d988400948ef71a9a892cbeb0b200d324ab2c7/pypdfium2-4.30.0-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:cc3bf29b0db8c76cdfaac1ec1cde8edf211a7de7390fbf8934ad2aa9b4d6dfad", size = 2864431, upload-time = "2024-05-09T18:32:57.911Z" },
+    { url = "https://files.pythonhosted.org/packages/65/cd/3f1edf20a0ef4a212a5e20a5900e64942c5a374473671ac0780eaa08ea80/pypdfium2-4.30.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f1f78d2189e0ddf9ac2b7a9b9bd4f0c66f54d1389ff6c17e9fd9dc034d06eb3f", size = 2812008, upload-time = "2024-05-09T18:32:59.886Z" },
+    { url = "https://files.pythonhosted.org/packages/c8/91/2d517db61845698f41a2a974de90762e50faeb529201c6b3574935969045/pypdfium2-4.30.0-py3-none-musllinux_1_1_aarch64.whl", hash = "sha256:5eda3641a2da7a7a0b2f4dbd71d706401a656fea521b6b6faa0675b15d31a163", size = 6181543, upload-time = "2024-05-09T18:33:02.597Z" },
+    { url = "https://files.pythonhosted.org/packages/ba/c4/ed1315143a7a84b2c7616569dfb472473968d628f17c231c39e29ae9d780/pypdfium2-4.30.0-py3-none-musllinux_1_1_i686.whl", hash = "sha256:0dfa61421b5eb68e1188b0b2231e7ba35735aef2d867d86e48ee6cab6975195e", size = 6175911, upload-time = "2024-05-09T18:33:05.376Z" },
+    { url = "https://files.pythonhosted.org/packages/7a/c4/9e62d03f414e0e3051c56d5943c3bf42aa9608ede4e19dc96438364e9e03/pypdfium2-4.30.0-py3-none-musllinux_1_1_x86_64.whl", hash = "sha256:f33bd79e7a09d5f7acca3b0b69ff6c8a488869a7fab48fdf400fec6e20b9c8be", size = 6267430, upload-time = "2024-05-09T18:33:08.067Z" },
+    { url = "https://files.pythonhosted.org/packages/90/47/eda4904f715fb98561e34012826e883816945934a851745570521ec89520/pypdfium2-4.30.0-py3-none-win32.whl", hash = "sha256:ee2410f15d576d976c2ab2558c93d392a25fb9f6635e8dd0a8a3a5241b275e0e", size = 2775951, upload-time = "2024-05-09T18:33:10.567Z" },
+    { url = "https://files.pythonhosted.org/packages/25/bd/56d9ec6b9f0fc4e0d95288759f3179f0fcd34b1a1526b75673d2f6d5196f/pypdfium2-4.30.0-py3-none-win_amd64.whl", hash = "sha256:90dbb2ac07be53219f56be09961eb95cf2473f834d01a42d901d13ccfad64b4c", size = 2892098, upload-time = "2024-05-09T18:33:13.107Z" },
+    { url = "https://files.pythonhosted.org/packages/be/7a/097801205b991bc3115e8af1edb850d30aeaf0118520b016354cf5ccd3f6/pypdfium2-4.30.0-py3-none-win_arm64.whl", hash = "sha256:119b2969a6d6b1e8d55e99caaf05290294f2d0fe49c12a3f17102d01c441bd29", size = 2752118, upload-time = "2024-05-09T18:33:15.489Z" },
 ]
 
 [[package]]
@@ -5349,16 +5350,131 @@ wheels = [
 
 [[package]]
 name = "ragbits"
-version = "0.0.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/21/f7/4dfc757e4d7adff14a8fad9989f47a88c063ca88456d0525d0d5d3593f54/ragbits-0.0.1.tar.gz", hash = "sha256:673b663730ee2ef0d2813ffe1d1619f3ce5042748a4c02c094c787f499f4c886", size = 1378, upload-time = "2024-09-13T15:27:07.347Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/96/e1/2cef0ba62827617ebcd183ebe3a7b3ca7cfee8d45f99c953b4db005b9a88/ragbits-0.0.1-py2.py3-none-any.whl", hash = "sha256:101ef35803f4b78b600b7381cf8f3c86f18018fa54156055d9b6e95f708475bf", size = 1354, upload-time = "2024-09-13T15:27:05.758Z" },
+version = "1.4.0.dev202601130240"
+source = { editable = "packages/ragbits" }
+dependencies = [
+    { name = "ragbits-agents" },
+    { name = "ragbits-chat" },
+    { name = "ragbits-cli" },
+    { name = "ragbits-core" },
+    { name = "ragbits-document-search" },
+    { name = "ragbits-evaluate" },
+    { name = "ragbits-guardrails" },
 ]
+
+[package.optional-dependencies]
+a2a = [
+    { name = "ragbits-agents", extra = ["a2a"] },
+]
+azure = [
+    { name = "ragbits-core", extra = ["azure"] },
+]
+chroma = [
+    { name = "ragbits-core", extra = ["chroma"] },
+]
+cli = [
+    { name = "ragbits-agents", extra = ["cli"] },
+]
+fastembed = [
+    { name = "ragbits-core", extra = ["fastembed"] },
+]
+fastembed-gpu = [
+    { name = "ragbits-core", extra = ["fastembed-gpu"] },
+]
+gcs = [
+    { name = "ragbits-core", extra = ["gcs"] },
+]
+google-drive = [
+    { name = "ragbits-core", extra = ["google-drive"] },
+]
+hf = [
+    { name = "ragbits-core", extra = ["hf"] },
+]
+local = [
+    { name = "ragbits-core", extra = ["local"] },
+]
+logfire = [
+    { name = "ragbits-core", extra = ["logfire"] },
+]
+mcp = [
+    { name = "ragbits-agents", extra = ["mcp"] },
+]
+openai = [
+    { name = "ragbits-guardrails", extra = ["openai"] },
+]
+otel = [
+    { name = "ragbits-core", extra = ["otel"] },
+]
+pgvector = [
+    { name = "ragbits-core", extra = ["pgvector"] },
+]
+promptfoo = [
+    { name = "ragbits-core", extra = ["promptfoo"] },
+]
+qdrant = [
+    { name = "ragbits-core", extra = ["qdrant"] },
+]
+ray = [
+    { name = "ragbits-document-search", extra = ["ray"] },
+]
+relari = [
+    { name = "ragbits-evaluate", extra = ["relari"] },
+]
+s3 = [
+    { name = "ragbits-core", extra = ["s3"] },
+]
+sql = [
+    { name = "ragbits-chat", extra = ["sql"] },
+]
+unstructured = [
+    { name = "ragbits-document-search", extra = ["unstructured"] },
+]
+weaviate = [
+    { name = "ragbits-core", extra = ["weaviate"] },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "ragbits-agents", editable = "packages/ragbits-agents" },
+    { name = "ragbits-agents", extras = ["a2a"], marker = "extra == 'a2a'", editable = "packages/ragbits-agents" },
+    { name = "ragbits-agents", extras = ["cli"], marker = "extra == 'cli'", editable = "packages/ragbits-agents" },
+    { name = "ragbits-agents", extras = ["mcp"], marker = "extra == 'mcp'", editable = "packages/ragbits-agents" },
+    { name = "ragbits-chat", editable = "packages/ragbits-chat" },
+    { name = "ragbits-chat", extras = ["sql"], marker = "extra == 'sql'", editable = "packages/ragbits-chat" },
+    { name = "ragbits-cli", editable = "packages/ragbits-cli" },
+    { name = "ragbits-core", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["azure"], marker = "extra == 'azure'", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["chroma"], marker = "extra == 'chroma'", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["fastembed"], marker = "extra == 'fastembed'", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["fastembed-gpu"], marker = "extra == 'fastembed-gpu'", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["gcs"], marker = "extra == 'gcs'", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["google-drive"], marker = "extra == 'google-drive'", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["hf"], marker = "extra == 'hf'", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["local"], marker = "extra == 'local'", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["logfire"], marker = "extra == 'logfire'", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["otel"], marker = "extra == 'otel'", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["pgvector"], marker = "extra == 'pgvector'", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["promptfoo"], marker = "extra == 'promptfoo'", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["qdrant"], marker = "extra == 'qdrant'", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["s3"], marker = "extra == 's3'", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["weaviate"], marker = "extra == 'weaviate'", editable = "packages/ragbits-core" },
+    { name = "ragbits-document-search", editable = "packages/ragbits-document-search" },
+    { name = "ragbits-document-search", extras = ["ray"], marker = "extra == 'ray'", editable = "packages/ragbits-document-search" },
+    { name = "ragbits-document-search", extras = ["unstructured"], marker = "extra == 'unstructured'", editable = "packages/ragbits-document-search" },
+    { name = "ragbits-evaluate", editable = "packages/ragbits-evaluate" },
+    { name = "ragbits-evaluate", extras = ["relari"], marker = "extra == 'relari'", editable = "packages/ragbits-evaluate" },
+    { name = "ragbits-guardrails", editable = "packages/ragbits-guardrails" },
+    { name = "ragbits-guardrails", extras = ["openai"], marker = "extra == 'openai'", editable = "packages/ragbits-guardrails" },
+]
+provides-extras = ["chroma", "hf", "s3", "gcs", "azure", "local", "openai", "otel", "logfire", "promptfoo", "qdrant", "relari", "fastembed", "fastembed-gpu", "pgvector", "ray", "unstructured", "sql", "a2a", "mcp", "weaviate", "google-drive", "cli"]
 
 [[package]]
 name = "ragbits-agents"
+<<<<<<< HEAD
 version = "1.4.0.dev202601010248"
+=======
+version = "1.4.0.dev202601130240"
+>>>>>>> c7b324b8a (chore: Package configuration adjustment (#896))
 source = { editable = "packages/ragbits-agents" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5394,7 +5510,11 @@ provides-extras = ["a2a", "mcp", "openai", "cli"]
 
 [[package]]
 name = "ragbits-chat"
+<<<<<<< HEAD
 version = "1.4.0.dev202601010248"
+=======
+version = "1.4.0.dev202601130240"
+>>>>>>> c7b324b8a (chore: Package configuration adjustment (#896))
 source = { editable = "packages/ragbits-chat" }
 dependencies = [
     { name = "bcrypt" },
@@ -5410,15 +5530,6 @@ sql = [
     { name = "sqlalchemy" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "pip-licenses" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "bcrypt", specifier = ">=4.2.0" },
@@ -5431,18 +5542,13 @@ requires-dist = [
 ]
 provides-extras = ["sql"]
 
-[package.metadata.requires-dev]
-dev = [
-    { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
-    { name = "pre-commit", specifier = "~=3.8.0" },
-    { name = "pytest", specifier = "~=8.3.3" },
-    { name = "pytest-asyncio", specifier = "~=0.24.0" },
-    { name = "pytest-cov", specifier = "~=5.0.0" },
-]
-
 [[package]]
 name = "ragbits-cli"
+<<<<<<< HEAD
 version = "1.4.0.dev202601010248"
+=======
+version = "1.4.0.dev202601130240"
+>>>>>>> c7b324b8a (chore: Package configuration adjustment (#896))
 source = { editable = "packages/ragbits-cli" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5457,7 +5563,11 @@ requires-dist = [
 
 [[package]]
 name = "ragbits-core"
+<<<<<<< HEAD
 version = "1.4.0.dev202601010248"
+=======
+version = "1.4.0.dev202601130240"
+>>>>>>> c7b324b8a (chore: Package configuration adjustment (#896))
 source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "aiohttp" },
@@ -5538,15 +5648,6 @@ weaviate = [
     { name = "weaviate-client" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "pip-licenses" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "accelerate", marker = "extra == 'local'", specifier = ">=1.7.0" },
@@ -5585,25 +5686,20 @@ requires-dist = [
     { name = "qdrant-client", marker = "extra == 'qdrant'", specifier = ">=1.12.1,<2.0.0" },
     { name = "sentence-transformers", marker = "extra == 'local'", specifier = ">=4.0.2,<5.0.0" },
     { name = "tomli", specifier = ">=2.0.2,<3.0.0" },
-    { name = "torch", marker = "extra == 'local'", specifier = ">=2.2.1,<3.0.0" },
+    { name = "torch", marker = "extra == 'local'", specifier = ">=2.2.2,<3.0.0" },
     { name = "transformers", marker = "extra == 'local'", specifier = ">=4.44.2,<5.0.0" },
     { name = "typer", specifier = ">=0.12.5,<1.0.0" },
     { name = "weaviate-client", marker = "extra == 'weaviate'", specifier = ">=4.15.4,<5.0.0" },
 ]
 provides-extras = ["chroma", "local", "fastembed", "promptfoo", "otel", "logfire", "phoenix", "qdrant", "pgvector", "fastembed-gpu", "azure", "gcs", "hf", "s3", "google-drive", "weaviate"]
 
-[package.metadata.requires-dev]
-dev = [
-    { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
-    { name = "pre-commit", specifier = "~=3.8.0" },
-    { name = "pytest", specifier = "~=8.3.3" },
-    { name = "pytest-asyncio", specifier = "~=0.24.0" },
-    { name = "pytest-cov", specifier = "~=5.0.0" },
-]
-
 [[package]]
 name = "ragbits-document-search"
+<<<<<<< HEAD
 version = "1.4.0.dev202601010248"
+=======
+version = "1.4.0.dev202601130240"
+>>>>>>> c7b324b8a (chore: Package configuration adjustment (#896))
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
     { name = "docling" },
@@ -5623,19 +5719,9 @@ unstructured = [
     { name = "unstructured-client" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "pip-licenses" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-    { name = "ragbits" },
-]
-
 [package.metadata]
 requires-dist = [
-    { name = "docling", specifier = ">=2.15.1,<3.0.0" },
+    { name = "docling", extras = ["easyocr"], specifier = ">=2.15.1,<3.0.0" },
     { name = "filetype", specifier = ">=1.2.0,<2.0.0" },
     { name = "opencv-python", specifier = ">=4.11.0.86,<5.0.0.0" },
     { name = "python-pptx", specifier = ">=1.0.0,<2.0.0" },
@@ -5647,19 +5733,13 @@ requires-dist = [
 ]
 provides-extras = ["unstructured", "ray"]
 
-[package.metadata.requires-dev]
-dev = [
-    { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
-    { name = "pre-commit", specifier = "~=3.8.0" },
-    { name = "pytest", specifier = "~=8.3.3" },
-    { name = "pytest-asyncio", specifier = "~=0.24.0" },
-    { name = "pytest-cov", specifier = "~=5.0.0" },
-    { name = "ragbits", extras = ["local"] },
-]
-
 [[package]]
 name = "ragbits-evaluate"
+<<<<<<< HEAD
 version = "1.4.0.dev202601010248"
+=======
+version = "1.4.0.dev202601130240"
+>>>>>>> c7b324b8a (chore: Package configuration adjustment (#896))
 source = { editable = "packages/ragbits-evaluate" }
 dependencies = [
     { name = "datasets" },
@@ -5676,15 +5756,6 @@ relari = [
     { name = "continuous-eval" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "pip-licenses" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "continuous-eval", marker = "extra == 'relari'", specifier = ">=0.3.12,<1.0.0" },
@@ -5698,18 +5769,13 @@ requires-dist = [
 ]
 provides-extras = ["relari"]
 
-[package.metadata.requires-dev]
-dev = [
-    { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
-    { name = "pre-commit", specifier = "~=3.8.0" },
-    { name = "pytest", specifier = "~=8.3.3" },
-    { name = "pytest-asyncio", specifier = "~=0.24.0" },
-    { name = "pytest-cov", specifier = "~=5.0.0" },
-]
-
 [[package]]
 name = "ragbits-guardrails"
+<<<<<<< HEAD
 version = "1.4.0.dev202601010248"
+=======
+version = "1.4.0.dev202601130240"
+>>>>>>> c7b324b8a (chore: Package configuration adjustment (#896))
 source = { editable = "packages/ragbits-guardrails" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5720,30 +5786,12 @@ openai = [
     { name = "openai" },
 ]
 
-[package.dev-dependencies]
-dev = [
-    { name = "pip-licenses" },
-    { name = "pre-commit" },
-    { name = "pytest" },
-    { name = "pytest-asyncio" },
-    { name = "pytest-cov" },
-]
-
 [package.metadata]
 requires-dist = [
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.91.0,<2.0.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
 ]
 provides-extras = ["openai"]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
-    { name = "pre-commit", specifier = "~=3.8.0" },
-    { name = "pytest", specifier = "~=8.3.3" },
-    { name = "pytest-asyncio", specifier = "~=0.24.0" },
-    { name = "pytest-cov", specifier = "~=5.0.0" },
-]
 
 [[package]]
 name = "ragbits-workspace"
@@ -7852,11 +7900,11 @@ wheels = [
 
 [[package]]
 name = "xlsxwriter"
-version = "3.2.3"
+version = "3.2.9"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a7/d1/e026d33dd5d552e5bf3a873dee54dad66b550230df8290d79394f09b2315/xlsxwriter-3.2.3.tar.gz", hash = "sha256:ad6fd41bdcf1b885876b1f6b7087560aecc9ae5a9cc2ba97dcac7ab2e210d3d5", size = 209135, upload-time = "2025-04-17T10:11:23.481Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/46/2c/c06ef49dc36e7954e55b802a8b231770d286a9758b3d936bd1e04ce5ba88/xlsxwriter-3.2.9.tar.gz", hash = "sha256:254b1c37a368c444eac6e2f867405cc9e461b0ed97a3233b2ac1e574efb4140c", size = 215940, upload-time = "2025-09-16T00:16:21.63Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/37/b1/a252d499f2760b314fcf264d2b36fcc4343a1ecdb25492b210cb0db70a68/XlsxWriter-3.2.3-py3-none-any.whl", hash = "sha256:593f8296e8a91790c6d0378ab08b064f34a642b3feb787cf6738236bd0a4860d", size = 169433, upload-time = "2025-04-17T10:11:21.329Z" },
+    { url = "https://files.pythonhosted.org/packages/3a/0c/3662f4a66880196a590b202f0db82d919dd2f89e99a27fadef91c4a33d41/xlsxwriter-3.2.9-py3-none-any.whl", hash = "sha256:9a5db42bc5dff014806c58a20b9eae7322a134abb6fce3c92c181bfb275ec5b3", size = 175315, upload-time = "2025-09-16T00:16:20.108Z" },
 ]
 
 [[package]]
