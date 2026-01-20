@@ -16,5 +16,4 @@ sse-starlette
 google-genai
 ollama
 pytest-xdist
-aioitertools
 llvmlite
