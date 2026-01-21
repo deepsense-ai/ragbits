@@ -37,6 +37,10 @@ vi.mock("@ragbits/api-client-react", () => ({
       uploadFile: vi.fn(),
     },
   }),
+  useRagbitsCall: () => ({
+    call: vi.fn(),
+    isLoading: false,
+  }),
 }));
 
 const MOCK_HISTORY: ChatMessage[] = [
