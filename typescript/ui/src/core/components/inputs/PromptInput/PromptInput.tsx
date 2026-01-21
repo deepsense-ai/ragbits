@@ -13,7 +13,7 @@ import {
   useEffect,
 } from "react";
 
-import { useRagbitsContext } from "@ragbits/api-client-react";
+import { useRagbitsCall } from "@ragbits/api-client-react";
 
 import PromptInputText from "./PromptInputText";
 import { TextAreaProps } from "@heroui/react";
@@ -59,8 +59,8 @@ const PromptInput = ({
     useCaretLogicalLineDetection();
   const quickMessageIndex = useRef(Math.max(quickMessages.length - 1, 0));
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { client } = useRagbitsContext();
-  const [isUploading, setIsUploading] = useState(false);
+  const { call: uploadFile, isLoading: isUploading } =
+    useRagbitsCall("/api/upload");
 
   const setQuickMessage = useCallback(() => {
     const quickMessage = quickMessages[quickMessageIndex.current];
@@ -171,13 +171,16 @@ const PromptInput = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
     try {
-      await client.uploadFile(file);
+      const formData = new FormData();
+      formData.append("file", file);
+      await uploadFile({
+        method: "POST",
+        body: formData,
+      });
     } catch (err) {
       console.error("Upload failed", err);
     } finally {
-      setIsUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };

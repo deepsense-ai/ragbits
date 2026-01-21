@@ -63,6 +63,10 @@ export interface BaseApiEndpoints {
     >
     '/api/user': EndpointDefinition<never, User>
     '/api/theme': EndpointDefinition<never, string>
+    '/api/upload': EndpointDefinition<
+        FormData,
+        { status: string; filename: string }
+    >
 }
 
 /**
@@ -121,8 +125,8 @@ export type EndpointMethod<
 export type HasRequiredKeys<T> = [T] extends [never]
     ? false
     : NonNullable<unknown> extends T
-      ? false
-      : true
+    ? false
+    : true
 
 /**
  * Generic request options for API endpoints with typed methods, path params, query params, and body
@@ -145,13 +149,13 @@ export type RequestOptions<
     (Endpoints[URL]['queryParams'] extends never
         ? { queryParams?: never }
         : HasRequiredKeys<Endpoints[URL]['queryParams']> extends true
-          ? { queryParams: Endpoints[URL]['queryParams'] } // Has required property
-          : { queryParams?: Endpoints[URL]['queryParams'] }) & // All properties optional
+        ? { queryParams: Endpoints[URL]['queryParams'] } // Has required property
+        : { queryParams?: Endpoints[URL]['queryParams'] }) & // All properties optional
     (Endpoints[URL]['request'] extends never
         ? { body?: never }
         : Endpoints[URL]['request'] extends undefined
-          ? { body?: Endpoints[URL]['request'] }
-          : { body: Endpoints[URL]['request'] })
+        ? { body?: Endpoints[URL]['request'] }
+        : { body: Endpoints[URL]['request'] })
 
 /**
  * Check if a type is not never and not undefined
@@ -159,8 +163,8 @@ export type RequestOptions<
 export type IsRequired<T> = [T] extends [never]
     ? false
     : T extends undefined
-      ? false
-      : true
+    ? false
+    : true
 
 /**
  * Check if an endpoint has any required parameters
@@ -174,8 +178,8 @@ export type HasRequiredParams<
     Endpoints extends AnyEndpoints<Endpoints>,
 > = Endpoints[URL]['pathParams'] extends never
     ? HasRequiredKeys<Endpoints[URL]['queryParams']> extends true
-        ? true
-        : IsRequired<Endpoints[URL]['request']>
+    ? true
+    : IsRequired<Endpoints[URL]['request']>
     : true
 
 /**
@@ -191,5 +195,5 @@ export type MakeRequestOptions<
     Endpoints extends AnyEndpoints<Endpoints>,
 > =
     HasRequiredParams<URL, Endpoints> extends true
-        ? [options: RequestOptions<URL, Endpoints>]
-        : [options?: RequestOptions<URL, Endpoints>]
+    ? [options: RequestOptions<URL, Endpoints>]
+    : [options?: RequestOptions<URL, Endpoints>]

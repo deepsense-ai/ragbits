@@ -198,6 +198,7 @@ class RagbitsAPI:
             @self.app.post("/api/upload", response_class=JSONResponse)
             async def upload_file(file: UploadFile) -> JSONResponse:
                 return await self._handle_file_upload(file)
+
         else:
 
             @self.app.post("/api/chat", response_class=StreamingResponse)
@@ -587,7 +588,7 @@ class RagbitsAPI:
         Returns:
             JSONResponse with status.
         """
-        if not self.chat_interface.upload_handler:
+        if self.chat_interface.upload_handler is None:
             raise HTTPException(status_code=400, detail="File upload not supported")
 
         try:

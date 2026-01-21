@@ -202,6 +202,16 @@ class ChatInterface(ABC):
     * Text: Regular text responses streamed chunk by chunk
     * References: Source documents used to generate the answer
     * State updates: Updates to the conversation state
+
+    Attributes:
+        upload_handler: Optional async callback for handling file uploads.
+            Should accept an UploadFile parameter.
+
+            Example::
+
+                async def upload_handler(self, file: UploadFile) -> None:
+                    content = await file.read()
+                    # process content
     """
 
     feedback_config: FeedbackConfig = FeedbackConfig()
@@ -212,14 +222,6 @@ class ChatInterface(ABC):
     history_persistence: HistoryPersistenceStrategy | None = None
     summary_generator: SummaryGenerator = HeuristicSummaryGenerator()
     upload_handler: Callable[[Any], Any] | None = None
-    """
-    Optional handler/callback for file uploads.
-    The handler should be an async method that accepts a single argument `file` (UploadFile).
-    Example:
-        async def upload_handler(self, file: UploadFile):
-            content = await file.read()
-            # process content
-    """
 
     def __init_subclass__(cls, **kwargs: dict) -> None:
         """Automatically apply the with_chat_metadata decorator to the chat method in subclasses."""

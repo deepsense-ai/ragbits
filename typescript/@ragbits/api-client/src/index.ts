@@ -105,46 +105,6 @@ export class RagbitsClient {
     }
 
     /**
-     * Upload a file to the backend
-     * @param file - File to upload
-     */
-    async uploadFile(
-        file: File
-    ): Promise<{ status: string; filename: string }> {
-        const formData = new FormData()
-        formData.append('file', file)
-
-        const defaultHeaders: Record<string, string> = {}
-        // Content-Type header is explicitly NOT set to allow browser to set boundary
-
-        const headers = {
-            ...defaultHeaders,
-        }
-
-        if (this.auth?.getToken) {
-            headers['Authorization'] = `Bearer ${this.auth.getToken()}`
-        }
-
-        const response = await fetch(this._buildApiUrl('/api/upload'), {
-            method: 'POST',
-            headers,
-            body: formData,
-            ...(this.auth?.credentials
-                ? { credentials: this.auth?.credentials }
-                : {}),
-        })
-
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}))
-            throw new Error(
-                error.detail || `Upload failed with status ${response.status}`
-            )
-        }
-
-        return response.json()
-    }
-
-    /**
      * Method to make API requests to known endpoints only
      * @param endpoint - API endpoint path
      * @param options - Typed request options for the specific endpoint
@@ -174,8 +134,21 @@ export class RagbitsClient {
         }
 
         if (body && method !== 'GET') {
-            requestOptions.body =
-                typeof body === 'string' ? body : JSON.stringify(body)
+            if (body instanceof FormData) {
+                requestOptions.body = body
+                // Let the browser set the Content-Type header with the boundary
+                if (
+                    requestOptions.headers &&
+                    'Content-Type' in requestOptions.headers
+                ) {
+                    delete (requestOptions.headers as Record<string, string>)[
+                        'Content-Type'
+                    ]
+                }
+            } else {
+                requestOptions.body =
+                    typeof body === 'string' ? body : JSON.stringify(body)
+            }
         }
 
         // Build URL with path parameters
