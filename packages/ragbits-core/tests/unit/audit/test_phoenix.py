@@ -3,14 +3,20 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 2ef7ba8ce (feat: Upgrade arize-phoenix to version 12.30.0, update the uv.lock file, and conditionally import openinference trace modules in tests.)
 trace_module = pytest.importorskip("openinference.semconv.trace")
 OpenInferenceSpanKindValues = trace_module.OpenInferenceSpanKindValues
 SpanAttributes = trace_module.SpanAttributes
 
 from ragbits.core.audit.traces.phoenix import PhoenixTraceHandler  # noqa: E402
+<<<<<<< HEAD
 =======
 from ragbits.core.audit.traces.phoenix import PhoenixTraceHandler
 >>>>>>> 2477c2433 (feat: add Arize Phoenix tracing integration)
+=======
+>>>>>>> 2ef7ba8ce (feat: Upgrade arize-phoenix to version 12.30.0, update the uv.lock file, and conditionally import openinference trace modules in tests.)
 
 
 @pytest.fixture
