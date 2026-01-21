@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add Phoenix tracing integration with new modules, dependencies, an example, and tests.
 - Add Support for Thinking in agents (#837)
 - Add support for confirmation requests in chat (#853)
 - Add name parameter and slightly refactor HuggingFace dataloder (#829)
