@@ -41,6 +41,7 @@ from ragbits.agents.post_processors.base import (
     stream_with_post_processing,
 )
 from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice
+from ragbits.agents.hooks import HookManager, ToolHook
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import (
     LLM,
@@ -375,6 +376,7 @@ class Agent(
         keep_history: bool = False,
         tools: list[Callable] | None = None,
         mcp_servers: list[MCPServer] | None = None,
+        hooks: list[ToolHook] | None = None,
         default_options: AgentOptions[LLMClientOptionsT] | None = None,
     ) -> None:
         """
@@ -394,6 +396,7 @@ class Agent(
             keep_history: Whether to keep the history of the agent.
             tools: The tools available to the agent.
             mcp_servers: The MCP servers available to the agent.
+            hooks: List of tool hooks to register for tool lifecycle events.
             default_options: The default options for the agent run.
         """
         super().__init__(default_options)
@@ -416,6 +419,7 @@ class Agent(
         self.mcp_servers = mcp_servers or []
         self.history = history or []
         self.keep_history = keep_history
+        self.hook_manager = HookManager(hooks)
 
         if getattr(self, "system_prompt", None) and not getattr(self, "input_type", None):
             raise ValueError(
@@ -958,6 +962,42 @@ class Agent(
 
         tool = tools_mapping[tool_call.name]
 
+        # Execute PRE_TOOL hooks
+        pre_tool_result = await self.hook_manager.execute_pre_tool(
+            tool_use_id=tool_call.id,
+            tool_name=tool_call.name,
+            tool_input=tool_call.arguments,
+            context=context,
+        )
+
+        # Handle hook decision
+        if pre_tool_result is not None:
+            if pre_tool_result.action == "deny":
+                # Tool execution denied by hook
+                denial_message = pre_tool_result.denial_message or "Tool execution denied by hook"
+
+                # Execute POST_TOOL hooks with denied result
+                await self.hook_manager.execute_post_tool(
+                    tool_use_id=tool_call.id,
+                    tool_name=tool_call.name,
+                    tool_input=tool_call.arguments,
+                    tool_output=denial_message,
+                    error=None,
+                    context=context,
+                )
+
+                yield ToolCallResult(
+                    id=tool_call.id,
+                    name=tool_call.name,
+                    arguments=tool_call.arguments,
+                    result=denial_message,
+                )
+                return
+
+            elif pre_tool_result.action == "modify":
+                # Use modified input from hook
+                tool_call.arguments = pre_tool_result.modified_input or tool_call.arguments
+
         # Check if tool requires confirmation
         if tool.requires_confirmation:
             # Check if this tool has been confirmed in the context
@@ -1007,6 +1047,9 @@ class Agent(
                 )
                 return
 
+        tool_error: Exception | None = None
+        tool_output = None
+
         with trace(agent_id=self.id, tool_name=tool_call.name, tool_arguments=tool_call.arguments) as outputs:
             try:
                 call_args = tool_call.arguments.copy()
@@ -1037,11 +1080,29 @@ class Agent(
                 }
 
             except Exception as e:
+                tool_error = e
                 outputs.result = {
                     "error": str(e),
                     "tool_call_id": tool_call.id,
                 }
-                raise AgentToolExecutionError(tool_call.name, e) from e
+
+        # Execute POST_TOOL hooks
+        post_tool_result = await self.hook_manager.execute_post_tool(
+            tool_use_id=tool_call.id,
+            tool_name=tool_call.name,
+            tool_input=tool_call.arguments,
+            tool_output=tool_output,
+            error=tool_error,
+            context=context,
+        )
+
+        # Handle hook output modification
+        if post_tool_result is not None and post_tool_result.action == "modify":
+            tool_output = post_tool_result.modified_output
+
+        # Raise error after hooks have been executed
+        if tool_error:
+            raise AgentToolExecutionError(tool_call.name, tool_error) from tool_error
 
         yield ToolCallResult(
             id=tool_call.id,

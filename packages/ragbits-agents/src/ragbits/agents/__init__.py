@@ -9,6 +9,17 @@ from ragbits.agents._main import (
     ToolCall,
     ToolCallResult,
 )
+from ragbits.agents.hooks import (
+    EventType,
+    HookManager,
+    PreToolCallback,
+    PreToolInput,
+    PreToolOutput,
+    PostToolCallback,
+    PostToolInput,
+    PostToolOutput,
+    ToolHook,
+)
 from ragbits.agents.post_processors.base import PostProcessor, StreamingPostProcessor
 from ragbits.agents.tool import requires_confirmation
 from ragbits.agents.tools import LongTermMemory, MemoryEntry, create_memory_tools
@@ -22,15 +33,24 @@ __all__ = [
     "AgentResultStreaming",
     "AgentRunContext",
     "DownstreamAgentResult",
+    "EventType",
+    "HookManager",
     "LongTermMemory",
     "MemoryEntry",
     "PostProcessor",
+    "PostToolCallback",
+    "PostToolInput",
+    "PostToolOutput",
+    "PreToolCallback",
+    "PreToolInput",
+    "PreToolOutput",
     "QuestionAnswerAgent",
     "QuestionAnswerPromptInput",
     "QuestionAnswerPromptOutput",
     "StreamingPostProcessor",
     "ToolCall",
     "ToolCallResult",
+    "ToolHook",
     "create_memory_tools",
     "requires_confirmation",
 ]
