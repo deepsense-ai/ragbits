@@ -1,42 +1,47 @@
 """
-Hook manager for organizing and executing tool hooks.
+Hook manager for organizing and executing hooks.
 
 This module provides the HookManager class which handles registration,
-organization, and execution of hooks during tool lifecycle events.
+organization, and execution of hooks during lifecycle events.
 """
+
+from __future__ import annotations
 
 import logging
 from collections import defaultdict
+from typing import TYPE_CHECKING, Any
 
-from ragbits.agents.hooks.base import EventType, ToolHook
-from ragbits.agents.hooks.inputs import PostToolInput, PreToolInput
-from ragbits.agents.hooks.outputs import PostToolOutput, PreToolOutput
+from ragbits.agents.hooks.base import Hook
+from ragbits.agents.hooks.types import EventType, PostToolInput, PostToolOutput, PreToolInput, PreToolOutput
+
+if TYPE_CHECKING:
+    from ragbits.agents._main import AgentRunContext
 
 logger = logging.getLogger(__name__)
 
 
 class HookManager:
     """
-    Manages registration and execution of tool hooks for an agent.
+    Manages registration and execution of hooks for an agent.
 
     The HookManager organizes hooks by type and executes them in priority order,
     stopping early when a hook returns a decision.
     """
 
-    def __init__(self, hooks: list[ToolHook] | None = None) -> None:
+    def __init__(self, hooks: list[Hook] | None = None) -> None:
         """
         Initialize the hook manager.
 
         Args:
             hooks: Initial list of hooks to register
         """
-        self._hooks: dict[EventType, list[ToolHook]] = defaultdict(list)
+        self._hooks: dict[EventType, list[Hook]] = defaultdict(list)
 
         if hooks:
             for hook in hooks:
                 self.register(hook)
 
-    def register(self, hook: ToolHook) -> None:
+    def register(self, hook: Hook) -> None:
         """
         Register a hook.
 
@@ -47,20 +52,10 @@ class HookManager:
             hook: The hook to register
         """
         self._hooks[hook.event_type].append(hook)
-        # Sort by priority (lower numbers first)
-        self._hooks[hook.event_type].sort(key=lambda h: h.priority) # TODO: Check if this is efficient
+        # Sort by priority (lower numbers first) - efficient for typical hook counts (1-10 per event type)
+        self._hooks[hook.event_type].sort(key=lambda h: h.priority)
 
-    def register_all(self, hooks: list[ToolHook]) -> None:
-        """
-        Register multiple hooks at once.
-
-        Args:
-            hooks: List of hooks to register
-        """
-        for hook in hooks:
-            self.register(hook)
-
-    def get_hooks(self, event_type: EventType, tool_name: str) -> list[ToolHook]:
+    def get_hooks(self, event_type: EventType, tool_name: str) -> list[Hook]:
         """
         Get all hooks for a specific type that match the tool name.
 
@@ -79,7 +74,7 @@ class HookManager:
         tool_use_id: str,
         tool_name: str,
         tool_input: dict,
-        context: Any,  # AgentRunContext
+        context: "AgentRunContext",
     ) -> PreToolOutput | None:
         """
         Execute pre-tool hooks for a tool invocation.
@@ -117,14 +112,14 @@ class HookManager:
                 if result is not None:
                     # Hook returned a decision - stop and return it
                     logger.debug(
-                        f"Pre-tool hook '{hook.name or 'unnamed'}' returned action: {result.action}"
+                        f"Pre-tool hook '{hook.callback.__name__}' returned action: {result.action}"
                     )
                     return result
 
             except Exception as e:
                 # Log error but continue with other hooks
                 logger.error(
-                    f"Error executing pre-tool hook '{hook.name or 'unnamed'}' for tool '{tool_name}': {e}",
+                    f"Error executing pre-tool hook '{hook.callback.__name__}' for tool '{tool_name}': {e}",
                     exc_info=True,
                 )
                 continue
@@ -137,9 +132,9 @@ class HookManager:
         tool_use_id: str,
         tool_name: str,
         tool_input: dict,
-        tool_output: "Any",
+        tool_output: Any,
         error: Exception | None,
-        context: "Any",  # AgentRunContext
+        context: AgentRunContext,
     ) -> PostToolOutput | None:
         """
         Execute post-tool hooks after a tool completes.
@@ -181,51 +176,17 @@ class HookManager:
                 if result is not None and result.action == "modify":
                     # Hook returned a modification - stop and return it
                     logger.debug(
-                        f"Post-tool hook '{hook.name or 'unnamed'}' modified output for tool '{tool_name}'"
+                        f"Post-tool hook '{hook.callback.__name__}' modified output for tool '{tool_name}'"
                     )
                     return result
 
             except Exception as e:
                 # Log error but continue with other hooks
                 logger.error(
-                    f"Error executing post-tool hook '{hook.name or 'unnamed'}' for tool '{tool_name}': {e}",
+                    f"Error executing post-tool hook '{hook.callback.__name__}' for tool '{tool_name}': {e}",
                     exc_info=True,
                 )
                 continue
 
         # No hook modified the output - pass through
         return None
-
-    def has_hooks(self, event_type: EventType, tool_name: str | None = None) -> bool:
-        """
-        Check if there are any registered hooks for an event type and optional tool.
-
-        Args:
-            event_type: The type of event to check
-            tool_name: Optional tool name to filter hooks
-
-        Returns:
-            True if there are registered hooks, False otherwise
-        """
-        if tool_name is None:
-            return len(self._hooks.get(event_type, [])) > 0
-        return len(self.get_hooks(event_type, tool_name)) > 0
-
-    def clear(self) -> None:
-        """Clear all registered hooks."""
-        self._hooks.clear()
-
-    def count(self, event_type: EventType | None = None) -> int:
-        """
-        Count the number of registered hooks.
-
-        Args:
-            event_type: Optional event type to count hooks for.
-                        If None, counts all hooks.
-
-        Returns:
-            Number of registered hooks
-        """
-        if event_type is None:
-            return sum(len(hooks) for hooks in self._hooks.values())
-        return len(self._hooks.get(event_type, []))

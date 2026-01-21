@@ -970,11 +970,12 @@ class Agent(
             context=context,
         )
 
-        # Handle hook decision
-        if pre_tool_result is not None:
-            if pre_tool_result.action == "deny":
+        # Handle hook result
+        if pre_tool_result is not None and pre_tool_result.result is not None:
+            # Check if hook denied execution (result is string)
+            if isinstance(pre_tool_result.result, str):
                 # Tool execution denied by hook
-                denial_message = pre_tool_result.denial_message or "Tool execution denied by hook"
+                denial_message = pre_tool_result.result
 
                 # Execute POST_TOOL hooks with denied result
                 await self.hook_manager.execute_post_tool(
@@ -993,10 +994,10 @@ class Agent(
                     result=denial_message,
                 )
                 return
-
-            elif pre_tool_result.action == "modify":
+            # Check if hook modified input (result is dict)
+            elif isinstance(pre_tool_result.result, dict):
                 # Use modified input from hook
-                tool_call.arguments = pre_tool_result.modified_input or tool_call.arguments
+                tool_call.arguments = pre_tool_result.result
 
         # Check if tool requires confirmation
         if tool.requires_confirmation:
@@ -1097,8 +1098,8 @@ class Agent(
         )
 
         # Handle hook output modification
-        if post_tool_result is not None and post_tool_result.action == "modify":
-            tool_output = post_tool_result.modified_output
+        if post_tool_result is not None and post_tool_result.result is not None:
+            tool_output = post_tool_result.result
 
         # Raise error after hooks have been executed
         if tool_error:

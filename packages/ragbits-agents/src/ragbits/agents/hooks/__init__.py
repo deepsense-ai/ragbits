@@ -1,8 +1,8 @@
 """
-Hooks system for tool lifecycle events.
+Hooks system for lifecycle events.
 
 This module provides a comprehensive hook system that allows users to register
-custom logic at various points in the tool execution lifecycle.
+custom logic at various points in the execution lifecycle.
 
 Available event types:
 - PRE_TOOL: Before a tool is invoked
@@ -12,7 +12,7 @@ Example usage:
 
     from ragbits.agents.hooks import (
         EventType,
-        ToolHook,
+        Hook,
         PreToolInput,
         PreToolOutput,
         PostToolInput,
@@ -24,17 +24,16 @@ Example usage:
         if input_data.tool_name == "dangerous_tool":
             return PreToolOutput(
                 action="deny",
-                denial_message="This tool is not allowed"
+                result="This tool is not allowed"
             )
         return None
 
     # Create hook instance
-    hook = ToolHook(
+    hook = Hook(
         event_type=EventType.PRE_TOOL,
         callback=validate_input,
-        tool_names=["dangerous_tool"],
-        priority=10,
-        name="security_check"
+        tools=["dangerous_tool"],
+        priority=10
     )
 
     # Register hooks with agent
@@ -44,37 +43,37 @@ Example usage:
     )
 """
 
-from ragbits.agents.hooks.base import (
-    EventType,
-    ToolHook,
-    PreToolCallback,
-    PostToolCallback,
-)
-from ragbits.agents.hooks.inputs import (
-    BaseInput,
-    PreToolInput,
-    PostToolInput,
-)
-from ragbits.agents.hooks.outputs import (
-    PreToolOutput,
-    PostToolOutput,
-)
+from ragbits.agents.hooks.base import Hook
 from ragbits.agents.hooks.manager import HookManager
+from ragbits.agents.hooks.types import (
+    EventType,
+    HookCallback,
+    HookInput,
+    HookOutput,
+    PostToolCallback,
+    PostToolInput,
+    PostToolOutput,
+    PreToolCallback,
+    PreToolInput,
+    PreToolOutput,
+)
 
 __all__ = [
-    # Event types and classes
+    # Core classes
+    "Hook",
+    "HookManager",
+    # Event types
     "EventType",
-    "ToolHook",
     # Callback types
+    "HookCallback",
     "PreToolCallback",
     "PostToolCallback",
     # Input types
-    "BaseInput",
+    "HookInput",
     "PreToolInput",
     "PostToolInput",
     # Output types
+    "HookOutput",
     "PreToolOutput",
     "PostToolOutput",
-    # Manager
-    "HookManager",
 ]
