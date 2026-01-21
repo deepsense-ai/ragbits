@@ -614,7 +614,7 @@ class LiteLLM(LLM[LiteLLMOptions], LazyLiteLLM):
         return super().from_config(config)
 
     def __reduce__(self) -> tuple[Callable, tuple]:
-        config = {
+        config: dict[str, Any] = {
             "model_name": self.model_name,
             "default_options": self.default_options.dict(),
             "api_base": self.api_base,

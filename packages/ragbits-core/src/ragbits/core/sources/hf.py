@@ -53,8 +53,8 @@ class HuggingFaceSource(Source):
             SourceConnectionError: If the source connection fails.
             SourceNotFoundError: If the source dataset is not found.
         """
-        from datasets import load_dataset
-        from datasets.exceptions import DatasetNotFoundError
+        from datasets import load_dataset  # noqa: PLC0415
+        from datasets.exceptions import DatasetNotFoundError  # noqa: PLC0415
 
         try:
             if self.name is not None and str(self.name).strip():
@@ -121,7 +121,7 @@ class HuggingFaceSource(Source):
         Returns:
             The iterable of sources from the Hugging Face repository.
         """
-        from datasets import load_dataset
+        from datasets import load_dataset  # noqa: PLC0415
 
         sources = load_dataset(path, split=split)
         cleaned_split = re.sub(r"\[.*?\]", "", split)

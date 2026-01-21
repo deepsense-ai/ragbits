@@ -78,7 +78,7 @@ class RayDistributedIngestStrategy(BatchedIngestStrategy):
         Returns:
             The ingest execution result.
         """
-        import ray
+        import ray  # noqa: PLC0415
 
         # Parse documents
         parse_results = ray.data.from_items(list(documents)).map_batches(

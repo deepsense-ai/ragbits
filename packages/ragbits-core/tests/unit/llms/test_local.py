@@ -35,7 +35,7 @@ def mock_tokenizer():
     tokenizer.eos_token_id = 2
     tokenizer._pad_token_type_id = PADDING_VALUE
 
-    def _apply_chat_template(template: list[dict], **kwargs) -> dict[str, torch.Tensor]:
+    def _apply_chat_template(template: list[dict], **kwargs) -> BatchEncoding:
         output: dict[str, list[list[int]]] = {"input_ids": [], "attention_mask": []}
         n_rows = len(template)
         for idx in range(1, n_rows + 1):

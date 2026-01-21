@@ -1,4 +1,7 @@
 import json
+import logging
+import re
+from collections import Counter
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from pathlib import Path
@@ -262,9 +265,7 @@ class HotpotQAPipeline(
         try:
             return self.parse_answer_fn(text)
         except Exception as exc:
-            import logging as _logging
-
-            _logging.getLogger(__name__).debug("Answer parse error: %s", exc)
+            logging.getLogger(__name__).debug("Answer parse error: %s", exc)
             return text
 
     async def _generate_answer(self, prompt: str) -> tuple[str, Usage, list]:
@@ -314,14 +315,11 @@ class HotpotQAPipeline(
 
     @staticmethod
     def _f1(prediction: str, ground_truth: str) -> float:
-        import re as _re
-        from collections import Counter as _Counter
-
         def tokens(value: str) -> list[str]:
             value = (value or "").lower()
-            value = _re.sub(r"[^a-z0-9\s]", " ", value)
-            value = _re.sub(r"\b(a|an|the)\b", " ", value)
-            value = _re.sub(r"\s+", " ", value).strip()
+            value = re.sub(r"[^a-z0-9\s]", " ", value)
+            value = re.sub(r"\b(a|an|the)\b", " ", value)
+            value = re.sub(r"\s+", " ", value).strip()
             return value.split()
 
         pred_tokens = tokens(prediction)
@@ -331,8 +329,8 @@ class HotpotQAPipeline(
         if not pred_tokens or not gt_tokens:
             return 0.0
 
-        pred_counts = _Counter(pred_tokens)
-        gt_counts = _Counter(gt_tokens)
+        pred_counts = Counter(pred_tokens)
+        gt_counts = Counter(gt_tokens)
         common = sum((pred_counts & gt_counts).values())
         if common == 0:
             return 0.0

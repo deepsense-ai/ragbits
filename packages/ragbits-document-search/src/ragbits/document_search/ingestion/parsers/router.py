@@ -72,8 +72,8 @@ class DocumentParserRouter(WithConstructionConfig):
         """
         Get the default parsers.
         """
-        from ragbits.document_search.ingestion.parsers.docling import DoclingDocumentParser
-        from ragbits.document_search.ingestion.parsers.pptx.parser import PptxDocumentParser
+        from ragbits.document_search.ingestion.parsers.docling import DoclingDocumentParser  # noqa: PLC0415
+        from ragbits.document_search.ingestion.parsers.pptx.parser import PptxDocumentParser  # noqa: PLC0415
 
         _default_parser = DoclingDocumentParser()
 

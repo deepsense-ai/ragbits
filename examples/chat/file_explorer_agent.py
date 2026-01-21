@@ -574,7 +574,7 @@ class FileExplorerChat(ChatInterface):
             CORRECT: Immediately call create_directory("test1"), then create_directory("test2") return text
             "I'll create two folders for you. Please confirm action."
 
-            Available tools: {', '.join([t.__name__ for t in self.tools])}
+            Available tools: {", ".join([t.__name__ for t in self.tools])}
             Restricted to: {TEMP_DIR}
             """,
             tools=self.tools,  # type: ignore[arg-type]

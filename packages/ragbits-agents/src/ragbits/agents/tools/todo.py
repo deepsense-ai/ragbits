@@ -1,5 +1,7 @@
 """Todo list management tool for agents."""
 
+import ast
+import re
 import uuid
 from collections.abc import AsyncGenerator
 from enum import Enum
@@ -440,8 +442,6 @@ class TodoOrchestrator(BaseModel):
     def _parse_tasks_from_response(response: str) -> list[str]:
         """Parse task list from agent response."""
         try:
-            import ast
-
             # The prompt asks for ONLY a Python list, so try direct parsing first
             response = response.strip()
 
@@ -454,7 +454,6 @@ class TodoOrchestrator(BaseModel):
                 pass
 
             # Fallback: Look for the first list in the response
-            import re
 
             list_pattern = r"\[.*?\]"
             match = re.search(list_pattern, response, re.DOTALL)

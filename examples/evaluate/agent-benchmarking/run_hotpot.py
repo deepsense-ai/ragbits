@@ -86,7 +86,7 @@ if __name__ == "__main__":
         "--agent_path",
         type=str,
         default=None,
-        help=("Path to agent 'path/to/file.py:var'. " "Defaults to exported hotpot_agent in example_agents."),
+        help=("Path to agent 'path/to/file.py:var'. Defaults to exported hotpot_agent in example_agents."),
     )
     args = parser.parse_args()
 

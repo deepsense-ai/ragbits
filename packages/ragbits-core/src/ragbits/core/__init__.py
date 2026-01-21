@@ -10,7 +10,7 @@ _config_future = None
 
 
 def _import_and_run_config() -> None:
-    from ragbits.core.config import import_modules_from_config
+    from ragbits.core.config import import_modules_from_config  # noqa: PLC0415
 
     import_modules_from_config()
 

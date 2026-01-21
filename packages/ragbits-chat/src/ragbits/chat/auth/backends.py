@@ -1,4 +1,5 @@
 import logging
+import os
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -187,8 +188,6 @@ class OAuth2AuthenticationBackend(AuthenticationBackend):
             The default redirect_uri uses a provider-specific path for better isolation and debugging.
             For Discord, it defaults to: http://localhost:8000/api/auth/callback/discord
         """
-        import os
-
         if default_options is None:
             default_options = AuthOptions()
         super().__init__(default_options)

@@ -79,7 +79,7 @@ class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOu
         env = Environment(autoescape=True)
         ast = env.parse(template)
         template_variables = meta.find_undeclared_variables(ast)
-        input_fields = cls.input_type.model_fields.keys() if cls.input_type else set()
+        input_fields = cast(type[BaseModel], cls.input_type).model_fields.keys() if cls.input_type else set()
         additional_variables = template_variables - input_fields
         if additional_variables:
             raise ValueError(f"Template uses variables that are not present in the input type: {additional_variables}")

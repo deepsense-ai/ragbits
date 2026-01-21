@@ -61,27 +61,27 @@ __all__ = [
 def __getattr__(name: str) -> object:
     """Lazy import for components with optional dependencies."""
     if name == "run_simulation":
-        from ragbits.evaluate.agent_simulation.conversation import run_simulation
+        from ragbits.evaluate.agent_simulation.conversation import run_simulation  # noqa: PLC0415
 
         return run_simulation
     if name == "DeepEvalEvaluator":
-        from ragbits.evaluate.agent_simulation.deepeval_evaluator import DeepEvalEvaluator
+        from ragbits.evaluate.agent_simulation.deepeval_evaluator import DeepEvalEvaluator  # noqa: PLC0415
 
         return DeepEvalEvaluator
     if name == "ConversationLogger":
-        from ragbits.evaluate.agent_simulation.logger import ConversationLogger
+        from ragbits.evaluate.agent_simulation.logger import ConversationLogger  # noqa: PLC0415
 
         return ConversationLogger
     if name in ("Personality", "Scenario", "Task", "Turn"):
-        from ragbits.evaluate.agent_simulation import models
+        from ragbits.evaluate.agent_simulation import models  # noqa: PLC0415
 
         return getattr(models, name)
     if name in ("load_personalities", "load_scenarios"):
-        from ragbits.evaluate.agent_simulation import scenarios
+        from ragbits.evaluate.agent_simulation import scenarios  # noqa: PLC0415
 
         return getattr(scenarios, name)
     if name in ("GoalChecker", "SimulatedUser"):
-        from ragbits.evaluate.agent_simulation import simulation
+        from ragbits.evaluate.agent_simulation import simulation  # noqa: PLC0415
 
         return getattr(simulation, name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

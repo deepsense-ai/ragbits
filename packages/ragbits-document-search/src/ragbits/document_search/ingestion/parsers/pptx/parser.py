@@ -39,7 +39,7 @@ class PptxDocumentParser(DoclingDocumentParser):
         )
 
         if pptx_callbacks is None:
-            from ragbits.document_search.ingestion.parsers.pptx import DEFAULT_CALLBACKS
+            from ragbits.document_search.ingestion.parsers.pptx import DEFAULT_CALLBACKS  # noqa: PLC0415
 
             self.pptx_callbacks = DEFAULT_CALLBACKS
         else:

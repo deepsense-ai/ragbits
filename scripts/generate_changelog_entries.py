@@ -235,8 +235,7 @@ def print_summary(packages_to_process: list[str], package_data: dict) -> None:
 
     if success_count == len(packages_to_process):
         summary = (
-            "[bold green]🎉 All Done![/bold green] "
-            f"[dim]Successfully generated {success_count} changelog entries[/dim]"
+            f"[bold green]🎉 All Done![/bold green] [dim]Successfully generated {success_count} changelog entries[/dim]"
         )
     else:
         failed_count = len(packages_to_process) - success_count
@@ -253,8 +252,7 @@ async def main() -> None:
     base_branch = sys.argv[1] if len(sys.argv) > 1 else "develop"
 
     console.print(
-        "[bold cyan]🚀 Changelog Generator[/bold cyan] "
-        f"[dim]Comparing against [bold]{base_branch}[/bold] branch[/dim]"
+        f"[bold cyan]🚀 Changelog Generator[/bold cyan] [dim]Comparing against [bold]{base_branch}[/bold] branch[/dim]"
     )
 
     # Get changed packages

@@ -1,5 +1,6 @@
 """CLI commands for managing and running agents."""
 
+import asyncio
 import importlib.util
 import sys
 from pathlib import Path
@@ -116,11 +117,11 @@ def run_interactive_agent(agent: Agent, agent_path: str) -> None:
     """
     try:
         # Import textual components here to avoid dependency issues
-        from textual import on
-        from textual.app import App, ComposeResult
-        from textual.containers import Horizontal, Vertical, VerticalScroll
-        from textual.reactive import reactive
-        from textual.widgets import (
+        from textual import on  # noqa: PLC0415
+        from textual.app import App, ComposeResult  # noqa: PLC0415
+        from textual.containers import Horizontal, Vertical, VerticalScroll  # noqa: PLC0415
+        from textual.reactive import reactive  # noqa: PLC0415
+        from textual.widgets import (  # noqa: PLC0415
             Button,
             Footer,
             Header,
@@ -254,10 +255,8 @@ def run_interactive_agent(agent: Agent, agent_path: str) -> None:
 
             @on(Input.Submitted, "#chat_input")
             @on(Button.Pressed, "#send_button")
-            def handle_send_message(self, event: Input.Submitted | Button.Pressed) -> None:
+            async def handle_submit(self) -> None:
                 """Handle sending a message to the agent."""
-                import asyncio
-
                 chat_input = self.query_one("#chat_input", Input)
                 message = chat_input.value.strip()
 
@@ -362,25 +361,28 @@ def run_interactive_agent(agent: Agent, agent_path: str) -> None:
         📍 Agent Path: {self.agent_path}
 
         🧠 LLM Configuration:
-          • Model: {self.metadata['llm']['model']}
-          • Type: {self.metadata['llm']['type']}
+          • Model: {self.metadata["llm"]["model"]}
+          • Type: {self.metadata["llm"]["type"]}
 
         📝 Prompt Configuration:
-          • Type: {self.metadata['prompt']['type']}
-          • Has System Prompt: {self.metadata['prompt']['has_system_prompt']}
+          • Type: {self.metadata["prompt"]["type"]}
+          • Has System Prompt: {self.metadata["prompt"]["has_system_prompt"]}
 
         🔧 Tools:
-          • Count: {self.metadata['tools']['count']}
-          • Names: {', '.join(self.metadata['tools']['names']) if self.metadata['tools']['names'] else 'None'}
+          • Count: {self.metadata["tools"]["count"]}
+          • Names: {", ".join(self.metadata["tools"]["names"]) if self.metadata["tools"]["names"] else "None"}
 
         🌐 MCP Servers:
-          • Count: {self.metadata['mcp_servers']['count']}
-          • Types: {', '.join(self.metadata['mcp_servers']['types'])
-                     if self.metadata['mcp_servers']['types'] else 'None'}
+          • Count: {self.metadata["mcp_servers"]["count"]}
+          • Types: {
+                    ", ".join(self.metadata["mcp_servers"]["types"])
+                    if self.metadata["mcp_servers"]["types"]
+                    else "None"
+                }
 
         💾 History:
-          • Enabled: {self.metadata['history']['enabled']}
-          • Current Length: {self.metadata['history']['length']}
+          • Enabled: {self.metadata["history"]["enabled"]}
+          • Current Length: {self.metadata["history"]["length"]}
         """
                 return info
 
@@ -447,8 +449,6 @@ def execute_agent(
 
     This runs the agent once with the provided input and outputs the result.
     """
-    import asyncio
-
     try:
         agent = import_agent_from_path(agent_path)
 

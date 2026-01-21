@@ -56,7 +56,7 @@ def promptfoo(
 
     For more information, see the [Promptfoo integration documentation](../how-to/prompts/promptfoo.md).
     """
-    from ragbits.core.prompt.promptfoo import generate_configs
+    from ragbits.core.prompt.promptfoo import generate_configs  # noqa: PLC0415
 
     generate_configs(file_pattern=file_pattern, root_path=root_path, target_path=target_path)
 

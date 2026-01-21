@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, cast
 
 import pytest
 
@@ -78,7 +78,6 @@ class TestListAuthInitialization:
         assert backend.users["alice"]["password_hash"] != test_password
 
         # Verify user objects
-        from typing import cast
 
         alice_user: User = cast(User, backend.users["alice"]["user"])
         assert alice_user.user_id == "user1"

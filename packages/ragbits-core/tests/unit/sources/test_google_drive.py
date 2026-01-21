@@ -1,6 +1,8 @@
 import json
 import os
+import tempfile
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 from googleapiclient.errors import HttpError
@@ -105,9 +107,7 @@ async def test_google_drive_impersonate():
 @pytest.mark.asyncio
 async def test_google_drive_source_fetch_file_not_found():
     """Test fetching a non-existent file."""
-    import json
-    import tempfile
-    from unittest.mock import MagicMock, patch
+    file_id = "nonexistent_file"
 
     file_id = "nonexistent_file"
     file_name = "missing.txt"
@@ -140,7 +140,7 @@ async def test_google_drive_source_fetch_file_not_found():
                     await source.fetch()
 
     # Clean up the temporary file
-    import os
+    # Clean up the temporary file
 
     os.unlink(temp_creds.name)
 

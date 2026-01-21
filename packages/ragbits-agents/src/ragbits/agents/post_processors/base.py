@@ -104,7 +104,7 @@ async def stream_with_post_processing(
     Streaming processors get chunks in real-time via process_streaming().
     Non-streaming processors get the complete result via process().
     """
-    from ragbits.agents import AgentResult
+    from ragbits.agents import AgentResult  # noqa: PLC0415
 
     streaming_processors = [p for p in post_processors or [] if isinstance(p, StreamingPostProcessor)]
     non_streaming_processors = [p for p in post_processors or [] if isinstance(p, PostProcessor)]

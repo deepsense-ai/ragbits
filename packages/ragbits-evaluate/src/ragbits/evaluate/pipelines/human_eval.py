@@ -59,9 +59,9 @@ def _execute_in_subprocess(
             with contextlib.redirect_stdout(captured_out), contextlib.redirect_stderr(captured_out):
                 # Apply soft resource limits -> NOT A SANDBOX
                 with contextlib.suppress(Exception):
-                    import os  # type: ignore
-                    import resource  # type: ignore
-                    import tempfile  # type: ignore
+                    import os  # type: ignore # noqa: PLC0415
+                    import resource  # type: ignore # noqa: PLC0415
+                    import tempfile  # type: ignore # noqa: PLC0415
 
                     cpu_secs = max(1, timeout_sec)
                     resource.setrlimit(resource.RLIMIT_CPU, (cpu_secs, cpu_secs))

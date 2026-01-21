@@ -8,6 +8,8 @@ from fastapi.testclient import TestClient
 from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.chat.api import RagbitsAPI
+from ragbits.chat.auth.backends import ListAuthenticationBackend
+from ragbits.chat.auth.session_store import InMemorySessionStore
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig
 from ragbits.chat.interface.types import (
@@ -70,9 +72,6 @@ def mock_chat_interface() -> type[MockChatInterface]:
 @pytest.fixture
 def api(mock_chat_interface: type[MockChatInterface]) -> RagbitsAPI:
     """Fixture providing a RagbitsAPI instance with the mock interface."""
-    from ragbits.chat.auth.backends import ListAuthenticationBackend
-    from ragbits.chat.auth.session_store import InMemorySessionStore
-
     # Set up authentication backend with test users
     test_users = [
         {

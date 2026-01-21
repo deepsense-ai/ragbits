@@ -6,6 +6,7 @@ from uuid import UUID
 import asyncpg
 import pytest
 
+from ragbits.core.embeddings.base import VectorSize
 from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.vector_stores import WhereQuery
 from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreOptions, VectorStoreResult
@@ -375,7 +376,6 @@ async def test_auto_vector_size_determination(mock_db_pool: tuple[MagicMock, Asy
     mock_embedder = AsyncMock()
 
     # Mock the get_vector_size method to return a VectorSize with size 5
-    from ragbits.core.embeddings.base import VectorSize
 
     mock_embedder.get_vector_size.return_value = VectorSize(size=5, is_sparse=False)
 

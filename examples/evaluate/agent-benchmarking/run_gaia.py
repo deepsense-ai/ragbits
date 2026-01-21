@@ -70,7 +70,7 @@ async def main(agent_path: str | None) -> None:
         print(f"  {key}: {value:.4f}")
 
     if use_todo:
-        from utils import print_todo_stats
+        from utils import print_todo_stats  # noqa: PLC0415
 
         await print_todo_stats(log_path, dataloader)
 
@@ -81,7 +81,7 @@ if __name__ == "__main__":
         "--agent_path",
         type=str,
         default=None,
-        help=("Path to agent 'path/to/file.py:var'. " "Defaults to exported gaia_agent in example_agents."),
+        help=("Path to agent 'path/to/file.py:var'. Defaults to exported gaia_agent in example_agents."),
     )
     args = parser.parse_args()
 

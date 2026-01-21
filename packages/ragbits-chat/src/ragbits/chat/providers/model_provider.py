@@ -41,15 +41,15 @@ class RagbitsChatModelProvider:
             return self._models_cache
 
         try:
-            from ragbits.chat.auth.types import (
+            from ragbits.chat.auth.types import (  # noqa: PLC0415
                 LoginRequest,
                 LoginResponse,
                 OAuth2AuthorizeResponse,
                 User,
                 UserCredentials,
             )
-            from ragbits.chat.interface.forms import UserSettings
-            from ragbits.chat.interface.types import (
+            from ragbits.chat.interface.forms import UserSettings  # noqa: PLC0415
+            from ragbits.chat.interface.types import (  # noqa: PLC0415
                 AuthenticationConfig,
                 ChatContext,
                 ChatMessageRequest,
@@ -79,7 +79,7 @@ class RagbitsChatModelProvider:
                 TodoItemContent,
                 UsageContent,
             )
-            from ragbits.chat.interface.ui_customization import (
+            from ragbits.chat.interface.ui_customization import (  # noqa: PLC0415
                 HeaderCustomization,
                 PageMetaCustomization,
                 UICustomization,
@@ -141,8 +141,7 @@ class RagbitsChatModelProvider:
 
         except ImportError as e:
             raise RuntimeError(
-                f"Error importing ragbits-chat models: {e}. "
-                "Make sure the ragbits-chat package is properly installed."
+                f"Error importing ragbits-chat models: {e}. Make sure the ragbits-chat package is properly installed."
             ) from e
 
     def get_categories(self) -> dict[str, list[str]]:

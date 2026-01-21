@@ -1090,8 +1090,8 @@ class Agent(
             version=version,
             description=description,
             url=f"{protocol}://{host}:{port}",
-            defaultInputModes=default_input_modes or ["text"],
-            defaultOutputModes=default_output_modes or ["text"],
+            default_input_modes=default_input_modes or ["text"],
+            default_output_modes=default_output_modes or ["text"],
             skills=skills or await self._extract_agent_skills(),
             capabilities=capabilities or AgentCapabilities(),
         )

@@ -87,8 +87,8 @@ class LocalLLM(LLM[LocalLLMOptions]):
     @staticmethod
     def _lazy_import_local_deps() -> tuple[Any, Any, Any, Any] | None:
         try:
-            import torch
-            from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+            import torch  # noqa: PLC0415
+            from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer  # noqa: PLC0415
 
             return torch, AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
         except ImportError:
@@ -283,7 +283,7 @@ def __getattr__(name: str) -> type:
     """Allow access to transformers classes for testing purposes."""
     if name in ("AutoModelForCausalLM", "AutoTokenizer", "TextIteratorStreamer"):
         try:
-            from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer
+            from transformers import AutoModelForCausalLM, AutoTokenizer, TextIteratorStreamer  # noqa: PLC0415
 
             transformers_classes = {
                 "AutoModelForCausalLM": AutoModelForCausalLM,

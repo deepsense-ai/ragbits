@@ -27,7 +27,7 @@ class OAuth2Credentials(BaseModel):
     """Represents OAuth2 authentication data from Discord."""
 
     access_token: str
-    token_type: str = "bearer"
+    token_type: str = "bearer"  # noqa: S105
 
 
 LoginRequest = UserCredentials
