@@ -1,9 +1,12 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
 
-from ragbits.core.audit.traces.phoenix import PhoenixTraceHandler
+trace_module = pytest.importorskip("openinference.semconv.trace")
+OpenInferenceSpanKindValues = trace_module.OpenInferenceSpanKindValues
+SpanAttributes = trace_module.SpanAttributes
+
+from ragbits.core.audit.traces.phoenix import PhoenixTraceHandler  # noqa: E402
 
 
 @pytest.fixture
