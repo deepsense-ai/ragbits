@@ -2,21 +2,11 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 2ef7ba8ce (feat: Upgrade arize-phoenix to version 12.30.0, update the uv.lock file, and conditionally import openinference trace modules in tests.)
 trace_module = pytest.importorskip("openinference.semconv.trace")
 OpenInferenceSpanKindValues = trace_module.OpenInferenceSpanKindValues
 SpanAttributes = trace_module.SpanAttributes
 
 from ragbits.core.audit.traces.phoenix import PhoenixTraceHandler  # noqa: E402
-<<<<<<< HEAD
-=======
-from ragbits.core.audit.traces.phoenix import PhoenixTraceHandler
->>>>>>> 2477c2433 (feat: add Arize Phoenix tracing integration)
-=======
->>>>>>> 2ef7ba8ce (feat: Upgrade arize-phoenix to version 12.30.0, update the uv.lock file, and conditionally import openinference trace modules in tests.)
 
 
 @pytest.fixture
@@ -69,7 +59,6 @@ def test_phoenix_trace_handler_init_custom_endpoint(
 
     assert isinstance(handler, PhoenixTraceHandler)
     mock_otel_exporter.assert_called_once_with(endpoint=custom_endpoint)
-<<<<<<< HEAD
 
 
 def test_start_llm_span(
@@ -109,5 +98,3 @@ def test_stop_llm_span(
 
         mock_super_stop.assert_called_once()
         span_mock.set_attribute.assert_any_call(SpanAttributes.OUTPUT_VALUE, "world")
-=======
->>>>>>> 2477c2433 (feat: add Arize Phoenix tracing integration)

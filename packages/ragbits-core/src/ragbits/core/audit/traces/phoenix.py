@@ -1,18 +1,12 @@
-<<<<<<< HEAD
 import json
 
 from openinference.semconv.trace import OpenInferenceSpanKindValues, SpanAttributes
-=======
->>>>>>> 2477c2433 (feat: add Arize Phoenix tracing integration)
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
-<<<<<<< HEAD
 from opentelemetry.trace import Span
-=======
->>>>>>> 2477c2433 (feat: add Arize Phoenix tracing integration)
 
 from ragbits.core.audit.traces.otel import OtelTraceHandler
 
@@ -40,7 +34,6 @@ class PhoenixTraceHandler(OtelTraceHandler):
         tracer_provider.add_span_processor(BatchSpanProcessor(span_exporter))
         trace.set_tracer_provider(tracer_provider)
         super().__init__(provider=tracer_provider)
-<<<<<<< HEAD
 
     def start(self, name: str, inputs: dict, current_span: Span | None = None) -> Span:
         """
@@ -91,5 +84,3 @@ class PhoenixTraceHandler(OtelTraceHandler):
                 current_span.set_attribute(SpanAttributes.OUTPUT_VALUE, str(response))
 
         super().stop(outputs, current_span)
-=======
->>>>>>> 2477c2433 (feat: add Arize Phoenix tracing integration)
