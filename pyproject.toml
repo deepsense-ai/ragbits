@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "ragbits-cli",
-    "ragbits-core[chroma,fastembed,local,otel,logfire,qdrant,pgvector,weaviate,azure,gcs,hf,s3,google_drive]",
+    "ragbits-core[chroma,fastembed,local,otel,logfire,qdrant,pgvector,weaviate,azure,gcs,hf,s3,google_drive,phoenix]",
     "ragbits-document-search[unstructured,ray]",
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
@@ -37,6 +37,7 @@ dev = [
     "mypy>=1.13.0",
     "moto~=4.2.7",
     "pytest-postgresql>=7.0.1",
+    "psycopg-binary>=3.2.0",
     "ruff>=0.6.8",
 ]
 
