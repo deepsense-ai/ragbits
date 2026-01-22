@@ -8,9 +8,14 @@ organization, and execution of hooks during lifecycle events.
 from __future__ import annotations
 
 from collections import defaultdict
+from typing import TYPE_CHECKING, Any
 
 from ragbits.agents.hooks.base import Hook
-from ragbits.agents.hooks.types import EventType, HookInput, HookOutput
+from ragbits.agents.hooks.types import EventType, PostToolInput, PostToolOutput, PreToolInput, PreToolOutput
+
+if TYPE_CHECKING:
+    from ragbits.agents._main import AgentRunContext
+    from ragbits.core.llms.base import ToolCall
 
 
 class HookManager:
@@ -18,7 +23,7 @@ class HookManager:
     Manages registration and execution of hooks for an agent.
 
     The HookManager organizes hooks by type and executes them in priority order,
-    stopping early when a hook returns a result.
+    with proper chaining of modifications between hooks.
     """
 
     def __init__(self, hooks: list[Hook] | None = None) -> None:
@@ -65,29 +70,100 @@ class HookManager:
 
         return [hook for hook in hooks if hook.matches_tool(tool_name)]
 
-    async def execute(self, event_type: EventType, hook_input: HookInput) -> HookOutput | None:
+    async def execute_pre_tool(
+        self,
+        context: AgentRunContext,
+        tool_call: ToolCall,
+    ) -> PreToolOutput:
         """
-        Execute all hooks for an event type in priority order.
+        Execute pre-tool hooks with proper chaining.
 
-        Stops at the first hook that returns a result.
+        Each hook sees the modified arguments from the previous hook.
+        Execution stops immediately if any hook returns "deny".
 
         Args:
-            event_type: The type of event
-            hook_input: The input to pass to hooks
+            context: The agent run context
+            tool_call: The tool call to process
 
         Returns:
-            The output from the first hook that returns a result, or None if no hooks return results
+            PreToolOutput with final arguments and decision
         """
-        # Get tool_name from input if it has one (for tool hooks)
-        tool_name = None
-        if hasattr(hook_input, "tool_call"):
-            tool_name = hook_input.tool_call.name
+        hooks = self.get_hooks(EventType.PRE_TOOL, tool_call.name)
 
-        hooks = self.get_hooks(event_type, tool_name)
+        # Start with original arguments
+        current_arguments = tool_call.arguments
+        final_decision = "pass"
+        final_reason = None
 
         for hook in hooks:
-            result = await hook.execute(hook_input)
-            if result is not None:
-                return result
+            # Create input with current state (chained from previous hook)
+            hook_input = PreToolInput(
+                context=context,
+                tool_call=tool_call.model_copy(update={"arguments": current_arguments}),
+            )
 
-        return None
+            result = await hook.execute(hook_input)
+
+            if result:
+                # Stop immediately on deny
+                if result.decision == "deny":
+                    return result
+
+                # Chain arguments for next hook
+                current_arguments = result.arguments
+
+                # Track non-pass decisions
+                if result.decision != "pass":
+                    final_decision = result.decision
+                    final_reason = result.reason
+
+        # Return final chained result
+        return PreToolOutput(
+            arguments=current_arguments,
+            decision=final_decision,
+            reason=final_reason,
+        )
+
+    async def execute_post_tool(
+        self,
+        context: AgentRunContext,
+        tool_call: ToolCall,
+        output: Any,  # noqa: ANN401
+        error: Exception | None,
+    ) -> PostToolOutput:
+        """
+        Execute post-tool hooks with proper output chaining.
+
+        Each hook sees the modified output from the previous hook.
+
+        Args:
+            context: The agent run context
+            tool_call: The tool call that was executed
+            output: The tool output
+            error: Any error that occurred
+
+        Returns:
+            PostToolOutput with final output
+        """
+        hooks = self.get_hooks(EventType.POST_TOOL, tool_call.name)
+
+        # Start with original output
+        current_output = output
+
+        for hook in hooks:
+            # Create input with current state (chained from previous hook)
+            hook_input = PostToolInput(
+                context=context,
+                tool_call=tool_call,
+                output=current_output,
+                error=error,
+            )
+
+            result = await hook.execute(hook_input)
+
+            if result:
+                # Chain output for next hook
+                current_output = result.output
+
+        # Return final chained result
+        return PostToolOutput(output=current_output)

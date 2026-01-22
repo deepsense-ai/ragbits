@@ -35,11 +35,7 @@ class Hook:
 
         async def validate_input(input_data: PreToolInput) -> PreToolOutput | None:
             if input_data.tool_call.name == "dangerous_tool":
-                return PreToolOutput(
-                    arguments=input_data.tool_call.arguments,
-                    decision="deny",
-                    reason="Not allowed"
-                )
+                return PreToolOutput(arguments=input_data.tool_call.arguments, decision="deny", reason="Not allowed")
             return None
 
 

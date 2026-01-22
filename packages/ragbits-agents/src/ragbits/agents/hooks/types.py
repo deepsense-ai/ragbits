@@ -42,6 +42,8 @@ class HookInput(BaseModel):
         context: The agent run context providing access to runtime state
     """
 
+    model_config = {"arbitrary_types_allowed": True}
+
     event_type: EventType
     context: AgentRunContext
 
@@ -121,7 +123,7 @@ class PreToolOutput(HookOutput):
     reason: str | None = None
 
     @model_validator(mode="after")
-    def validate_reason(self) -> "PreToolOutput":
+    def validate_reason(self) -> PreToolOutput:
         """Validate that reason is provided for ask and deny decisions."""
         if self.decision in ("ask", "deny") and not self.reason:
             raise ValueError(f"reason is required when decision='{self.decision}'")
