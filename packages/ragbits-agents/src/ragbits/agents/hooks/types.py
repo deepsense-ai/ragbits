@@ -7,20 +7,15 @@ input types, and output types for the hooks system.
 
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 if TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable
-
     from ragbits.agents._main import AgentRunContext
-
-
-# ============================================================================
-# Event Types
-# ============================================================================
+    from ragbits.core.llms.base import ToolCall
 
 
 class EventType(str, Enum):
@@ -36,16 +31,11 @@ class EventType(str, Enum):
     POST_TOOL = "post_tool"
 
 
-# ============================================================================
-# Input Types
-# ============================================================================
-
-
 class HookInput(BaseModel):
     """
     Base input for all hook callbacks.
 
-    Contains common attributes shared by all hook types (tool, run, etc.).
+    Contains common attributes shared by all hook types.
 
     Attributes:
         event_type: The type of event
@@ -62,21 +52,17 @@ class PreToolInput(HookInput):
 
     This is provided before a tool is invoked, allowing hooks to:
     - Inspect the tool call
-    - Modify tool input
+    - Modify tool arguments
     - Deny execution
 
     Attributes:
         event_type: Always EventType.PRE_TOOL (unchangeable)
         context: The agent run context
-        tool_use_id: Unique identifier for this tool invocation
-        tool_name: Name of the tool being invoked
-        tool_input: Arguments being passed to the tool
+        tool_call: The complete tool call (contains name, arguments, id, type)
     """
 
     event_type: Literal[EventType.PRE_TOOL] = Field(default=EventType.PRE_TOOL, frozen=True)
-    tool_use_id: str
-    tool_name: str
-    tool_input: dict[str, Any]
+    tool_call: ToolCall
 
 
 class PostToolInput(HookInput):
@@ -91,24 +77,15 @@ class PostToolInput(HookInput):
     Attributes:
         event_type: Always EventType.POST_TOOL (unchangeable)
         context: The agent run context
-        tool_use_id: Unique identifier for this tool invocation
-        tool_name: Name of the tool that was invoked
-        tool_input: Arguments that were passed to the tool
-        tool_output: The result returned by the tool (None if error occurred)
+        tool_call: The original tool call
+        output: The result returned by the tool (None if error occurred)
         error: Any error that occurred during execution (None if successful)
     """
 
     event_type: Literal[EventType.POST_TOOL] = Field(default=EventType.POST_TOOL, frozen=True)
-    tool_use_id: str
-    tool_name: str
-    tool_input: dict[str, Any]
-    tool_output: Any = None
+    tool_call: ToolCall
+    output: Any = None
     error: Exception | None = None
-
-
-# ============================================================================
-# Output Types
-# ============================================================================
 
 
 class HookOutput(BaseModel):
@@ -119,45 +96,35 @@ class HookOutput(BaseModel):
 
     Attributes:
         event_type: The type of event
-        result: The result data (type varies by hook type)
     """
 
     event_type: EventType
-    result: Any = None
 
 
 class PreToolOutput(HookOutput):
     """
     Output returned by pre-tool hook callbacks.
 
-    This allows hooks to control tool execution:
-    - "allow": Proceed with tool execution (default behavior)
-    - "deny": Block tool execution and provide a reason
-    - "modify": Execute tool with modified input
+    This allows hooks to control tool execution. The output always contains
+    arguments (either original or modified).
 
     Attributes:
         event_type: Always EventType.PRE_TOOL (unchangeable)
-        action: The action to take ("allow", "deny", or "modify")
-        result: Modified tool input (required when action="modify") or denial message (required when action="deny")
+        arguments: Tool arguments to use (original or modified) - always present
+        decision: The decision on tool execution ("pass", "ask", "deny")
+        reason: Explanation for ask/deny decisions (required for "ask" and "deny", can be None for "pass")
     """
 
     event_type: Literal[EventType.PRE_TOOL] = Field(default=EventType.PRE_TOOL, frozen=True)  # type: ignore[assignment]
-    action: Literal["allow", "deny", "modify"]
-    result: dict[str, Any] | str | None = None  # type: ignore[assignment]
+    arguments: dict[str, Any]
+    decision: Literal["pass", "ask", "deny"] = "pass"
+    reason: str | None = None
 
     @model_validator(mode="after")
-    def validate_action_result(self) -> "PreToolOutput":
-        """Validate that result is provided and has correct type for each action."""
-        if self.action == "modify":
-            if self.result is None:
-                raise ValueError("result must be provided when action='modify'")
-            if not isinstance(self.result, dict):
-                raise ValueError("result must be a dict when action='modify'")
-        elif self.action == "deny":
-            if self.result is None:
-                raise ValueError("result must be provided when action='deny'")
-            if not isinstance(self.result, str):
-                raise ValueError("result must be a string (denial message) when action='deny'")
+    def validate_reason(self) -> "PreToolOutput":
+        """Validate that reason is provided for ask and deny decisions."""
+        if self.decision in ("ask", "deny") and not self.reason:
+            raise ValueError(f"reason is required when decision='{self.decision}'")
         return self
 
 
@@ -165,34 +132,27 @@ class PostToolOutput(HookOutput):
     """
     Output returned by post-tool hook callbacks.
 
-    This allows hooks to modify tool results:
-    - "pass": Return the original tool output unchanged
-    - "modify": Return modified tool output
+    The output always contains the tool output (either original or modified).
 
     Attributes:
         event_type: Always EventType.POST_TOOL (unchangeable)
-        action: The action to take ("pass" or "modify")
-        result: Modified tool output (required when action="modify")
+        output: Tool output to use (original or modified) - always present
+
+    Example:
+        ```python
+        # Pass through unchanged
+        return PostToolOutput(output=input.output)
+
+        # Modify output
+        return PostToolOutput(output={"filtered": data})
+        ```
     """
 
     event_type: Literal[EventType.POST_TOOL] = Field(default=EventType.POST_TOOL, frozen=True)  # type: ignore[assignment]
-    action: Literal["pass", "modify"]
-
-    @model_validator(mode="after")
-    def validate_action_result(self) -> "PostToolOutput":
-        """Validate that result is provided when action='modify'."""
-        if self.action == "modify" and self.result is None:
-            raise ValueError("result must be provided when action='modify'")
-        return self
+    output: Any
 
 
-# ============================================================================
-# Callback Types
-# ============================================================================
-
-# Type aliases for hook callbacks
 PreToolCallback = Callable[[PreToolInput], Awaitable[PreToolOutput | None]]
 PostToolCallback = Callable[[PostToolInput], Awaitable[PostToolOutput | None]]
 
-# Union of all callback types
 HookCallback = PreToolCallback | PostToolCallback

@@ -20,6 +20,7 @@ from pydantic import (
 from typing_extensions import Self
 
 from ragbits import agents
+from ragbits.agents import PostToolOutput, PreToolOutput
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.exceptions import (
     AgentInvalidPostProcessorError,
@@ -32,6 +33,7 @@ from ragbits.agents.exceptions import (
     AgentToolNotAvailableError,
     AgentToolNotSupportedError,
 )
+from ragbits.agents.hooks import EventType, Hook, HookManager, PostToolInput, PreToolInput
 from ragbits.agents.mcp.server import MCPServer, MCPServerStdio, MCPServerStreamableHttp
 from ragbits.agents.mcp.utils import get_tools
 from ragbits.agents.post_processors.base import (
@@ -41,7 +43,6 @@ from ragbits.agents.post_processors.base import (
     stream_with_post_processing,
 )
 from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice
-from ragbits.agents.hooks import HookManager, ToolHook
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import (
     LLM,
@@ -376,7 +377,7 @@ class Agent(
         keep_history: bool = False,
         tools: list[Callable] | None = None,
         mcp_servers: list[MCPServer] | None = None,
-        hooks: list[ToolHook] | None = None,
+        hooks: list[Hook] | None = None,
         default_options: AgentOptions[LLMClientOptionsT] | None = None,
     ) -> None:
         """
@@ -963,41 +964,49 @@ class Agent(
         tool = tools_mapping[tool_call.name]
 
         # Execute PRE_TOOL hooks
-        pre_tool_result = await self.hook_manager.execute_pre_tool(
-            tool_use_id=tool_call.id,
-            tool_name=tool_call.name,
-            tool_input=tool_call.arguments,
+        pre_tool_input = PreToolInput(
             context=context,
+            tool_call=tool_call,
         )
+        pre_tool_result: PreToolOutput = await self.hook_manager.execute(EventType.PRE_TOOL, pre_tool_input)
 
         # Handle hook result
-        if pre_tool_result is not None and pre_tool_result.result is not None:
-            # Check if hook denied execution (result is string)
-            if isinstance(pre_tool_result.result, str):
-                # Tool execution denied by hook
-                denial_message = pre_tool_result.result
-
-                # Execute POST_TOOL hooks with denied result
-                await self.hook_manager.execute_post_tool(
-                    tool_use_id=tool_call.id,
-                    tool_name=tool_call.name,
-                    tool_input=tool_call.arguments,
-                    tool_output=denial_message,
-                    error=None,
-                    context=context,
-                )
+        if pre_tool_result is not None:
+            # Check decision before updating arguments
+            if pre_tool_result.decision == "deny":
 
                 yield ToolCallResult(
                     id=tool_call.id,
                     name=tool_call.name,
                     arguments=tool_call.arguments,
-                    result=denial_message,
+                    result=pre_tool_result.reason or "Tool execution denied",
                 )
                 return
-            # Check if hook modified input (result is dict)
-            elif isinstance(pre_tool_result.result, dict):
-                # Use modified input from hook
-                tool_call.arguments = pre_tool_result.result
+
+            # Always update arguments (for "pass" and "ask" decisions)
+            tool_call.arguments = pre_tool_result.arguments
+
+            # Handle "ask" decision - similar to deny for now
+            if pre_tool_result.decision == "ask":
+                pass
+                # TODO: possible place/way of replacing confirmation
+                # request = ConfirmationRequest(
+                #     confirmation_id=confirmation_id,
+                #     tool_name=tool_call.name,
+                #     tool_description=tool.description or "",
+                #     arguments=tool_call.arguments,
+                # )
+                #
+                # # Yield confirmation request (will be streamed to frontend)
+                # yield request
+                #
+                # yield ToolCallResult(
+                #     id=tool_call.id,
+                #     name=tool_call.name,
+                #     arguments=tool_call.arguments,
+                #     result=pre_tool_result.reason or "Tool requires user confirmation",
+                # )
+                # return
 
         # Check if tool requires confirmation
         if tool.requires_confirmation:
@@ -1049,7 +1058,6 @@ class Agent(
                 return
 
         tool_error: Exception | None = None
-        tool_output = None
 
         with trace(agent_id=self.id, tool_name=tool_call.name, tool_arguments=tool_call.arguments) as outputs:
             try:
@@ -1088,18 +1096,14 @@ class Agent(
                 }
 
         # Execute POST_TOOL hooks
-        post_tool_result = await self.hook_manager.execute_post_tool(
-            tool_use_id=tool_call.id,
-            tool_name=tool_call.name,
-            tool_input=tool_call.arguments,
-            tool_output=tool_output,
-            error=tool_error,
+        post_tool_input = PostToolInput(
             context=context,
+            tool_call=tool_call,
+            output=tool_output,
+            error=tool_error,
         )
-
-        # Handle hook output modification
-        if post_tool_result is not None and post_tool_result.result is not None:
-            tool_output = post_tool_result.result
+        hook_result: PostToolOutput = await self.hook_manager.execute(EventType.POST_TOOL, post_tool_input)
+        tool_output = hook_result.output
 
         # Raise error after hooks have been executed
         if tool_error:

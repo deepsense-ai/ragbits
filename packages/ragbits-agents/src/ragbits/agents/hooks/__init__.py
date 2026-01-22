@@ -21,10 +21,11 @@ Example usage:
 
     # Create a pre-tool hook
     async def validate_input(input_data: PreToolInput) -> PreToolOutput | None:
-        if input_data.tool_name == "dangerous_tool":
+        if input_data.tool_call.name == "dangerous_tool":
             return PreToolOutput(
-                action="deny",
-                result="This tool is not allowed"
+                arguments=input_data.tool_call.arguments,
+                decision="deny",
+                reason="This tool is not allowed"
             )
         return None
 
@@ -59,21 +60,21 @@ from ragbits.agents.hooks.types import (
 )
 
 __all__ = [
-    # Core classes
-    "Hook",
-    "HookManager",
     # Event types
     "EventType",
+    # Core classes
+    "Hook",
     # Callback types
     "HookCallback",
-    "PreToolCallback",
-    "PostToolCallback",
     # Input types
     "HookInput",
-    "PreToolInput",
-    "PostToolInput",
+    "HookManager",
     # Output types
     "HookOutput",
-    "PreToolOutput",
+    "PostToolCallback",
+    "PostToolInput",
     "PostToolOutput",
+    "PreToolCallback",
+    "PreToolInput",
+    "PreToolOutput",
 ]

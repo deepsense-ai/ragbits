@@ -32,17 +32,18 @@ class Hook:
         ```python
         from ragbits.agents.hooks import Hook, EventType, PreToolInput, PreToolOutput
 
+
         async def validate_input(input_data: PreToolInput) -> PreToolOutput | None:
-            if input_data.tool_name == "dangerous_tool":
-                return PreToolOutput(action="deny", result="Not allowed")
+            if input_data.tool_call.name == "dangerous_tool":
+                return PreToolOutput(
+                    arguments=input_data.tool_call.arguments,
+                    decision="deny",
+                    reason="Not allowed"
+                )
             return None
 
-        hook = Hook(
-            event_type=EventType.PRE_TOOL,
-            callback=validate_input,
-            tools=["dangerous_tool"],
-            priority=10
-        )
+
+        hook = Hook(event_type=EventType.PRE_TOOL, callback=validate_input, tools=["dangerous_tool"], priority=10)
         ```
     """
 
@@ -50,11 +51,6 @@ class Hook:
     callback: "HookCallback"
     tools: list[str] | None = None
     priority: int = 100
-
-    def __post_init__(self) -> None:
-        """Validate hook configuration."""
-        if self.priority < 0:
-            raise ValueError("Hook priority must be non-negative")
 
     def matches_tool(self, tool_name: str) -> bool:
         """
