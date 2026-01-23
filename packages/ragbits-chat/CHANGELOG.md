@@ -10,7 +10,7 @@
 - CI/CD for nightly npm builds, update ragbits-api-client-react deps to install latest version of the @ragbits/api-client (#873)
 - CI/CD for nightlty builds improvements (#874)
 - Add automatic topic extraction to be used as conversation title with ability to edit in the client side (#840)
-- Add todo list component to the UI, add support for todo events in API (#827) (#907)
+- Add planner component to the UI, add support for planner events in API (#827) (#907)
 - Add support for confirmation requests in chat (#853)
 - customizable HeroUI theme (#841)
 - Add error response type to the chat interface with ability to display error messages to the user (#878)
@@ -19,7 +19,6 @@
 
 - Make `SummaryGenerator` optional in `ChatInterface` by providing a default no-op implementation.
 - Add automatic topic extraction to be used as conversation title with ability to edit in the client side (#840)
-- Add todo list component to the UI, add support for todo events in API (#827)
 - Add custom response type to the chat interface with full type safety and validation (#849)
   - New class-based response system: `TextResponse`, `ReferenceResponse`, `StateUpdateResponse`, etc.
   - Support for custom response types by extending `ResponseContent` and `ChatResponse`
