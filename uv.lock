@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version < '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
@@ -5049,7 +5049,7 @@ wheels = [
 
 [[package]]
 name = "ragbits"
-version = "1.4.0.dev202601130240"
+version = "1.4.0.dev202601170236"
 source = { editable = "packages/ragbits" }
 dependencies = [
     { name = "ragbits-agents" },
@@ -5169,7 +5169,7 @@ provides-extras = ["chroma", "hf", "s3", "gcs", "azure", "local", "openai", "ote
 
 [[package]]
 name = "ragbits-agents"
-version = "1.4.0.dev202601130240"
+version = "1.4.0.dev202601170236"
 source = { editable = "packages/ragbits-agents" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5205,7 +5205,7 @@ provides-extras = ["a2a", "mcp", "openai", "cli"]
 
 [[package]]
 name = "ragbits-chat"
-version = "1.4.0.dev202601130240"
+version = "1.4.0.dev202601170236"
 source = { editable = "packages/ragbits-chat" }
 dependencies = [
     { name = "bcrypt" },
@@ -5235,7 +5235,7 @@ provides-extras = ["sql"]
 
 [[package]]
 name = "ragbits-cli"
-version = "1.4.0.dev202601130240"
+version = "1.4.0.dev202601170236"
 source = { editable = "packages/ragbits-cli" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5250,7 +5250,7 @@ requires-dist = [
 
 [[package]]
 name = "ragbits-core"
-version = "1.4.0.dev202601130240"
+version = "1.4.0.dev202601170236"
 source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "aiohttp" },
@@ -5370,7 +5370,7 @@ provides-extras = ["chroma", "local", "fastembed", "promptfoo", "otel", "logfire
 
 [[package]]
 name = "ragbits-document-search"
-version = "1.4.0.dev202601130240"
+version = "1.4.0.dev202601170236"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
     { name = "docling" },
@@ -5406,7 +5406,7 @@ provides-extras = ["unstructured", "ray"]
 
 [[package]]
 name = "ragbits-evaluate"
-version = "1.4.0.dev202601130240"
+version = "1.4.0.dev202601170236"
 source = { editable = "packages/ragbits-evaluate" }
 dependencies = [
     { name = "datasets" },
@@ -5438,7 +5438,7 @@ provides-extras = ["relari"]
 
 [[package]]
 name = "ragbits-guardrails"
-version = "1.4.0.dev202601130240"
+version = "1.4.0.dev202601170236"
 source = { editable = "packages/ragbits-guardrails" }
 dependencies = [
     { name = "ragbits-core" },

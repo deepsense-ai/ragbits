@@ -2,7 +2,6 @@ import asyncio
 import importlib
 import json
 import logging
-import os
 import re
 import time
 from collections.abc import AsyncGenerator
@@ -22,6 +21,7 @@ from ragbits.chat.auth import AuthenticationBackend, User
 from ragbits.chat.auth.backends import MultiAuthenticationBackend, OAuth2AuthenticationBackend
 from ragbits.chat.auth.provider_config import get_provider_visual_config
 from ragbits.chat.auth.types import LoginRequest, LoginResponse, OAuth2Credentials
+from ragbits.chat.config import BASE_URL, CHUNK_SIZE, IS_PRODUCTION, SESSION_COOKIE_NAME
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import (
     AuthenticationConfig,
@@ -45,17 +45,6 @@ from ragbits.core.audit.traces import trace
 from .metrics import ChatCounterMetric, ChatHistogramMetric
 
 logger = logging.getLogger(__name__)
-
-# Environment-aware cookie security: only require HTTPS in production
-IS_PRODUCTION = os.getenv("ENVIRONMENT", "").lower() == "production"
-
-# Session cookie name - used for storing session ID in HTTP-only cookie
-SESSION_COOKIE_NAME = "ragbits_session"
-
-# Chunk size for large base64 images to prevent SSE message size issues
-# Keep chunks extremely small to avoid JSON string length limits in browsers and SSE parsing issues
-# Account for JSON overhead: metadata + base64 data should fit comfortably in browser limits
-CHUNK_SIZE = 102400  # ~100KB bytes base64 chunks for ultra-safe JSON parsing and SSE transmission
 
 
 class RagbitsAPI:
@@ -91,12 +80,7 @@ class RagbitsAPI:
         self.auth_backend = self._load_auth_backend(auth_backend)
         self.theme_path = Path(theme_path) if theme_path else None
 
-        # get frontend base URL from environment variable or use default
-        frontend_base_url = os.getenv("FRONTEND_BASE_URL", "http://localhost:8000")
-        # remove trailing slash from frontend base URL
-        frontend_base_url = frontend_base_url.rstrip("/")
-        # set frontend base URL on the API
-        self.frontend_base_url = frontend_base_url
+        self.frontend_base_url = BASE_URL
 
         @asynccontextmanager
         async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
