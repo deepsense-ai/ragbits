@@ -25,7 +25,7 @@ class OAuth2Provider:
         self._display_name = display_name
         self._authorize_url = authorize_url
         self._token_url = token_url
-        self._user_info_url - user_info_url
+        self._user_info_url = user_info_url
         self._scopes = scopes
         self._user_factory = user_factory
 
@@ -52,7 +52,7 @@ class OAuth2Provider:
     @property
     def user_info_url(self) -> str:
         """User info endpoint."""
-        return self.user_info_url
+        return self._user_info_url
 
     @property
     def scope(self) -> str:
@@ -78,12 +78,12 @@ DiscordOAuth2Provider = OAuth2Provider(
     authorize_url="https://discord.com/api/oauth2/authorize",
     token_url="https://discord.com/api/oauth2/token",  # noqa: S106
     user_info_url="https://discord.com/api/users/@me",
-    scope="identify email",
+    scopes=["identify", "email"],
     user_factory=lambda user_data: User(
         user_id=f"discord_{user_data['id']}",
-        username=user_data.get("username", ""),
-        email=user_data.get("email"),
-        full_name=user_data.get("global_name"),
+        username=str(user_data.get("username", "")),
+        email=str(user_data["email"]) if user_data.get("email") else None,
+        full_name=str(user_data["global_name"]) if user_data.get("global_name") else None,
         roles=["user"],
         metadata={
             "provider": "discord",
@@ -100,12 +100,12 @@ GoogleOAuth2Provider = OAuth2Provider(
     authorize_url="https://accounts.google.com/o/oauth2/v2/auth",
     token_url="https://oauth2.googleapis.com/token",  # noqa: S106
     user_info_url="https://www.googleapis.com/oauth2/v2/userinfo",
-    scope="openid email profile",
+    scopes=["openid", "email", "profile"],
     user_factory=lambda user_data: User(
         user_id=f"google_{user_data['id']}",
-        username=user_data.get("email", "").split("@")[0],
-        email=user_data.get("email"),
-        full_name=user_data.get("name"),
+        username=str(user_data.get("email", "")).split("@")[0],
+        email=str(user_data["email"]) if user_data.get("email") else None,
+        full_name=str(user_data["name"]) if user_data.get("name") else None,
         roles=["user"],
         metadata={
             "provider": "google",
