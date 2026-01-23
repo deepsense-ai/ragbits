@@ -5,17 +5,12 @@ This module provides the HookManager class which handles registration,
 organization, and execution of hooks during lifecycle events.
 """
 
-from __future__ import annotations
-
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any
+from typing import Any, Literal
 
 from ragbits.agents.hooks.base import Hook
 from ragbits.agents.hooks.types import EventType, PostToolInput, PostToolOutput, PreToolInput, PreToolOutput
-
-if TYPE_CHECKING:
-    from ragbits.agents._main import AgentRunContext
-    from ragbits.core.llms.base import ToolCall
+from ragbits.core.llms.base import ToolCall
 
 
 class HookManager:
@@ -72,7 +67,6 @@ class HookManager:
 
     async def execute_pre_tool(
         self,
-        context: AgentRunContext,
         tool_call: ToolCall,
     ) -> PreToolOutput:
         """
@@ -82,7 +76,6 @@ class HookManager:
         Execution stops immediately if any hook returns "deny".
 
         Args:
-            context: The agent run context
             tool_call: The tool call to process
 
         Returns:
@@ -92,30 +85,28 @@ class HookManager:
 
         # Start with original arguments
         current_arguments = tool_call.arguments
-        final_decision = "pass"
-        final_reason = None
+        final_decision: Literal["pass", "ask", "deny"] = "pass"
+        final_reason: str | None = None
 
         for hook in hooks:
             # Create input with current state (chained from previous hook)
             hook_input = PreToolInput(
-                context=context,
                 tool_call=tool_call.model_copy(update={"arguments": current_arguments}),
             )
 
-            result = await hook.execute(hook_input)
+            result: PreToolOutput = await hook.execute(hook_input)
 
-            if result:
-                # Stop immediately on deny
-                if result.decision == "deny":
-                    return result
+            # Stop immediately on deny
+            if result.decision == "deny":
+                return result
 
-                # Chain arguments for next hook
-                current_arguments = result.arguments
+            # Chain arguments for next hook
+            current_arguments = result.arguments
 
-                # Track non-pass decisions
-                if result.decision != "pass":
-                    final_decision = result.decision
-                    final_reason = result.reason
+            # Track non-pass decisions
+            if result.decision != "pass":
+                final_decision = result.decision
+                final_reason = result.reason
 
         # Return final chained result
         return PreToolOutput(
@@ -126,7 +117,6 @@ class HookManager:
 
     async def execute_post_tool(
         self,
-        context: AgentRunContext,
         tool_call: ToolCall,
         output: Any,  # noqa: ANN401
         error: Exception | None,
@@ -137,7 +127,6 @@ class HookManager:
         Each hook sees the modified output from the previous hook.
 
         Args:
-            context: The agent run context
             tool_call: The tool call that was executed
             output: The tool output
             error: Any error that occurred
@@ -153,17 +142,15 @@ class HookManager:
         for hook in hooks:
             # Create input with current state (chained from previous hook)
             hook_input = PostToolInput(
-                context=context,
                 tool_call=tool_call,
                 output=current_output,
                 error=error,
             )
 
-            result = await hook.execute(hook_input)
+            result: PostToolOutput = await hook.execute(hook_input)
 
-            if result:
-                # Chain output for next hook
-                current_output = result.output
+            # Chain output for next hook
+            current_output = result.output
 
         # Return final chained result
         return PostToolOutput(output=current_output)

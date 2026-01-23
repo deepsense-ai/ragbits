@@ -5,17 +5,12 @@ This module contains all type definitions including EventType, callback types,
 input types, and output types for the hooks system.
 """
 
-from __future__ import annotations
-
-from collections.abc import Awaitable, Callable
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-if TYPE_CHECKING:
-    from ragbits.agents._main import AgentRunContext
-    from ragbits.core.llms.base import ToolCall
+from ragbits.core.llms.base import ToolCall
 
 
 class EventType(str, Enum):
@@ -31,24 +26,22 @@ class EventType(str, Enum):
     POST_TOOL = "post_tool"
 
 
-class HookInput(BaseModel):
+class HookEventIO(BaseModel):
     """
-    Base input for all hook callbacks.
+    Base class for hook inputs and outputs.
 
-    Contains common attributes shared by all hook types.
+    Contains the common event_type attribute shared by all hook events.
 
     Attributes:
         event_type: The type of event
-        context: The agent run context providing access to runtime state
     """
 
     model_config = {"arbitrary_types_allowed": True}
 
     event_type: EventType
-    context: AgentRunContext
 
 
-class PreToolInput(HookInput):
+class PreToolInput(HookEventIO):
     """
     Input passed to pre-tool hook callbacks.
 
@@ -59,7 +52,6 @@ class PreToolInput(HookInput):
 
     Attributes:
         event_type: Always EventType.PRE_TOOL (unchangeable)
-        context: The agent run context
         tool_call: The complete tool call (contains name, arguments, id, type)
     """
 
@@ -67,7 +59,7 @@ class PreToolInput(HookInput):
     tool_call: ToolCall
 
 
-class PostToolInput(HookInput):
+class PostToolInput(HookEventIO):
     """
     Input passed to post-tool hook callbacks.
 
@@ -78,7 +70,6 @@ class PostToolInput(HookInput):
 
     Attributes:
         event_type: Always EventType.POST_TOOL (unchangeable)
-        context: The agent run context
         tool_call: The original tool call
         output: The result returned by the tool (None if error occurred)
         error: Any error that occurred during execution (None if successful)
@@ -90,20 +81,7 @@ class PostToolInput(HookInput):
     error: Exception | None = None
 
 
-class HookOutput(BaseModel):
-    """
-    Base output for all hook callbacks.
-
-    Contains common attributes shared by all hook output types.
-
-    Attributes:
-        event_type: The type of event
-    """
-
-    event_type: EventType
-
-
-class PreToolOutput(HookOutput):
+class PreToolOutput(HookEventIO):
     """
     Output returned by pre-tool hook callbacks.
 
@@ -123,14 +101,14 @@ class PreToolOutput(HookOutput):
     reason: str | None = None
 
     @model_validator(mode="after")
-    def validate_reason(self) -> PreToolOutput:
+    def validate_reason(self) -> "PreToolOutput":
         """Validate that reason is provided for ask and deny decisions."""
         if self.decision in ("ask", "deny") and not self.reason:
             raise ValueError(f"reason is required when decision='{self.decision}'")
         return self
 
 
-class PostToolOutput(HookOutput):
+class PostToolOutput(HookEventIO):
     """
     Output returned by post-tool hook callbacks.
 
@@ -152,9 +130,3 @@ class PostToolOutput(HookOutput):
 
     event_type: Literal[EventType.POST_TOOL] = Field(default=EventType.POST_TOOL, frozen=True)  # type: ignore[assignment]
     output: Any
-
-
-PreToolCallback = Callable[[PreToolInput], Awaitable[PreToolOutput | None]]
-PostToolCallback = Callable[[PostToolInput], Awaitable[PostToolOutput | None]]
-
-HookCallback = PreToolCallback | PostToolCallback

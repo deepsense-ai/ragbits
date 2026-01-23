@@ -15,22 +15,20 @@ Example usage:
         Hook,
         PreToolInput,
         PreToolOutput,
-        PostToolInput,
-        PostToolOutput,
     )
 
-    # Create a pre-tool hook
-    async def validate_input(input_data: PreToolInput) -> PreToolOutput | None:
+    # Create a pre-tool hook callback
+    async def validate_input(input_data: PreToolInput) -> PreToolOutput:
         if input_data.tool_call.name == "dangerous_tool":
             return PreToolOutput(
                 arguments=input_data.tool_call.arguments,
                 decision="deny",
                 reason="This tool is not allowed"
             )
-        return None
+        return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
 
-    # Create hook instance
-    hook = Hook(
+    # Create hook instance with proper type annotation
+    hook: Hook[PreToolInput, PreToolOutput] = Hook(
         event_type=EventType.PRE_TOOL,
         callback=validate_input,
         tools=["dangerous_tool"],
@@ -44,17 +42,13 @@ Example usage:
     )
 """
 
-from ragbits.agents.hooks.base import Hook
+from ragbits.agents.hooks.base import Hook, HookInputT, HookOutputT
+from ragbits.agents.hooks.confirmation import requires_confirmation_hook
 from ragbits.agents.hooks.manager import HookManager
 from ragbits.agents.hooks.types import (
     EventType,
-    HookCallback,
-    HookInput,
-    HookOutput,
-    PostToolCallback,
     PostToolInput,
     PostToolOutput,
-    PreToolCallback,
     PreToolInput,
     PreToolOutput,
 )
@@ -64,17 +58,15 @@ __all__ = [
     "EventType",
     # Core classes
     "Hook",
-    # Callback types
-    "HookCallback",
-    # Input types
-    "HookInput",
     "HookManager",
-    # Output types
-    "HookOutput",
-    "PostToolCallback",
+    # Type variables
+    "HookInputT",
+    "HookOutputT",
+    # Input/output types
     "PostToolInput",
     "PostToolOutput",
-    "PreToolCallback",
     "PreToolInput",
     "PreToolOutput",
+    # Custom hooks
+    "requires_confirmation_hook",
 ]

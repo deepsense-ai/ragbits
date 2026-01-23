@@ -2,15 +2,18 @@
 Base classes for the hooks system.
 """
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import Generic, TypeVar
 
-if TYPE_CHECKING:
-    from ragbits.agents.hooks.types import EventType, HookCallback, HookInput, HookOutput
+from ragbits.agents.hooks.types import EventType, HookEventIO
+
+HookInputT = TypeVar("HookInputT", bound=HookEventIO)
+HookOutputT = TypeVar("HookOutputT", bound=HookEventIO)
 
 
 @dataclass
-class Hook:
+class Hook(Generic[HookInputT, HookOutputT]):
     """
     A hook that intercepts execution at various lifecycle points.
 
@@ -33,18 +36,20 @@ class Hook:
         from ragbits.agents.hooks import Hook, EventType, PreToolInput, PreToolOutput
 
 
-        async def validate_input(input_data: PreToolInput) -> PreToolOutput | None:
+        async def validate_input(input_data: PreToolInput) -> PreToolOutput:
             if input_data.tool_call.name == "dangerous_tool":
                 return PreToolOutput(arguments=input_data.tool_call.arguments, decision="deny", reason="Not allowed")
-            return None
+            return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
 
 
-        hook = Hook(event_type=EventType.PRE_TOOL, callback=validate_input, tools=["dangerous_tool"], priority=10)
+        hook: Hook[PreToolInput, PreToolOutput] = Hook(
+            event_type=EventType.PRE_TOOL, callback=validate_input, tools=["dangerous_tool"], priority=10
+        )
         ```
     """
 
-    event_type: "EventType"
-    callback: "HookCallback"
+    event_type: EventType
+    callback: Callable[[HookInputT], Awaitable[HookOutputT]]
     tools: list[str] | None = None
     priority: int = 100
 
@@ -62,7 +67,7 @@ class Hook:
             return True
         return tool_name in self.tools
 
-    async def execute(self, hook_input: "HookInput") -> "HookOutput | None":
+    async def execute(self, hook_input: HookInputT) -> HookOutputT:
         """
         Execute the hook callback with the given input.
 
@@ -70,6 +75,6 @@ class Hook:
             hook_input: The input to pass to the callback
 
         Returns:
-            The output from the callback, or None if no action needed
+            The output from the callback
         """
-        return await self.callback(hook_input)  # type: ignore
+        return await self.callback(hook_input)

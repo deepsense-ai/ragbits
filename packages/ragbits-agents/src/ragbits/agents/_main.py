@@ -967,7 +967,6 @@ class Agent(
 
         # Execute PRE_TOOL hooks with chaining
         pre_tool_result = await self.hook_manager.execute_pre_tool(
-            context=context,
             tool_call=tool_call,
         )
 
@@ -1094,7 +1093,6 @@ class Agent(
 
         # Execute POST_TOOL hooks with chaining
         post_tool_result = await self.hook_manager.execute_post_tool(
-            context=context,
             tool_call=tool_call,
             output=tool_output,
             error=tool_error,

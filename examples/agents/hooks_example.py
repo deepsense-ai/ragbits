@@ -33,10 +33,10 @@ def send_notification(email: str, message: str) -> str:
     return f"Email sent to {email}: {message}"
 
 
-async def validate_email(input_data: PreToolInput) -> PreToolOutput | None:
+async def validate_email(input_data: PreToolInput) -> PreToolOutput:
     """Validate email format before sending."""
     if input_data.tool_call.name != "send_notification":
-        return None
+        return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
 
     email = input_data.tool_call.arguments.get("email", "")
     email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
@@ -50,13 +50,13 @@ async def validate_email(input_data: PreToolInput) -> PreToolOutput | None:
         )
 
     hook_actions.append({"hook": "validate_email", "action": "passed", "email": email})
-    return None
+    return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
 
 
-async def sanitize_email_domain(input_data: PreToolInput) -> PreToolOutput | None:
+async def sanitize_email_domain(input_data: PreToolInput) -> PreToolOutput:
     """Ensure emails only go to approved domains."""
     if input_data.tool_call.name != "send_notification":
-        return None
+        return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
 
     email = input_data.tool_call.arguments.get("email", "")
     approved_domains = ["example.com", "test.com"]
@@ -83,13 +83,13 @@ async def sanitize_email_domain(input_data: PreToolInput) -> PreToolOutput | Non
         )
 
     hook_actions.append({"hook": "sanitize_email_domain", "action": "passed", "email": email})
-    return None
+    return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
 
 
-async def mask_sensitive_data(input_data: PostToolInput) -> PostToolOutput | None:
+async def mask_sensitive_data(input_data: PostToolInput) -> PostToolOutput:
     """Mask sensitive information in user search results."""
     if input_data.tool_call.name != "search_user":
-        return None
+        return PostToolOutput(output=input_data.output)
 
     if isinstance(input_data.output, dict) and "ssn" in input_data.output:
         original_ssn = input_data.output["ssn"]
@@ -108,13 +108,13 @@ async def mask_sensitive_data(input_data: PostToolInput) -> PostToolOutput | Non
 
         return PostToolOutput(output=masked_output)
 
-    return None
+    return PostToolOutput(output=input_data.output)
 
 
-async def log_notification(input_data: PostToolInput) -> PostToolOutput | None:
+async def log_notification(input_data: PostToolInput) -> PostToolOutput:
     """Add logging metadata to notification results."""
     if input_data.tool_call.name != "send_notification":
-        return None
+        return PostToolOutput(output=input_data.output)
 
     original_output = input_data.output
     enhanced_output = f"{input_data.output} [Logged at system]"
@@ -156,22 +156,27 @@ async def main() -> None:
 
     print(f"\nAgent Response: {response.content}\n")
 
-    print("\nHook Execution Details:")
-    for action in hook_actions:
-        if action["hook"] == "validate_email":
-            print(f"  [{action['hook']}] Email validation: {action['action']} ({action['email']})")
+    print("Tool Results:")
+    for tool_call in response.tool_calls:
+        if tool_call.name == "search_user":
+            result = tool_call.result
+            print(f"  search_user: name={result['name']}, ssn={result['ssn']}, balance=${result['balance']}")
+        elif tool_call.name == "send_notification":
+            print(f"  send_notification: {tool_call.result}")
 
+    print("\nHook Actions:")
+    for action in hook_actions:
+        if action["hook"] == "mask_sensitive_data":
+            print(f"  {action['field'].upper()} masked: {action['original']} → {action['masked']}")
+        elif action["hook"] == "validate_email":
+            print(f"  Email validation {action['action']}: {action['email']}")
         elif action["hook"] == "sanitize_email_domain":
             if action["action"] == "modified":
-                print(f"  [{action['hook']}] Domain sanitized: {action['original']} → {action['modified']}")
+                print(f"  Domain redirected: {action['original']} → {action['modified']}")
             else:
-                print(f"  [{action['hook']}] Domain approved: {action['email']}")
-
-        elif action["hook"] == "mask_sensitive_data":
-            print(f"  [{action['hook']}] {action['field'].upper()} masked: {action['original']} → {action['masked']}")
-
+                print(f"  Domain approved: {action['email']}")
         elif action["hook"] == "log_notification":
-            print(f"  [{action['hook']}] Output enhanced with logging metadata")
+            print("  Output enhanced with logging metadata")
 
 
 if __name__ == "__main__":
