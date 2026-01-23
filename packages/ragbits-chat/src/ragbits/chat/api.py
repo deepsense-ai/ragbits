@@ -181,19 +181,19 @@ class RagbitsAPI:
 
                     return await self._handle_oauth2_callback(code, state, backend)
 
-            @self.app.post("/api/chat", response_class=StreamingResponse)
-            async def chat_message(
-                request: Request,
-                chat_request: ChatMessageRequest,
-            ) -> StreamingResponse:
-                return await self._handle_chat_message(chat_request, request)
+        @self.app.post("/api/chat", response_class=StreamingResponse)
+        async def chat_message(
+            request: Request,
+            chat_request: ChatMessageRequest,
+        ) -> StreamingResponse:
+            return await self._handle_chat_message(chat_request, request)
 
-            @self.app.post("/api/feedback", response_class=JSONResponse)
-            async def feedback(
-                request: Request,
-                feedback_request: FeedbackRequest,
-            ) -> JSONResponse:
-                return await self._handle_feedback(feedback_request, request)
+        @self.app.post("/api/feedback", response_class=JSONResponse)
+        async def feedback(
+            request: Request,
+            feedback_request: FeedbackRequest,
+        ) -> JSONResponse:
+            return await self._handle_feedback(feedback_request, request)
 
         @self.app.post("/api/upload", response_class=JSONResponse)
         async def upload_file(file: UploadFile) -> JSONResponse:
