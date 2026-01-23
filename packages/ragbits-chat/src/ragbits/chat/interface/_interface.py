@@ -9,6 +9,8 @@ from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator, Callable
 from typing import Any
 
+from fastapi import UploadFile
+
 from ragbits.agents.tools.todo import Task
 from ragbits.chat.interface.summary import HeuristicSummaryGenerator, SummaryGenerator
 from ragbits.chat.interface.ui_customization import UICustomization
@@ -221,7 +223,7 @@ class ChatInterface(ABC):
     ui_customization: UICustomization | None = None
     history_persistence: HistoryPersistenceStrategy | None = None
     summary_generator: SummaryGenerator = HeuristicSummaryGenerator()
-    upload_handler: Callable[[Any], Any] | None = None
+    upload_handler: Callable[[UploadFile], Any] | None = None
 
     def __init_subclass__(cls, **kwargs: dict) -> None:
         """Automatically apply the with_chat_metadata decorator to the chat method in subclasses."""
