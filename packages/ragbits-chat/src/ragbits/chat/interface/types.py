@@ -1,9 +1,8 @@
 import warnings
 from abc import ABC, abstractmethod
-from datetime import datetime
 from enum import Enum
 from typing import Any, Generic, TypeVar, cast
-from zoneinfo import ZoneInfo, available_timezones
+from zoneinfo import available_timezones
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -329,6 +328,7 @@ class ChatContext(BaseModel):
         if v is not None and v not in available_timezones():
             raise ValueError(f"Invalid timezone: {v}. Must be a valid IANA timezone.")
         return v
+
 
 # Generic type variable for content, bounded to ResponseContent
 ChatResponseContentT = TypeVar("ChatResponseContentT", bound=ResponseContent)
