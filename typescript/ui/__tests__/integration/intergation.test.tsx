@@ -81,7 +81,9 @@ describe("Integration tests", () => {
         expect(makeStreamRequestSpy).toHaveBeenCalledWith(
           "/api/chat",
           {
-            context: {},
+            context: {
+              timezone: expect.any(String),
+            },
             history: [],
             message: "Test message",
           },
@@ -120,6 +122,7 @@ describe("Integration tests", () => {
               conversation_id: expect.any(String),
               signature: expect.any(String),
               state: expect.any(Object),
+              timezone: expect.any(String),
             },
             history: [
               {
@@ -209,6 +212,7 @@ describe("Integration tests", () => {
               conversation_id: expect.any(String),
               signature: expect.any(String),
               state: expect.any(Object),
+              timezone: expect.any(String),
               user_settings: {
                 language: "Polish",
               },
