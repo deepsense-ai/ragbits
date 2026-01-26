@@ -372,7 +372,7 @@ class Agent(
         *,
         history: ChatFormat | None = None,
         keep_history: bool = False,
-        tools: list[Callable] | None = None,
+        tools: list["Callable | Agent | Tool"] | None = None,
         mcp_servers: list[MCPServer] | None = None,
         hooks: list[Hook] | None = None,
         default_options: AgentOptions[LLMClientOptionsT] | None = None,
@@ -392,7 +392,10 @@ class Agent(
                 - None: No predefined prompt. The input provided to run() will be used as the complete prompt.
             history: The history of the agent.
             keep_history: Whether to keep the history of the agent.
-            tools: The tools available to the agent.
+            tools: The tools available to the agent. There are three types of tools:
+                * Callable: a callable with type annotations and docstring explaining how to use the tool
+                * Agent: an instance of an "Agent" with "name" and "description"
+                * Tool: a Tool instance created explicitly with name, description and parameters schema
             mcp_servers: The MCP servers available to the agent.
             hooks: List of tool hooks to register for tool lifecycle events.
             default_options: The default options for the agent run.
@@ -405,15 +408,14 @@ class Agent(
         self.description = description
         self.tools = []
         for tool in tools or []:
-            if isinstance(tool, tuple):
-                agent, kwargs = tool
-                self.tools.append(Tool.from_agent(agent, **kwargs))
+            if isinstance(tool, Callable):
+                self.tools.append(Tool.from_callable(tool))
             elif isinstance(tool, Agent):
                 self.tools.append(Tool.from_agent(tool))
             elif isinstance(tool, Tool):
                 self.tools.append(tool)
             else:
-                self.tools.append(Tool.from_callable(tool))
+                raise ValueError(f"Unexpected tool type: {type(tool)}. Allowed types are Callable, Agent and Tool.")
         self.mcp_servers = mcp_servers or []
         self.history = history or []
         self.keep_history = keep_history
