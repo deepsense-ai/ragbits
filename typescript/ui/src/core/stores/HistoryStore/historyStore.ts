@@ -79,6 +79,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
           ? { conversation_id: conversationId }
           : {}),
         ...(chatOptions ? { user_settings: chatOptions } : {}),
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       };
     },
   },
