@@ -5,12 +5,17 @@ This module provides the HookManager class which handles registration,
 organization, and execution of hooks during lifecycle events.
 """
 
+import hashlib
+import json
 from collections import defaultdict
-from typing import Any
+from typing import TYPE_CHECKING, Any, Literal
 
 from ragbits.agents.hooks.base import Hook
 from ragbits.agents.hooks.types import EventType, PostToolInput, PostToolOutput, PreToolInput, PreToolOutput
 from ragbits.core.llms.base import ToolCall
+
+if TYPE_CHECKING:
+    from ragbits.agents._main import AgentRunContext
 
 
 class HookManager:
@@ -68,15 +73,17 @@ class HookManager:
     async def execute_pre_tool(
         self,
         tool_call: ToolCall,
+        context: "AgentRunContext | None" = None,
     ) -> PreToolOutput:
         """
         Execute pre-tool hooks with proper chaining.
 
         Each hook sees the modified arguments from the previous hook.
-        Execution stops immediately if any hook returns "deny".
+        Execution stops immediately if any hook returns "deny" or "ask" (unless confirmed).
 
         Args:
             tool_call: The tool call to process
+            context: Agent run context containing confirmed_hooks
 
         Returns:
             PreToolOutput with final arguments and decision
@@ -85,6 +92,7 @@ class HookManager:
 
         # Start with original arguments
         current_arguments = tool_call.arguments
+        final_decision: Literal["pass", "ask", "deny"] = "pass"
         final_reason: str | None = None
 
         for hook in hooks:
@@ -96,15 +104,60 @@ class HookManager:
             result: PreToolOutput = await hook.execute(hook_input)
 
             # Stop immediately on deny
-            if result.decision in ("deny", "ask"):
+            if result.decision == "deny":
                 return result
+
+            # Handle "ask" decision
+            if result.decision == "ask":
+                # Generate confirmation_id: hash(hook_function_name + tool_name + arguments)
+                hook_name = hook.callback.__name__
+                confirmation_str = f"{hook_name}:{tool_call.name}:{json.dumps(current_arguments, sort_keys=True)}"
+                confirmation_id = hashlib.sha256(confirmation_str.encode()).hexdigest()[:16]
+
+                # Check if already confirmed/declined in context
+                if context and context.confirmed_hooks:
+                    for conf in context.confirmed_hooks:
+                        if conf.get("confirmation_id") == confirmation_id:
+                            if conf.get("confirmed"):
+                                # Approved → convert to "pass" and continue to next hook
+                                result = PreToolOutput(arguments=current_arguments, decision="pass")
+                            else:
+                                # Declined → convert to "deny" and stop immediately
+                                return PreToolOutput(
+                                    arguments=current_arguments,
+                                    decision="deny",
+                                    reason=result.reason or "Hook declined by user",
+                                )
+                            break
+                    else:
+                        # Not in context → return "ask" with confirmation_id
+                        return PreToolOutput(
+                            arguments=current_arguments,
+                            decision="ask",
+                            reason=result.reason,
+                            confirmation_id=confirmation_id,
+                        )
+                else:
+                    # No context → return "ask" with confirmation_id
+                    return PreToolOutput(
+                        arguments=current_arguments,
+                        decision="ask",
+                        reason=result.reason,
+                        confirmation_id=confirmation_id,
+                    )
 
             # Chain arguments for next hook
             current_arguments = result.arguments
 
+            # Track non-pass decisions
+            if result.decision != "pass":
+                final_decision = result.decision
+                final_reason = result.reason
+
+        # Return final chained result
         return PreToolOutput(
             arguments=current_arguments,
-            decision="pass",
+            decision=final_decision,
             reason=final_reason,
         )
 

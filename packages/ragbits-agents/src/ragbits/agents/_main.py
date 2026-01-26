@@ -1,6 +1,4 @@
 import asyncio
-import hashlib
-import json
 import types
 import uuid
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
@@ -216,9 +214,9 @@ class AgentRunContext(BaseModel, Generic[DepsT]):
     """Whether to stream events from downstream agents when tools execute other agents."""
     downstream_agents: dict[str, "Agent"] = Field(default_factory=dict)
     """Registry of all agents that participated in this run"""
-    confirmed_tools: list[dict[str, Any]] | None = Field(
+    confirmed_hooks: list[dict[str, Any]] | None = Field(
         default=None,
-        description="List of confirmed/declined tools from the frontend",
+        description="List of confirmed/declined hooks. Each entry has 'confirmation_id' and 'confirmed' (bool)",
     )
 
     def register_agent(self, agent: "Agent") -> None:
@@ -968,6 +966,7 @@ class Agent(
         # Execute PRE_TOOL hooks with chaining
         pre_tool_result = await self.hook_manager.execute_pre_tool(
             tool_call=tool_call,
+            context=context,
         )
 
         # Check decision
@@ -979,81 +978,28 @@ class Agent(
                 result=pre_tool_result.reason or "Tool execution denied",
             )
             return
-        # TODO: possible place/way of replacing confirmation by handling ask decision
-        # elif pre_tool_result.decision == "ask":
-        #     confirmation_id = hashlib.sha256(
-        #         f"{tool_call.name}:{json.dumps(tool_call.arguments, sort_keys=True)}".encode()
-        #     ).hexdigest()[:CONFIRMATION_ID_LENGTH]
-        #
-        #     request = ConfirmationRequest(
-        #         confirmation_id=confirmation_id,
-        #         tool_name=tool_call.name,
-        #         tool_description=tool.description or "",
-        #         arguments=tool_call.arguments,
-        #     )
-        #
-        #     # Yield confirmation request (will be streamed to frontend)
-        #     yield request
-        #
-        #     yield ToolCallResult(
-        #         id=tool_call.id,
-        #         name=tool_call.name,
-        #         arguments=tool_call.arguments,
-        #         result=pre_tool_result.reason or "Tool requires user confirmation",
-        #     )
-        #     return
+        # Handle "ask" decision from hooks
+        elif pre_tool_result.decision == "ask":
+            request = ConfirmationRequest(
+                confirmation_id=pre_tool_result.confirmation_id or "",
+                tool_name=tool_call.name,
+                tool_description=pre_tool_result.reason or "Hook requires user confirmation",
+                arguments=pre_tool_result.arguments,
+            )
+
+            # Yield confirmation request (will be streamed to frontend)
+            yield request
+
+            yield ToolCallResult(
+                id=tool_call.id,
+                name=tool_call.name,
+                arguments=tool_call.arguments,
+                result=pre_tool_result.reason or "Hook requires user confirmation",
+            )
+            return
 
         # Always update arguments (chained from hooks)
         tool_call.arguments = pre_tool_result.arguments
-
-        # Check if tool requires confirmation
-        if tool.requires_confirmation:
-            # Check if this tool has been confirmed in the context
-            confirmed_tools = context.confirmed_tools or []
-
-            # Generate a stable confirmation ID based on tool name and arguments
-            confirmation_id = hashlib.sha256(
-                f"{tool_call.name}:{json.dumps(tool_call.arguments, sort_keys=True)}".encode()
-            ).hexdigest()[:CONFIRMATION_ID_LENGTH]
-
-            # Check if this specific tool call has been confirmed or declined
-            is_confirmed = any(
-                ct.get("confirmation_id") == confirmation_id and ct.get("confirmed") for ct in confirmed_tools
-            )
-            is_declined = any(
-                ct.get("confirmation_id") == confirmation_id and not ct.get("confirmed", True) for ct in confirmed_tools
-            )
-
-            if is_declined:
-                # Tool was explicitly declined - skip execution entirely
-                yield ToolCallResult(
-                    id=tool_call.id,
-                    name=tool_call.name,
-                    arguments=tool_call.arguments,
-                    result="❌ Action declined by user",
-                )
-                return
-
-            if not is_confirmed:
-                # Tool not confirmed yet - create and yield confirmation request
-                request = ConfirmationRequest(
-                    confirmation_id=confirmation_id,
-                    tool_name=tool_call.name,
-                    tool_description=tool.description or "",
-                    arguments=tool_call.arguments,
-                )
-
-                # Yield confirmation request (will be streamed to frontend)
-                yield request
-
-                # Yield a pending result and exit without executing
-                yield ToolCallResult(
-                    id=tool_call.id,
-                    name=tool_call.name,
-                    arguments=tool_call.arguments,
-                    result="⏳ Awaiting user confirmation",
-                )
-                return
 
         tool_error: Exception | None = None
 
