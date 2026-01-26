@@ -979,30 +979,32 @@ class Agent(
                 result=pre_tool_result.reason or "Tool execution denied",
             )
             return
+        # TODO: possible place/way of replacing confirmation by handling ask decision
+        # elif pre_tool_result.decision == "ask":
+        #     confirmation_id = hashlib.sha256(
+        #         f"{tool_call.name}:{json.dumps(tool_call.arguments, sort_keys=True)}".encode()
+        #     ).hexdigest()[:CONFIRMATION_ID_LENGTH]
+        #
+        #     request = ConfirmationRequest(
+        #         confirmation_id=confirmation_id,
+        #         tool_name=tool_call.name,
+        #         tool_description=tool.description or "",
+        #         arguments=tool_call.arguments,
+        #     )
+        #
+        #     # Yield confirmation request (will be streamed to frontend)
+        #     yield request
+        #
+        #     yield ToolCallResult(
+        #         id=tool_call.id,
+        #         name=tool_call.name,
+        #         arguments=tool_call.arguments,
+        #         result=pre_tool_result.reason or "Tool requires user confirmation",
+        #     )
+        #     return
 
         # Always update arguments (chained from hooks)
         tool_call.arguments = pre_tool_result.arguments
-
-        # TODO: possible place/way of replacing confirmation
-        # Handle "ask" decision
-        # if pre_tool_result.decision == "ask":
-        # request = ConfirmationRequest(
-        #     confirmation_id=confirmation_id,
-        #     tool_name=tool_call.name,
-        #     tool_description=tool.description or "",
-        #     arguments=tool_call.arguments,
-        # )
-        #
-        # # Yield confirmation request (will be streamed to frontend)
-        # yield request
-        #
-        # yield ToolCallResult(
-        #     id=tool_call.id,
-        #     name=tool_call.name,
-        #     arguments=tool_call.arguments,
-        #     result=pre_tool_result.reason or "Tool requires user confirmation",
-        # )
-        # return
 
         # Check if tool requires confirmation
         if tool.requires_confirmation:

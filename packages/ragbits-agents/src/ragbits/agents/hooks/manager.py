@@ -6,7 +6,7 @@ organization, and execution of hooks during lifecycle events.
 """
 
 from collections import defaultdict
-from typing import Any, Literal
+from typing import Any
 
 from ragbits.agents.hooks.base import Hook
 from ragbits.agents.hooks.types import EventType, PostToolInput, PostToolOutput, PreToolInput, PreToolOutput
@@ -85,7 +85,6 @@ class HookManager:
 
         # Start with original arguments
         current_arguments = tool_call.arguments
-        final_decision: Literal["pass", "ask", "deny"] = "pass"
         final_reason: str | None = None
 
         for hook in hooks:
@@ -97,21 +96,15 @@ class HookManager:
             result: PreToolOutput = await hook.execute(hook_input)
 
             # Stop immediately on deny
-            if result.decision == "deny":
+            if result.decision in ("deny", "ask"):
                 return result
 
             # Chain arguments for next hook
             current_arguments = result.arguments
 
-            # Track non-pass decisions
-            if result.decision != "pass":
-                final_decision = result.decision
-                final_reason = result.reason
-
-        # Return final chained result
         return PreToolOutput(
             arguments=current_arguments,
-            decision=final_decision,
+            decision="pass",
             reason=final_reason,
         )
 
