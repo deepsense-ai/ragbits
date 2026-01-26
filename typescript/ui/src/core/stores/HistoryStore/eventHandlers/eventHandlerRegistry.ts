@@ -16,7 +16,7 @@ import {
   handleMessageId,
   handleReference,
   handleText,
-  handleTodoItem,
+  handlePlanItem,
   handleUsage,
 } from "./messageHandlers";
 
@@ -111,8 +111,8 @@ ChatHandlerRegistry.register("clear_message", {
 ChatHandlerRegistry.register("usage", {
   handle: handleUsage,
 });
-ChatHandlerRegistry.register("todo_item", {
-  handle: handleTodoItem,
+ChatHandlerRegistry.register("plan_item", {
+  handle: handlePlanItem,
 });
 ChatHandlerRegistry.register("conversation_summary", {
   handle: handleConversationSummary,

@@ -238,13 +238,13 @@ class ClearMessageContent(ResponseContent):
         return "clear_message"
 
 
-class TodoItemContent(ResponseContent):
-    """Todo item content wrapper."""
+class PlanItemContent(ResponseContent):
+    """Plan item content wrapper."""
 
     task: Task
 
     def get_type(self) -> str:  # noqa: D102, PLR6301
-        return "todo_item"
+        return "plan_item"
 
 
 class ConfirmationRequestContent(ResponseContent):
@@ -297,7 +297,7 @@ class ChatResponseType(str, Enum):
     CHUNKED_CONTENT = "chunked_content"
     CLEAR_MESSAGE = "clear_message"
     USAGE = "usage"
-    TODO_ITEM = "todo_item"
+    PLAN_ITEM = "plan_item"
     CONFIRMATION_REQUEST = "confirmation_request"
     ERROR = "error"
 
@@ -667,23 +667,23 @@ class ChatResponse(BaseModel, ABC, Generic[ChatResponseContentT]):
         return None
 
     def as_task(self) -> Task | None:
-        """Return the content as Task if this is an todo_item response, else None.
+        """Return the content as Task if this is a plan_item response, else None.
 
         .. deprecated:: 1.4.0
             Use isinstance() checks and typed access instead.
             This method is kept for backward compatibility and will be removed in version 2.0.0.
 
         Returns:
-            The Task content if this is a TodoItemResponse, None otherwise.
+            The Task content if this is a PlanItemResponse, None otherwise.
         """
         warnings.warn(
             "The 'as_task()' method is deprecated. Use isinstance() checks instead "
-            "(e.g., if isinstance(response, TodoItemResponse): task = response.content.task). "
+            "(e.g., if isinstance(response, PlanItemResponse): task = response.content.task). "
             "This method will be removed in version 2.0.0.",
             DeprecationWarning,
             stacklevel=2,
         )
-        if isinstance(self.content, TodoItemContent):
+        if isinstance(self.content, PlanItemContent):
             return self.content.task
         return None
 
@@ -779,8 +779,8 @@ class UsageResponse(ChatResponse[UsageContent]):
     """Usage statistics response."""
 
 
-class TodoItemResponse(ChatResponse[TodoItemContent]):
-    """Todo item response."""
+class PlanItemResponse(ChatResponse[PlanItemContent]):
+    """Plan item response."""
 
 
 class ConfirmationRequestResponse(ChatResponse[ConfirmationRequestContent]):
@@ -805,7 +805,7 @@ ChatResponseUnion = (
     | ChunkedContentResponse
     | ClearMessageResponse
     | UsageResponse
-    | TodoItemResponse
+    | PlanItemResponse
     | ConfirmationRequestResponse
     | ErrorResponse
 )

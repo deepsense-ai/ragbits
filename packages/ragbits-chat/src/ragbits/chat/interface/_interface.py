@@ -42,14 +42,14 @@ from .types import (
     MessageIdContent,
     MessageIdResponse,
     MessageUsage,
+    PlanItemContent,
+    PlanItemResponse,
     Reference,
     ReferenceResponse,
     StateUpdate,
     StateUpdateResponse,
     TextContent,
     TextResponse,
-    TodoItemContent,
-    TodoItemResponse,
     UsageContent,
     UsageResponse,
 )
@@ -273,8 +273,8 @@ class ChatInterface(ABC):
         )
 
     @staticmethod
-    def create_todo_item_response(task: Task) -> TodoItemResponse:
-        return TodoItemResponse(content=TodoItemContent(task=task))
+    def create_plan_item_response(task: Task) -> PlanItemResponse:
+        return PlanItemResponse(content=PlanItemContent(task=task))
 
     @staticmethod
     def _sign_state(state: dict[str, Any]) -> str:

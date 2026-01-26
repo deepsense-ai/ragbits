@@ -90,7 +90,7 @@ class CodePlannerChat(ChatInterface):
             ChatResponse objects containing:
             - Text chunks for the response
             - Live updates showing planning progress
-            - Todo items for plan tasks
+            - Plan items for planning tasks
         """
         async for response in self.agent.run_streaming(CodePlannerInput(query=message)):
             match response:
@@ -116,7 +116,7 @@ class CodePlannerChat(ChatInterface):
                                     description=f"{len(self.planning_state.plan.tasks)} tasks",
                                 )
                                 for task in self.planning_state.plan.tasks:
-                                    yield self.create_todo_item_response(task)
+                                    yield self.create_plan_item_response(task)
 
                             case "get_current_task":
                                 if self.planning_state.plan.current_task:
@@ -125,7 +125,7 @@ class CodePlannerChat(ChatInterface):
                                         type=LiveUpdateType.START,
                                         label=self.planning_state.plan.current_task.description,
                                     )
-                                    yield self.create_todo_item_response(self.planning_state.plan.current_task)
+                                    yield self.create_plan_item_response(self.planning_state.plan.current_task)
 
                             case "complete_task":
                                 if self.planning_state.plan.last_completed_task:
@@ -135,4 +135,4 @@ class CodePlannerChat(ChatInterface):
                                         label=self.planning_state.plan.last_completed_task.description,
                                         description=self.planning_state.plan.last_completed_task.result,
                                     )
-                                    yield self.create_todo_item_response(self.planning_state.plan.last_completed_task)
+                                    yield self.create_plan_item_response(self.planning_state.plan.last_completed_task)

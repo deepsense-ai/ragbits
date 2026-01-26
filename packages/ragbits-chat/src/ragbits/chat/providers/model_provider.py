@@ -73,10 +73,10 @@ class RagbitsChatModelProvider:
                 MessageRole,
                 MessageUsage,
                 OAuth2ProviderConfig,
+                PlanItemContent,
                 Reference,
                 StateUpdate,
                 TextContent,
-                TodoItemContent,
                 UsageContent,
             )
             from ragbits.chat.interface.ui_customization import (
@@ -111,7 +111,7 @@ class RagbitsChatModelProvider:
                 "ConversationSummaryContent": ConversationSummaryContent,
                 "FollowupMessagesContent": FollowupMessagesContent,
                 "UsageContent": UsageContent,
-                "TodoItemContent": TodoItemContent,
+                "PlanItemContent": PlanItemContent,
                 "ConfirmationRequestContent": ConfirmationRequestContent,
                 "ErrorContent": ErrorContent,
                 # Configuration models
@@ -181,7 +181,7 @@ class RagbitsChatModelProvider:
                 "FollowupMessagesContent",
                 "UsageContent",
                 "ClearMessageContent",
-                "TodoItemContent",
+                "PlanItemContent",
                 "ConfirmationRequestContent",
                 "ErrorContent",
             ],
