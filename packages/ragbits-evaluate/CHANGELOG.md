@@ -12,6 +12,8 @@
 
 - Feat: add metrics collection system for agent simulation (`MetricCollector` protocol, `LatencyMetricCollector`, `TokenUsageMetricCollector`, `ToolUsageMetricCollector`) (#882)
 
+- Fix: improve `continuous-eval` import compatibility for different package versions specified by constraints
+
 ## 1.3.0 (2025-09-11)
 
 ### Changed

@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Add timezone field to ChatContext, automatically populated from browser (#916)
 - Fix PostgreSQL conversation persistence by ensuring session flush after creating new conversation in SQL storage (#903)
 - Change auth backend from jwt to http-only cookie based authentication, add support for OAuth2 authentication (#867)
 - Make `SummaryGenerator` optional in `ChatInterface` by providing a default Heuristic implementation.
