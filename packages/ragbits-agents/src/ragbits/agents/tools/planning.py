@@ -128,20 +128,12 @@ def create_planning_tools(state: PlanningState) -> list[Callable[..., Any]]:
         if state.plan is None:
             return "No active plan."
 
-        task = state.plan.current_task
-        if task is None:
+        if state.plan.current_task is None:
             return "All tasks completed."
 
-        task.status = TaskStatus.IN_PROGRESS
+        state.plan.current_task.status = TaskStatus.IN_PROGRESS
 
-        completed_context = ""
-        if state.plan.completed_tasks:
-            summaries = [f"- {t.description}: {t.result}" for t in state.plan.completed_tasks if t.result]
-            if summaries:
-                completed_context = "\n\nContext from completed tasks:\n" + "\n".join(summaries)
-
-        progress = f"{len(state.plan.completed_tasks)+1}/{len(state.plan.tasks)}"
-        return f"Current task ({progress}): {task.description}{completed_context}"
+        return f"Current task: {state.plan.current_task.description}"
 
     def complete_task(result: str) -> str:
         """
@@ -171,11 +163,10 @@ def create_planning_tools(state: PlanningState) -> list[Callable[..., Any]]:
         current.status = TaskStatus.COMPLETED
         current.result = result
 
-        next_task = state.plan.current_task
-        if next_task is None:
-            return f"Task completed: {current.description}\n\nAll tasks finished."
+        if remaining := len(state.plan.pending_tasks):
+            return f"Task completed: {current.description}\n\n{remaining} tasks remaining."
 
-        return f"Task completed: {current.description}\n\nNext task: {next_task.description}"
+        return f"Task completed: {current.description}\n\nAll tasks finished."
 
     def add_task(description: str, position: int | None = None) -> str:
         """
