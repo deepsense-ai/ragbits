@@ -176,7 +176,7 @@ class OAuth2AuthenticationBackend(AuthenticationBackend):
 
         Args:
             session_store: Session storage backend
-            provider: OAuth2 provider implementation (e.g., DiscordOAuth2Provider, GoogleOAuth2Provider)
+            provider: OAuth2 provider implementation (e.g., OAuth2Providers.DISCORD, OAuth2Providers.GOOGLE)
             client_id: OAuth2 client ID (or set {PROVIDER}_CLIENT_ID env var)
             client_secret: OAuth2 client secret (or set {PROVIDER}_CLIENT_SECRET env var)
             redirect_uri: Callback URL for OAuth2 flow (or set OAUTH2_REDIRECT_URI env var,

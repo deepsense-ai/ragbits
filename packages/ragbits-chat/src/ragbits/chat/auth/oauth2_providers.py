@@ -72,46 +72,48 @@ class OAuth2Provider:
         return self._user_factory(user_data)
 
 
-DiscordOAuth2Provider = OAuth2Provider(
-    name="discord",
-    display_name="Discord",
-    authorize_url="https://discord.com/api/oauth2/authorize",
-    token_url="https://discord.com/api/oauth2/token",  # noqa: S106
-    user_info_url="https://discord.com/api/users/@me",
-    scopes=["identify", "email"],
-    user_factory=lambda user_data: User(
-        user_id=f"discord_{user_data['id']}",
-        username=str(user_data.get("username", "")),
-        email=str(user_data["email"]) if user_data.get("email") else None,
-        full_name=str(user_data["global_name"]) if user_data.get("global_name") else None,
-        roles=["user"],
-        metadata={
-            "provider": "discord",
-            "avatar": user_data.get("avatar"),
-            "discriminator": user_data.get("discriminator"),
-        },
-    ),
-)
+class OAuth2Providers:
+    """Namespace for built-in OAuth2 provider configurations."""
 
+    DISCORD = OAuth2Provider(
+        name="discord",
+        display_name="Discord",
+        authorize_url="https://discord.com/api/oauth2/authorize",
+        token_url="https://discord.com/api/oauth2/token",  # noqa: S106
+        user_info_url="https://discord.com/api/users/@me",
+        scopes=["identify", "email"],
+        user_factory=lambda user_data: User(
+            user_id=f"discord_{user_data['id']}",
+            username=str(user_data.get("username", "")),
+            email=str(user_data["email"]) if user_data.get("email") else None,
+            full_name=str(user_data["global_name"]) if user_data.get("global_name") else None,
+            roles=["user"],
+            metadata={
+                "provider": "discord",
+                "avatar": user_data.get("avatar"),
+                "discriminator": user_data.get("discriminator"),
+            },
+        ),
+    )
 
-GoogleOAuth2Provider = OAuth2Provider(
-    name="google",
-    display_name="Google",
-    authorize_url="https://accounts.google.com/o/oauth2/v2/auth",
-    token_url="https://oauth2.googleapis.com/token",  # noqa: S106
-    user_info_url="https://www.googleapis.com/oauth2/v2/userinfo",
-    scopes=["openid", "email", "profile"],
-    user_factory=lambda user_data: User(
-        user_id=f"google_{user_data['id']}",
-        username=str(user_data.get("email", "")).split("@")[0],
-        email=str(user_data["email"]) if user_data.get("email") else None,
-        full_name=str(user_data["name"]) if user_data.get("name") else None,
-        roles=["user"],
-        metadata={
-            "provider": "google",
-            "picture": user_data.get("picture"),
-            "verified_email": user_data.get("verified_email"),
-            "hd": user_data.get("hd"),  # Google Workspace domain
-        },
-    ),
-)
+    GOOGLE = OAuth2Provider(
+        name="google",
+        display_name="Google",
+        authorize_url="https://accounts.google.com/o/oauth2/v2/auth",
+        token_url="https://oauth2.googleapis.com/token",  # noqa: S106
+        user_info_url="https://www.googleapis.com/oauth2/v2/userinfo",
+        scopes=["openid", "email", "profile"],
+        user_factory=lambda user_data: User(
+            user_id=f"google_{user_data['id']}",
+            username=str(user_data.get("email", "")).split("@")[0],
+            email=str(user_data["email"]) if user_data.get("email") else None,
+            full_name=str(user_data["name"]) if user_data.get("name") else None,
+            roles=["user"],
+            metadata={
+                "provider": "google",
+                "picture": user_data.get("picture"),
+                "verified_email": user_data.get("verified_email"),
+                "hd": user_data.get("hd"),  # Google Workspace domain
+            },
+        ),
+    )

@@ -78,7 +78,7 @@ from collections.abc import AsyncGenerator
 
 from ragbits.chat.auth import ListAuthenticationBackend
 from ragbits.chat.auth.backends import MultiAuthenticationBackend, OAuth2AuthenticationBackend
-from ragbits.chat.auth.oauth2_providers import DiscordOAuth2Provider, GoogleOAuth2Provider
+from ragbits.chat.auth.oauth2_providers import OAuth2Providers
 from ragbits.chat.auth.session_store import InMemorySessionStore
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
@@ -320,7 +320,7 @@ def get_discord_auth_backend() -> OAuth2AuthenticationBackend:
     # If not set, redirect_uri defaults to http://localhost:8000/api/auth/callback/discord
     return OAuth2AuthenticationBackend(
         session_store=InMemorySessionStore(),
-        provider=DiscordOAuth2Provider(),
+        provider=OAuth2Providers.DISCORD,
     )
 
 
@@ -354,7 +354,7 @@ def get_google_auth_backend() -> OAuth2AuthenticationBackend:
     # If not set, redirect_uri defaults to http://localhost:8000/api/auth/callback/google
     return OAuth2AuthenticationBackend(
         session_store=InMemorySessionStore(),
-        provider=GoogleOAuth2Provider(),
+        provider=OAuth2Providers.GOOGLE,
     )
 
 
