@@ -2,8 +2,9 @@ import warnings
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Generic, TypeVar, cast
+from zoneinfo import available_timezones
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ragbits.chat.auth.types import User
 from ragbits.chat.interface.forms import UserSettings
@@ -288,7 +289,19 @@ class ChatContext(BaseModel):
     state: dict[str, Any] = Field(default_factory=dict)
     user: User | None = None
     session_id: str | None = None
+    timezone: str | None = Field(
+        default=None,
+        description="User's timezone in IANA format (e.g., 'Europe/Warsaw', 'America/New_York')",
+    )
     model_config = ConfigDict(extra="allow")
+
+    @field_validator("timezone")
+    @classmethod
+    def validate_timezone(cls, v: str | None) -> str | None:
+        """Validate that timezone is a valid IANA timezone identifier."""
+        if v is not None and v not in available_timezones():
+            raise ValueError(f"Invalid timezone: {v}. Must be a valid IANA timezone.")
+        return v
 
 
 # Generic type variable for content, bounded to ResponseContent

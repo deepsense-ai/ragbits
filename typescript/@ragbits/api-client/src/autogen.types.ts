@@ -74,6 +74,18 @@ export interface ChatContext {
     }
     user: User | null
     session_id: string | null
+    /**
+     * List of confirmed/declined tools from the frontend
+     */
+    confirmed_tools:
+        | {
+              [k: string]: unknown
+          }[]
+        | null
+    /**
+     * User's timezone in IANA format (e.g., 'Europe/Warsaw', 'America/New_York')
+     */
+    timezone: string | null
     [k: string]: unknown
 }
 
