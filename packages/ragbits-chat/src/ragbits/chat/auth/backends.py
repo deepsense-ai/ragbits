@@ -11,6 +11,7 @@ import httpx
 from ragbits.chat.auth.base import AuthenticationBackend, AuthenticationResponse, AuthOptions
 from ragbits.chat.auth.oauth2_providers import OAuth2Provider
 from ragbits.chat.auth.types import OAuth2Credentials, Session, SessionStore, User, UserCredentials
+from ragbits.chat.config import BASE_URL
 
 logger = logging.getLogger(__name__)
 
@@ -175,7 +176,7 @@ class OAuth2AuthenticationBackend(AuthenticationBackend):
 
         Args:
             session_store: Session storage backend
-            provider: OAuth2 provider implementation (e.g., DiscordOAuth2Provider, GoogleOAuth2Provider)
+            provider: OAuth2 provider implementation (e.g., OAuth2Providers.DISCORD, OAuth2Providers.GOOGLE)
             client_id: OAuth2 client ID (or set {PROVIDER}_CLIENT_ID env var)
             client_secret: OAuth2 client secret (or set {PROVIDER}_CLIENT_SECRET env var)
             redirect_uri: Callback URL for OAuth2 flow (or set OAUTH2_REDIRECT_URI env var,
@@ -203,12 +204,7 @@ class OAuth2AuthenticationBackend(AuthenticationBackend):
 
         # Use provider-specific callback URL for better isolation and debugging
         if not redirect_uri:
-            # Get base URL from environment variable or use default
-            base_url = os.getenv("OAUTH2_CALLBACK_BASE_URL", "http://localhost:8000")
-            # Remove trailing slash from base URL
-            base_url = base_url.rstrip("/")
-            # Construct redirect URI with base URL and provider name
-            redirect_uri = f"{base_url}/api/auth/callback/{self.provider.name}"
+            redirect_uri = f"{BASE_URL}/api/auth/callback/{self.provider.name}"
 
         # remove trailing slash from redirect URI
         redirect_uri = redirect_uri.rstrip("/")
