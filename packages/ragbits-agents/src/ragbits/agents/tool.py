@@ -39,7 +39,7 @@ class ToolReturn:
 
     value: Any
     "Value passed directly to LLM as a result of the tool"
-    metadata: Any
+    metadata: Any = None
     "Metadata not passed to the LLM, but which can be used in the application later on"
 
 
