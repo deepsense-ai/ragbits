@@ -8,11 +8,11 @@ import {
   ChatMessage,
   Conversation,
   HistoryStore,
-} from "../../../types/history";
-import { mapHistoryToMessages } from "../../utils/messageMapper";
+} from "../../../core/types/history";
 import { immer } from "zustand/middleware/immer";
 import { omitBy } from "lodash";
 import { ChatHandlerRegistry } from "./eventHandlers/eventHandlerRegistry";
+import { mapHistoryToMessages } from "../../../core/utils/messageMapper";
 
 const TEMPORARY_CONVERSATION_TAG = "temp-";
 

@@ -11,7 +11,7 @@ import { Icon } from "@iconify/react";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useState, useRef, useEffect } from "react";
 import { toJSONSafe } from "../../../core/utils/json";
-import { Conversation } from "../../../types/history";
+import { Conversation } from "../../../core/types/history";
 import { useHistoryPrimitives } from "../../../core/stores/HistoryStore/selectors";
 import { useHistoryStore } from "../../../core/stores/HistoryStore/useHistoryStore";
 

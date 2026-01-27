@@ -5,7 +5,7 @@ import { ComponentProps } from "react";
 import HorizontalActions from "../../src/core/components/inputs/PromptInput/HorizontalActions";
 import PromptInput from "../../src/core/components/inputs/PromptInput/PromptInput";
 import userEvent from "@testing-library/user-event";
-import { ChatMessage } from "../../src/types/history";
+import { ChatMessage } from "../../src/core/types/history";
 import { MessageRole } from "@ragbits/api-client";
 
 vi.mock(

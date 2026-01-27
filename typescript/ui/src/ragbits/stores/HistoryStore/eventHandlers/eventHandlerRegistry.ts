@@ -1,5 +1,5 @@
 import { ChatResponse } from "@ragbits/api-client-react";
-import { Conversation, HistoryStore } from "../../../../types/history";
+import { Conversation, HistoryStore } from "../../../../core/types/history";
 import {
   handleAfterConversationId,
   handleConversationId,

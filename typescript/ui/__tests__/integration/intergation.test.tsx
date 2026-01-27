@@ -30,11 +30,11 @@ import PromptInput from "../../src/core/components/inputs/PromptInput/PromptInpu
 import { pluginManager } from "../../src/core/utils/plugins/PluginManager";
 import { ChatOptionsPlugin } from "../../src/plugins/ChatOptionsPlugin";
 import FeedbackForm from "../../src/plugins/FeedbackPlugin/components/FeedbackForm";
-import { createHistoryStore } from "../../src/core/stores/HistoryStore/historyStore";
 import { createStore } from "zustand";
 import { useHistoryStore } from "../../src/core/stores/HistoryStore/useHistoryStore";
-import { HistoryStore } from "../../src/types/history";
+import { HistoryStore } from "../../src/core/types/history";
 import { API_URL } from "../../src/config";
+import { createHistoryStore } from "../../src/ragbits/stores/HistoryStore/historyStore";
 
 vi.mock("../../src/core/stores/HistoryStore/useHistoryStore", () => {
   return {

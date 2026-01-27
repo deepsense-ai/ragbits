@@ -2,11 +2,7 @@ import { PropsWithChildren, useMemo } from "react";
 import { createStore } from "zustand";
 import { immer } from "zustand/middleware/immer";
 import { HistoryStoreContext } from "./HistoryStoreContext";
-import {
-  Conversation,
-  HistoryStore,
-  ChatMessage,
-} from "../../../types/history";
+import { Conversation, HistoryStore, ChatMessage } from "../../types/history";
 import { RagbitsClient, MessageRole } from "@ragbits/api-client-react";
 import { v4 as uuidv4 } from "uuid";
 
@@ -40,6 +36,7 @@ function createMinimalHistoryStore(
   onSendMessage?: (text: string, client: RagbitsClient) => Promise<void>,
 ) {
   return immer<HistoryStore>((set, get) => {
+    // TODO: CREATE SHARED METHODS FOR COMMON THINGS
     const addMessageToConversation = (
       conversationId: string,
       message: Omit<ChatMessage, "id">,

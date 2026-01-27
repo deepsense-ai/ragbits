@@ -1,7 +1,7 @@
 import { render, screen, within, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect } from "vitest";
-import { ChatMessage } from "../../../../src/types/history";
+import { ChatMessage } from "../../../../src/core/types/history";
 import UsageButton from "../../../../src/plugins/UsagePlugin/components/UsageButton";
 
 const mockUsage: Exclude<ChatMessage["usage"], undefined> = {

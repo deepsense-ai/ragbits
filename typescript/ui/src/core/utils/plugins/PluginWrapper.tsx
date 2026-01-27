@@ -1,8 +1,8 @@
 import { Suspense } from "react";
-import { Plugin } from "../../../types/plugins";
+import { Plugin } from "../../types/plugins";
 import { Skeleton } from "@heroui/react";
 import { usePlugin } from "./usePlugin";
-import { PropsOf } from "../../../types/utility";
+import { PropsOf } from "../../types/utility";
 type ComponentProps<T> = T extends undefined
   ? { componentProps?: never }
   : {

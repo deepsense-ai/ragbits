@@ -15,7 +15,7 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
-import { ChatMessage } from "../../../types/history";
+import { ChatMessage } from "../../../core/types/history";
 import { MessageUsage } from "@ragbits/api-client-react";
 import { upperFirst, words } from "lodash";
 

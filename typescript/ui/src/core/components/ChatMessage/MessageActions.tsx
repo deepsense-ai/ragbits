@@ -5,7 +5,7 @@ import { Icon } from "@iconify/react";
 import DelayedTooltip from "../DelayedTooltip.tsx";
 import PluginWrapper from "../../utils/plugins/PluginWrapper.tsx";
 import { FeedbackFormPlugin } from "../../../plugins/FeedbackPlugin/index.tsx";
-import { ChatMessage } from "../../../types/history.ts";
+import { ChatMessage } from "../../types/history.ts";
 import { UsagePlugin } from "../../../plugins/UsagePlugin/index.tsx";
 
 type MessageActionsProps = {

@@ -1,5 +1,5 @@
 import { transform } from "lodash";
-import { Plugin } from "../../../types/plugins";
+import { Plugin } from "../../types/plugins";
 
 type PluginState = {
   isActivated: boolean;

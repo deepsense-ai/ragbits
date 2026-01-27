@@ -1,6 +1,6 @@
 import { useContext } from "react";
 import { useStore } from "zustand";
-import { HistoryStore } from "../../../types/history";
+import { HistoryStore } from "../../types/history";
 import { HistoryStoreContext } from "./HistoryStoreContext";
 
 export const useHistoryStore = <T>(selector: (s: HistoryStore) => T): T => {

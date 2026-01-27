@@ -264,7 +264,14 @@ const PromptInput = ({
               width={20}
             />
           </Button>
-          {pluginSlots["chat-options"]}
+          <PluginWrapper
+            plugin={ChatOptionsPlugin}
+            component="ChatOptionsForm"
+            skeletonSize={{
+              width: "40px",
+              height: "40px",
+            }}
+          />
           <Button
             isIconOnly
             aria-label={

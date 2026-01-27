@@ -1,11 +1,11 @@
 import { PropsWithChildren, useMemo, useState } from "react";
 import { createStore, useStore } from "zustand";
-import { createHistoryStore } from "./historyStore";
 import { createJSONStorage, persist } from "zustand/middleware";
-import { IndexedDBStorage } from "./indexedDBStorage";
 import { HistoryStoreContext } from "./HistoryStoreContext";
-import { Conversation } from "../../../types/history";
+import { Conversation } from "../../types/history";
 import InitializationScreen from "../../components/InitializationScreen";
+import { createHistoryStore } from "../../../ragbits/stores/HistoryStore/historyStore";
+import { IndexedDBStorage } from "../../../ragbits/stores/HistoryStore/indexedDBStorage";
 
 export const HISTORY_STORE_KEY_BASE = "ragbits-history-store";
 
