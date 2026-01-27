@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from contextlib import suppress
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
@@ -68,7 +68,7 @@ class ToolReturn:
 
     value: Any
     "Value passed directly to LLM as a result of the tool"
-    metadata: Any
+    metadata: Any = None
     "Metadata not passed to the LLM, but which can be used in the application later on"
 
 
@@ -86,7 +86,7 @@ class ToolCallResult:
     """Dictionary containing the arguments passed to the tool"""
     result: Any
     """The output from the tool call."""
-    metadata: Any = field(default_factory=dict)
+    metadata: Any = None
     """Metadata returned from a tool that is not meant to be seen by the LLM"""
 
 
