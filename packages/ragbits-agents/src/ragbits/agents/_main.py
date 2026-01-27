@@ -392,7 +392,16 @@ class Agent(
                 - None: No predefined prompt. The input provided to run() will be used as the complete prompt.
             history: The history of the agent.
             keep_history: Whether to keep the history of the agent.
-            tools: The tools available to the agent.
+            tools: The tools available to the agent. Can be one of:
+                * Callable - a function with typing of parameters and a docstring that will be sent to the LLM
+                    The output from the callable will be sent to the LLM as a result of a tool.
+                    To specify additional values to return, that are not passed to the LLM use ToolReturn.
+                    If this callable returns a generator or async generator, the yielded values are yielded from the
+                    streaming agent as well. The exception is a ToolReturn, which is used to send the result to the LLM.
+                    The ToolReturn is expected to be yielded only once. This feature is meant to be used only with
+                    `run_streaming`.
+                * Agent - another instance of an Agent, with name and description
+                * Tool - raw instance of a Tool
             mcp_servers: The MCP servers available to the agent.
             hooks: List of tool hooks to register for tool lifecycle events.
             default_options: The default options for the agent run.
