@@ -306,6 +306,63 @@ describe("Integration tests", () => {
     });
   });
 
+  describe("/api/upload", () => {
+    it("should call upload endpoint with correct data", async () => {
+      const makeRequestSpy = vi.spyOn(RagbitsClient.prototype, "makeRequest");
+
+      makeRequestSpy.mockImplementation((endpoint) => {
+        if (endpoint === "/api/config") {
+          return Promise.resolve({
+            feedback: { like: { enabled: false }, dislike: { enabled: false } },
+            user_settings: { form: null },
+            conversation_history: false,
+            authentication: { enabled: false, auth_types: [] },
+            show_usage: false,
+          });
+        }
+        return Promise.resolve({});
+      });
+
+      const WrappedInput = () => (
+        <RagbitsContextProvider baseUrl={BASE_URL}>
+          <ConfigContextProvider>
+            <PromptInput
+              isLoading={false}
+              submit={vi.fn()}
+              stopAnswering={vi.fn()}
+              followupMessages={[]}
+            />
+          </ConfigContextProvider>
+        </RagbitsContextProvider>
+      );
+
+      const { container } = render(<WrappedInput />);
+
+      await screen.findByRole("textbox", {}, { timeout: 5000 });
+
+      const file = new File(["(⌐□_□)"], "chucknorris.png", {
+        type: "image/png",
+      });
+      const input = container.querySelector('input[type="file"]');
+
+      if (!input) {
+        throw new Error("File input not found");
+      }
+
+      fireEvent.change(input, { target: { files: [file] } });
+
+      await waitFor(() => {
+        expect(makeRequestSpy).toHaveBeenCalledWith(
+          "/api/upload",
+          expect.objectContaining({
+            method: "POST",
+            body: expect.any(FormData),
+          }),
+        );
+      });
+    });
+  });
+
   describe("/api/feedback", () => {
     describe("should send correct request based on config", async () => {
       let messageId: string = "";
