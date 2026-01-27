@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from contextlib import suppress
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
 
@@ -60,6 +60,19 @@ def requires_confirmation(func: Callable[P, T]) -> Callable[P, T]:
 
 
 @dataclass
+class ToolReturn:
+    """
+    Represents an object returned from the tool. If a tool wants to return a value with some content hidden
+    from LLM, it needs to return an object of this class directly.
+    """
+
+    value: Any
+    "Value passed directly to LLM as a result of the tool"
+    metadata: Any
+    "Metadata not passed to the LLM, but which can be used in the application later on"
+
+
+@dataclass
 class ToolCallResult:
     """
     Result of the tool call.
@@ -73,6 +86,8 @@ class ToolCallResult:
     """Dictionary containing the arguments passed to the tool"""
     result: Any
     """The output from the tool call."""
+    metadata: Any = field(default_factory=dict)
+    """Metadata returned from a tool that is not meant to be seen by the LLM"""
 
 
 @dataclass

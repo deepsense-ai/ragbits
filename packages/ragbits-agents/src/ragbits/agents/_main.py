@@ -407,12 +407,12 @@ class Agent(
         self.description = description
         self.tools = []
         for tool in tools or []:
-            if isinstance(tool, Callable):
-                self.tools.append(Tool.from_callable(tool))
-            elif isinstance(tool, Agent):
+            if isinstance(tool, Agent):
                 self.tools.append(Tool.from_agent(tool))
             elif isinstance(tool, Tool):
                 self.tools.append(tool)
+            elif callable(tool):
+                self.tools.append(Tool.from_callable(tool))
             else:
                 raise ValueError(f"Unexpected tool type: {type(tool)}. Allowed types are Callable, Agent and Tool.")
         self.mcp_servers = mcp_servers or []
@@ -764,7 +764,9 @@ class Agent(
                         elif isinstance(result, ToolCallResult):
                             # Add ALL tool results to history (including pending confirmations)
                             # This allows the agent to see them in the next turn
-                            prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
+                            prompt_with_history = prompt_with_history.add_tool_use_message(
+                                id=result.id, name=result.name, arguments=result.arguments, result=result.result
+                            )
                             returned_tool_call = True
 
                     # If we have pending confirmations, prepare for text-only summary generation
