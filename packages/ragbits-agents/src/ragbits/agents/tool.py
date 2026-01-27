@@ -85,7 +85,7 @@ class ToolCallResult:
     arguments: dict[str, Any]
     """Dictionary containing the arguments passed to the tool"""
     result: Any
-    """The output from the tool call."""
+    """The output from the tool call passed to the LLM"""
     metadata: Any = None
     """Metadata returned from a tool that is not meant to be seen by the LLM"""
 

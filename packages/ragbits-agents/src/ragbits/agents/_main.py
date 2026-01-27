@@ -536,7 +536,9 @@ class Agent(
                 ):
                     if isinstance(result, ToolCallResult):
                         tool_calls.append(result)
-                        prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
+                        prompt_with_history = prompt_with_history.add_tool_use_message(
+                            id=result.id, name=result.name, arguments=result.arguments, result=result.result
+                        )
 
                 turn_count += 1
             else:
