@@ -5,7 +5,6 @@ import { FeedbackFormPluginName } from "../../../plugins/FeedbackPlugin";
 import { ChatOptionsPluginName } from "../../../plugins/ChatOptionsPlugin";
 import { pluginManager } from "../../utils/plugins/PluginManager";
 import { SharePluginName } from "../../../plugins/SharePlugin";
-import HistoryStoreContextProvider from "../../stores/HistoryStore/HistoryStoreContextProvider";
 import { ChatHistoryPluginName } from "../../../plugins/ChatHistoryPlugin";
 import { CONFIG_LOADING_PAGE_TITLE } from "../../../config";
 import { AuthPluginName } from "../../../plugins/AuthPlugin";
@@ -103,12 +102,6 @@ export function ConfigContextProvider({ children }: PropsWithChildren) {
   }
 
   return (
-    <ConfigContext.Provider value={value}>
-      <HistoryStoreContextProvider
-        shouldStoreHistory={value.config.conversation_history}
-      >
-        {children}
-      </HistoryStoreContextProvider>
-    </ConfigContext.Provider>
+    <ConfigContext.Provider value={value}>{children}</ConfigContext.Provider>
   );
 }

@@ -1,92 +1,179 @@
-import { PropsWithChildren, useMemo, useState } from "react";
+import { PropsWithChildren, useMemo } from "react";
 import { createStore, useStore } from "zustand";
-import { createJSONStorage, persist } from "zustand/middleware";
+import { immer } from "zustand/middleware/immer";
 import { HistoryStoreContext } from "./HistoryStoreContext";
-import { Conversation } from "../../types/history";
+import { HistoryStore, ChatMessage } from "../../types/history";
+import { MessageRole } from "@ragbits/api-client-react";
+import { v4 as uuidv4 } from "uuid";
 import InitializationScreen from "../../components/InitializationScreen";
-import { createHistoryStore } from "../../../ragbits/stores/HistoryStore/historyStore";
-import { IndexedDBStorage } from "../../../ragbits/stores/HistoryStore/indexedDBStorage";
+import {
+  initialConversationValues,
+  initialHistoryValues,
+  isTemporaryConversation,
+  updateConversation,
+} from "./utils";
+import { omitBy } from "lodash";
 
-export const HISTORY_STORE_KEY_BASE = "ragbits-history-store";
+const createMinimalHistoryStore = immer<HistoryStore>((set, get) => {
+  return {
+    ...initialHistoryValues(),
+    // TODO: We might want to unify primitives with the RagbitsHistoryStore later
+    primitives: {
+      getCurrentConversation: () => {
+        const state = get();
+        return (
+          state.conversations[state.currentConversation] ??
+          initialConversationValues()
+        );
+      },
+      addMessage: (conversationId, message) => {
+        const id = uuidv4();
+        const newMessage: ChatMessage = { ...message, id };
+        set(
+          updateConversation(conversationId, (draft) => {
+            draft.followupMessages = null;
+            draft.lastMessageId = id;
+            draft.history[id] = newMessage;
+          }),
+        );
+        return id;
+      },
+      deleteMessage: (conversationId, messageId) => {
+        set((draft) => {
+          const conv = draft.conversations[conversationId];
+          if (!conv) return;
+          delete conv.history[messageId];
+        });
+      },
+      restore: () => {}, // No-op for minimal implementation
+      stopAnswering: (conversationId) => {
+        const conv = get().conversations[conversationId];
+        conv?.abortController?.abort();
+        set((draft) => {
+          const c = draft.conversations[conversationId];
+          if (!c) return;
+          c.isLoading = false;
+          c.abortController = null;
+        });
+      },
+    },
 
-interface HistoryStoreContextProviderProps {
-  shouldStoreHistory: boolean;
-}
+    actions: {
+      sendMessage: async (text: string) => {
+        const state = get();
+        const {
+          primitives: { addMessage },
+        } = get();
+        const conversationId = state.currentConversation;
 
-function initializeStore(shouldStoreHistory: boolean, storeKey: string) {
-  if (shouldStoreHistory) {
-    return createStore(
-      persist(createHistoryStore, {
-        name: storeKey,
-        partialize: (value) => ({
-          conversations: value.conversations,
-        }),
-        onRehydrateStorage: (state) => {
-          // We have to wait for the hydration to finish to avoid any races that may result in saving of the invalid
-          // state to the storage (e.g. clearing all history)
-          return () => state._internal._setHasHydrated(true);
-        },
-        merge: (persistedState, currentState) => {
-          const persistedConversations =
-            (persistedState as Record<string, unknown>)?.conversations ?? {};
-          const { conversations, currentConversation } = currentState;
-          const fixedConversations = Object.values(
-            persistedConversations,
-          ).reduce((acc, c: Conversation) => {
-            if (c.conversationId === null) {
-              return acc;
-            }
+        // Add user message
+        addMessage(conversationId, {
+          role: MessageRole.User,
+          content: text,
+        });
 
-            acc[c.conversationId] = {
-              ...c,
-              isLoading: false,
-              abortController: null,
-            };
-            return acc;
-          }, {});
+        // Set loading
+        set(
+          updateConversation(conversationId, (draft) => {
+            draft.isLoading = true;
+          }),
+        );
 
-          return {
-            ...currentState,
-            currentConversation: currentConversation,
-            conversations: { ...fixedConversations, ...conversations },
-          };
-        },
-        storage: createJSONStorage(() => IndexedDBStorage),
-      }),
-    );
-  }
+        // Default: just add a placeholder assistant message
+        addMessage(conversationId, {
+          role: MessageRole.Assistant,
+          content:
+            "This is a demo response. Use RagbitsHistoryStoreProvider for real API calls.",
+        });
 
-  // Manually set _hasHydrated when we don't use any storage
-  const store = createStore(createHistoryStore);
-  store.getState()._internal._setHasHydrated(true);
+        set((draft) => {
+          const conv = draft.conversations[conversationId];
+          if (conv) {
+            conv.isLoading = false;
+          }
+        });
+      },
 
-  return store;
+      stopAnswering: () => {
+        const state = get();
+        state.primitives.stopAnswering(state.currentConversation);
+      },
+
+      newConversation: () => {
+        const newConversation = initialConversationValues();
+        set((draft) => {
+          draft.conversations[newConversation.conversationId] = newConversation;
+          draft.currentConversation = newConversation.conversationId;
+
+          // Cleanup unused temporary conversations
+          draft.conversations = omitBy(
+            draft.conversations,
+            (c) =>
+              isTemporaryConversation(c.conversationId) &&
+              c.conversationId !== draft.currentConversation,
+          );
+        });
+
+        return newConversation.conversationId;
+      },
+
+      selectConversation: (conversationId: string) => {
+        set((draft) => {
+          draft.currentConversation = conversationId;
+        });
+      },
+
+      deleteConversation: (conversationId: string) => {
+        set((draft) => {
+          delete draft.conversations[conversationId];
+        });
+      },
+
+      // These are no-ops for minimal implementation
+      sendSilentConfirmation: () => {},
+      mergeExtensions: () => {},
+      initializeChatOptions: () => {},
+      setConversationProperties: () => {},
+    },
+
+    computed: {
+      getContext: () => ({}),
+    },
+
+    _internal: {
+      _hasHydrated: true,
+      _setHasHydrated: () => {},
+      handleResponse: () => {},
+    },
+  };
+});
+
+export type HistoryStoreInitializer = typeof createMinimalHistoryStore;
+
+export interface HistoryStoreContextProviderProps {
+  storeInitializer?: HistoryStoreInitializer;
+  waitForHydration?: boolean;
 }
 
 export default function HistoryStoreContextProvider({
   children,
-  shouldStoreHistory,
+  storeInitializer = createMinimalHistoryStore,
+  waitForHydration = false,
 }: PropsWithChildren<HistoryStoreContextProviderProps>) {
-  const [storeKey, _setStoreKey] = useState(HISTORY_STORE_KEY_BASE);
   const store = useMemo(
-    () => initializeStore(shouldStoreHistory, storeKey),
-    [shouldStoreHistory, storeKey],
+    () => createStore(storeInitializer),
+    [storeInitializer],
   );
   const hasHydrated = useStore(store, (s) => s._internal._hasHydrated);
-
-  const initializeUserStore = (userId: string) => {
-    _setStoreKey(`${HISTORY_STORE_KEY_BASE}-${userId}`);
-  };
 
   const value = useMemo(
     () => ({
       store,
-      initializeUserStore,
     }),
     [store],
   );
 
-  if (shouldStoreHistory && !hasHydrated) {
+  if (waitForHydration && !hasHydrated) {
     return <InitializationScreen />;
   }
 

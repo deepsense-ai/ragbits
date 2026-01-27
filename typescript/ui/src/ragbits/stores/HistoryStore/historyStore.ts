@@ -3,7 +3,6 @@ import {
   ChatResponse,
   MessageRole,
 } from "@ragbits/api-client-react";
-import { v4 as uuidv4 } from "uuid";
 import {
   ChatMessage,
   Conversation,
@@ -13,55 +12,14 @@ import { immer } from "zustand/middleware/immer";
 import { omitBy } from "lodash";
 import { ChatHandlerRegistry } from "./eventHandlers/eventHandlerRegistry";
 import { mapHistoryToMessages } from "../../../core/utils/messageMapper";
-
-const TEMPORARY_CONVERSATION_TAG = "temp-";
-
-const getTemporaryConversationId = () =>
-  `${TEMPORARY_CONVERSATION_TAG}${uuidv4()}`;
-
-const initialConversationValues = () => ({
-  history: {},
-  followupMessages: null,
-  serverState: null,
-  conversationId: getTemporaryConversationId(),
-  eventsLog: [],
-  lastMessageId: null,
-  context: undefined,
-  chatOptions: undefined,
-  isLoading: false,
-  abortController: null,
-});
-
-const initialHistoryValues = () => {
-  // Always initialize with empty conversation
-  const startingConversation = initialConversationValues();
-  return {
-    conversations: {
-      [startingConversation.conversationId]: startingConversation,
-    },
-    currentConversation: startingConversation.conversationId,
-  };
-};
-
-const updateConversation = (
-  conversationId: string,
-  mutator: (draft: Conversation) => void,
-) => {
-  return (draft: HistoryStore) => {
-    const conversation = draft.conversations[conversationId];
-    if (!conversation) {
-      throw new Error(
-        `Conversation with ID '${conversationId}' does not exist`,
-      );
-    }
-
-    mutator(conversation);
-  };
-};
-
-export const isTemporaryConversation = (conversationId: string) => {
-  return conversationId.startsWith(TEMPORARY_CONVERSATION_TAG);
-};
+import {
+  initialHistoryValues,
+  isTemporaryConversation,
+  updateConversation,
+  getTemporaryConversationId,
+  initialConversationValues,
+} from "../../../core/stores/HistoryStore/utils";
+import { v4 as uuidv4 } from "uuid";
 
 export const createHistoryStore = immer<HistoryStore>((set, get) => ({
   ...initialHistoryValues(),

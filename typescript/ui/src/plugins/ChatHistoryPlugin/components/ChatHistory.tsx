@@ -16,7 +16,7 @@ import { useNavigate } from "react-router";
 import { getConversationRoute } from "../utils";
 import { useShallow } from "zustand/shallow";
 import { zip } from "lodash";
-import { isTemporaryConversation } from "../../../ragbits/stores/HistoryStore/historyStore";
+import { isTemporaryConversation } from "../../../core/stores/HistoryStore/utils";
 
 export default function ChatHistory() {
   const {

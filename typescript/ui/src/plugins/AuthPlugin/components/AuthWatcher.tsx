@@ -22,7 +22,13 @@ export function AuthWatcher() {
         if (user) {
           login(user);
           // Initialize the history store with user-specific key
-          initializeUserStore(user.user_id);
+          if (initializeUserStore) {
+            initializeUserStore(user.user_id);
+          } else {
+            console.error(
+              "Failed to initialize store for user, initializeUserStore() is not defined. Check current HistoryStoreContextProvider implementation.",
+            );
+          }
           if (location.pathname === "/login") {
             navigate("/");
           }

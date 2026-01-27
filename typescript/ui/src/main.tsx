@@ -17,6 +17,7 @@ import { Routes } from "./core/components/Routes.tsx";
 import { AuthPlugin } from "./plugins/AuthPlugin/index.tsx";
 import { UsagePlugin } from "./plugins/UsagePlugin/index.tsx";
 import { CredentialsLoginPlugin } from "./plugins/AuthPlugin/plugins/CredentialsLoginPlugin.tsx";
+import RagbitsHistoryStoreProvider from "./ragbits/stores/HistoryStore/RagbitsHistoryStoreProvider.tsx";
 
 //Register plugins
 pluginManager.register(FeedbackFormPlugin);
@@ -49,9 +50,11 @@ createRoot(document.getElementById("root")!).render(
       <RagbitsContextProvider baseUrl={API_URL}>
         <ThemeContextProvider>
           <ConfigContextProvider>
-            <BrowserRouter>
-              <Routes />
-            </BrowserRouter>
+            <RagbitsHistoryStoreProvider>
+              <BrowserRouter>
+                <Routes />
+              </BrowserRouter>
+            </RagbitsHistoryStoreProvider>
           </ConfigContextProvider>
         </ThemeContextProvider>
       </RagbitsContextProvider>

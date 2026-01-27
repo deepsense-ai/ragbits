@@ -6,5 +6,5 @@ export const HistoryStoreContext = createContext<{
   store: ReturnType<
     typeof createStore<HistoryStore, [["zustand/immer", never]]>
   > | null;
-  initializeUserStore: (userId: string) => void;
+  initializeUserStore?: (userId: string) => void;
 } | null>(null);
