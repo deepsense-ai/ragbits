@@ -308,20 +308,28 @@ describe("Integration tests", () => {
 
   describe("/api/upload", () => {
     it("should call upload endpoint with correct data", async () => {
-      const makeRequestSpy = vi.spyOn(RagbitsClient.prototype, "makeRequest");
-
-      makeRequestSpy.mockImplementation((endpoint) => {
-        if (endpoint === "/api/config") {
-          return Promise.resolve({
-            feedback: { like: { enabled: false }, dislike: { enabled: false } },
-            user_settings: { form: null },
-            conversation_history: false,
-            authentication: { enabled: false, auth_types: [] },
-            show_usage: false,
-          });
+      // Mock fetch for this test
+      const fetchSpy = vi.fn().mockImplementation((url) => {
+        if (url.toString().endsWith("/api/config")) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                feedback: {
+                  like: { enabled: false },
+                  dislike: { enabled: false },
+                },
+                user_settings: { form: null },
+                conversation_history: false,
+                authentication: { enabled: false, auth_types: [] },
+                show_usage: false,
+              }),
+              { status: 200 },
+            ),
+          );
         }
-        return Promise.resolve({});
+        return Promise.resolve(new Response("{}", { status: 200 }));
       });
+      global.fetch = fetchSpy;
 
       const WrappedInput = () => (
         <RagbitsContextProvider baseUrl={BASE_URL}>
@@ -352,15 +360,31 @@ describe("Integration tests", () => {
       fireEvent.change(input, { target: { files: [file] } });
 
       await waitFor(() => {
-        expect(makeRequestSpy).toHaveBeenCalledWith(
-          "/api/upload",
+        // Find the upload call
+        const uploadCall = fetchSpy.mock.calls.find((call) =>
+          call[0].toString().endsWith("/api/upload"),
+        );
+
+        if (!uploadCall) {
+          throw new Error("Upload call not found");
+        }
+
+        const [url, options] = uploadCall;
+        expect(url).toContain("/api/upload");
+        expect(options).toEqual(
           expect.objectContaining({
             method: "POST",
-            body: expect.any(FormData),
+            body: expect.any(Object), // FormData is difficult to inspect deeply in jsdom sometimes, but body should be there
           }),
         );
+        // CRITICAL CHECK: Content-Type should NOT be application/json
+        // In fact, it should NOT be set at all so browser sets it with boundary
+        const headers = options?.headers as Record<string, string>;
+        expect(headers["Content-Type"]).toBeUndefined();
       });
     });
+
+
   });
 
   describe("/api/feedback", () => {

@@ -77,6 +77,10 @@ export class RagbitsClient {
             'Content-Type': 'application/json',
         }
 
+        if (options.body instanceof FormData) {
+            delete defaultHeaders['Content-Type']
+        }
+
         const headers = {
             ...defaultHeaders,
             ...this.normalizeHeaders(options.headers),
