@@ -559,7 +559,7 @@ class FileExplorerChat(ChatInterface):
         The agent will check context.confirmed_hooks for any confirmations.
         If a hook needs confirmation but hasn't been confirmed yet, it will
         yield a ConfirmationRequest and exit. The frontend will then send a
-        new request with the confirmation in context.confirmed_tools (mapped to confirmed_hooks).
+        new request with the confirmation in context.confirmed_hooks.
         """
         # Create agent with history passed explicitly
         agent: Agent = Agent(
@@ -587,10 +587,9 @@ class FileExplorerChat(ChatInterface):
         # Create agent context with confirmed_hooks from the request context
         agent_context: AgentRunContext = AgentRunContext()
 
-        # Pass confirmed_tools from ChatContext to AgentRunContext.confirmed_hooks
-        # (Frontend still uses confirmed_tools but we map it to confirmed_hooks)
-        if context.confirmed_tools:
-            agent_context.confirmed_hooks = context.confirmed_tools
+        # Pass confirmed_hooks from ChatContext to AgentRunContext
+        if context.confirmed_hooks:
+            agent_context.confirmed_hooks = context.confirmed_hooks
 
         # Run agent in streaming mode with the message and history
         async for response in agent.run_streaming(
