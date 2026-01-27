@@ -4,12 +4,11 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, cast
 
 from pydantic import BaseModel
-from typing_extensions import Self
-
 from ragbits.core.llms.base import LLMClientOptionsT
 from ragbits.core.prompt.prompt import PromptInputT, PromptOutputT
 from ragbits.core.utils.decorators import requires_dependencies
 from ragbits.core.utils.function_schema import convert_function_to_function_schema, get_context_variable_name
+from typing_extensions import Self
 
 if TYPE_CHECKING:
     from ragbits.agents import Agent, AgentResultStreaming, AgentRunContext
@@ -28,6 +27,19 @@ class ToolReturn:
     value: Any
     "Value passed directly to LLM as a result of the tool"
     metadata: Any = None
+    "Metadata not passed to the LLM, but which can be used in the application later on"
+
+
+@dataclass
+class ToolReturn:
+    """
+    Represents an object returned from the tool. If a tool wants to return a value with some content hidden
+    from LLM, it needs to return an object of this class directly.
+    """
+
+    value: Any
+    "Value passed directly to LLM as a result of the tool"
+    metadata: Any
     "Metadata not passed to the LLM, but which can be used in the application later on"
 
 

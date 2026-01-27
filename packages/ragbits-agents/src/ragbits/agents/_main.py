@@ -408,12 +408,12 @@ class Agent(
         self.description = description
         self.tools = []
         for tool in tools or []:
-            if isinstance(tool, Callable):
-                self.tools.append(Tool.from_callable(tool))
-            elif isinstance(tool, Agent):
+            if isinstance(tool, Agent):
                 self.tools.append(Tool.from_agent(tool))
             elif isinstance(tool, Tool):
                 self.tools.append(tool)
+            elif callable(tool):
+                self.tools.append(Tool.from_callable(tool))
             else:
                 raise ValueError(f"Unexpected tool type: {type(tool)}. Allowed types are Callable, Agent and Tool.")
         self.mcp_servers = mcp_servers or []
