@@ -14,8 +14,13 @@ import { ChatMessage } from "./ChatMessage";
 import QuickMessageInput from "./inputs/QuickMessageInput";
 import { useConfigContext } from "../contexts/ConfigContext/useConfigContext";
 import { useRagbitsContext } from "@ragbits/api-client-react";
+import { PromptInputProps } from "./inputs/PromptInput/PromptInput";
 
-export default function Chat() {
+interface ChatProps {
+  pluginSlots?: PromptInputProps["pluginSlots"] & {};
+}
+
+export default function Chat({ pluginSlots }: ChatProps) {
   const {
     config: { customization },
   } = useConfigContext();
@@ -151,6 +156,7 @@ export default function Chat() {
           stopAnswering={stopAnswering}
           followupMessages={followupMessages}
           isDisabled={hasPendingConfirmations}
+          pluginSlots={{ "chat-options": pluginSlots?.["chat-options"] }}
         />
       </div>
     </div>

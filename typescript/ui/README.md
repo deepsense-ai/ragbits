@@ -87,6 +87,61 @@ npm run dev
 - `npm run format` - Format code with Prettier
 - `npm run format:check` - Check code formatting
 
+## Standalone Usage (Without Full Backend)
+
+You can use the chat UI components without setting up the full Ragbits backend.
+
+### Basic Setup
+
+```tsx
+import { RagbitsContextProvider } from "@ragbits/api-client-react";
+import { ThemeContextProvider } from "./core/contexts/ThemeContext";
+import { MinimalHistoryStoreProvider } from "./core/stores/HistoryStore";
+import Chat from "./core/components/Chat";
+
+function App() {
+  return (
+    <RagbitsContextProvider baseUrl="https://your-api.com">
+      <ThemeContextProvider>
+        <MinimalHistoryStoreProvider>
+          {/* No ConfigContextProvider needed! */}
+          <Chat />
+        </MinimalHistoryStoreProvider>
+      </ThemeContextProvider>
+    </RagbitsContextProvider>
+  );
+}
+```
+
+### With Custom Message Handling
+
+```tsx
+<MinimalHistoryStoreProvider
+  onSendMessage={async (text, client) => {
+    // Call your API
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      body: JSON.stringify({ message: text }),
+    });
+    // Handle response...
+  }}
+>
+  <Chat />
+</MinimalHistoryStoreProvider>
+```
+
+### What Works in Standalone Mode
+
+- Chat input and message display
+- Theme switching
+- Basic conversation flow
+
+### What's Disabled in Standalone Mode
+
+- Plugins (feedback, share, chat history sidebar, auth)
+- Conversation persistence (IndexedDB)
+- Config-based customization
+
 ## Plugin System
 
 The UI supports a plugin architecture for extending functionality. Plugins are located in the `src/plugins/` directory.
