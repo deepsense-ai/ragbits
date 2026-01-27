@@ -1,7 +1,7 @@
 import asyncio
 import types
 import uuid
-from collections.abc import AsyncGenerator, AsyncIterator, Callable
+from collections.abc import AsyncGenerator, AsyncIterator, Callable, Generator
 from collections.abc import AsyncGenerator as _AG
 from contextlib import suppress
 from copy import deepcopy
@@ -372,7 +372,7 @@ class Agent(
         *,
         history: ChatFormat | None = None,
         keep_history: bool = False,
-        tools: list[Callable] | None = None,
+        tools: list["Callable | Tool | Agent"] | None = None,
         mcp_servers: list[MCPServer] | None = None,
         hooks: list[Hook] | None = None,
         default_options: AgentOptions[LLMClientOptionsT] | None = None,
@@ -1008,8 +1008,21 @@ class Agent(
                     else asyncio.to_thread(tool.on_tool_call, **call_args)
                 )
 
+                tool_return = None
                 if isinstance(tool_output, ToolReturn):
                     tool_return = tool_output
+                elif isinstance(tool_output, Generator):
+                    for event in tool_output:
+                        if isinstance(event, ToolReturn):
+                            tool_return = event
+                        else:
+                            yield event
+                elif isinstance(tool_output, AsyncGenerator):
+                    async for event in tool_output:
+                        if isinstance(event, ToolReturn):
+                            tool_return = event
+                        else:
+                            yield event
                 elif isinstance(tool_output, AgentResultStreaming):
                     async for downstream_item in tool_output:
                         if context.stream_downstream_events:
@@ -1022,6 +1035,8 @@ class Agent(
                     tool_return = ToolReturn(value=tool_output.content, metadata=metadata)
                 else:
                     tool_return = ToolReturn(value=tool_output, metadata=None)
+                if tool_return is None:  # if Generator or AsyncGenerator cases didn't yield any ToolReturn
+                    tool_return = ToolReturn(value=None, metadata=None)
 
                 outputs.result = {
                     "tool_output": tool_return.value,
