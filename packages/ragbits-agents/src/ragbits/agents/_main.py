@@ -958,6 +958,46 @@ class Agent(
 
         return tools_mapping
 
+
+    @staticmethod
+    async def _process_tool_output(
+        tool_output: ToolReturn | Generator | AsyncGenerator | AgentResultStreaming | object,
+        tool: Tool,
+        context: AgentRunContext,
+    ) -> AsyncGenerator[ToolReturn | Any, None]:
+        """
+        Process the output from a tool call and yield events if the tool output is an agent, generator or async
+        generator.
+
+        Args:
+            tool_output: The raw output from the tool call.
+            tool: The tool that was called.
+            context: The agent run context.
+
+        Yields:
+            ToolReturn with the final result, and any intermediate events or downstream results.
+        """
+        if isinstance(tool_output, AgentResultStreaming):
+            async for downstream_item in tool_output:
+                if context.stream_downstream_events:
+                    yield DownstreamAgentResult(agent_id=tool.id, item=downstream_item)
+            metadata = {
+                "metadata": tool_output.metadata,
+                "tool_calls": tool_output.tool_calls,
+                "usage": tool_output.usage,
+            }
+            yield ToolReturn(value=tool_output.content, metadata=metadata)
+        elif isinstance(tool_output, ToolReturn):
+            yield tool_output
+        elif isinstance(tool_output, Generator):
+            for event in tool_output:
+                yield event
+        elif isinstance(tool_output, AsyncGenerator):
+            async for event in tool_output:
+                yield event
+        else:
+            yield ToolReturn(value=tool_output, metadata=None)
+
     async def _execute_tool(
         self,
         tool_call: ToolCall,
@@ -1003,6 +1043,7 @@ class Agent(
 
         tool_error: Exception | None = None
 
+        tool_return: ToolReturn = ToolReturn(value=None, metadata=None)
         with trace(agent_id=self.id, tool_name=tool_call.name, tool_arguments=tool_call.arguments) as outputs:
             try:
                 call_args = tool_call.arguments.copy()
@@ -1015,35 +1056,11 @@ class Agent(
                     else asyncio.to_thread(tool.on_tool_call, **call_args)
                 )
 
-                tool_return = None
-                if isinstance(tool_output, ToolReturn):
-                    tool_return = tool_output
-                elif isinstance(tool_output, Generator):
-                    for event in tool_output:
-                        if isinstance(event, ToolReturn):
-                            tool_return = event
-                        else:
-                            yield event
-                elif isinstance(tool_output, AsyncGenerator):
-                    async for event in tool_output:
-                        if isinstance(event, ToolReturn):
-                            tool_return = event
-                        else:
-                            yield event
-                elif isinstance(tool_output, AgentResultStreaming):
-                    async for downstream_item in tool_output:
-                        if context.stream_downstream_events:
-                            yield DownstreamAgentResult(agent_id=tool.id, item=downstream_item)
-                    metadata = {
-                        "metadata": tool_output.metadata,
-                        "tool_calls": tool_output.tool_calls,
-                        "usage": tool_output.usage,
-                    }
-                    tool_return = ToolReturn(value=tool_output.content, metadata=metadata)
-                else:
-                    tool_return = ToolReturn(value=tool_output, metadata=None)
-                if tool_return is None:  # if Generator or AsyncGenerator cases didn't yield any ToolReturn
-                    tool_return = ToolReturn(value=None, metadata=None)
+                async for tool_output_event in self._process_tool_output(tool_output, tool, context):
+                    if isinstance(tool_output_event, ToolReturn):
+                        tool_return = tool_output_event
+                    else:
+                        yield tool_output_event
 
                 outputs.result = {
                     "tool_output": tool_return.value,
