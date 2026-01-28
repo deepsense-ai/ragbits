@@ -20,11 +20,14 @@ const createMinimalHistoryStore = immer<HistoryStore>((set, get) => {
     // TODO: We might want to unify primitives with the RagbitsHistoryStore later
     primitives: {
       getCurrentConversation: () => {
-        const state = get();
-        return (
-          state.conversations[state.currentConversation] ??
-          initialConversationValues()
-        );
+        const { currentConversation, conversations } = get();
+        const conversation = conversations[currentConversation];
+
+        if (!conversation) {
+          throw new Error("Tried to get conversation that doesn't exist.");
+        }
+
+        return conversation;
       },
       addMessage: (conversationId, message) => {
         const id = uuidv4();
@@ -39,22 +42,36 @@ const createMinimalHistoryStore = immer<HistoryStore>((set, get) => {
         return id;
       },
       deleteMessage: (conversationId, messageId) => {
-        set((draft) => {
-          const conv = draft.conversations[conversationId];
-          if (!conv) return;
-          delete conv.history[messageId];
-        });
+        set(
+          updateConversation(conversationId, (draft) => {
+            const { history } = draft;
+            const messageIds = Object.keys(history);
+
+            if (messageIds.at(-1) === messageId) {
+              draft.lastMessageId = messageIds.at(-2) ?? null;
+            }
+
+            delete draft.history[messageId];
+          }),
+        );
       },
       restore: () => {}, // No-op for minimal implementation
       stopAnswering: (conversationId) => {
-        const conv = get().conversations[conversationId];
-        conv?.abortController?.abort();
-        set((draft) => {
-          const c = draft.conversations[conversationId];
-          if (!c) return;
-          c.isLoading = false;
-          c.abortController = null;
-        });
+        const conversation = get().conversations[conversationId];
+
+        if (!conversation) {
+          throw new Error(
+            "Tried to stop answering for conversation that doesn't exist",
+          );
+        }
+
+        conversation.abortController?.abort();
+        set(
+          updateConversation(conversationId, (draft) => {
+            draft.abortController = null;
+            draft.isLoading = false;
+          }),
+        );
       },
     },
 
@@ -119,14 +136,35 @@ const createMinimalHistoryStore = immer<HistoryStore>((set, get) => {
 
       selectConversation: (conversationId: string) => {
         set((draft) => {
+          if (draft.currentConversation === conversationId) {
+            return;
+          }
+          const conversation = draft.conversations[conversationId];
+          if (!conversation) {
+            throw new Error(
+              `Tried to select conversation that doesn't exist, id: ${conversationId}`,
+            );
+          }
+
           draft.currentConversation = conversationId;
         });
       },
 
       deleteConversation: (conversationId: string) => {
+        const {
+          actions: { newConversation },
+          primitives: { stopAnswering },
+          currentConversation,
+        } = get();
+        stopAnswering(conversationId);
+
         set((draft) => {
           delete draft.conversations[conversationId];
         });
+
+        if (conversationId === currentConversation) {
+          return newConversation();
+        }
       },
 
       // These are no-ops for minimal implementation

@@ -119,8 +119,8 @@ function App() {
 <MinimalHistoryStoreProvider
   onSendMessage={async (text, client) => {
     // Call your API
-    const response = await fetch('/api/chat', {
-      method: 'POST',
+    const response = await fetch("/api/chat", {
+      method: "POST",
       body: JSON.stringify({ message: text }),
     });
     // Handle response...

@@ -49,8 +49,7 @@ export function Slot<S extends SlotName>({
         const Component = filler.component;
         return (
           <Suspense key={index} fallback={skeleton}>
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            <Component {...(props as any)} />
+            <Component {...(props || {})} />
           </Suspense>
         );
       })}
