@@ -963,7 +963,7 @@ class Agent(
         tool_call: ToolCall,
         tools_mapping: dict[str, Tool],
         context: AgentRunContext,
-    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult | ConfirmationRequest, None]:
+    ) -> AsyncGenerator[Any, None]:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
         if tool_call.name not in tools_mapping:
