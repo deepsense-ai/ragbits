@@ -33,7 +33,7 @@ import FeedbackForm from "../../src/plugins/FeedbackPlugin/components/FeedbackFo
 import { createStore } from "zustand";
 import { useHistoryStore } from "../../src/core/stores/HistoryStore/useHistoryStore";
 import { HistoryStore } from "../../src/core/types/history";
-import { API_URL } from "../../src/config";
+import { API_URL } from "../../src/core/config";
 import { createHistoryStore } from "../../src/ragbits/stores/HistoryStore/historyStore";
 
 vi.mock("../../src/core/stores/HistoryStore/useHistoryStore", () => {

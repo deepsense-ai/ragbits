@@ -9,7 +9,7 @@ import { pluginManager } from "./core/utils/plugins/PluginManager.ts";
 import { FeedbackFormPlugin } from "./plugins/FeedbackPlugin/index.tsx";
 import { ChatOptionsPlugin } from "./plugins/ChatOptionsPlugin/index.tsx";
 import { ConfigContextProvider } from "./core/contexts/ConfigContext/ConfigContextProvider.tsx";
-import { API_URL } from "./config";
+import { API_URL } from "./core/config.tsx";
 import { SharePlugin } from "./plugins/SharePlugin/index.tsx";
 import { ChatHistoryPlugin } from "./plugins/ChatHistoryPlugin/index";
 import { BrowserRouter } from "react-router";
@@ -27,7 +27,7 @@ pluginManager.register(ChatHistoryPlugin);
 pluginManager.register(AuthPlugin);
 pluginManager.register(UsagePlugin);
 pluginManager.register(CredentialsLoginPlugin);
-// OAuth2 login plugins are registered dynamically in ConfigContextProvider
+// OAuth2 login plugins are registered dynamically in PluginActivator
 
 // Preload icons
 loadIcons([

@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { describe, it, expect } from "vitest";
 import { ChatMessage } from "../../../../src/core/types/history";
 import UsageButton from "../../../../src/plugins/UsagePlugin/components/UsageButton";
+import { MessageRole } from "@ragbits/api-client";
 
 const mockUsage: Exclude<ChatMessage["usage"], undefined> = {
   "gpt-4": {
@@ -21,17 +22,24 @@ const mockUsage: Exclude<ChatMessage["usage"], undefined> = {
   },
 };
 
+const mockMessage: ChatMessage = {
+  id: "test-message-id",
+  role: MessageRole.Assistant,
+  content: "Test message content",
+  usage: mockUsage,
+};
+
 describe("UsageButton", () => {
   const user = userEvent.setup();
   it("renders the info button", () => {
-    render(<UsageButton usage={mockUsage} />);
+    render(<UsageButton message={mockMessage} />);
     expect(
       screen.getByRole("button", { name: /open usage details/i }),
     ).toBeInTheDocument();
   });
 
   it("shows tooltip with summary info on hover", async () => {
-    render(<UsageButton usage={mockUsage} />);
+    render(<UsageButton message={mockMessage} />);
     const button = screen.getByRole("button", { name: /open usage details/i });
 
     await user.tab();
@@ -46,7 +54,7 @@ describe("UsageButton", () => {
   });
 
   it("opens modal with detailed usage table when clicked", async () => {
-    render(<UsageButton usage={mockUsage} />);
+    render(<UsageButton message={mockMessage} />);
     await user.click(
       screen.getByRole("button", { name: /open usage details/i }),
     );
@@ -76,7 +84,7 @@ describe("UsageButton", () => {
   });
 
   it("closes modal when pressing Escape", async () => {
-    render(<UsageButton usage={mockUsage} />);
+    render(<UsageButton message={mockMessage} />);
     await user.click(
       screen.getByRole("button", { name: /open usage details/i }),
     );
@@ -88,5 +96,15 @@ describe("UsageButton", () => {
     await waitFor(() => {
       expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     });
+  });
+
+  it("returns null when message has no usage data", () => {
+    const messageWithoutUsage: ChatMessage = {
+      id: "test-message-id",
+      role: MessageRole.Assistant,
+      content: "Test message content",
+    };
+    const { container } = render(<UsageButton message={messageWithoutUsage} />);
+    expect(container).toBeEmptyDOMElement();
   });
 });

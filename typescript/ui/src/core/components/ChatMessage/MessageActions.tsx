@@ -3,10 +3,8 @@ import { Button } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
 import DelayedTooltip from "../DelayedTooltip.tsx";
-import PluginWrapper from "../../utils/plugins/PluginWrapper.tsx";
-import { FeedbackFormPlugin } from "../../../plugins/FeedbackPlugin/index.tsx";
+import { Slot } from "../Slot.tsx";
 import { ChatMessage } from "../../types/history.ts";
-import { UsagePlugin } from "../../../plugins/UsagePlugin/index.tsx";
 
 type MessageActionsProps = {
   content: string;
@@ -35,19 +33,11 @@ const MessageActions = ({
 
   return (
     <div className="flex items-center gap-2">
-      {message.usage && Object.keys(message.usage).length >= 1 && (
-        <PluginWrapper
-          plugin={UsagePlugin}
-          component="UsageButton"
-          componentProps={{
-            usage: message.usage,
-          }}
-          skeletonSize={{
-            width: "88px",
-            height: "40px",
-          }}
-        />
-      )}
+      <Slot
+        name="message.actions"
+        props={{ message, content, serverId }}
+        skeletonSize={{ width: "88px", height: "40px" }}
+      />
 
       <DelayedTooltip content="Copy" placement="bottom">
         <Button
@@ -64,20 +54,6 @@ const MessageActions = ({
           />
         </Button>
       </DelayedTooltip>
-
-      {serverId && (
-        <PluginWrapper
-          plugin={FeedbackFormPlugin}
-          component="FeedbackForm"
-          componentProps={{
-            message,
-          }}
-          skeletonSize={{
-            width: "88px",
-            height: "40px",
-          }}
-        />
-      )}
     </div>
   );
 };

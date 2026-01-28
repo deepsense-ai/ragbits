@@ -37,6 +37,10 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
     method: "POST",
   });
 
+  if (!message.serverId) {
+    return null;
+  }
+
   const schema = feedback[feedbackType].form;
   const onOpenChange = () => {
     onClose();

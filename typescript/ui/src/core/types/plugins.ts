@@ -1,4 +1,20 @@
-import { FunctionComponent, LazyExoticComponent, ReactNode } from "react";
+import {
+  ComponentType,
+  FunctionComponent,
+  LazyExoticComponent,
+  ReactNode,
+} from "react";
+import { SlotName, SlotPropsMap } from "./slots";
+
+// Slot registration within a plugin
+export interface PluginSlot<S extends SlotName = SlotName> {
+  slot: S;
+  component:
+    | LazyExoticComponent<FunctionComponent<SlotPropsMap[S]>>
+    | ComponentType<SlotPropsMap[S]>;
+  priority?: number; // Higher = rendered first
+  condition?: () => boolean; // Dynamic visibility
+}
 
 export interface Plugin<
   T extends Record<
@@ -14,6 +30,7 @@ export interface Plugin<
   components: T;
   routes?: PluginRoute[];
   routeWrappers?: PluginRouteWrapper[];
+  slots?: PluginSlot[];
   metadata?: Record<string, unknown>;
 }
 

@@ -19,8 +19,9 @@ import PromptInputText from "./PromptInputText";
 import { TextAreaProps } from "@heroui/react";
 import HorizontalActions from "./HorizontalActions";
 import { useCaretLogicalLineDetection } from "../../../utils/useTextAreaCaretDetection";
-import { ChatMessage } from "../../../../types/history";
+import { Slot } from "../../Slot";
 import { MessageRole } from "@ragbits/api-client";
+import { ChatMessage } from "../../../types/history";
 
 export interface PromptInputProps {
   submit: (text: string) => void;
@@ -34,9 +35,6 @@ export interface PromptInputProps {
   customSendIcon?: ReactNode;
   customStopIcon?: ReactNode;
   isDisabled?: boolean;
-  pluginSlots?: {
-    "chat-options"?: ReactNode;
-  };
 }
 
 const PromptInput = ({
@@ -51,7 +49,6 @@ const PromptInput = ({
   customStopIcon,
   history,
   isDisabled = false,
-  pluginSlots = {},
 }: PromptInputProps) => {
   const [message, setMessage] = useState("");
   const [quickMessages, setQuickMessages] = useState<string[]>([]);
@@ -264,13 +261,9 @@ const PromptInput = ({
               width={20}
             />
           </Button>
-          <PluginWrapper
-            plugin={ChatOptionsPlugin}
-            component="ChatOptionsForm"
-            skeletonSize={{
-              width: "40px",
-              height: "40px",
-            }}
+          <Slot
+            name="prompt.beforeSend"
+            skeletonSize={{ width: "40px", height: "40px" }}
           />
           <Button
             isIconOnly
