@@ -5,8 +5,9 @@ This module contains all type definitions including EventType, callback types,
 input types, and output types for the hooks system.
 """
 
+from collections.abc import Awaitable, Callable
 from enum import Enum
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -133,3 +134,8 @@ class PostToolOutput(HookEventIO):
 
     event_type: Literal[EventType.POST_TOOL] = Field(default=EventType.POST_TOOL, frozen=True)  # type: ignore[assignment]
     output: Any
+
+
+# Type aliases for hook callbacks
+PreToolHookCallback: TypeAlias = Callable[["PreToolInput"], Awaitable["PreToolOutput"]]
+PostToolHookCallback: TypeAlias = Callable[["PostToolInput"], Awaitable["PostToolOutput"]]

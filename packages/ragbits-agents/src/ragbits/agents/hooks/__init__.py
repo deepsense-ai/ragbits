@@ -47,8 +47,10 @@ from ragbits.agents.hooks.confirmation import requires_confirmation_hook
 from ragbits.agents.hooks.manager import HookManager
 from ragbits.agents.hooks.types import (
     EventType,
+    PostToolHookCallback,
     PostToolInput,
     PostToolOutput,
+    PreToolHookCallback,
     PreToolInput,
     PreToolOutput,
 )
@@ -62,9 +64,12 @@ __all__ = [
     "HookInputT",
     "HookManager",
     "HookOutputT",
+    "PostToolHookCallback",
     # Input/output types
     "PostToolInput",
     "PostToolOutput",
+    # Callback type aliases
+    "PreToolHookCallback",
     "PreToolInput",
     "PreToolOutput",
     # Custom hooks

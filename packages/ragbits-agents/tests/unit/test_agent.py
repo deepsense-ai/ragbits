@@ -7,11 +7,20 @@ from pydantic import BaseModel
 
 from ragbits.agents import Agent, AgentRunContext
 from ragbits.agents._main import AgentOptions, AgentResult, AgentResultStreaming, ToolCallResult, ToolChoice
+from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.exceptions import (
     AgentInvalidPromptInputError,
     AgentMaxTurnsExceededError,
     AgentToolNotAvailableError,
     AgentToolNotSupportedError,
+)
+from ragbits.agents.hooks import (
+    EventType,
+    Hook,
+    PostToolHookCallback,
+    PreToolHookCallback,
+    PreToolInput,
+    PreToolOutput,
 )
 from ragbits.core.llms.base import Usage, UsageItem
 from ragbits.core.llms.mock import MockLLM, MockLLMOptions
@@ -813,3 +822,116 @@ async def test_input_type_check_with_system_prompt(llm_with_tool_call: MockLLM):
             tools=[get_weather],
             keep_history=True,
         )
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_pre_tool_hook_denies_execution(
+    llm_with_tool_call: MockLLM, method: Callable, deny_hook: PreToolHookCallback
+):
+    """Test that a pre-tool hook can deny tool execution."""
+    hook = Hook(event_type=EventType.PRE_TOOL, callback=deny_hook)
+    agent = Agent(llm=llm_with_tool_call, prompt=CustomPrompt, tools=[get_weather], hooks=[hook])
+
+    result = await method(agent)
+
+    assert result.tool_calls[0].result == "Blocked by hook"
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_pre_tool_hook_denies_only_matching_tool(
+    llm_with_tool_call: MockLLM, method: Callable, deny_hook: PreToolHookCallback
+):
+    """Test that a hook with tools filter only affects matching tools."""
+    hook = Hook(event_type=EventType.PRE_TOOL, callback=deny_hook, tools=["other_tool"])
+    agent = Agent(llm=llm_with_tool_call, prompt=CustomPrompt, tools=[get_weather], hooks=[hook])
+
+    result = await method(agent)
+
+    # Tool should execute normally since hook doesn't match
+    assert "72" in result.tool_calls[0].result
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_pre_tool_hook_modifies_arguments(
+    llm_with_tool_call: MockLLM, method: Callable, add_field: Callable[..., PreToolHookCallback]
+):
+    """Test that a pre-tool hook can modify tool arguments."""
+    hook = Hook(event_type=EventType.PRE_TOOL, callback=add_field("location", "New York"))
+    agent = Agent(llm=llm_with_tool_call, prompt=CustomPrompt, tools=[get_weather], hooks=[hook])
+
+    result = await method(agent)
+
+    assert result.tool_calls[0].arguments["location"] == "New York"
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_post_tool_hook_modifies_output(
+    llm_with_tool_call: MockLLM, method: Callable, append_output: Callable[..., PostToolHookCallback]
+):
+    """Test that a post-tool hook can modify tool output."""
+    hook = Hook(event_type=EventType.POST_TOOL, callback=append_output("[MODIFIED]", prepend=True))
+    agent = Agent(llm=llm_with_tool_call, prompt=CustomPrompt, tools=[get_weather], hooks=[hook])
+
+    result = await method(agent)
+
+    assert result.tool_calls[0].result.startswith("[MODIFIED]")
+
+
+async def test_pre_tool_hook_ask_yields_confirmation_request(
+    llm_with_tool_call: MockLLM, ask_hook: PreToolHookCallback
+):
+    """Test that ask decision yields a ConfirmationRequest."""
+    hook = Hook(event_type=EventType.PRE_TOOL, callback=ask_hook)
+    agent = Agent(llm=llm_with_tool_call, prompt=CustomPrompt, tools=[get_weather], hooks=[hook])
+
+    events = []
+    async for event in agent.run_streaming():
+        events.append(event)
+
+    confirmation_requests = [e for e in events if isinstance(e, ConfirmationRequest)]
+    assert len(confirmation_requests) == 1
+    assert confirmation_requests[0].tool_name == "get_weather"
+
+
+async def test_pre_tool_hook_ask_with_confirmation_approved(llm_with_tool_call: MockLLM, ask_hook: PreToolHookCallback):
+    """Test that approved confirmation allows tool execution."""
+    hook = Hook(event_type=EventType.PRE_TOOL, callback=ask_hook)
+    agent = Agent(llm=llm_with_tool_call, prompt=CustomPrompt, tools=[get_weather], hooks=[hook])
+
+    # First run to get confirmation_id
+    events = []
+    async for event in agent.run_streaming():
+        events.append(event)
+    confirmation_request = next(e for e in events if isinstance(e, ConfirmationRequest))
+
+    # Second run with confirmation approved
+    context: AgentRunContext = AgentRunContext(
+        confirmed_hooks=[{"confirmation_id": confirmation_request.confirmation_id, "confirmed": True}]
+    )
+    result = await agent.run(context=context)
+
+    assert result.tool_calls is not None
+    assert "72" in result.tool_calls[0].result
+
+
+async def test_hook_priority_order(llm_with_tool_call: MockLLM):
+    """Test that hooks execute in priority order (lower first)."""
+    execution_order: list[int] = []
+
+    async def hook_priority_10(input_data: PreToolInput) -> PreToolOutput:
+        execution_order.append(10)
+        return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
+
+    async def hook_priority_5(input_data: PreToolInput) -> PreToolOutput:
+        execution_order.append(5)
+        return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
+
+    hooks = [
+        Hook(event_type=EventType.PRE_TOOL, callback=hook_priority_10, priority=10),
+        Hook(event_type=EventType.PRE_TOOL, callback=hook_priority_5, priority=5),
+    ]
+    agent = Agent(llm=llm_with_tool_call, prompt=CustomPrompt, tools=[get_weather], hooks=hooks)
+
+    await agent.run()
+
+    assert execution_order == [5, 10]
