@@ -8,14 +8,19 @@ organization, and execution of hooks during lifecycle events.
 import hashlib
 import json
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 
+from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.hooks.base import Hook
 from ragbits.agents.hooks.types import EventType, PostToolInput, PostToolOutput, PreToolInput, PreToolOutput
 from ragbits.core.llms.base import ToolCall
 
 if TYPE_CHECKING:
     from ragbits.agents._main import AgentRunContext
+
+# Confirmation ID length: 16 hex chars provides sufficient uniqueness
+# while being compact for display and storage
+CONFIRMATION_ID_LENGTH = 16
 
 
 class HookManager:
@@ -73,7 +78,7 @@ class HookManager:
     async def execute_pre_tool(
         self,
         tool_call: ToolCall,
-        context: "AgentRunContext | None" = None,
+        context: "AgentRunContext",
     ) -> PreToolOutput:
         """
         Execute pre-tool hooks with proper chaining.
@@ -92,10 +97,13 @@ class HookManager:
 
         # Start with original arguments
         current_arguments = tool_call.arguments
-        final_decision: Literal["pass", "ask", "deny"] = "pass"
-        final_reason: str | None = None
 
         for hook in hooks:
+            # Generate confirmation_id: hash(hook_function_name + tool_name + arguments)
+            hook_name = hook.callback.__name__
+            confirmation_id_str = f"{hook_name}:{tool_call.name}:{json.dumps(current_arguments, sort_keys=True)}"
+            confirmation_id = hashlib.sha256(confirmation_id_str.encode()).hexdigest()[:CONFIRMATION_ID_LENGTH]
+
             # Create input with current state (chained from previous hook)
             hook_input = PreToolInput(
                 tool_call=tool_call.model_copy(update={"arguments": current_arguments}),
@@ -103,63 +111,47 @@ class HookManager:
 
             result: PreToolOutput = await hook.execute(hook_input)
 
-            # Stop immediately on deny
             if result.decision == "deny":
-                return result
+                return PreToolOutput(
+                    arguments=current_arguments,
+                    decision="deny",
+                    reason=result.reason,
+                )
 
-            # Handle "ask" decision
-            if result.decision == "ask":
-                # Generate confirmation_id: hash(hook_function_name + tool_name + arguments)
-                hook_name = hook.callback.__name__
-                confirmation_str = f"{hook_name}:{tool_call.name}:{json.dumps(current_arguments, sort_keys=True)}"
-                confirmation_id = hashlib.sha256(confirmation_str.encode()).hexdigest()[:16]
-
+            elif result.decision == "ask":
                 # Check if already confirmed/declined in context
-                if context and context.confirmed_hooks:
-                    for conf in context.confirmed_hooks:
-                        if conf.get("confirmation_id") == confirmation_id:
-                            if conf.get("confirmed"):
-                                # Approved → convert to "pass" and continue to next hook
-                                result = PreToolOutput(arguments=current_arguments, decision="pass")
-                            else:
-                                # Declined → convert to "deny" and stop immediately
-                                return PreToolOutput(
-                                    arguments=current_arguments,
-                                    decision="deny",
-                                    reason=result.reason or "Hook declined by user",
-                                )
+                for conf in context.confirmed_hooks:
+                    if conf.get("confirmation_id") == confirmation_id:
+                        if conf.get("confirmed"):
+                            # Approved → convert to "pass" and continue to next hook
+                            result = PreToolOutput(arguments=current_arguments, decision="pass")
                             break
-                    else:
-                        # Not in context → return "ask" with confirmation_id
-                        return PreToolOutput(
-                            arguments=current_arguments,
-                            decision="ask",
-                            reason=result.reason,
-                            confirmation_id=confirmation_id,
-                        )
+                        else:
+                            # Declined → convert to "deny" and stop immediately
+                            return PreToolOutput(
+                                arguments=current_arguments,
+                                decision="deny",
+                                reason=result.reason or "Hook declined by user",
+                            )
                 else:
-                    # No context → return "ask" with confirmation_id
+                    # Not in context → return "ask" with full ConfirmationRequest
                     return PreToolOutput(
                         arguments=current_arguments,
                         decision="ask",
                         reason=result.reason,
-                        confirmation_id=confirmation_id,
+                        confirmation_request=ConfirmationRequest(
+                            confirmation_id=confirmation_id,
+                            tool_name=tool_call.name,
+                            tool_description=result.reason or "Hook requires user confirmation",
+                            arguments=current_arguments,
+                        ),
                     )
 
             # Chain arguments for next hook
             current_arguments = result.arguments
 
-            # Track non-pass decisions
-            if result.decision != "pass":
-                final_decision = result.decision
-                final_reason = result.reason
-
-        # Return final chained result
-        return PreToolOutput(
-            arguments=current_arguments,
-            decision=final_decision,
-            reason=final_reason,
-        )
+        # All hooks passed
+        return PreToolOutput(arguments=current_arguments, decision="pass")
 
     async def execute_post_tool(
         self,

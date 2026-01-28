@@ -58,9 +58,9 @@ __all__ = [
     "EventType",
     # Core classes
     "Hook",
-    "HookManager",
     # Type variables
     "HookInputT",
+    "HookManager",
     "HookOutputT",
     # Input/output types
     "PostToolInput",

@@ -67,10 +67,6 @@ with suppress(ImportError):
 
     from ragbits.core.llms import LiteLLM
 
-# Confirmation ID length: 16 hex chars provides sufficient uniqueness
-# while being compact for display and storage
-CONFIRMATION_ID_LENGTH = 16
-
 _Input = TypeVar("_Input", bound=BaseModel)
 _Output = TypeVar("_Output")
 
@@ -214,8 +210,8 @@ class AgentRunContext(BaseModel, Generic[DepsT]):
     """Whether to stream events from downstream agents when tools execute other agents."""
     downstream_agents: dict[str, "Agent"] = Field(default_factory=dict)
     """Registry of all agents that participated in this run"""
-    confirmed_hooks: list[dict[str, Any]] | None = Field(
-        default=None,
+    confirmed_hooks: list[dict[str, Any]] = Field(
+        default_factory=list,
         description="List of confirmed/declined hooks. Each entry has 'confirmation_id' and 'confirmed' (bool)",
     )
 
@@ -979,16 +975,8 @@ class Agent(
             )
             return
         # Handle "ask" decision from hooks
-        elif pre_tool_result.decision == "ask":
-            request = ConfirmationRequest(
-                confirmation_id=pre_tool_result.confirmation_id or "",
-                tool_name=tool_call.name,
-                tool_description=pre_tool_result.reason or "Hook requires user confirmation",
-                arguments=pre_tool_result.arguments,
-            )
-
-            # Yield confirmation request (will be streamed to frontend)
-            yield request
+        elif pre_tool_result.decision == "ask" and pre_tool_result.confirmation_request is not None:
+            yield pre_tool_result.confirmation_request
 
             yield ToolCallResult(
                 id=tool_call.id,
