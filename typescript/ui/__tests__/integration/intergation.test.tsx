@@ -28,7 +28,10 @@ import { ConfigContextProvider } from "../../src/core/contexts/ConfigContext/Con
 import userEvent from "@testing-library/user-event";
 import PromptInput from "../../src/core/components/inputs/PromptInput/PromptInput";
 import { pluginManager } from "../../src/core/utils/plugins/PluginManager";
-import { ChatOptionsPlugin } from "../../src/plugins/ChatOptionsPlugin";
+import {
+  ChatOptionsPlugin,
+  ChatOptionsPluginName,
+} from "../../src/plugins/ChatOptionsPlugin";
 import FeedbackForm from "../../src/plugins/FeedbackPlugin/components/FeedbackForm";
 import { createStore } from "zustand";
 import { useHistoryStore } from "../../src/core/stores/HistoryStore/useHistoryStore";
@@ -157,6 +160,7 @@ describe("Integration tests", () => {
 
       it("should call chat endpoint with selected options", async () => {
         pluginManager.register(ChatOptionsPlugin);
+        pluginManager.activate(ChatOptionsPluginName);
         const {
           actions: { sendMessage, stopAnswering },
           primitives: { getCurrentConversation },
