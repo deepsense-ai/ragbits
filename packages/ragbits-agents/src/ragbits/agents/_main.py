@@ -395,11 +395,10 @@ class Agent(
             tools: The tools available to the agent. Can be one of:
                 * Callable - a function with typing of parameters and a docstring that will be sent to the LLM
                     The output from the callable will be sent to the LLM as a result of a tool.
-                    To specify additional values to return, that are not passed to the LLM use ToolReturn.
+                    To specify additional values to return, that are not passed to the LLM, use ToolReturn.
                     If this callable returns a generator or async generator, the yielded values are yielded from the
                     streaming agent as well. The exception is a ToolReturn, which is used to send the result to the LLM.
-                    The ToolReturn is expected to be yielded only once. This feature is meant to be used only with
-                    `run_streaming`.
+                    The ToolReturn is expected to be yielded only once.
                 * Agent - another instance of an Agent, with name and description
                 * Tool - raw instance of a Tool
             mcp_servers: The MCP servers available to the agent.
@@ -414,15 +413,14 @@ class Agent(
         self.description = description
         self.tools = []
         for tool in tools or []:
-            if isinstance(tool, tuple):
-                agent, kwargs = tool
-                self.tools.append(Tool.from_agent(agent, **kwargs))
-            elif isinstance(tool, Agent):
+            if isinstance(tool, Agent):
                 self.tools.append(Tool.from_agent(tool))
             elif isinstance(tool, Tool):
                 self.tools.append(tool)
-            else:
+            elif callable(tool):
                 self.tools.append(Tool.from_callable(tool))
+            else:
+                raise ValueError(f"Unsupported type of a tool: {type(tool)}. Should be a Callable, Agent, or Tool")
         self.mcp_servers = mcp_servers or []
         self.history = history or []
         self.keep_history = keep_history
