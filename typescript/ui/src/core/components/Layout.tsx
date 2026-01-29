@@ -6,16 +6,10 @@ import DelayedTooltip from "./DelayedTooltip";
 import { PropsWithChildren, useCallback, useState } from "react";
 import { useConfigContext } from "../contexts/ConfigContext/useConfigContext";
 import DebugPanel from "./DebugPanel";
-import PluginWrapper from "../utils/plugins/PluginWrapper";
-import { SharePlugin } from "../../plugins/SharePlugin";
+import { Slot } from "./Slot";
+import { useSlotHasFillers } from "../utils/slots/useSlotHasFillers";
 import { useHistoryActions } from "../stores/HistoryStore/selectors";
-import {
-  ChatHistoryPlugin,
-  ChatHistoryPluginName,
-} from "../../plugins/ChatHistoryPlugin";
-import { usePlugin } from "../utils/plugins/usePlugin";
 import { isURL } from "../utils/media";
-import { AuthPlugin } from "../../plugins/AuthPlugin";
 
 interface LayoutProps {
   title: string;
@@ -36,7 +30,7 @@ export default function Layout({
   logo,
   classNames,
 }: PropsWithChildren<LayoutProps>) {
-  const chatHistoryPlugin = usePlugin(ChatHistoryPluginName);
+  const historyEnabled = useSlotHasFillers("layout.sidebar");
   const { config } = useConfigContext();
   const { newConversation: clearHistory, stopAnswering } = useHistoryActions();
   const { setTheme, theme } = useThemeContext();
@@ -51,14 +45,9 @@ export default function Layout({
     clearHistory();
   }, [clearHistory, stopAnswering]);
 
-  const historyEnabled = chatHistoryPlugin?.isActivated;
   return (
     <div className="flex h-full min-h-[48rem] justify-center py-4">
-      <PluginWrapper
-        plugin={ChatHistoryPlugin}
-        component="ChatHistory"
-        disableSkeleton
-      />
+      <Slot name="layout.sidebar" disableSkeleton />
       <div
         className={cn(
           "flex grow flex-col px-4 sm:max-w-[1200px]",
@@ -100,21 +89,9 @@ export default function Layout({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <PluginWrapper
-              plugin={AuthPlugin}
-              component="LogoutButton"
-              skeletonSize={{
-                width: "40px",
-                height: "40px",
-              }}
-            />
-            <PluginWrapper
-              plugin={SharePlugin}
-              component="ShareButton"
-              skeletonSize={{
-                width: "40px",
-                height: "40px",
-              }}
+            <Slot
+              name="layout.headerActions"
+              skeletonSize={{ width: "40px", height: "40px" }}
             />
             {!historyEnabled && (
               <DelayedTooltip content="Clear chat" placement="bottom">

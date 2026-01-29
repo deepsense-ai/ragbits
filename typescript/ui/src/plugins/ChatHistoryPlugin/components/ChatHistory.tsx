@@ -12,11 +12,11 @@ import { useRef, useState } from "react";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useHistoryActions } from "../../../core/stores/HistoryStore/selectors";
 import { useHistoryStore } from "../../../core/stores/HistoryStore/useHistoryStore";
-import { isTemporaryConversation } from "../../../core/stores/HistoryStore/historyStore";
 import { useNavigate } from "react-router";
 import { getConversationRoute } from "../utils";
 import { useShallow } from "zustand/shallow";
 import { zip } from "lodash";
+import { isTemporaryConversation } from "../../../core/stores/HistoryStore/utils";
 
 export default function ChatHistory() {
   const {

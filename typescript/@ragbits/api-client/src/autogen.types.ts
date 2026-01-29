@@ -351,6 +351,10 @@ export interface ConfigResponse {
     customization: UICustomization | null
     user_settings: UserSettings
     /**
+     * Flag indicating whether API supports file upload
+     */
+    supports_upload: boolean
+    /**
      * Debug mode flag
      */
     debug_mode: boolean

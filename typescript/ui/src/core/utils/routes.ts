@@ -1,5 +1,5 @@
 import { RouteObject } from "react-router";
-import { Plugin, PluginRouteWrapper } from "../../types/plugins";
+import { Plugin, PluginRouteWrapper } from "../types/plugins";
 import { produce } from "immer";
 
 export function injectPluginRoutes(

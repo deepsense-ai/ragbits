@@ -3,8 +3,8 @@ import { describe, it, expect, beforeEach, vi, Mock } from "vitest";
 import ChatMessage from "../../src/core/components/ChatMessage/ChatMessage";
 import { MessageRole } from "@ragbits/api-client-react";
 import { enableMapSet } from "immer";
-import PluginWrapper from "../../src/core/utils/plugins/PluginWrapper";
 import { ComponentProps, PropsWithChildren } from "react";
+import { Slot } from "../../src/core/components/Slot";
 
 vi.mock("../../src/core/stores/HistoryStore/useHistoryStore", () => {
   return {
@@ -16,6 +16,9 @@ vi.mock("../../src/core/stores/HistoryStore/selectors", () => {
   return {
     useConversationProperty: vi.fn(),
     useMessage: vi.fn(),
+    useHistoryActions: vi.fn(() => ({
+      sendSilentConfirmation: vi.fn(),
+    })),
   };
 });
 
@@ -76,18 +79,17 @@ function mockStore(
   });
 }
 
-const COMPONENT_TEST_ID: Record<string, string> = {
-  FeedbackForm: "feedback-form",
-  UsageButton: "usage-button",
-};
-
-vi.mock("../../src/core/utils/plugins/PluginWrapper.tsx", () => ({
-  default: ({ component }: ComponentProps<typeof PluginWrapper>) => {
-    return (
-      <div data-testid={COMPONENT_TEST_ID[component]} data-plugin={component}>
-        {component}
-      </div>
-    );
+vi.mock("../../src/core/components/Slot.tsx", () => ({
+  Slot: ({ name }: ComponentProps<typeof Slot>) => {
+    if (name === "message.actions") {
+      return (
+        <>
+          <div data-testid="feedback-form">FeedbackForm</div>
+          <div data-testid="usage-button">UsageButton</div>
+        </>
+      );
+    }
+    return null;
   },
 }));
 
@@ -125,23 +127,6 @@ describe("ChatMessage", () => {
 
     it("shows feedback from when enabled", () => {
       mockStore(MessageRole.Assistant);
-      vi.mock(
-        "../../src/core/contexts/ConfigContex/useConfigContext.tsx",
-        () => ({
-          config: {
-            feedback: {
-              like: {
-                enabled: true,
-                form: null,
-              },
-              dislike: {
-                enabled: true,
-                form: null,
-              },
-            },
-          },
-        }),
-      );
 
       render(<ChatMessage messageId={MessageRole.Assistant} />);
       expect(screen.getByTestId("feedback-form")).toBeInTheDocument();
@@ -149,14 +134,6 @@ describe("ChatMessage", () => {
 
     it("shows usage button when enabled", () => {
       mockStore(MessageRole.Assistant);
-      vi.mock(
-        "../../src/core/contexts/ConfigContex/useConfigContext.tsx",
-        () => ({
-          config: {
-            show_usage: true,
-          },
-        }),
-      );
 
       render(<ChatMessage messageId={MessageRole.Assistant} />);
       expect(screen.getByTestId("usage-button")).toBeInTheDocument();

@@ -15,12 +15,14 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
-import { ChatMessage } from "../../../types/history";
+import { ChatMessage } from "../../../core/types/history";
 import { MessageUsage } from "@ragbits/api-client-react";
 import { upperFirst, words } from "lodash";
 
 interface UsageButtonProps {
-  usage: Exclude<ChatMessage["usage"], undefined>;
+  message: ChatMessage;
+  content?: string;
+  serverId?: string;
 }
 
 type TableData = MessageUsage & { model: string };
@@ -56,9 +58,16 @@ function toFormattedNumber(numStr: string) {
   );
 }
 
-export default function UsageButton({ usage }: UsageButtonProps) {
-  const models = Object.keys(usage);
+export default function UsageButton({ message }: UsageButtonProps) {
+  const usage = message.usage;
   const { isOpen, onOpen, onClose } = useDisclosure();
+
+  // Don't render if no usage data
+  if (!usage || Object.keys(usage).length < 1) {
+    return null;
+  }
+
+  const models = Object.keys(usage);
 
   const onOpenChange = () => {
     onClose();

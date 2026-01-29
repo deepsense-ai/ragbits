@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { ComponentProps } from "react";
 import userEvent from "@testing-library/user-event";
 import LiveUpdates from "../../src/core/components/ChatMessage/LiveUpdates";
-import { ChatMessage } from "../../src/types/history";
+import { ChatMessage } from "../../src/core/types/history";
 import ShimmerText from "../../src/core/components/ShimmerText";
 
 vi.mock("../../src/core/components/ShimmerText", () => ({

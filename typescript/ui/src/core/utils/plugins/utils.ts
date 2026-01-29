@@ -5,7 +5,7 @@ import {
   useContext,
   useSyncExternalStore,
 } from "react";
-import { Plugin } from "../../../types/plugins";
+import { Plugin } from "../../types/plugins";
 import { identity, noop } from "lodash";
 import { StoreApi } from "zustand";
 

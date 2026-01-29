@@ -1,92 +1,217 @@
-import { PropsWithChildren, useMemo, useState } from "react";
+import { PropsWithChildren, useMemo } from "react";
 import { createStore, useStore } from "zustand";
-import { createHistoryStore } from "./historyStore";
-import { createJSONStorage, persist } from "zustand/middleware";
-import { IndexedDBStorage } from "./indexedDBStorage";
+import { immer } from "zustand/middleware/immer";
 import { HistoryStoreContext } from "./HistoryStoreContext";
-import { Conversation } from "../../../types/history";
+import { HistoryStore, ChatMessage } from "../../types/history";
+import { MessageRole } from "@ragbits/api-client-react";
+import { v4 as uuidv4 } from "uuid";
 import InitializationScreen from "../../components/InitializationScreen";
+import {
+  initialConversationValues,
+  initialHistoryValues,
+  isTemporaryConversation,
+  updateConversation,
+} from "./utils";
+import { omitBy } from "lodash";
 
-export const HISTORY_STORE_KEY_BASE = "ragbits-history-store";
+const createMinimalHistoryStore = immer<HistoryStore>((set, get) => {
+  return {
+    ...initialHistoryValues(),
+    // TODO: We might want to unify primitives with the RagbitsHistoryStore later
+    primitives: {
+      getCurrentConversation: () => {
+        const { currentConversation, conversations } = get();
+        const conversation = conversations[currentConversation];
 
-interface HistoryStoreContextProviderProps {
-  shouldStoreHistory: boolean;
-}
+        if (!conversation) {
+          throw new Error("Tried to get conversation that doesn't exist.");
+        }
 
-function initializeStore(shouldStoreHistory: boolean, storeKey: string) {
-  if (shouldStoreHistory) {
-    return createStore(
-      persist(createHistoryStore, {
-        name: storeKey,
-        partialize: (value) => ({
-          conversations: value.conversations,
-        }),
-        onRehydrateStorage: (state) => {
-          // We have to wait for the hydration to finish to avoid any races that may result in saving of the invalid
-          // state to the storage (e.g. clearing all history)
-          return () => state._internal._setHasHydrated(true);
-        },
-        merge: (persistedState, currentState) => {
-          const persistedConversations =
-            (persistedState as Record<string, unknown>)?.conversations ?? {};
-          const { conversations, currentConversation } = currentState;
-          const fixedConversations = Object.values(
-            persistedConversations,
-          ).reduce((acc, c: Conversation) => {
-            if (c.conversationId === null) {
-              return acc;
+        return conversation;
+      },
+      addMessage: (conversationId, message) => {
+        const id = uuidv4();
+        const newMessage: ChatMessage = { ...message, id };
+        set(
+          updateConversation(conversationId, (draft) => {
+            draft.followupMessages = null;
+            draft.lastMessageId = id;
+            draft.history[id] = newMessage;
+          }),
+        );
+        return id;
+      },
+      deleteMessage: (conversationId, messageId) => {
+        set(
+          updateConversation(conversationId, (draft) => {
+            const { history } = draft;
+            const messageIds = Object.keys(history);
+
+            if (messageIds.at(-1) === messageId) {
+              draft.lastMessageId = messageIds.at(-2) ?? null;
             }
 
-            acc[c.conversationId] = {
-              ...c,
-              isLoading: false,
-              abortController: null,
-            };
-            return acc;
-          }, {});
+            delete draft.history[messageId];
+          }),
+        );
+      },
+      restore: () => {}, // No-op for minimal implementation
+      stopAnswering: (conversationId) => {
+        const conversation = get().conversations[conversationId];
 
-          return {
-            ...currentState,
-            currentConversation: currentConversation,
-            conversations: { ...fixedConversations, ...conversations },
-          };
-        },
-        storage: createJSONStorage(() => IndexedDBStorage),
-      }),
-    );
-  }
+        if (!conversation) {
+          throw new Error(
+            "Tried to stop answering for conversation that doesn't exist",
+          );
+        }
 
-  // Manually set _hasHydrated when we don't use any storage
-  const store = createStore(createHistoryStore);
-  store.getState()._internal._setHasHydrated(true);
+        conversation.abortController?.abort();
+        set(
+          updateConversation(conversationId, (draft) => {
+            draft.abortController = null;
+            draft.isLoading = false;
+          }),
+        );
+      },
+    },
 
-  return store;
+    actions: {
+      sendMessage: async (text: string) => {
+        const state = get();
+        const {
+          primitives: { addMessage },
+        } = get();
+        const conversationId = state.currentConversation;
+
+        // Add user message
+        addMessage(conversationId, {
+          role: MessageRole.User,
+          content: text,
+        });
+
+        // Set loading
+        set(
+          updateConversation(conversationId, (draft) => {
+            draft.isLoading = true;
+          }),
+        );
+
+        // Default: just add a placeholder assistant message
+        addMessage(conversationId, {
+          role: MessageRole.Assistant,
+          content:
+            "This is a demo response. Use RagbitsHistoryStoreProvider for real API calls.",
+        });
+
+        set((draft) => {
+          const conv = draft.conversations[conversationId];
+          if (conv) {
+            conv.isLoading = false;
+          }
+        });
+      },
+
+      stopAnswering: () => {
+        const state = get();
+        state.primitives.stopAnswering(state.currentConversation);
+      },
+
+      newConversation: () => {
+        const newConversation = initialConversationValues();
+        set((draft) => {
+          draft.conversations[newConversation.conversationId] = newConversation;
+          draft.currentConversation = newConversation.conversationId;
+
+          // Cleanup unused temporary conversations
+          draft.conversations = omitBy(
+            draft.conversations,
+            (c) =>
+              isTemporaryConversation(c.conversationId) &&
+              c.conversationId !== draft.currentConversation,
+          );
+        });
+
+        return newConversation.conversationId;
+      },
+
+      selectConversation: (conversationId: string) => {
+        set((draft) => {
+          if (draft.currentConversation === conversationId) {
+            return;
+          }
+          const conversation = draft.conversations[conversationId];
+          if (!conversation) {
+            throw new Error(
+              `Tried to select conversation that doesn't exist, id: ${conversationId}`,
+            );
+          }
+
+          draft.currentConversation = conversationId;
+        });
+      },
+
+      deleteConversation: (conversationId: string) => {
+        const {
+          actions: { newConversation },
+          primitives: { stopAnswering },
+          currentConversation,
+        } = get();
+        stopAnswering(conversationId);
+
+        set((draft) => {
+          delete draft.conversations[conversationId];
+        });
+
+        if (conversationId === currentConversation) {
+          return newConversation();
+        }
+      },
+
+      // These are no-ops for minimal implementation
+      sendSilentConfirmation: () => {},
+      mergeExtensions: () => {},
+      initializeChatOptions: () => {},
+      setConversationProperties: () => {},
+    },
+
+    computed: {
+      getContext: () => ({}),
+    },
+
+    _internal: {
+      _hasHydrated: true,
+      _setHasHydrated: () => {},
+      handleResponse: () => {},
+    },
+  };
+});
+
+export type HistoryStoreInitializer = typeof createMinimalHistoryStore;
+
+export interface HistoryStoreContextProviderProps {
+  storeInitializer?: HistoryStoreInitializer;
+  waitForHydration?: boolean;
 }
 
 export default function HistoryStoreContextProvider({
   children,
-  shouldStoreHistory,
+  storeInitializer = createMinimalHistoryStore,
+  waitForHydration = false,
 }: PropsWithChildren<HistoryStoreContextProviderProps>) {
-  const [storeKey, _setStoreKey] = useState(HISTORY_STORE_KEY_BASE);
   const store = useMemo(
-    () => initializeStore(shouldStoreHistory, storeKey),
-    [shouldStoreHistory, storeKey],
+    () => createStore(storeInitializer),
+    [storeInitializer],
   );
   const hasHydrated = useStore(store, (s) => s._internal._hasHydrated);
-
-  const initializeUserStore = (userId: string) => {
-    _setStoreKey(`${HISTORY_STORE_KEY_BASE}-${userId}`);
-  };
 
   const value = useMemo(
     () => ({
       store,
-      initializeUserStore,
     }),
     [store],
   );
 
-  if (shouldStoreHistory && !hasHydrated) {
+  if (waitForHydration && !hasHydrated) {
     return <InitializationScreen />;
   }
 
