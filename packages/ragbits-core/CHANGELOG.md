@@ -2,6 +2,7 @@
 
 ## Unreleased
 - Add Support for Thinking in agents (#837)
+- Fix trace context managers not closing properly when streaming (#922)
 
 ## 1.4.1 (2026-02-08)
 
