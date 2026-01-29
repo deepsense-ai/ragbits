@@ -842,7 +842,7 @@ async def test_pre_tool_hook_denies_only_matching_tool(
     llm_with_tool_call: MockLLM, method: Callable, deny_hook: PreToolHookCallback
 ):
     """Test that a hook with tools filter only affects matching tools."""
-    hook = Hook(event_type=EventType.PRE_TOOL, callback=deny_hook, tools=["other_tool"])
+    hook = Hook(event_type=EventType.PRE_TOOL, callback=deny_hook, tool_names=["other_tool"])
     agent = Agent(llm=llm_with_tool_call, prompt=CustomPrompt, tools=[get_weather], hooks=[hook])
 
     result = await method(agent)
@@ -906,7 +906,7 @@ async def test_pre_tool_hook_ask_with_confirmation_approved(llm_with_tool_call: 
 
     # Second run with confirmation approved
     context: AgentRunContext = AgentRunContext(
-        confirmed_hooks=[{"confirmation_id": confirmation_request.confirmation_id, "confirmed": True}]
+        tool_confirmations=[{"confirmation_id": confirmation_request.confirmation_id, "confirmed": True}]
     )
     result = await agent.run(context=context)
 

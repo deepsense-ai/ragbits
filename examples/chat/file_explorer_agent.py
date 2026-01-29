@@ -32,7 +32,7 @@ from pathlib import Path
 from ragbits.agents import Agent, ToolCallResult
 from ragbits.agents._main import AgentRunContext
 from ragbits.agents.confirmation import ConfirmationRequest
-from ragbits.agents.hooks.confirmation import requires_confirmation_hook
+from ragbits.agents.hooks.confirmation import create_confirmation_hook
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import (
     ChatContext,
@@ -542,8 +542,8 @@ class FileExplorerChat(ChatInterface):
 
         # Create confirmation hook for destructive tools
         self.hooks = [
-            requires_confirmation_hook(
-                tools=["create_file", "delete_file", "move_file", "create_directory", "delete_directory"]
+            create_confirmation_hook(
+                tool_names=["create_file", "delete_file", "move_file", "create_directory", "delete_directory"]
             )
         ]
 
@@ -556,10 +556,10 @@ class FileExplorerChat(ChatInterface):
         """
         Chat implementation with non-blocking confirmation support.
 
-        The agent will check context.confirmed_hooks for any confirmations.
+        The agent will check context.tool_confirmations for any confirmations.
         If a hook needs confirmation but hasn't been confirmed yet, it will
         yield a ConfirmationRequest and exit. The frontend will then send a
-        new request with the confirmation in context.confirmed_hooks.
+        new request with the confirmation in context.tool_confirmations.
         """
         # Create agent with history passed explicitly
         agent: Agent = Agent(
@@ -584,12 +584,12 @@ class FileExplorerChat(ChatInterface):
             history=history,
         )
 
-        # Create agent context with confirmed_hooks from the request context
+        # Create agent context with tool_confirmations from the request context
         agent_context: AgentRunContext = AgentRunContext()
 
-        # Pass confirmed_hooks from ChatContext to AgentRunContext
-        if context.confirmed_hooks:
-            agent_context.confirmed_hooks = context.confirmed_hooks
+        # Pass tool_confirmations from ChatContext to AgentRunContext
+        if context.tool_confirmations:
+            agent_context.tool_confirmations = context.tool_confirmations
 
         # Run agent in streaming mode with the message and history
         async for response in agent.run_streaming(

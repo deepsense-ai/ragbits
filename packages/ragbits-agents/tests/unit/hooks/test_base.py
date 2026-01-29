@@ -11,12 +11,12 @@ from ragbits.core.llms.base import ToolCall
 
 class TestHookToolMatching:
     def test_matches_tool_when_in_list(self, pass_hook: PreToolHookCallback):
-        hook = Hook(event_type=EventType.PRE_TOOL, callback=pass_hook, tools=["tool1", "tool2"])
+        hook = Hook(event_type=EventType.PRE_TOOL, callback=pass_hook, tool_names=["tool1", "tool2"])
         assert hook.matches_tool("tool1") is True
         assert hook.matches_tool("other") is False
 
     def test_matches_all_tools_when_tools_is_none(self, pass_hook: PreToolHookCallback):
-        hook = Hook(event_type=EventType.PRE_TOOL, callback=pass_hook, tools=None)
+        hook = Hook(event_type=EventType.PRE_TOOL, callback=pass_hook, tool_names=None)
         assert hook.matches_tool("anything") is True
 
 

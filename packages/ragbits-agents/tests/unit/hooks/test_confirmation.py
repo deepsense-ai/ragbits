@@ -4,28 +4,28 @@
 
 import pytest
 
-from ragbits.agents.hooks.confirmation import requires_confirmation_hook
+from ragbits.agents.hooks.confirmation import create_confirmation_hook
 from ragbits.agents.hooks.types import EventType, PreToolInput
 from ragbits.core.llms.base import ToolCall
 
 
-class TestRequiresConfirmationHook:
+class TestCreateConfirmationHook:
     def test_creates_hook_with_defaults(self):
-        hook = requires_confirmation_hook()
+        hook = create_confirmation_hook()
 
         assert hook.event_type == EventType.PRE_TOOL
         assert hook.priority == 1
-        assert hook.tools is None
+        assert hook.tool_names is None
 
     def test_creates_hook_with_custom_options(self):
-        hook = requires_confirmation_hook(tools=["delete_file"], priority=50)
+        hook = create_confirmation_hook(tool_names=["delete_file"], priority=50)
 
-        assert hook.tools == ["delete_file"]
+        assert hook.tool_names == ["delete_file"]
         assert hook.priority == 50
 
     @pytest.mark.asyncio
     async def test_hook_returns_ask_decision_with_reason(self, tool_call: ToolCall):
-        hook = requires_confirmation_hook()
+        hook = create_confirmation_hook()
         result = await hook.execute(PreToolInput(tool_call=tool_call))
 
         assert result.decision == "ask"

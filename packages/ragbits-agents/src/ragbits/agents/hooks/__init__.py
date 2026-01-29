@@ -31,7 +31,7 @@ Example usage:
     hook: Hook[PreToolInput, PreToolOutput] = Hook(
         event_type=EventType.PRE_TOOL,
         callback=validate_input,
-        tools=["dangerous_tool"],
+        tool_names=["dangerous_tool"],
         priority=10
     )
 
@@ -43,7 +43,7 @@ Example usage:
 """
 
 from ragbits.agents.hooks.base import Hook, HookInputT, HookOutputT
-from ragbits.agents.hooks.confirmation import requires_confirmation_hook
+from ragbits.agents.hooks.confirmation import create_confirmation_hook
 from ragbits.agents.hooks.manager import HookManager
 from ragbits.agents.hooks.types import (
     EventType,
@@ -72,6 +72,6 @@ __all__ = [
     "PreToolHookCallback",
     "PreToolInput",
     "PreToolOutput",
-    # Custom hooks
-    "requires_confirmation_hook",
+    # Hook factories
+    "create_confirmation_hook",
 ]

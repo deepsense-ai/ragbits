@@ -136,10 +136,10 @@ async def main() -> None:
     llm = LiteLLM("gpt-4o-mini")
 
     hooks = [
-        Hook(event_type=EventType.PRE_TOOL, callback=validate_email, tools=["send_notification"], priority=10),
-        Hook(event_type=EventType.PRE_TOOL, callback=sanitize_email_domain, tools=["send_notification"], priority=20),
-        Hook(event_type=EventType.POST_TOOL, callback=mask_sensitive_data, tools=["search_user"], priority=10),
-        Hook(event_type=EventType.POST_TOOL, callback=log_notification, tools=["send_notification"], priority=10),
+        Hook(event_type=EventType.PRE_TOOL, callback=validate_email, tool_names=["send_notification"], priority=10),
+        Hook(event_type=EventType.PRE_TOOL, callback=sanitize_email_domain, tool_names=["send_notification"], priority=20),
+        Hook(event_type=EventType.POST_TOOL, callback=mask_sensitive_data, tool_names=["search_user"], priority=10),
+        Hook(event_type=EventType.POST_TOOL, callback=log_notification, tool_names=["send_notification"], priority=10),
     ]
 
     agent = Agent(

@@ -8,16 +8,17 @@ from ragbits.agents.hooks.base import Hook
 from ragbits.agents.hooks.types import EventType, PreToolInput, PreToolOutput
 
 
-def requires_confirmation_hook(tools: list[str] | None = None, priority: int = 1) -> Hook[PreToolInput, PreToolOutput]:
+def create_confirmation_hook(
+    tool_names: list[str] | None = None, priority: int = 1
+) -> Hook[PreToolInput, PreToolOutput]:
     """
     Create a hook that requires user confirmation before tool execution.
 
-    This replaces the @requires_confirmation decorator with a hook-based approach.
     The hook returns "ask" decision, which causes the agent to yield a ConfirmationRequest
     and wait for user approval/decline.
 
     Args:
-        tools: List of tool names to require confirmation for. If None, applies to all tools.
+        tool_names: List of tool names to require confirmation for. If None, applies to all tools.
         priority: Hook priority (default: 1, runs first)
 
     Returns:
@@ -26,11 +27,13 @@ def requires_confirmation_hook(tools: list[str] | None = None, priority: int = 1
     Example:
         ```python
         from ragbits.agents import Agent
-        from ragbits.agents.hooks.helpers import requires_confirmation_hook
+        from ragbits.agents.hooks.confirmation import create_confirmation_hook
 
-        agent = Agent(tools=[delete_file, send_email], hooks=[requires_confirmation_hook(tools=["delete_file", "send_email"])])
+        agent = Agent(
+            tools=[delete_file, send_email], hooks=[create_confirmation_hook(tool_names=["delete_file", "send_email"])]
+        )
         ```
-    """  # noqa: E501
+    """
 
     async def confirm_hook(input_data: PreToolInput) -> PreToolOutput:
         """Hook that always returns 'ask' to require confirmation."""
@@ -43,6 +46,6 @@ def requires_confirmation_hook(tools: list[str] | None = None, priority: int = 1
     return Hook(
         event_type=EventType.PRE_TOOL,
         callback=confirm_hook,
-        tools=tools,
+        tool_names=tool_names,
         priority=priority,
     )

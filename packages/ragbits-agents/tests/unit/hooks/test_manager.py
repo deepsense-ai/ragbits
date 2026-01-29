@@ -59,9 +59,9 @@ class TestHookRetrieval:
     def test_filters_by_tool_name(self, pass_hook: PreToolHookCallback):
         manager = HookManager(
             hooks=[
-                Hook(event_type=EventType.PRE_TOOL, callback=pass_hook, tools=["tool1"]),
-                Hook(event_type=EventType.PRE_TOOL, callback=pass_hook, tools=["tool2"]),
-                Hook(event_type=EventType.PRE_TOOL, callback=pass_hook, tools=None),  # universal
+                Hook(event_type=EventType.PRE_TOOL, callback=pass_hook, tool_names=["tool1"]),
+                Hook(event_type=EventType.PRE_TOOL, callback=pass_hook, tool_names=["tool2"]),
+                Hook(event_type=EventType.PRE_TOOL, callback=pass_hook, tool_names=None),  # universal
             ]
         )
 
@@ -120,13 +120,13 @@ class TestPreToolExecution:
 
         # Approved
         ctx_approved: AgentRunContext = AgentRunContext(
-            confirmed_hooks=[{"confirmation_id": confirmation_id, "confirmed": True}]
+            tool_confirmations=[{"confirmation_id": confirmation_id, "confirmed": True}]
         )
         assert (await manager.execute_pre_tool(tool_call, ctx_approved)).decision == "pass"
 
         # Declined
         ctx_declined: AgentRunContext = AgentRunContext(
-            confirmed_hooks=[{"confirmation_id": confirmation_id, "confirmed": False}]
+            tool_confirmations=[{"confirmation_id": confirmation_id, "confirmed": False}]
         )
         assert (await manager.execute_pre_tool(tool_call, ctx_declined)).decision == "deny"
 

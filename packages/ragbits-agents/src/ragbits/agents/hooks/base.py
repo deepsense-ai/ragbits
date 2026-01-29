@@ -3,7 +3,6 @@ Base classes for the hooks system.
 """
 
 from collections.abc import Awaitable, Callable
-from dataclasses import dataclass
 from typing import Generic, TypeVar
 
 from ragbits.agents.hooks.types import EventType, HookEventIO
@@ -12,7 +11,6 @@ HookInputT = TypeVar("HookInputT", bound=HookEventIO)
 HookOutputT = TypeVar("HookOutputT", bound=HookEventIO)
 
 
-@dataclass
 class Hook(Generic[HookInputT, HookOutputT]):
     """
     A hook that intercepts execution at various lifecycle points.
@@ -28,7 +26,7 @@ class Hook(Generic[HookInputT, HookOutputT]):
     Attributes:
         event_type: The type of event (e.g., PRE_TOOL, POST_TOOL)
         callback: The async function to call when the event is triggered
-        tools: List of tool names this hook applies to. If None, applies to all tools.
+        tool_names: List of tool names this hook applies to. If None, applies to all tools.
         priority: Execution priority (lower numbers execute first, default: 100)
 
     Example:
@@ -43,15 +41,31 @@ class Hook(Generic[HookInputT, HookOutputT]):
 
 
         hook: Hook[PreToolInput, PreToolOutput] = Hook(
-            event_type=EventType.PRE_TOOL, callback=validate_input, tools=["dangerous_tool"], priority=10
+            event_type=EventType.PRE_TOOL, callback=validate_input, tool_names=["dangerous_tool"], priority=10
         )
         ```
     """
 
-    event_type: EventType
-    callback: Callable[[HookInputT], Awaitable[HookOutputT]]
-    tools: list[str] | None = None
-    priority: int = 100
+    def __init__(
+        self,
+        event_type: EventType,
+        callback: Callable[[HookInputT], Awaitable[HookOutputT]],
+        tool_names: list[str] | None = None,
+        priority: int = 100,
+    ) -> None:
+        """
+        Initialize a hook.
+
+        Args:
+            event_type: The type of event (e.g., PRE_TOOL, POST_TOOL)
+            callback: The async function to call when the event is triggered
+            tool_names: List of tool names this hook applies to. If None, applies to all tools.
+            priority: Execution priority (lower numbers execute first, default: 100)
+        """
+        self.event_type = event_type
+        self.callback = callback
+        self.tool_names = tool_names
+        self.priority = priority
 
     def matches_tool(self, tool_name: str) -> bool:
         """
@@ -63,9 +77,9 @@ class Hook(Generic[HookInputT, HookOutputT]):
         Returns:
             True if this hook should be executed for the given tool
         """
-        if self.tools is None:
+        if self.tool_names is None:
             return True
-        return tool_name in self.tools
+        return tool_name in self.tool_names
 
     async def execute(self, hook_input: HookInputT) -> HookOutputT:
         """

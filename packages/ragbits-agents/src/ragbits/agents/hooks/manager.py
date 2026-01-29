@@ -88,7 +88,7 @@ class HookManager:
 
         Args:
             tool_call: The tool call to process
-            context: Agent run context containing confirmed_hooks
+            context: Agent run context containing tool_confirmations
 
         Returns:
             PreToolOutput with final arguments and decision
@@ -120,7 +120,7 @@ class HookManager:
 
             elif result.decision == "ask":
                 # Check if already confirmed/declined in context
-                for conf in context.confirmed_hooks:
+                for conf in context.tool_confirmations:
                     if conf.get("confirmation_id") == confirmation_id:
                         if conf.get("confirmed"):
                             # Approved → convert to "pass" and continue to next hook
@@ -131,7 +131,7 @@ class HookManager:
                             return PreToolOutput(
                                 arguments=current_arguments,
                                 decision="deny",
-                                reason=result.reason or "Hook declined by user",
+                                reason=result.reason or "Tool execution declined by user",
                             )
                 else:
                     # Not in context → return "ask" with full ConfirmationRequest

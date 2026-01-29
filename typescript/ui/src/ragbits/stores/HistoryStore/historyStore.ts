@@ -389,9 +389,9 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       // Reuse the same message for the response instead of creating a new one
       const assistantResponseId = messageId;
 
-      // Prepare the chat request with confirmed_hooks context
-      // Build the confirmed_hooks array from all decisions
-      const confirmed_hooks = idsArray.map((id) => ({
+      // Prepare the chat request with tool_confirmations context
+      // Build the tool_confirmations array from all decisions
+      const tool_confirmations = idsArray.map((id) => ({
         confirmation_id: id,
         confirmed: decisionsMap[id],
       }));
@@ -402,7 +402,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         history: mapHistoryToMessages(history),
         context: {
           ...getContext(),
-          confirmed_hooks,
+          tool_confirmations,
         },
       };
 

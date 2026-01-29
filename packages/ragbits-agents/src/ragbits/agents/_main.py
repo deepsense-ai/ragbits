@@ -210,9 +210,10 @@ class AgentRunContext(BaseModel, Generic[DepsT]):
     """Whether to stream events from downstream agents when tools execute other agents."""
     downstream_agents: dict[str, "Agent"] = Field(default_factory=dict)
     """Registry of all agents that participated in this run"""
-    confirmed_hooks: list[dict[str, Any]] = Field(
+    tool_confirmations: list[dict[str, Any]] = Field(
         default_factory=list,
-        description="List of confirmed/declined hooks. Each entry has 'confirmation_id' and 'confirmed' (bool)",
+        description="List of confirmed/declined tool executions. Each entry has 'confirmation_id' and 'confirmed' "
+        "(bool)",
     )
 
     def register_agent(self, agent: "Agent") -> None:
