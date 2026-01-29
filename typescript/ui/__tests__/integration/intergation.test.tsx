@@ -383,8 +383,6 @@ describe("Integration tests", () => {
         expect(headers["Content-Type"]).toBeUndefined();
       });
     });
-
-
   });
 
   describe("/api/feedback", () => {
