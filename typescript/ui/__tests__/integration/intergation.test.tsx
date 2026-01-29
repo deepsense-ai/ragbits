@@ -329,6 +329,7 @@ describe("Integration tests", () => {
         }
         return Promise.resolve(new Response("{}", { status: 200 }));
       });
+      const originalFetch = global.fetch;
       global.fetch = fetchSpy;
 
       const WrappedInput = () => (
@@ -382,6 +383,8 @@ describe("Integration tests", () => {
         const headers = options?.headers as Record<string, string>;
         expect(headers["Content-Type"]).toBeUndefined();
       });
+
+      global.fetch = originalFetch;
     });
   });
 
