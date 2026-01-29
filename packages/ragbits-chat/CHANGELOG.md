@@ -3,6 +3,7 @@
 ## Unreleased
 - Add timezone field to ChatContext, automatically populated from browser (#916)
 - Fix PostgreSQL conversation persistence by ensuring session flush after creating new conversation in SQL storage (#903)
+- Add file upload ingestion support with `upload_handler` in `ChatInterface` and `/api/upload` endpoint in `RagbitsAPI`.
 - Change auth backend from jwt to http-only cookie based authentication, add support for OAuth2 authentication (#867)
 - Add Google OAuth2 provider and refactor providers to use `OAuth2Providers` namespace (e.g., `OAuth2Providers.GOOGLE`) (#915)
 - Make `SummaryGenerator` optional in `ChatInterface` by providing a default Heuristic implementation.

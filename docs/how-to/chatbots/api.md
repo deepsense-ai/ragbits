@@ -154,6 +154,52 @@ async def chat(self, message: str, history: ChatFormat, context: ChatContext) ->
         yield self.create_text_response(chunk)
 ```
 
+## Handling File Uploads
+
+Ragbits Chat supports file uploads, allowing users to send files to your chatbot. To enable this feature, implement the `upload_handler` method in your `ChatInterface` subclass.
+
+### Enable File Uploads
+
+Define an async `upload_handler` method that accepts a `fastapi.UploadFile` object:
+
+```python
+from collections.abc import AsyncGenerator
+
+from fastapi import UploadFile
+
+from ragbits.chat.interface import ChatInterface
+from ragbits.chat.interface.types import ChatContext, ChatResponse
+from ragbits.core.prompt import ChatFormat
+
+
+class MyChat(ChatInterface):
+    async def upload_handler(self, file: UploadFile) -> None:
+        """
+        Handle file uploads.
+
+        Args:
+            file: The uploaded file (FastAPI UploadFile)
+        """
+        # Read the file content
+        content = await file.read()
+        filename = file.filename
+
+        # Process the file (e.g., ingest into vector store, save to disk)
+        print(f"Received file: {filename}, size: {len(content)} bytes")
+
+    async def chat(
+        self,
+        message: str,
+        history: ChatFormat,
+        context: ChatContext,
+    ) -> AsyncGenerator[ChatResponse, None]:
+        yield self.create_text_response(f"You said: {message}")
+```
+
+When this method is implemented, the chat interface will automatically show an attachment icon in the input bar.
+
+> **Note**: The upload handler processes the file but does not directly return a response to the chat stream. The frontend receives a success status via the `/api/upload` endpoint. If you want to acknowledge the upload in the chat, the user typically sends a follow-up message, or you can store the uploaded file reference in state for later use.
+
 ## State Management
 
 Ragbits Chat provides secure state management to maintain conversation context across requests. State data is automatically signed using HMAC to prevent tampering.
@@ -336,6 +382,7 @@ The API server exposes the following endpoints:
 - `GET /api/config`: Returns UI configuration including feedback forms
 - `POST /api/chat`: Accepts chat messages and returns streaming responses
 - `POST /api/feedback`: Accepts feedback from the user
+- `POST /api/upload`: Accepts file uploads (only available when `upload_handler` is implemented)
 
 ## Server Configuration
 
