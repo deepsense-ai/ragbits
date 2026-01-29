@@ -1,5 +1,1 @@
-<<<<<<<< HEAD:packages/ragbits-chat/src/ragbits/chat/ui-build/assets/chunk-IGSAU2ZA-Bov4X6Tw.js
-import{l as h,be as p,R as x,r as i,j as M,Z as R}from"./index-C5N0grPW.js";var s=h((r,o)=>{const{as:t,children:d,className:l,...n}=r,{slots:c,classNames:a,headerId:m,setHeaderMounted:e}=p(),f=x(o),u=t||"header";return i.useEffect(()=>(e(!0),()=>e(!1)),[e]),M.jsx(u,{ref:f,className:c.header({class:R(a?.header,l)}),id:m,...n,children:d})});s.displayName="HeroUI.ModalHeader";var N=s;export{N as m};
-========
 import{l as h,be as p,R as x,r as i,j as M,Z as R}from"./index-trHvhqaI.js";var s=h((r,o)=>{const{as:t,children:d,className:l,...n}=r,{slots:c,classNames:a,headerId:m,setHeaderMounted:e}=p(),f=x(o),u=t||"header";return i.useEffect(()=>(e(!0),()=>e(!1)),[e]),M.jsx(u,{ref:f,className:c.header({class:R(a?.header,l)}),id:m,...n,children:d})});s.displayName="HeroUI.ModalHeader";var N=s;export{N as m};
->>>>>>>> cf1ef5694 (feat: move upload file to plugin, improve slots architecture):packages/ragbits-chat/src/ragbits/chat/ui-build/assets/chunk-IGSAU2ZA-DhtF8Y_0.js
