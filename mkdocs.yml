@@ -44,6 +44,7 @@ nav:
         - "Setup guardrails": how-to/guardrails/use_guardrails.md
       - Chatbots:
         - "Setup API & UI": how-to/chatbots/api.md
+        - "Extend and customize the UI": how-to/chatbots/extending-ui.md
       - Evaluate:
           - "Evaluate pipelines": how-to/evaluate/evaluate.md
           - "Create custom evaluation pipeline": how-to/evaluate/custom_evaluation_pipeline.md

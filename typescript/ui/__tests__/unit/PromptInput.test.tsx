@@ -1,12 +1,12 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
-import PluginWrapper from "../../src/core/utils/plugins/PluginWrapper";
 import { ComponentProps } from "react";
 import HorizontalActions from "../../src/core/components/inputs/PromptInput/HorizontalActions";
 import PromptInput from "../../src/core/components/inputs/PromptInput/PromptInput";
 import userEvent from "@testing-library/user-event";
-import { ChatMessage } from "../../src/types/history";
+import { ChatMessage } from "../../src/core/types/history";
 import { MessageRole } from "@ragbits/api-client";
+import { Slot } from "../../src/core/components/Slot";
 
 vi.mock(
   "../../src/core/components/inputs/PromptInput/HorizontalActions.tsx",
@@ -16,10 +16,10 @@ vi.mock(
   }),
 );
 
-vi.mock("../../src/core/utils/plugins/PluginWrapper.tsx", () => ({
-  default: ({ component }: ComponentProps<typeof PluginWrapper>) => (
-    <div data-testid="feedback-form" data-plugin={component}>
-      {component}
+vi.mock("../../src/core/components/Slot.tsx", () => ({
+  Slot: ({ name }: ComponentProps<typeof Slot>) => (
+    <div data-testid="slot" data-slot-name={name}>
+      {name === "prompt.beforeSend" ? "ChatOptionsForm" : name}
     </div>
   ),
 }));

@@ -7,9 +7,8 @@ import {
   useSyncExternalStore,
   useRef,
 } from "react";
-import { RagbitsClient } from "@ragbits/api-client-react";
 import { ThemeContext, Theme } from "./ThemeContext";
-import { API_URL } from "../../../config";
+import { useRagbitsContext } from "@ragbits/api-client-react";
 
 function getPreferredTheme() {
   return window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -35,9 +34,7 @@ export const ThemeContextProvider: FC<{ children: ReactNode }> = ({
 }) => {
   const themeValue = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   const themeLoadedRef = useRef(false);
-  const client = new RagbitsClient({
-    baseUrl: API_URL,
-  });
+  const { client } = useRagbitsContext();
 
   // Load HeroUI custom theme from backend - only once
   useEffect(() => {
