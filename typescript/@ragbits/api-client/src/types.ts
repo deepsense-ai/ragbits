@@ -65,6 +65,10 @@ export interface BaseApiEndpoints {
     >
     '/api/user': EndpointDefinition<never, User>
     '/api/theme': EndpointDefinition<never, string>
+    '/api/upload': EndpointDefinition<
+        FormData,
+        { status: string; filename: string }
+    >
 }
 
 /**

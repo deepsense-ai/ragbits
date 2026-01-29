@@ -306,6 +306,88 @@ describe("Integration tests", () => {
     });
   });
 
+  describe("/api/upload", () => {
+    it("should call upload endpoint with correct data", async () => {
+      // Mock fetch for this test
+      const fetchSpy = vi.fn().mockImplementation((url) => {
+        if (url.toString().endsWith("/api/config")) {
+          return Promise.resolve(
+            new Response(
+              JSON.stringify({
+                feedback: {
+                  like: { enabled: false },
+                  dislike: { enabled: false },
+                },
+                user_settings: { form: null },
+                conversation_history: false,
+                authentication: { enabled: false, auth_types: [] },
+                show_usage: false,
+              }),
+              { status: 200 },
+            ),
+          );
+        }
+        return Promise.resolve(new Response("{}", { status: 200 }));
+      });
+      const originalFetch = global.fetch;
+      global.fetch = fetchSpy;
+
+      const WrappedInput = () => (
+        <RagbitsContextProvider baseUrl={BASE_URL}>
+          <ConfigContextProvider>
+            <PromptInput
+              isLoading={false}
+              submit={vi.fn()}
+              stopAnswering={vi.fn()}
+              followupMessages={[]}
+            />
+          </ConfigContextProvider>
+        </RagbitsContextProvider>
+      );
+
+      const { container } = render(<WrappedInput />);
+
+      await screen.findByRole("textbox", {}, { timeout: 5000 });
+
+      const file = new File(["(⌐□_□)"], "chucknorris.png", {
+        type: "image/png",
+      });
+      const input = container.querySelector('input[type="file"]');
+
+      if (!input) {
+        throw new Error("File input not found");
+      }
+
+      fireEvent.change(input, { target: { files: [file] } });
+
+      await waitFor(() => {
+        // Find the upload call
+        const uploadCall = fetchSpy.mock.calls.find((call) =>
+          call[0].toString().endsWith("/api/upload"),
+        );
+
+        if (!uploadCall) {
+          throw new Error("Upload call not found");
+        }
+
+        const [url, options] = uploadCall;
+        expect(url).toContain("/api/upload");
+        expect(options).toEqual(
+          expect.objectContaining({
+            method: "POST",
+            body: expect.any(Object), // FormData is difficult to inspect deeply in jsdom sometimes, but body should be there
+          }),
+        );
+        // CRITICAL CHECK: Content-Type should NOT be application/json
+        // In fact, it should NOT be set at all so browser sets it with boundary
+        const headers = options?.headers as Record<string, string>;
+        expect(headers["Content-Type"]).toBeUndefined();
+      });
+
+      global.fetch = originalFetch;
+    });
+  });
+
   describe("/api/feedback", () => {
     describe("should send correct request based on config", async () => {
       let messageId: string = "";
