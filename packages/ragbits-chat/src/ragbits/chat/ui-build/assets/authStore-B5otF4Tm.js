@@ -1,1 +1,0 @@
-import{bu as s,bv as r}from"./index-Ccm71X34.js";const i=s(r(t=>({user:null,isAuthenticated:!1,hasHydrated:!1,login:e=>t(a=>{a.user=e,a.isAuthenticated=!0}),logout:()=>t(e=>{e.user=null,e.isAuthenticated=!1}),setHydrated:()=>t(e=>{e.hasHydrated=!0})})));export{i as a};
