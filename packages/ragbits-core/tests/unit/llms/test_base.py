@@ -411,3 +411,20 @@ async def test_generate_with_metadata_tracing_and_metrics(
     assert metric_calls[2][1]["value"] == 90.0  # total_tokens / throughput
     assert metric_calls[2][1]["attributes"]["model"] == llm.model_name
     assert metric_calls[2][1]["metric_type"] == MetricType.HISTOGRAM
+
+
+async def test_generate_streaming_trace_handler_closes_properly(llm: MockLLM, mock_trace_handler: MagicMock):
+    set_trace_handlers(mock_trace_handler)
+
+    prompt = SimplePrompt("Hello")
+    stream = llm.generate_streaming(prompt)
+
+    responses = [response async for response in stream]
+    assert responses == ["first response", "second response"]
+
+    # Verify trace context manager was called and properly exited
+    mock_trace_handler.trace.assert_called_once()
+    # The context manager's __enter__ and __exit__ should both be called
+    trace_cm = mock_trace_handler.trace.return_value
+    trace_cm.__enter__.assert_called_once()
+    trace_cm.__exit__.assert_called_once()
