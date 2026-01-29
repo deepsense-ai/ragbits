@@ -1,6 +1,6 @@
 import { transform } from "lodash";
-import { Plugin, PluginSlot } from "../../types/plugins";
-import { SlotName } from "../../types/slots";
+import { AnyPluginSlot, Plugin } from "../../types/plugins";
+import { SlotName, StoredSlot } from "../../types/slots";
 
 type PluginState = {
   isActivated: boolean;
@@ -9,9 +9,7 @@ type PluginState = {
 type Plugins = Record<string, PluginState>;
 
 // Internal slot filler with plugin reference for cleanup
-interface RegisteredSlotFiller extends PluginSlot {
-  pluginName: string;
-}
+type RegisteredSlotFiller = StoredSlot & { pluginName: string };
 
 class PluginManager {
   private plugins: Plugins = {};
@@ -20,7 +18,7 @@ class PluginManager {
   private listeners: Set<() => void> = new Set();
 
   // Caches for useSyncExternalStore (must return stable references)
-  private slotFillersCache: Map<SlotName, PluginSlot[]> = new Map();
+  private slotFillersCache: Map<SlotName, StoredSlot[]> = new Map();
   private hasSlotFillersCache: Map<SlotName, boolean> = new Map();
 
   register(plugin: Plugin) {
@@ -94,7 +92,7 @@ class PluginManager {
   }
 
   // Slot management methods
-  getSlotFillers(slot: SlotName): PluginSlot[] {
+  getSlotFillers(slot: SlotName): StoredSlot[] {
     const fillers = this.slotFillers.get(slot) ?? [];
     const cached = this.slotFillersCache.get(slot);
 
@@ -128,9 +126,16 @@ class PluginManager {
     return () => this.listeners.delete(listener);
   }
 
-  private registerSlot(pluginName: string, slot: PluginSlot) {
+  private registerSlot(pluginName: string, slot: AnyPluginSlot) {
     const existing = this.slotFillers.get(slot.slot) ?? [];
-    const filler: RegisteredSlotFiller = { ...slot, pluginName };
+    // Convert typed slot to stored slot format
+    const filler: RegisteredSlotFiller = {
+      slot: slot.slot,
+      component: slot.component,
+      priority: slot.priority,
+      condition: slot.condition,
+      pluginName,
+    };
     existing.push(filler);
     existing.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
     this.slotFillers.set(slot.slot, existing);

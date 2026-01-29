@@ -38,6 +38,7 @@ import { useHistoryStore } from "../../src/core/stores/HistoryStore/useHistorySt
 import { HistoryStore } from "../../src/core/types/history";
 import { API_URL } from "../../src/core/config";
 import { createHistoryStore } from "../../src/ragbits/stores/HistoryStore/historyStore";
+import { UploadPlugin, UploadPluginName } from "../../src/plugins/UploadPlugin";
 
 vi.mock("../../src/core/stores/HistoryStore/useHistoryStore", () => {
   return {
@@ -312,6 +313,8 @@ describe("Integration tests", () => {
 
   describe("/api/upload", () => {
     it("should call upload endpoint with correct data", async () => {
+      pluginManager.register(UploadPlugin);
+      pluginManager.activate(UploadPluginName);
       // Mock fetch for this test
       const fetchSpy = vi.fn().mockImplementation((url) => {
         if (url.toString().endsWith("/api/config")) {
@@ -352,6 +355,7 @@ describe("Integration tests", () => {
       const { container } = render(<WrappedInput />);
 
       await screen.findByRole("textbox", {}, { timeout: 5000 });
+      await screen.findByTestId("upload-file-button");
 
       const file = new File(["(⌐□_□)"], "chucknorris.png", {
         type: "image/png",

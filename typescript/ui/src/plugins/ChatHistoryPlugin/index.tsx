@@ -2,6 +2,7 @@ import { lazy } from "react";
 import { createPlugin } from "../../core/utils/plugins/utils";
 import ConversationRoute from "./routes/ConversationRoute";
 import ConversationGuard from "./routes/ConversationGuard";
+import { makeSlot } from "../../core/utils/slots/utils";
 
 const ChatHistory = lazy(() => import("./components/ChatHistory"));
 
@@ -24,11 +25,5 @@ export const ChatHistoryPlugin = createPlugin({
       wrapper: (children) => <ConversationGuard>{children}</ConversationGuard>,
     },
   ],
-  slots: [
-    {
-      slot: "layout.sidebar",
-      component: ChatHistory,
-      priority: 10,
-    },
-  ],
+  slots: [makeSlot("layout.sidebar", ChatHistory, 10)],
 });

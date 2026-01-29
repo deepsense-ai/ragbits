@@ -3,20 +3,21 @@ import { Skeleton } from "@heroui/react";
 import { SlotName, SlotPropsMap } from "../types/slots";
 import { pluginManager } from "../utils/plugins/PluginManager";
 
-interface SlotProps<S extends SlotName> {
+type SlotProps<S extends SlotName> = {
   name: S;
-  props?: SlotPropsMap[S];
   fallback?: ReactNode;
   skeletonSize?: { width: string; height: string };
   disableSkeleton?: boolean;
-}
+} & (SlotPropsMap[S] extends Record<string, never>
+  ? object
+  : { props: SlotPropsMap[S] });
 
 export function Slot<S extends SlotName>({
   name,
-  props = {} as SlotPropsMap[S],
   fallback,
   skeletonSize,
   disableSkeleton,
+  ...rest
 }: SlotProps<S>) {
   const fillers = useSyncExternalStore(
     (cb) => pluginManager.subscribe(cb),
@@ -43,13 +44,15 @@ export function Slot<S extends SlotName>({
     />
   );
 
+  const props = "props" in rest ? rest.props : undefined;
+
   return (
     <>
       {activeFillers.map((filler, index) => {
         const Component = filler.component;
         return (
           <Suspense key={index} fallback={skeleton}>
-            <Component {...(props || {})} />
+            <Component {...(props ?? {})} />
           </Suspense>
         );
       })}

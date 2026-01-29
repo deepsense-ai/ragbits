@@ -267,6 +267,7 @@ class RagbitsAPI:
                     auth_types=auth_types,
                     oauth2_providers=oauth2_providers,
                 ),
+                supports_upload=self.chat_interface.upload_handler is not None,
             )
 
             return JSONResponse(content=config_response.model_dump())

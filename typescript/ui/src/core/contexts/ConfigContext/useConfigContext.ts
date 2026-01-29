@@ -13,6 +13,7 @@ const DEFAULT_CONFIG: IConfigContext = {
     show_usage: false,
     debug_mode: false,
     customization: null,
+    supports_upload: false,
   },
 };
 

@@ -1,5 +1,6 @@
 import { lazy } from "react";
 import { createPlugin } from "../../core/utils/plugins/utils";
+import { makeSlot } from "../../core/utils/slots/utils";
 
 const UsageButton = lazy(() => import("./components/UsageButton"));
 
@@ -9,11 +10,5 @@ export const UsagePlugin = createPlugin({
   components: {
     UsageButton,
   },
-  slots: [
-    {
-      slot: "message.actions",
-      component: UsageButton,
-      priority: 10, // Higher = rendered first
-    },
-  ],
+  slots: [makeSlot("message.actions", UsageButton, 10)],
 });

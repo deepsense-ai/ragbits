@@ -1,5 +1,6 @@
 import { lazy } from "react";
 import { createPlugin } from "../../core/utils/plugins/utils";
+import { makeSlot } from "../../core/utils/slots/utils";
 
 const ChatOptionsForm = lazy(() => import("./components/ChatOptionsForm"));
 
@@ -9,11 +10,5 @@ export const ChatOptionsPlugin = createPlugin({
   components: {
     ChatOptionsForm,
   },
-  slots: [
-    {
-      slot: "prompt.beforeSend",
-      component: ChatOptionsForm,
-      priority: 10,
-    },
-  ],
+  slots: [makeSlot("prompt.beforeSend", ChatOptionsForm, 10)],
 });

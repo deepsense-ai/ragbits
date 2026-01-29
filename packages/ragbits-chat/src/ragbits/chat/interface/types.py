@@ -901,6 +901,7 @@ class ConfigResponse(BaseModel):
     feedback: FeedbackConfig = Field(..., description="Feedback configuration")
     customization: UICustomization | None = Field(default=None, description="UI customization")
     user_settings: UserSettings = Field(default_factory=UserSettings, description="User settings")
+    supports_upload: bool = Field(default=False, description="Flag indicating whether API supports file upload")
     debug_mode: bool = Field(default=False, description="Debug mode flag")
     conversation_history: bool = Field(default=False, description="Flag to enable conversation history")
     show_usage: bool = Field(default=False, description="Flag to enable usage statistics")

@@ -11,6 +11,7 @@ import { AuthPluginName } from "../plugins/AuthPlugin";
 import { UsagePluginName } from "../plugins/UsagePlugin";
 import { CredentialsLoginPluginName } from "../plugins/AuthPlugin/plugins/CredentialsLoginPlugin";
 import { createOAuth2LoginPlugin } from "../plugins/AuthPlugin/plugins/OAuth2LoginPlugin";
+import { UploadPluginName } from "../plugins/UploadPlugin";
 
 export function usePluginActivation() {
   const { config } = useConfigContext();
@@ -24,6 +25,7 @@ export function usePluginActivation() {
       conversation_history,
       authentication,
       show_usage,
+      supports_upload,
     } = config;
 
     if (feedback.like.enabled || feedback.dislike.enabled) {
@@ -66,6 +68,10 @@ export function usePluginActivation() {
     }
     if (show_usage) {
       pluginManager.activate(UsagePluginName);
+    }
+
+    if (supports_upload) {
+      pluginManager.activate(UploadPluginName);
     }
 
     pluginManager.activate(SharePluginName);

@@ -1,5 +1,6 @@
 import { lazy } from "react";
 import { createPlugin } from "../../core/utils/plugins/utils";
+import { makeSlot } from "../../core/utils/slots/utils";
 
 const ShareButton = lazy(() => import("./components/ShareButton"));
 
@@ -9,11 +10,5 @@ export const SharePlugin = createPlugin({
   components: {
     ShareButton,
   },
-  slots: [
-    {
-      slot: "layout.headerActions",
-      component: ShareButton,
-      priority: 5,
-    },
-  ],
+  slots: [makeSlot("layout.headerActions", ShareButton, 5)],
 });

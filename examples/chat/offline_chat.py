@@ -22,6 +22,7 @@ import asyncio
 from collections.abc import AsyncGenerator
 from typing import Literal
 
+from fastapi import UploadFile
 from pydantic import BaseModel, ConfigDict, Field
 
 from ragbits.chat.interface import ChatInterface
@@ -150,3 +151,25 @@ class MyChat(ChatInterface):
             yield self.create_text_response(chunk)
 
         yield self.create_followup_messages(["Example Response 1", "Example Response 2", "Example Response 3"])
+
+    async def upload_handler(self, file: UploadFile) -> None:  # noqa: PLR6301
+        """
+        Handle file uploads.
+
+        Args:
+            file: The uploaded file (FastAPI UploadFile)
+        """
+        # Read the file content
+        content = await file.read()
+        file_size = len(content)
+        filename = file.filename
+
+        # In a real application, you might process the file, ingest it into a vector store, etc.
+        # Here we just print some info to the console.
+        print(f"Received file: {filename}, size: {file_size} bytes")
+
+        # Note: The upload_handler doesn't return a response to the chat stream directly.
+        # The frontend receives a success status.
+        # If you want to notify the user in the chat, the user would usually send a message
+        # mentioning they uploaded a file, or you could potentially trigger something else.
+        # Currently the flow is: UI uploads -> Backend handles -> UI gets 200 OK.

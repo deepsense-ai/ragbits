@@ -2,6 +2,7 @@ import { lazy } from "react";
 import { createPlugin } from "../../core/utils/plugins/utils";
 import LoginRoute from "./routes/LoginRoute";
 import AuthRoute from "./routes/AuthRoute";
+import { makeSlot } from "../../core/utils/slots/utils";
 
 const LogoutButton = lazy(() => import("./components/LogoutButton"));
 
@@ -23,13 +24,7 @@ export const AuthPlugin = createPlugin({
       wrapper: (children) => <AuthRoute>{children}</AuthRoute>,
     },
   ],
-  slots: [
-    {
-      slot: "layout.headerActions",
-      component: LogoutButton,
-      priority: 10,
-    },
-  ],
+  slots: [makeSlot("layout.headerActions", LogoutButton, 10)],
 });
 
 // TODO: Handle token refresh when implemented
