@@ -29,6 +29,28 @@ To run with Discord OAuth2 authentication:
      --auth examples.chat.authenticated_chat:get_discord_auth_backend
     ```
 
+Prerequisites for Discord OAuth2:
+1. Create a Discord application at https://discord.com/developers/applications
+2. Add redirect URI: http://localhost:8000/api/auth/callback/discord
+3. Set environment variables DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET
+
+## Running with Google OAuth2 Authentication
+
+To run with Google OAuth2 authentication:
+
+    ```bash
+    export GOOGLE_CLIENT_ID="your_client_id_here"
+    export GOOGLE_CLIENT_SECRET="your_client_secret_here"
+    uv run ragbits api run examples.chat.authenticated_chat:MyAuthenticatedChat \\
+     --auth examples.chat.authenticated_chat:get_google_auth_backend
+    ```
+
+Prerequisites for Google OAuth2:
+1. Go to https://console.cloud.google.com/apis/credentials
+2. Create OAuth 2.0 Client ID (Web application)
+3. Add authorized redirect URI: http://localhost:8000/api/auth/callback/google
+4. Set environment variables GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET
+
 ## Running with Multiple Authentication Methods
 
 To run with both credentials and Discord OAuth2:
@@ -39,11 +61,6 @@ To run with both credentials and Discord OAuth2:
     uv run ragbits api run examples.chat.authenticated_chat:MyAuthenticatedChat \\
      --auth examples.chat.authenticated_chat:get_multi_auth_backend
     ```
-
-Prerequisites for OAuth2:
-1. Create a Discord application at https://discord.com/developers/applications
-2. Add redirect URI: http://localhost:8000/api/auth/callback/discord
-3. Set environment variables DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET
 
 The preferred components approach allows the CLI to automatically use your configured authentication
 backend while keeping the ChatInterface class focused on its core functionality.
@@ -61,7 +78,7 @@ from collections.abc import AsyncGenerator
 
 from ragbits.chat.auth import ListAuthenticationBackend
 from ragbits.chat.auth.backends import MultiAuthenticationBackend, OAuth2AuthenticationBackend
-from ragbits.chat.auth.oauth2_providers import DiscordOAuth2Provider
+from ragbits.chat.auth.oauth2_providers import OAuth2Providers
 from ragbits.chat.auth.session_store import InMemorySessionStore
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
@@ -303,7 +320,41 @@ def get_discord_auth_backend() -> OAuth2AuthenticationBackend:
     # If not set, redirect_uri defaults to http://localhost:8000/api/auth/callback/discord
     return OAuth2AuthenticationBackend(
         session_store=InMemorySessionStore(),
-        provider=DiscordOAuth2Provider(),
+        provider=OAuth2Providers.DISCORD,
+    )
+
+
+def get_google_auth_backend() -> OAuth2AuthenticationBackend:
+    """
+    Factory function to create Google OAuth2 authentication backend.
+
+    This backend uses Google OAuth2 for authentication. Users sign in with their Google account.
+
+    Prerequisites:
+    1. Go to https://console.cloud.google.com/apis/credentials
+    2. Create OAuth 2.0 Client ID (Web application)
+    3. Add authorized redirect URI: http://localhost:8000/api/auth/callback/google
+    4. Set environment variables:
+       - GOOGLE_CLIENT_ID: Your Google OAuth2 client ID
+       - GOOGLE_CLIENT_SECRET: Your Google OAuth2 client secret
+
+    OAuth2 Flow:
+    1. User clicks "Sign in with Google" button
+    2. User is redirected to Google to authorize
+    3. Google redirects back to /api/auth/callback/google with authorization code
+    4. Backend exchanges code for access token
+    5. Backend fetches user info from Google API
+    6. Backend creates session and authenticates user
+
+    Note: The redirect_uri is automatically set to the provider-specific endpoint.
+    If you need a custom redirect_uri, you can pass it explicitly or set OAUTH2_REDIRECT_URI env var.
+    """
+    # Credentials and redirect_uri are automatically read from environment variables:
+    # GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and optionally OAUTH2_REDIRECT_URI
+    # If not set, redirect_uri defaults to http://localhost:8000/api/auth/callback/google
+    return OAuth2AuthenticationBackend(
+        session_store=InMemorySessionStore(),
+        provider=OAuth2Providers.GOOGLE,
     )
 
 
