@@ -45,7 +45,13 @@ export default function CredentialsLogin() {
       }
 
       login(response.user);
-      initializeUserStore(response.user.user_id);
+      if (initializeUserStore) {
+        initializeUserStore(response.user.user_id);
+      } else {
+        console.error(
+          "Failed to initialize store for user, initializeUserStore() is not defined. Check current HistoryStoreContextProvider implementation.",
+        );
+      }
       navigate("/");
     } catch (e) {
       console.error("Failed to login", e);

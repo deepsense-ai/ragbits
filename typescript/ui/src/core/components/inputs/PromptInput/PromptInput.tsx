@@ -9,22 +9,18 @@ import {
   useRef,
   ReactNode,
   useState,
-  ChangeEvent,
   useEffect,
 } from "react";
-
-import { useRagbitsCall } from "@ragbits/api-client-react";
 
 import PromptInputText from "./PromptInputText";
 import { TextAreaProps } from "@heroui/react";
 import HorizontalActions from "./HorizontalActions";
 import { useCaretLogicalLineDetection } from "../../../utils/useTextAreaCaretDetection";
-import { ChatMessage } from "../../../../types/history";
-import PluginWrapper from "../../../utils/plugins/PluginWrapper";
-import { ChatOptionsPlugin } from "../../../../plugins/ChatOptionsPlugin";
+import { Slot } from "../../Slot";
 import { MessageRole } from "@ragbits/api-client";
+import { ChatMessage } from "../../../types/history";
 
-interface PromptInputProps {
+export interface PromptInputProps {
   submit: (text: string) => void;
   stopAnswering: () => void;
   isLoading: boolean;
@@ -58,9 +54,6 @@ const PromptInput = ({
   const { isCaretInFirstLine, isCaretInLastLine } =
     useCaretLogicalLineDetection();
   const quickMessageIndex = useRef(Math.max(quickMessages.length - 1, 0));
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const { call: uploadFile, isLoading: isUploading } =
-    useRagbitsCall("/api/upload");
 
   const setQuickMessage = useCallback(() => {
     const quickMessage = quickMessages[quickMessageIndex.current];
@@ -163,28 +156,6 @@ const PromptInput = ({
     setMessage(value);
   }, []);
 
-  const handleFileClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      await uploadFile({
-        method: "POST",
-        body: formData,
-      });
-    } catch (err) {
-      console.error("Upload failed", err);
-    } finally {
-      if (fileInputRef.current) fileInputRef.current.value = "";
-    }
-  };
-
   useEffect(() => {
     const newQuickMessages = (history ?? [])
       .filter((m) => m.role === MessageRole.User)
@@ -240,35 +211,10 @@ const PromptInput = ({
           {...inputProps}
         />
         <div className="flex items-center gap-2">
-          <input
-            type="file"
-            ref={fileInputRef}
-            className="hidden"
-            onChange={handleFileChange}
-          />
-          <Button
-            isIconOnly
-            aria-label="Upload file"
-            variant="light"
-            radius="full"
-            size="sm"
-            onPress={handleFileClick}
-            isLoading={isUploading}
-            isDisabled={isDisabled || isLoading}
-          >
-            <Icon
-              className="text-default-500"
-              icon="heroicons:paper-clip"
-              width={20}
-            />
-          </Button>
-          <PluginWrapper
-            plugin={ChatOptionsPlugin}
-            component="ChatOptionsForm"
-            skeletonSize={{
-              width: "40px",
-              height: "40px",
-            }}
+          <Slot
+            name="prompt.beforeSend"
+            skeletonSize={{ width: "40px", height: "40px" }}
+            props={{ isInputDisabled: isLoading || isDisabled }}
           />
           <Button
             isIconOnly

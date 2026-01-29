@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Decoupling of components from ragbits specific logic. Introduction of slot based plugin architecture. Minimal history store implementation (#917)
 - Add timezone field to ChatContext, automatically populated from browser (#916)
 - Fix PostgreSQL conversation persistence by ensuring session flush after creating new conversation in SQL storage (#903)
 - Add file upload ingestion support with `upload_handler` in `ChatInterface` and `/api/upload` endpoint in `RagbitsAPI`.

@@ -1,5 +1,5 @@
 import { Message } from "@ragbits/api-client-react";
-import { ChatMessage } from "../../types/history";
+import { ChatMessage } from "../types/history";
 
 /**
  * Maps the internal history state to the API message format
