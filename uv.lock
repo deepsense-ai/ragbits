@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version < '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
@@ -5308,6 +5308,9 @@ otel = [
 pgvector = [
     { name = "asyncpg" },
 ]
+postgres = [
+    { name = "asyncpg" },
+]
 promptfoo = [
     { name = "pyyaml" },
 ]
@@ -5317,6 +5320,9 @@ qdrant = [
 s3 = [
     { name = "boto3" },
 ]
+sqlite = [
+    { name = "aiosqlite" },
+]
 weaviate = [
     { name = "weaviate-client" },
 ]
@@ -5325,7 +5331,9 @@ weaviate = [
 requires-dist = [
     { name = "accelerate", marker = "extra == 'local'", specifier = ">=1.7.0" },
     { name = "aiohttp", specifier = ">=3.10.8,<4.0.0" },
+    { name = "aiosqlite", marker = "extra == 'sqlite'", specifier = ">=0.19.0,<1.0.0" },
     { name = "asyncpg", marker = "extra == 'pgvector'", specifier = ">=0.30.0,<1.0.0" },
+    { name = "asyncpg", marker = "extra == 'postgres'", specifier = ">=0.29.0,<1.0.0" },
     { name = "azure-core", marker = "extra == 'azure'", specifier = ">=1.32.0,<2.0.0" },
     { name = "azure-identity", marker = "extra == 'azure'", specifier = ">=1.19.0,<2.0.0" },
     { name = "azure-storage-blob", marker = "extra == 'azure'", specifier = ">=12.24.1,<13.0.0" },
@@ -5361,7 +5369,7 @@ requires-dist = [
     { name = "typer", specifier = ">=0.12.5,<1.0.0" },
     { name = "weaviate-client", marker = "extra == 'weaviate'", specifier = ">=4.15.4,<5.0.0" },
 ]
-provides-extras = ["chroma", "local", "fastembed", "promptfoo", "otel", "logfire", "qdrant", "pgvector", "fastembed-gpu", "azure", "gcs", "hf", "s3", "google-drive", "weaviate"]
+provides-extras = ["chroma", "local", "fastembed", "promptfoo", "otel", "logfire", "qdrant", "pgvector", "fastembed-gpu", "azure", "gcs", "hf", "s3", "google-drive", "weaviate", "postgres", "sqlite"]
 
 [[package]]
 name = "ragbits-document-search"
