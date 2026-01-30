@@ -311,9 +311,10 @@ class ChatContext(BaseModel):
     state: dict[str, Any] = Field(default_factory=dict)
     user: User | None = None
     session_id: str | None = None
-    confirmed_tools: list[dict[str, Any]] | None = Field(
+    tool_confirmations: list[dict[str, Any]] | None = Field(
         default=None,
-        description="List of confirmed/declined tools from the frontend",
+        description="List of confirmed/declined tool executions from the frontend. Each entry has 'confirmation_id' "
+        "and 'confirmed' (bool)",
     )
     timezone: str | None = Field(
         default=None,

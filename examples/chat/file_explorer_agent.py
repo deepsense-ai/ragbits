@@ -32,7 +32,7 @@ from pathlib import Path
 from ragbits.agents import Agent, ToolCallResult
 from ragbits.agents._main import AgentRunContext
 from ragbits.agents.confirmation import ConfirmationRequest
-from ragbits.agents.tool import requires_confirmation
+from ragbits.agents.hooks.confirmation import create_confirmation_hook
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import (
     ChatContext,
@@ -281,7 +281,6 @@ def search_files(pattern: str, directory: str = "") -> str:
     return json.dumps(result, indent=2)
 
 
-@requires_confirmation
 def create_file(filepath: str, content: str, context: AgentRunContext | None = None) -> str:
     """
     Create a new file with content. Requires confirmation.
@@ -324,7 +323,6 @@ def create_file(filepath: str, content: str, context: AgentRunContext | None = N
     return json.dumps(result, indent=2)
 
 
-@requires_confirmation
 def delete_file(filepath: str, context: AgentRunContext | None = None) -> str:
     """
     Delete a file. Requires confirmation.
@@ -366,7 +364,6 @@ def delete_file(filepath: str, context: AgentRunContext | None = None) -> str:
     return json.dumps(result, indent=2)
 
 
-@requires_confirmation
 def move_file(source: str, destination: str, context: AgentRunContext | None = None) -> str:
     """
     Move or rename a file. Requires confirmation.
@@ -424,7 +421,6 @@ def move_file(source: str, destination: str, context: AgentRunContext | None = N
     return json.dumps(result, indent=2)
 
 
-@requires_confirmation
 def create_directory(dirpath: str, context: AgentRunContext | None = None) -> str:
     """
     Create a new directory. Requires confirmation.
@@ -459,7 +455,6 @@ def create_directory(dirpath: str, context: AgentRunContext | None = None) -> st
     return json.dumps(result, indent=2)
 
 
-@requires_confirmation
 def delete_directory(dirpath: str, context: AgentRunContext | None = None) -> str:
     """
     Delete an empty directory. Requires confirmation.
@@ -545,6 +540,13 @@ class FileExplorerChat(ChatInterface):
             delete_directory,
         ]
 
+        # Create confirmation hook for destructive tools
+        self.hooks = [
+            create_confirmation_hook(
+                tool_names=["create_file", "delete_file", "move_file", "create_directory", "delete_directory"]
+            )
+        ]
+
     async def chat(  # noqa: PLR0912
         self,
         message: str,
@@ -554,10 +556,10 @@ class FileExplorerChat(ChatInterface):
         """
         Chat implementation with non-blocking confirmation support.
 
-        The agent will check context.confirmed_tools for any confirmations.
-        If a tool needs confirmation but hasn't been confirmed yet, it will
+        The agent will check context.tool_confirmations for any confirmations.
+        If a hook needs confirmation but hasn't been confirmed yet, it will
         yield a ConfirmationRequest and exit. The frontend will then send a
-        new request with the confirmation in context.confirmed_tools.
+        new request with the confirmation in context.tool_confirmations.
         """
         # Create agent with history passed explicitly
         agent: Agent = Agent(
@@ -578,15 +580,16 @@ class FileExplorerChat(ChatInterface):
             Restricted to: {TEMP_DIR}
             """,
             tools=self.tools,  # type: ignore[arg-type]
+            hooks=self.hooks,
             history=history,
         )
 
-        # Create agent context with confirmed_tools from the request context
+        # Create agent context with tool_confirmations from the request context
         agent_context: AgentRunContext = AgentRunContext()
 
-        # Pass confirmed_tools from ChatContext to AgentRunContext
-        if context.confirmed_tools:
-            agent_context.confirmed_tools = context.confirmed_tools
+        # Pass tool_confirmations from ChatContext to AgentRunContext
+        if context.tool_confirmations:
+            agent_context.tool_confirmations = context.tool_confirmations
 
         # Run agent in streaming mode with the message and history
         async for response in agent.run_streaming(
