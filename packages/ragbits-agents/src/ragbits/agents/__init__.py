@@ -9,6 +9,11 @@ from ragbits.agents._main import (
     ToolCall,
     ToolCallResult,
 )
+from ragbits.agents.hooks import (
+    EventType,
+    Hook,
+    HookManager,
+)
 from ragbits.agents.types import QuestionAnswerAgent, QuestionAnswerPromptInput, QuestionAnswerPromptOutput
 
 __all__ = [
@@ -19,6 +24,9 @@ __all__ = [
     "AgentResultStreaming",
     "AgentRunContext",
     "DownstreamAgentResult",
+    "EventType",
+    "Hook",
+    "HookManager",
     "QuestionAnswerAgent",
     "QuestionAnswerPromptInput",
     "QuestionAnswerPromptOutput",
