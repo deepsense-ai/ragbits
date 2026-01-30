@@ -316,9 +316,10 @@ class ChatContext(BaseModel):
         default=None,
         description="User's timezone in IANA format (e.g., 'Europe/Warsaw', 'America/New_York')",
     )
-    confirmed_tools: list[dict[str, Any]] | None = Field(
+    tool_confirmations: list[dict[str, Any]] | None = Field(
         default=None,
-        description="List of confirmed/declined tools from the frontend",
+        description="List of confirmed/declined tool executions from the frontend. Each entry has 'confirmation_id' "
+        "and 'confirmed' (bool)",
     )
     model_config = ConfigDict(extra="allow")
 

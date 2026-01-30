@@ -11,6 +11,7 @@
 - Add Support for Thinking in agents (#837)
 - Add support for confirmation requests in agents (#866)
 - Allow passing Tool objects directly to Agent (#886)
+- Add hooks system (pre- and post-tool) for lifecycle event interception (#914)
 
 ## 1.4.1 (2026-02-08)
 
