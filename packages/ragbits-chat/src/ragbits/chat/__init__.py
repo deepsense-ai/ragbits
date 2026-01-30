@@ -38,8 +38,6 @@ from ragbits.chat.interface.types import (
     StateUpdateResponse,
     TextContent,
     TextResponse,
-    TodoItemContent,
-    TodoItemResponse,
     UsageContent,
     UsageResponse,
 )
@@ -78,8 +76,6 @@ __all__ = [
     "SyncRagbitsConversation",
     "TextContent",
     "TextResponse",
-    "TodoItemContent",
-    "TodoItemResponse",
     "UsageContent",
     "UsageResponse",
     "User",
