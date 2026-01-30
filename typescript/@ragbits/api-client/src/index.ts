@@ -77,6 +77,10 @@ export class RagbitsClient {
             'Content-Type': 'application/json',
         }
 
+        if (options.body instanceof FormData) {
+            delete defaultHeaders['Content-Type']
+        }
+
         const headers = {
             ...defaultHeaders,
             ...this.normalizeHeaders(options.headers),
@@ -134,8 +138,21 @@ export class RagbitsClient {
         }
 
         if (body && method !== 'GET') {
-            requestOptions.body =
-                typeof body === 'string' ? body : JSON.stringify(body)
+            if (body instanceof FormData) {
+                requestOptions.body = body
+                // Let the browser set the Content-Type header with the boundary
+                if (
+                    requestOptions.headers &&
+                    'Content-Type' in requestOptions.headers
+                ) {
+                    delete (requestOptions.headers as Record<string, string>)[
+                        'Content-Type'
+                    ]
+                }
+            } else {
+                requestOptions.body =
+                    typeof body === 'string' ? body : JSON.stringify(body)
+            }
         }
 
         // Build URL with path parameters

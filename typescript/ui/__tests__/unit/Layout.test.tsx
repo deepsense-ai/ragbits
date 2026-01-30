@@ -1,7 +1,10 @@
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, Mock, vi } from "vitest";
+import { describe, expect, it, Mock, vi, beforeEach, afterEach } from "vitest";
 import userEvent from "@testing-library/user-event";
 import Layout from "../../src/core/components/Layout";
+import { Slot } from "../../src/core/components/Slot";
+import { ComponentProps } from "react";
+
 vi.mock("../../src/core/components/DebugPanel", () => ({
   default: ({ isOpen }: { isOpen: boolean }) => (
     <div>isOpen: {JSON.stringify(isOpen)}</div>
@@ -26,31 +29,39 @@ vi.mock("../../src/core/stores/HistoryStore/selectors", () => {
   };
 });
 
-vi.mock(
-  "../../src/plugins/ChatHistoryPlugin/components/ChatHistory.tsx",
-  () => ({
-    default: () => <div>ChatHistory</div>,
-  }),
-);
+// Track whether chat history should be enabled
+let chatHistoryEnabled = false;
+
+vi.mock("../../src/core/components/Slot.tsx", () => ({
+  Slot: ({ name }: ComponentProps<typeof Slot>) => {
+    if (name === "layout.sidebar" && chatHistoryEnabled) {
+      return <div>ChatHistory</div>;
+    }
+    if (name === "layout.headerActions") {
+      return <div data-testid="header-actions-slot">HeaderActions</div>;
+    }
+    return null;
+  },
+}));
+
+vi.mock("../../src/core/utils/slots/useSlotHasFillers.ts", () => ({
+  useSlotHasFillers: (slot: string) => {
+    if (slot === "layout.sidebar") {
+      return chatHistoryEnabled;
+    }
+    return false;
+  },
+}));
 
 import { useConfigContext } from "../../src/core/contexts/ConfigContext/useConfigContext";
 import { useThemeContext } from "../../src/core/contexts/ThemeContext/useThemeContext";
 import { Theme } from "../../src/core/contexts/ThemeContext/ThemeContext";
 import { useHistoryActions } from "../../src/core/stores/HistoryStore/selectors";
-import { pluginManager } from "../../src/core/utils/plugins/PluginManager";
-import {
-  ChatHistoryPlugin,
-  ChatHistoryPluginName,
-} from "../../src/plugins/ChatHistoryPlugin";
 
-function mockConfig(
-  isDebugEnabled: boolean = false,
-  withClientSideHistory: boolean = false,
-) {
+function mockConfig(isDebugEnabled: boolean = false) {
   (useConfigContext as Mock).mockReturnValue({
     config: {
       debug_mode: isDebugEnabled,
-      conversationHistory: withClientSideHistory,
     },
   });
 }
@@ -63,18 +74,25 @@ function mockTheme(theme: Theme) {
   });
 }
 
-const clearHistoryMock = vi.fn();
+const newConversationMock = vi.fn();
 const stopAnsweringMock = vi.fn();
 (useHistoryActions as Mock).mockReturnValue({
-  clearHistory: clearHistoryMock,
+  newConversation: newConversationMock,
   stopAnswering: stopAnsweringMock,
 });
 
 describe("Layout", () => {
+  beforeEach(() => {
+    chatHistoryEnabled = false;
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("renders with chat history", async () => {
-    pluginManager.register(ChatHistoryPlugin);
-    pluginManager.activate(ChatHistoryPluginName);
-    mockConfig(false, true);
+    chatHistoryEnabled = true;
+    mockConfig(false);
     mockTheme(Theme.LIGHT);
     render(
       <Layout
@@ -102,9 +120,10 @@ describe("Layout", () => {
     ).toBeInTheDocument();
     expect(screen.queryByTestId("layout-debug-button")).toBeNull();
   });
+
   it("renders without chat history", async () => {
-    pluginManager.deactivate(ChatHistoryPluginName);
-    mockConfig(false, false);
+    chatHistoryEnabled = false;
+    mockConfig(false);
     mockTheme(Theme.LIGHT);
     render(
       <Layout
@@ -119,9 +138,8 @@ describe("Layout", () => {
     expect(screen.getByText("Custom Title")).toBeInTheDocument();
     expect(screen.getByText("Custom Subtitle")).toBeInTheDocument();
     expect(screen.getByText("Custom Logo")).toBeInTheDocument();
-    // Chat history
 
-    // Chat history
+    // Chat history should not be present
     await waitFor(() => {
       expect(screen.queryByText("ChatHistory")).not.toBeInTheDocument();
       expect(
@@ -134,6 +152,7 @@ describe("Layout", () => {
     ).toBeInTheDocument();
     expect(screen.queryByTestId("layout-debug-button")).toBeNull();
   });
+
   it("renders without debug panel", () => {
     mockConfig();
     mockTheme(Theme.LIGHT);
@@ -197,6 +216,7 @@ describe("Layout", () => {
     await user.click(toggleThemeButton);
     expect(setThemeMock).toHaveBeenCalled();
   });
+
   it('shows debug panel when "debug button" is clicked', async () => {
     mockConfig(true);
     mockTheme(Theme.LIGHT);

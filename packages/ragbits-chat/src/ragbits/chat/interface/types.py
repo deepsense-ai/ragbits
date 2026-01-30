@@ -311,9 +311,10 @@ class ChatContext(BaseModel):
     state: dict[str, Any] = Field(default_factory=dict)
     user: User | None = None
     session_id: str | None = None
-    confirmed_tools: list[dict[str, Any]] | None = Field(
+    tool_confirmations: list[dict[str, Any]] | None = Field(
         default=None,
-        description="List of confirmed/declined tools from the frontend",
+        description="List of confirmed/declined tool executions from the frontend. Each entry has 'confirmation_id' "
+        "and 'confirmed' (bool)",
     )
     timezone: str | None = Field(
         default=None,
@@ -901,6 +902,7 @@ class ConfigResponse(BaseModel):
     feedback: FeedbackConfig = Field(..., description="Feedback configuration")
     customization: UICustomization | None = Field(default=None, description="UI customization")
     user_settings: UserSettings = Field(default_factory=UserSettings, description="User settings")
+    supports_upload: bool = Field(default=False, description="Flag indicating whether API supports file upload")
     debug_mode: bool = Field(default=False, description="Debug mode flag")
     conversation_history: bool = Field(default=False, description="Flag to enable conversation history")
     show_usage: bool = Field(default=False, description="Flag to enable usage statistics")
