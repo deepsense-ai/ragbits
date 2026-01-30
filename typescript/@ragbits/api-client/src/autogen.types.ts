@@ -82,6 +82,10 @@ export interface ChatContext {
               [k: string]: unknown
           }[]
         | null
+    /**
+     * User's timezone in IANA format (e.g., 'Europe/Warsaw', 'America/New_York')
+     */
+    timezone: string | null
     [k: string]: unknown
 }
 
@@ -358,6 +362,10 @@ export interface ConfigResponse {
      */
     customization: UICustomization | null
     user_settings: UserSettings
+    /**
+     * Flag indicating whether API supports file upload
+     */
+    supports_upload: boolean
     /**
      * Debug mode flag
      */

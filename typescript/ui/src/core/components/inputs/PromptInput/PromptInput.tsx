@@ -16,12 +16,11 @@ import PromptInputText from "./PromptInputText";
 import { TextAreaProps } from "@heroui/react";
 import HorizontalActions from "./HorizontalActions";
 import { useCaretLogicalLineDetection } from "../../../utils/useTextAreaCaretDetection";
-import { ChatMessage } from "../../../../types/history";
-import PluginWrapper from "../../../utils/plugins/PluginWrapper";
-import { ChatOptionsPlugin } from "../../../../plugins/ChatOptionsPlugin";
+import { Slot } from "../../Slot";
 import { MessageRole } from "@ragbits/api-client";
+import { ChatMessage } from "../../../types/history";
 
-interface PromptInputProps {
+export interface PromptInputProps {
   submit: (text: string) => void;
   stopAnswering: () => void;
   isLoading: boolean;
@@ -212,13 +211,10 @@ const PromptInput = ({
           {...inputProps}
         />
         <div className="flex items-center gap-2">
-          <PluginWrapper
-            plugin={ChatOptionsPlugin}
-            component="ChatOptionsForm"
-            skeletonSize={{
-              width: "40px",
-              height: "40px",
-            }}
+          <Slot
+            name="prompt.beforeSend"
+            skeletonSize={{ width: "40px", height: "40px" }}
+            props={{ isInputDisabled: isLoading || isDisabled }}
           />
           <Button
             isIconOnly

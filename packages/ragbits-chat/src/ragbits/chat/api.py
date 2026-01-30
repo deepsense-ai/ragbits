@@ -2,7 +2,6 @@ import asyncio
 import importlib
 import json
 import logging
-import os
 import re
 import time
 from collections.abc import AsyncGenerator
@@ -11,7 +10,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Request, UploadFile, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, StreamingResponse
@@ -22,6 +21,7 @@ from ragbits.chat.auth import AuthenticationBackend, User
 from ragbits.chat.auth.backends import MultiAuthenticationBackend, OAuth2AuthenticationBackend
 from ragbits.chat.auth.provider_config import get_provider_visual_config
 from ragbits.chat.auth.types import LoginRequest, LoginResponse, OAuth2Credentials
+from ragbits.chat.config import BASE_URL, CHUNK_SIZE, IS_PRODUCTION, SESSION_COOKIE_NAME
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import (
     AuthenticationConfig,
@@ -45,17 +45,6 @@ from ragbits.core.audit.traces import trace
 from .metrics import ChatCounterMetric, ChatHistogramMetric
 
 logger = logging.getLogger(__name__)
-
-# Environment-aware cookie security: only require HTTPS in production
-IS_PRODUCTION = os.getenv("ENVIRONMENT", "").lower() == "production"
-
-# Session cookie name - used for storing session ID in HTTP-only cookie
-SESSION_COOKIE_NAME = "ragbits_session"
-
-# Chunk size for large base64 images to prevent SSE message size issues
-# Keep chunks extremely small to avoid JSON string length limits in browsers and SSE parsing issues
-# Account for JSON overhead: metadata + base64 data should fit comfortably in browser limits
-CHUNK_SIZE = 102400  # ~100KB bytes base64 chunks for ultra-safe JSON parsing and SSE transmission
 
 
 class RagbitsAPI:
@@ -91,12 +80,7 @@ class RagbitsAPI:
         self.auth_backend = self._load_auth_backend(auth_backend)
         self.theme_path = Path(theme_path) if theme_path else None
 
-        # get frontend base URL from environment variable or use default
-        frontend_base_url = os.getenv("FRONTEND_BASE_URL", "http://localhost:8000")
-        # remove trailing slash from frontend base URL
-        frontend_base_url = frontend_base_url.rstrip("/")
-        # set frontend base URL on the API
-        self.frontend_base_url = frontend_base_url
+        self.frontend_base_url = BASE_URL
 
         @asynccontextmanager
         async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -197,34 +181,23 @@ class RagbitsAPI:
 
                     return await self._handle_oauth2_callback(code, state, backend)
 
-            @self.app.post("/api/chat", response_class=StreamingResponse)
-            async def chat_message(
-                request: Request,
-                chat_request: ChatMessageRequest,
-            ) -> StreamingResponse:
-                return await self._handle_chat_message(chat_request, request)
+        @self.app.post("/api/chat", response_class=StreamingResponse)
+        async def chat_message(
+            request: Request,
+            chat_request: ChatMessageRequest,
+        ) -> StreamingResponse:
+            return await self._handle_chat_message(chat_request, request)
 
-            @self.app.post("/api/feedback", response_class=JSONResponse)
-            async def feedback(
-                request: Request,
-                feedback_request: FeedbackRequest,
-            ) -> JSONResponse:
-                return await self._handle_feedback(feedback_request, request)
-        else:
+        @self.app.post("/api/feedback", response_class=JSONResponse)
+        async def feedback(
+            request: Request,
+            feedback_request: FeedbackRequest,
+        ) -> JSONResponse:
+            return await self._handle_feedback(feedback_request, request)
 
-            @self.app.post("/api/chat", response_class=StreamingResponse)
-            async def chat_message(
-                request: Request,
-                chat_request: ChatMessageRequest,
-            ) -> StreamingResponse:
-                return await self._handle_chat_message(chat_request, request)
-
-            @self.app.post("/api/feedback", response_class=JSONResponse)
-            async def feedback(
-                request: Request,
-                feedback_request: FeedbackRequest,
-            ) -> JSONResponse:
-                return await self._handle_feedback(feedback_request, request)
+        @self.app.post("/api/upload", response_class=JSONResponse)
+        async def upload_file(file: UploadFile) -> JSONResponse:
+            return await self._handle_file_upload(file)
 
         @self.app.get("/api/config", response_class=JSONResponse)
         async def config() -> JSONResponse:
@@ -294,6 +267,7 @@ class RagbitsAPI:
                     auth_types=auth_types,
                     oauth2_providers=oauth2_providers,
                 ),
+                supports_upload=self.chat_interface.upload_handler is not None,
             )
 
             return JSONResponse(content=config_response.model_dump())
@@ -584,6 +558,31 @@ class RagbitsAPI:
                 error_type=type(e).__name__,
             )
             raise HTTPException(status_code=500, detail="Internal server error") from None
+
+    async def _handle_file_upload(self, file: UploadFile) -> JSONResponse:
+        """
+        Handle file upload requests.
+
+        Args:
+            file: The uploaded file.
+
+        Returns:
+            JSONResponse with status.
+        """
+        if self.chat_interface.upload_handler is None:
+            raise HTTPException(status_code=400, detail="File upload not supported")
+
+        try:
+            # Check if handler is async and call it
+            if asyncio.iscoroutinefunction(self.chat_interface.upload_handler):
+                await self.chat_interface.upload_handler(file)
+            else:
+                await asyncio.to_thread(self.chat_interface.upload_handler, file)
+
+            return JSONResponse(content={"status": "success", "filename": file.filename})
+        except Exception as e:
+            logger.error(f"File upload error: {e}")
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     async def get_current_user_from_cookie(self, request: Request) -> User | None:
         """

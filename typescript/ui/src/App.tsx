@@ -1,13 +1,16 @@
 import Layout from "./core/components/Layout";
 import { useLayoutEffect, useMemo } from "react";
 import { useConfigContext } from "./core/contexts/ConfigContext/useConfigContext";
-import { DEFAULT_LOGO, DEFAULT_SUBTITLE, DEFAULT_TITLE } from "./config";
+import { DEFAULT_LOGO, DEFAULT_SUBTITLE, DEFAULT_TITLE } from "./core/config";
 import { Outlet } from "react-router";
 import { isURL } from "./core/utils/media";
+import { usePluginActivation } from "./ragbits/PluginActivator";
 
 const CUSTOM_FAVICON_ID = "generated-favicon";
 
 export default function App() {
+  usePluginActivation();
+
   const {
     config: { customization },
   } = useConfigContext();

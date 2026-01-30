@@ -5,7 +5,7 @@ import { useStore } from "zustand";
 import { AuthStoreContextProvider } from "../contexts/AuthStoreContext/AuthStoreContextProvider";
 import InitializationScreen from "../../../core/components/InitializationScreen";
 import { RagbitsContextProvider } from "@ragbits/api-client-react";
-import { API_URL } from "../../../config";
+import { API_URL } from "../../../core/config";
 import { AuthWatcher } from "./AuthWatcher";
 
 export default function AuthGuard({ children }: PropsWithChildren) {

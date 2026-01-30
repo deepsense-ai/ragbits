@@ -2,8 +2,9 @@ import warnings
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any, Generic, TypeVar, cast
+from zoneinfo import available_timezones
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.tools.todo import Task
@@ -310,11 +311,24 @@ class ChatContext(BaseModel):
     state: dict[str, Any] = Field(default_factory=dict)
     user: User | None = None
     session_id: str | None = None
-    confirmed_tools: list[dict[str, Any]] | None = Field(
+    tool_confirmations: list[dict[str, Any]] | None = Field(
         default=None,
-        description="List of confirmed/declined tools from the frontend",
+        description="List of confirmed/declined tool executions from the frontend. Each entry has 'confirmation_id' "
+        "and 'confirmed' (bool)",
+    )
+    timezone: str | None = Field(
+        default=None,
+        description="User's timezone in IANA format (e.g., 'Europe/Warsaw', 'America/New_York')",
     )
     model_config = ConfigDict(extra="allow")
+
+    @field_validator("timezone")
+    @classmethod
+    def validate_timezone(cls, v: str | None) -> str | None:
+        """Validate that timezone is a valid IANA timezone identifier."""
+        if v is not None and v not in available_timezones():
+            raise ValueError(f"Invalid timezone: {v}. Must be a valid IANA timezone.")
+        return v
 
 
 # Generic type variable for content, bounded to ResponseContent
@@ -888,6 +902,7 @@ class ConfigResponse(BaseModel):
     feedback: FeedbackConfig = Field(..., description="Feedback configuration")
     customization: UICustomization | None = Field(default=None, description="UI customization")
     user_settings: UserSettings = Field(default_factory=UserSettings, description="User settings")
+    supports_upload: bool = Field(default=False, description="Flag indicating whether API supports file upload")
     debug_mode: bool = Field(default=False, description="Debug mode flag")
     conversation_history: bool = Field(default=False, description="Flag to enable conversation history")
     show_usage: bool = Field(default=False, description="Flag to enable usage statistics")

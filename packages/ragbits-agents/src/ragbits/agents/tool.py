@@ -1,11 +1,10 @@
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
-from functools import wraps
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, cast
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from pydantic import BaseModel
-from typing_extensions import ParamSpec, Self
+from typing_extensions import Self
 
 from ragbits.core.llms.base import LLMClientOptionsT
 from ragbits.core.prompt.prompt import PromptInputT, PromptOutputT
@@ -18,45 +17,18 @@ if TYPE_CHECKING:
 with suppress(ImportError):
     from pydantic_ai import Tool as PydanticAITool
 
-P = ParamSpec("P")
-T = TypeVar("T")
 
-
-def requires_confirmation(func: Callable[P, T]) -> Callable[P, T]:
+@dataclass
+class ToolReturn:
     """
-    Decorator to mark a tool function as requiring user confirmation before execution.
-
-    When a function decorated with @requires_confirmation is used as a tool in an Agent,
-    the agent will request user confirmation before executing the tool.
-
-    Example:
-        ```python
-        @requires_confirmation
-        def delete_file(filepath: str) -> str:
-            '''Delete a file from the system.'''
-            # Implementation
-            return "File deleted"
-
-
-        agent = Agent(llm=llm, tools=[delete_file])
-        # The agent will automatically mark delete_file as requiring confirmation
-        ```
-
-    Args:
-        func: The function to mark as requiring confirmation
-
-    Returns:
-        The same function with a _requires_confirmation attribute set to True
+    Represents an object returned from the tool. If a tool wants to return a value with some content hidden
+    from LLM, it needs to return an object of this class directly.
     """
 
-    @wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
-        return func(*args, **kwargs)
-
-    # Mark the function as requiring confirmation
-    wrapper._requires_confirmation = True  # type: ignore[attr-defined]
-
-    return wrapper
+    value: Any
+    "Value passed directly to LLM as a result of the tool"
+    metadata: Any = None
+    "Metadata not passed to the LLM, but which can be used in the application later on"
 
 
 @dataclass
@@ -72,7 +44,9 @@ class ToolCallResult:
     arguments: dict[str, Any]
     """Dictionary containing the arguments passed to the tool"""
     result: Any
-    """The output from the tool call."""
+    """The output from the tool call passed to the LLM"""
+    metadata: Any = None
+    """Metadata returned from a tool that is not meant to be seen by the LLM"""
 
 
 @dataclass
@@ -92,27 +66,19 @@ class Tool:
     context_var_name: str | None = None
     """The name of the context variable that this tool accepts."""
     id: str | None = None
-    requires_confirmation: bool = False
-    """Whether this tool requires user confirmation before execution."""
 
     @classmethod
-    def from_callable(cls, callable: Callable, requires_confirmation: bool = False) -> Self:
+    def from_callable(cls, callable: Callable) -> Self:
         """
         Create a Tool instance from a callable function.
 
         Args:
             callable: The function to convert into a Tool
-            requires_confirmation: Whether this tool requires user confirmation before execution.
-                If not provided, checks if the callable has been decorated with @requires_confirmation.
 
         Returns:
             A new Tool instance representing the callable function.
         """
         schema = convert_function_to_function_schema(callable)
-
-        # Check if the callable has been decorated with @requires_confirmation
-        # Priority: explicit parameter > decorator attribute
-        needs_confirmation = requires_confirmation or getattr(callable, "_requires_confirmation", False)
 
         return cls(
             name=schema["function"]["name"],
@@ -120,7 +86,6 @@ class Tool:
             parameters=schema["function"]["parameters"],
             on_tool_call=callable,
             context_var_name=get_context_variable_name(callable),
-            requires_confirmation=needs_confirmation,
         )
 
     def to_function_schema(self) -> dict[str, Any]:

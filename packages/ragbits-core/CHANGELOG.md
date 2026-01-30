@@ -6,6 +6,7 @@
 - Add Support for Thinking in agents (#837)
 - Add support for confirmation requests in chat (#853)
 - Add name parameter and slightly refactor HuggingFace dataloder (#829)
+- Fix trace context managers not closing properly when streaming (#922)
 
 ## 1.3.0 (2025-09-11)
 

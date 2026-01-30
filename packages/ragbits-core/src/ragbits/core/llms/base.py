@@ -244,6 +244,9 @@ class LLMResultStreaming(AsyncIterator[T]):
                     self.metadata: LLMResponseWithMetadata = item
                     if item.usage:
                         self.usage += item.usage
+                    # Exhaust generator to let trace context managers close properly
+                    async for _ in self._generator:
+                        pass
                     raise StopAsyncIteration
                 case Usage():
                     self.usage += item
