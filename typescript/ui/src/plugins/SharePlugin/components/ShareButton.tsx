@@ -13,7 +13,8 @@ import { useState, useRef, useEffect } from "react";
 import { toJSONSafe } from "../../../core/utils/json";
 import { Conversation } from "../../../core/types/history";
 import { useHistoryPrimitives } from "../../../core/stores/HistoryStore/selectors";
-import { useHistoryStore } from "../../../core/stores/HistoryStore/useHistoryStore";
+import { useNavigate } from "react-router";
+import { getConversationRoute } from "../../ChatHistoryPlugin/utils";
 
 const DEFAULT_ICON = "heroicons:share";
 const SUCCESS_ICON = "heroicons:check";
@@ -51,11 +52,11 @@ function isSharedState(value: unknown): value is SharedState {
 }
 
 export default function ShareButton() {
-  const { restore } = useHistoryPrimitives();
+  const { restore, getCurrentConversation } = useHistoryPrimitives();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [icon, setIcon] = useState(DEFAULT_ICON);
   const iconTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { getCurrentConversation } = useHistoryStore((s) => s.primitives);
+  const navigate = useNavigate();
 
   const onShare = () => {
     const {
@@ -97,11 +98,15 @@ export default function ShareButton() {
   useEffect(() => {
     const decode = (e: ClipboardEvent) => {
       if (!e.clipboardData) {
+        console.warn("[Share] Nothing to parse, skipping.");
         return;
       }
 
       const types = e.clipboardData.types;
       if (!types.includes("text/plain") && !types.includes("text")) {
+        console.warn(
+          "[Share] Invalid content type of pasted content, skipping.",
+        );
         return;
       }
 
@@ -113,6 +118,7 @@ export default function ShareButton() {
 
         if (!pastedBinary.startsWith("\x78\xDA")) {
           // No zlib header, ignore
+          console.warn("[Share] Incorrect header, skipping.");
           return;
         }
 
@@ -122,6 +128,9 @@ export default function ShareButton() {
           !parsedText.startsWith(SHARE_START_TAG) ||
           !parsedText.endsWith(SHARE_END_TAG)
         ) {
+          console.warn(
+            "[Share] Failed to parse as valid Ragbits state, skipping.",
+          );
           return;
         }
 
@@ -134,18 +143,26 @@ export default function ShareButton() {
         );
         const parsedState = JSON.parse(stateText);
         if (!isSharedState(parsedState)) {
+          console.warn(
+            "[Share] Pasted state didn't pass validation, skipping.",
+          );
           return;
         }
 
-        restore(
+        const restoredConversationId = restore(
           parsedState.history,
           parsedState.followupMessages,
           parsedState.chatOptions,
           parsedState.serverState,
           parsedState.conversationId,
         );
+
+        navigate(getConversationRoute(restoredConversationId));
       } catch (e) {
-        console.error("Couldn't parse pasted string as valid Ragbits state", e);
+        console.error(
+          "[Share] Couldn't parse pasted string as valid Ragbits state",
+          e,
+        );
       }
     };
 

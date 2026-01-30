@@ -81,7 +81,7 @@ export interface HistoryStore {
       chatOptions: Conversation["chatOptions"],
       serverState: Conversation["serverState"],
       conversationId: Conversation["conversationId"],
-    ) => void;
+    ) => string;
     getCurrentConversation: () => Conversation;
     stopAnswering: (conversationId: string) => void;
   };
