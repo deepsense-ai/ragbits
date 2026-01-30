@@ -19,6 +19,19 @@ with suppress(ImportError):
 
 
 @dataclass
+class ToolReturn:
+    """
+    Represents an object returned from the tool. If a tool wants to return a value with some content hidden
+    from LLM, it needs to return an object of this class directly.
+    """
+
+    value: Any
+    "Value passed directly to LLM as a result of the tool"
+    metadata: Any = None
+    "Metadata not passed to the LLM, but which can be used in the application later on"
+
+
+@dataclass
 class ToolCallResult:
     """
     Result of the tool call.
@@ -31,7 +44,9 @@ class ToolCallResult:
     arguments: dict[str, Any]
     """Dictionary containing the arguments passed to the tool"""
     result: Any
-    """The output from the tool call."""
+    """The output from the tool call passed to the LLM"""
+    metadata: Any = None
+    """Metadata returned from a tool that is not meant to be seen by the LLM"""
 
 
 @dataclass
