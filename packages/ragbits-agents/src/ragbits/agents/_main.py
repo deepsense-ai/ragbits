@@ -42,7 +42,7 @@ from ragbits.agents.post_processors.base import (
     StreamingPostProcessor,
     stream_with_post_processing,
 )
-from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice
+from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice, ToolReturn
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import (
     LLM,
@@ -538,7 +538,9 @@ class Agent(
                 ):
                     if isinstance(result, ToolCallResult):
                         tool_calls.append(result)
-                        prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
+                        prompt_with_history = prompt_with_history.add_tool_use_message(
+                            id=result.id, name=result.name, arguments=result.arguments, result=result.result
+                        )
 
                 turn_count += 1
             else:
@@ -764,7 +766,9 @@ class Agent(
                         elif isinstance(result, ToolCallResult):
                             # Add ALL tool results to history (including pending confirmations)
                             # This allows the agent to see them in the next turn
-                            prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
+                            prompt_with_history = prompt_with_history.add_tool_use_message(
+                                id=result.id, name=result.name, arguments=result.arguments, result=result.result
+                            )
                             returned_tool_call = True
 
                     # If we have pending confirmations, prepare for text-only summary generation
@@ -1004,20 +1008,23 @@ class Agent(
                     else asyncio.to_thread(tool.on_tool_call, **call_args)
                 )
 
-                if isinstance(tool_output, AgentResultStreaming):
+                if isinstance(tool_output, ToolReturn):
+                    tool_return = tool_output
+                elif isinstance(tool_output, AgentResultStreaming):
                     async for downstream_item in tool_output:
                         if context.stream_downstream_events:
                             yield DownstreamAgentResult(agent_id=tool.id, item=downstream_item)
-
-                    tool_output = {
-                        "content": tool_output.content,
+                    metadata = {
                         "metadata": tool_output.metadata,
                         "tool_calls": tool_output.tool_calls,
                         "usage": tool_output.usage,
                     }
+                    tool_return = ToolReturn(value=tool_output.content, metadata=metadata)
+                else:
+                    tool_return = ToolReturn(value=tool_output, metadata=None)
 
                 outputs.result = {
-                    "tool_output": tool_output,
+                    "tool_output": tool_return.value,
                     "tool_call_id": tool_call.id,
                 }
 
@@ -1044,7 +1051,8 @@ class Agent(
             id=tool_call.id,
             name=tool_call.name,
             arguments=tool_call.arguments,
-            result=tool_output,
+            result=tool_return.value,
+            metadata=tool_return.metadata,
         )
 
     @requires_dependencies(["a2a.types"], "a2a")
