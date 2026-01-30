@@ -117,6 +117,8 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         draft.conversations[conversationId] = conversation;
         draft.currentConversation = conversationId;
       });
+
+      return conversationId;
     },
 
     addMessage: (conversationId, message) => {

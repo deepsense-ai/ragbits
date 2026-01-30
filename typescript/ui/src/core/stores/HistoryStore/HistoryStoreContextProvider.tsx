@@ -7,6 +7,7 @@ import { MessageRole } from "@ragbits/api-client-react";
 import { v4 as uuidv4 } from "uuid";
 import InitializationScreen from "../../components/InitializationScreen";
 import {
+  getTemporaryConversationId,
   initialConversationValues,
   initialHistoryValues,
   isTemporaryConversation,
@@ -55,7 +56,9 @@ const createMinimalHistoryStore = immer<HistoryStore>((set, get) => {
           }),
         );
       },
-      restore: () => {}, // No-op for minimal implementation
+      restore: () => {
+        return getTemporaryConversationId();
+      },
       stopAnswering: (conversationId) => {
         const conversation = get().conversations[conversationId];
 
