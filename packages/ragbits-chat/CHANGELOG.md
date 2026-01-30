@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add support for confirmation requests in chat (#853) (#914)
+
 ## 1.4.1 (2026-02-08)
 ### Changed
 
