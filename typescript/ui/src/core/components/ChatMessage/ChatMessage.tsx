@@ -10,12 +10,9 @@ import MessageActions from "./MessageActions.tsx";
 import LoadingIndicator from "./LoadingIndicator.tsx";
 import {
   useConversationProperty,
-  useHistoryActions,
   useMessage,
 } from "../../stores/HistoryStore/selectors.ts";
 import { MessageRole } from "@ragbits/api-client";
-import { AnimatePresence, motion } from "framer-motion";
-import { useRagbitsContext } from "@ragbits/api-client-react";
 
 type ChatMessageProps = {
   classNames?: {
@@ -32,24 +29,13 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     const lastMessageId = useConversationProperty((s) => s.lastMessageId);
     const isHistoryLoading = useConversationProperty((s) => s.isLoading);
     const message = useMessage(messageId);
-    const { sendSilentConfirmation } = useHistoryActions();
-    const { client: ragbitsClient } = useRagbitsContext();
 
     if (!message) {
       throw new Error("Tried to render non-existent message");
     }
 
-    const {
-      serverId,
-      content,
-      role,
-      references,
-      liveUpdates,
-      images,
-      confirmationRequests,
-      confirmationStates,
-      error,
-    } = message;
+    const { serverId, content, role, references, liveUpdates, images, error } =
+      message;
     const rightAlign = role === MessageRole.User;
     const isLoading =
       isHistoryLoading &&

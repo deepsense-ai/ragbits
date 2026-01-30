@@ -206,7 +206,7 @@ const PromptInput = ({
           <Slot
             name="prompt.beforeSend"
             skeletonSize={{ width: "40px", height: "40px" }}
-            props={{ isInputDisabled: isLoading || isDisabled }}
+            props={{ isInputDisabled: isLoading }}
           />
           <Button
             isIconOnly

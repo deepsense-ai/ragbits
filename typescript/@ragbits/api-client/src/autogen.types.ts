@@ -40,20 +40,6 @@ export const MessageRole = {
 export type MessageRole = TypeFrom<typeof MessageRole>
 
 /**
- * Represents the TaskStatus enum
- */
-export const TaskStatus = {
-    Pending: 'pending',
-    InProgress: 'in_progress',
-    Completed: 'completed',
-    Failed: 'failed',
-    Cancelled: 'cancelled',
-    Retrying: 'retrying',
-} as const
-
-export type TaskStatus = TypeFrom<typeof TaskStatus>
-
-/**
  * Represents the AuthType enum
  */
 export const AuthType = {
@@ -74,14 +60,6 @@ export interface ChatContext {
     }
     user: User | null
     session_id: string | null
-    /**
-     * List of confirmed/declined tools from the frontend
-     */
-    confirmed_tools:
-        | {
-              [k: string]: unknown
-          }[]
-        | null
     /**
      * User's timezone in IANA format (e.g., 'Europe/Warsaw', 'America/New_York')
      */
@@ -185,29 +163,6 @@ export interface MessageUsage {
 }
 
 /**
- * Simple task representation.
- */
-export interface Task {
-    id: string
-    description: string
-    /**
-     * Task status options.
-     */
-    status:
-        | 'pending'
-        | 'in_progress'
-        | 'completed'
-        | 'failed'
-        | 'cancelled'
-        | 'retrying'
-    order: number
-    summary: string | null
-    parent_id: string | null
-    full_response: string | null
-    dependencies: string[]
-}
-
-/**
  * Text content wrapper.
  */
 export interface TextContent {
@@ -249,20 +204,6 @@ export interface UsageContent {
     usage: {
         [k: string]: MessageUsage
     }
-}
-
-/**
- * Todo item content wrapper.
- */
-export interface TodoItemContent {
-    task: Task
-}
-
-/**
- * Confirmation request content wrapper.
- */
-export interface ConfirmationRequestContent {
-    confirmation_request: ConfirmationRequest
 }
 
 /**
@@ -585,19 +526,9 @@ export interface ClearMessageChatResponse {
     content: unknown
 }
 
-export interface TodoItemChatResonse {
-    type: 'todo_item'
-    content: TodoItemContent
-}
-
 export interface ConversationSummaryResponse {
     type: 'conversation_summary'
     content: ConversationSummaryContent
-}
-
-export interface ConfirmationRequestChatResponse {
-    type: 'confirmation_request'
-    content: ConfirmationRequestContent
 }
 
 export interface ErrorChatResponse {
@@ -624,7 +555,5 @@ export type ChatResponse =
     | ImageChatResponse
     | MessageUsageChatResponse
     | ClearMessageChatResponse
-    | TodoItemChatResonse
     | ConversationSummaryResponse
-    | ConfirmationRequestChatResponse
     | ErrorChatResponse
