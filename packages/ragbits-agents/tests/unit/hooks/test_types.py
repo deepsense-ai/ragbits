@@ -67,26 +67,16 @@ class TestPreToolOutput:
 
 
 class TestPostToolInput:
-    def test_creation_with_output_and_error(self, tool_call: ToolCall):
+    def test_creation_with_output(self, tool_call: ToolCall):
         input_data = PostToolInput(tool_call=tool_call, tool_return=ToolReturn(value="result"))
         assert input_data.event_type == EventType.POST_TOOL
-        assert input_data.tool_return is not None
         assert input_data.tool_return.value == "result"
-        assert input_data.error is None
-
-        error = ValueError("failed")
-        input_with_error = PostToolInput(tool_call=tool_call, tool_return=None, error=error)
-        assert input_with_error.error == error
 
 
 class TestPostToolOutput:
     def test_creation_with_various_outputs(self):
         string_output = PostToolOutput(tool_return=ToolReturn("string"))
-        assert string_output.tool_return is not None
         assert string_output.tool_return.value == "string"
 
         dict_output = PostToolOutput(tool_return=ToolReturn({"key": "value"}))
-        assert dict_output.tool_return is not None
         assert dict_output.tool_return.value == {"key": "value"}
-
-        assert PostToolOutput(tool_return=None).tool_return is None
