@@ -10,6 +10,7 @@ from ragbits.agents.hooks.types import (
     PreToolInput,
     PreToolOutput,
 )
+from ragbits.agents.tool import ToolReturn
 
 # Reusable hook callbacks as fixtures
 
@@ -62,9 +63,10 @@ def append_output():
 
     def factory(text: str, prepend: bool = False) -> PostToolHookCallback:
         async def hook(input_data: PostToolInput) -> PostToolOutput:
+            tool_return_value = input_data.tool_return.value if input_data.tool_return is not None else None
             if prepend:
-                return PostToolOutput(output=f"{text}{input_data.output}")
-            return PostToolOutput(output=f"{input_data.output}{text}")
+                return PostToolOutput(tool_return=ToolReturn(f"{text}{tool_return_value}"))
+            return PostToolOutput(tool_return=ToolReturn(f"{tool_return_value}{text}"))
 
         return hook
 

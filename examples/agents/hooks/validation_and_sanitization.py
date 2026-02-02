@@ -13,6 +13,7 @@ from typing import Any
 
 from ragbits.agents import Agent
 from ragbits.agents.hooks import EventType, Hook, PostToolInput, PostToolOutput, PreToolInput, PreToolOutput
+from ragbits.agents.tool import ToolReturn
 from ragbits.core.llms.litellm import LiteLLM
 
 # Track hook actions for demonstration
@@ -89,11 +90,11 @@ async def sanitize_email_domain(input_data: PreToolInput) -> PreToolOutput:
 async def mask_sensitive_data(input_data: PostToolInput) -> PostToolOutput:
     """Mask sensitive information in user search results."""
     if input_data.tool_call.name != "search_user":
-        return PostToolOutput(output=input_data.output)
+        return PostToolOutput(tool_return=input_data.tool_return)
 
-    if isinstance(input_data.output, dict) and "ssn" in input_data.output:
-        original_ssn = input_data.output["ssn"]
-        masked_output = input_data.output.copy()
+    if isinstance(input_data.tool_return.value, dict) and "ssn" in input_data.tool_return.value:
+        original_ssn = input_data.tool_return.value["ssn"]
+        masked_output = input_data.tool_return.value.copy()
         masked_output["ssn"] = "***-**-****"
 
         hook_actions.append(
@@ -106,18 +107,18 @@ async def mask_sensitive_data(input_data: PostToolInput) -> PostToolOutput:
             }
         )
 
-        return PostToolOutput(output=masked_output)
+        return PostToolOutput(tool_return=ToolReturn(masked_output))
 
-    return PostToolOutput(output=input_data.output)
+    return PostToolOutput(tool_return=input_data.tool_return)
 
 
 async def log_notification(input_data: PostToolInput) -> PostToolOutput:
     """Add logging metadata to notification results."""
     if input_data.tool_call.name != "send_notification":
-        return PostToolOutput(output=input_data.output)
+        return PostToolOutput(tool_return=ToolReturn(value=input_data.tool_return.value))
 
-    original_output = input_data.output
-    enhanced_output = f"{input_data.output} [Logged at system]"
+    original_output = input_data.tool_return.value
+    enhanced_output = f"{input_data.tool_return.value} [Logged at system]"
 
     hook_actions.append(
         {
@@ -128,7 +129,7 @@ async def log_notification(input_data: PostToolInput) -> PostToolOutput:
         }
     )
 
-    return PostToolOutput(output=enhanced_output)
+    return PostToolOutput(tool_return=ToolReturn(enhanced_output))
 
 
 async def main() -> None:
