@@ -37,16 +37,29 @@ def run(
         "--theme",
         help="Path to a HeroUI theme JSON file from heroui.com/themes",
     ),
+    reload: bool = typer.Option(False, "--reload", help="Enable auto-reload on code changes for debugging"),
 ) -> None:
     """
     Run API service with UI demo
     """
-    api = RagbitsAPI(
-        chat_interface=chat_interface,
-        cors_origins=cors_origins,
-        ui_build_dir=ui_build_dir,
-        debug_mode=debug_mode,
-        auth_backend=auth,
-        theme_path=theme,
-    )
-    api.run(host=host, port=port)
+    if reload:
+        RagbitsAPI.run_with_reload(
+            host=host,
+            port=port,
+            chat_interface=chat_interface,
+            cors_origins=cors_origins,
+            ui_build_dir=ui_build_dir,
+            debug_mode=debug_mode,
+            auth_backend=auth,
+            theme_path=theme,
+        )
+    else:
+        api = RagbitsAPI(
+            chat_interface=chat_interface,
+            cors_origins=cors_origins,
+            ui_build_dir=ui_build_dir,
+            debug_mode=debug_mode,
+            auth_backend=auth,
+            theme_path=theme,
+        )
+        api.run(host=host, port=port)
