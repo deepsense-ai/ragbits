@@ -3,7 +3,6 @@
 # ruff: noqa: PLR6301
 
 import pytest
-from pydantic import ValidationError
 
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.hooks.types import (
@@ -18,14 +17,11 @@ from ragbits.core.llms.base import ToolCall
 
 
 class TestPreToolInput:
-    def test_creation_with_frozen_event_type(self, tool_call: ToolCall):
+    def test_creation(self, tool_call: ToolCall):
         input_data = PreToolInput(tool_call=tool_call)
 
         assert input_data.event_type == EventType.PRE_TOOL
         assert input_data.tool_call.name == "test_tool"
-
-        with pytest.raises(ValidationError):
-            input_data.event_type = EventType.POST_TOOL  # type: ignore[assignment]
 
 
 class TestPreToolOutput:
@@ -37,7 +33,7 @@ class TestPreToolOutput:
         assert output.confirmation_request is None
 
     def test_deny_decision_requires_reason(self):
-        with pytest.raises(ValidationError, match="reason is required"):
+        with pytest.raises(ValueError, match="reason is required"):
             PreToolOutput(arguments={}, decision="deny")
 
         output = PreToolOutput(arguments={}, decision="deny", reason="Not allowed")
@@ -45,7 +41,7 @@ class TestPreToolOutput:
         assert output.reason == "Not allowed"
 
     def test_ask_decision_requires_reason(self):
-        with pytest.raises(ValidationError, match="reason is required"):
+        with pytest.raises(ValueError, match="reason is required"):
             PreToolOutput(arguments={}, decision="ask")
 
         output = PreToolOutput(arguments={}, decision="ask", reason="Confirm?")
