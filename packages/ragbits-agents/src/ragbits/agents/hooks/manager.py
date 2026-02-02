@@ -157,7 +157,7 @@ class HookManager:
     async def execute_post_tool(
         self,
         tool_call: ToolCall,
-        tool_return: ToolReturn,
+        tool_return: ToolReturn | None,
         error: Exception | None,
     ) -> PostToolOutput:
         """
