@@ -12,6 +12,7 @@ from typing import Any, Literal, TypeAlias
 from pydantic import BaseModel, Field, model_validator
 
 from ragbits.agents.confirmation import ConfirmationRequest
+from ragbits.agents.tool import ToolReturn
 from ragbits.core.llms.base import ToolCall
 
 
@@ -73,13 +74,13 @@ class PostToolInput(HookEventIO):
     Attributes:
         event_type: Always EventType.POST_TOOL (unchangeable)
         tool_call: The original tool call
-        output: The result returned by the tool (None if error occurred)
+        tool_return: The result returned by the tool (None if error occurred)
         error: Any error that occurred during execution (None if successful)
     """
 
     event_type: Literal[EventType.POST_TOOL] = Field(default=EventType.POST_TOOL, frozen=True)
     tool_call: ToolCall
-    output: Any = None
+    tool_return: ToolReturn | None = None
     error: Exception | None = None
 
 
@@ -120,20 +121,20 @@ class PostToolOutput(HookEventIO):
 
     Attributes:
         event_type: Always EventType.POST_TOOL (unchangeable)
-        output: Tool output to use (original or modified) - always present
+        tool_return: Tool output to use (original or modified) - None if the tool execution failed
 
     Example:
         ```python
         # Pass through unchanged
-        return PostToolOutput(output=input.output)
+        return PostToolOutput(tool_return=input.tool_return)
 
         # Modify output
-        return PostToolOutput(output={"filtered": data})
+        return PostToolOutput(tool_return=ToolReturn(value={"filtered": data}))
         ```
     """
 
     event_type: Literal[EventType.POST_TOOL] = Field(default=EventType.POST_TOOL, frozen=True)  # type: ignore[assignment]
-    output: Any
+    tool_return: ToolReturn | None
 
 
 # Type aliases for hook callbacks
