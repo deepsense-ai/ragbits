@@ -3,9 +3,15 @@
 import pytest
 
 from ragbits.agents.hooks.types import (
+    PostRunHookCallback,
+    PostRunInput,
+    PostRunOutput,
     PostToolHookCallback,
     PostToolInput,
     PostToolOutput,
+    PreRunHookCallback,
+    PreRunInput,
+    PreRunOutput,
     PreToolHookCallback,
     PreToolInput,
     PreToolOutput,
@@ -71,3 +77,30 @@ def append_output():
         return hook
 
     return factory
+
+
+# Run hooks fixtures
+
+
+@pytest.fixture
+def modify_input():
+    """Factory to create pre-run hooks that modify input."""
+
+    def factory(prefix: str) -> PreRunHookCallback:
+        async def hook(input_data: PreRunInput) -> PreRunOutput:
+            modified = f"{prefix}: {input_data.input}" if input_data.input else prefix
+            return PreRunOutput(output=modified)
+
+        return hook
+
+    return factory
+
+
+@pytest.fixture
+def post_run_pass() -> PostRunHookCallback:
+    """Post-run hook that passes through the result."""
+
+    async def hook(input_data: PostRunInput) -> PostRunOutput:
+        return PostRunOutput(result=input_data.result)
+
+    return hook
