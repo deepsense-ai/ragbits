@@ -115,7 +115,7 @@ async def mask_sensitive_data(input_data: PostToolInput) -> PostToolOutput:
 async def log_notification(input_data: PostToolInput) -> PostToolOutput:
     """Add logging metadata to notification results."""
     if input_data.tool_call.name != "send_notification":
-        return PostToolOutput(tool_return=ToolReturn(value=input_data.tool_return.value))
+        return PostToolOutput(tool_return=input_data.tool_return)
 
     original_output = input_data.tool_return.value
     enhanced_output = f"{input_data.tool_return.value} [Logged at system]"
