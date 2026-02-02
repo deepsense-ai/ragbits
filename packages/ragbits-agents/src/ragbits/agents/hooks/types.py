@@ -49,14 +49,12 @@ class PostToolInput:
 
     Attributes:
         tool_call: The original tool call
-        tool_return: The result returned by the tool (None if error occurred)
-        error: Any error that occurred during execution (None if successful)
+        tool_return: The result returned by the tool
         event_type: Always EventType.POST_TOOL
     """
 
     tool_call: ToolCall
-    tool_return: ToolReturn | None = None
-    error: Exception | None = None
+    tool_return: ToolReturn
     event_type: Literal[EventType.POST_TOOL] = EventType.POST_TOOL
 
 
@@ -91,11 +89,11 @@ class PostToolOutput:
     Output returned by post-tool hook callbacks.
 
     Attributes:
-        tool_return: Tool output to use (original or modified) - None if the tool execution failed
+        tool_return: Tool output to use (original or modified)
         event_type: Always EventType.POST_TOOL (unchangeable)
     """
 
-    tool_return: ToolReturn | None
+    tool_return: ToolReturn
     event_type: Literal[EventType.POST_TOOL] = EventType.POST_TOOL
 
 

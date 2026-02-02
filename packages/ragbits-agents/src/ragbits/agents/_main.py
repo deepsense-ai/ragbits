@@ -994,8 +994,6 @@ class Agent(
         # Always update arguments (chained from hooks)
         tool_call.arguments = pre_tool_result.arguments
 
-        tool_error: Exception | None = None
-
         with trace(agent_id=self.id, tool_name=tool_call.name, tool_arguments=tool_call.arguments) as outputs:
             try:
                 call_args = tool_call.arguments.copy()
@@ -1029,29 +1027,24 @@ class Agent(
                 }
 
             except Exception as e:
-                tool_error = e
                 outputs.result = {
                     "error": str(e),
                     "tool_call_id": tool_call.id,
                 }
+                raise AgentToolExecutionError(tool_call.name, e) from e
 
         # Execute POST_TOOL hooks with chaining
         post_tool_output = await self.hook_manager.execute_post_tool(
             tool_call=tool_call,
             tool_return=tool_return,
-            error=tool_error,
         )
-
-        # Raise error after hooks have been executed
-        if tool_error:
-            raise AgentToolExecutionError(tool_call.name, tool_error) from tool_error
 
         yield ToolCallResult(
             id=tool_call.id,
             name=tool_call.name,
             arguments=tool_call.arguments,
-            result=post_tool_output.tool_return.value if post_tool_output.tool_return else None,
-            metadata=post_tool_output.tool_return.metadata if post_tool_output.tool_return else None,
+            result=post_tool_output.tool_return.value,
+            metadata=post_tool_output.tool_return.metadata,
         )
 
     @requires_dependencies(["a2a.types"], "a2a")
