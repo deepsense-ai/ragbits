@@ -57,7 +57,7 @@ const MOCK_CONVERSATIONS: HistoryStore["conversations"] = {
     history: {},
     followupMessages: null,
     serverState: null,
-    conversationId: "null",
+    conversationId: "temp-mock-id-1",
     eventsLog: [],
     lastMessageId: null,
     chatOptions: undefined,
@@ -82,6 +82,7 @@ describe("ChatHistory", () => {
       mockStore(null);
       render(<ChatHistory />);
 
+      console.log(screen.debug(undefined, 100000));
       mockConversationsKeys.forEach((key) => {
         if (isTemporaryConversation(MOCK_CONVERSATIONS[key].conversationId)) {
           return;
