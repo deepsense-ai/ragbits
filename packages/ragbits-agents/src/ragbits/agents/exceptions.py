@@ -70,11 +70,25 @@ class AgentMaxTurnsExceededError(AgentError):
 
     def __init__(self, max_turns: int) -> None:
         super().__init__(
-            f"The number of Agent turns exceeded the limit of {max_turns}."
-            "To change this limit, pass ragbits.agents.AgentOptions with max_turns when initializing the Agent."
+            f"The number of Agent turns exceeded the limit of {max_turns}. "
+            "To change this limit, pass ragbits.agents.AgentOptions with max_turns when initializing the Agent. "
             "agent = Agent(options=AgentOptions(max_turns=x))"
         )
         self.max_turns = max_turns
+
+
+class AgentMaxRerunsExceededError(AgentError):
+    """
+    Raised when the maximum number of reruns (triggered by post-run hooks) is exceeded.
+    """
+
+    def __init__(self, max_reruns: int) -> None:
+        super().__init__(
+            f"The number of Agent reruns exceeded the limit of {max_reruns}. "
+            "To change this limit, pass ragbits.agents.AgentOptions with max_reruns when initializing the Agent. "
+            "agent = Agent(options=AgentOptions(max_reruns=x))"
+        )
+        self.max_reruns = max_reruns
 
 
 class AgentMaxTokensExceededError(AgentError):
@@ -106,13 +120,3 @@ class AgentNextPromptOverLimitError(AgentError):
         self.limit = limit
         self.actual = actual
         self.next_prompt_tokens = next_prompt_tokens
-
-
-class AgentInvalidPostProcessorError(AgentError):
-    """
-    Raised when the post-processor is invalid.
-    """
-
-    def __init__(self, reason: str) -> None:
-        super().__init__(f"Invalid post-processor: {reason}")
-        self.reason = reason

@@ -8,23 +8,34 @@ organization, and execution of hooks during lifecycle events.
 import hashlib
 import json
 from collections import defaultdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Generic
 
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.hooks.base import Hook
-from ragbits.agents.hooks.types import EventType, PostToolInput, PostToolOutput, PreToolInput, PreToolOutput
+from ragbits.agents.hooks.types import (
+    EventType,
+    PostRunInput,
+    PostRunOutput,
+    PostToolInput,
+    PostToolOutput,
+    PreRunInput,
+    PreRunOutput,
+    PreToolInput,
+    PreToolOutput,
+)
 from ragbits.agents.tool import ToolReturn
-from ragbits.core.llms.base import ToolCall
+from ragbits.core.llms.base import LLMClientOptionsT, ToolCall
+from ragbits.core.prompt.prompt import PromptInputT, PromptOutputT
 
 if TYPE_CHECKING:
-    from ragbits.agents._main import AgentRunContext
+    from ragbits.agents._main import AgentOptions, AgentResult, AgentRunContext
 
 # Confirmation ID length: 16 hex chars provides sufficient uniqueness
 # while being compact for display and storage
 CONFIRMATION_ID_LENGTH = 16
 
 
-class HookManager:
+class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
     """
     Manages registration and execution of hooks for an agent.
 
@@ -58,7 +69,7 @@ class HookManager:
         self._hooks[hook.event_type].append(hook)
         self._hooks[hook.event_type].sort(key=lambda h: h.priority)
 
-    def get_hooks(self, event_type: EventType, tool_name: str | None) -> list[Hook]:
+    def get_hooks(self, event_type: EventType, tool_name: str | None = None) -> list[Hook]:
         """
         Get all hooks for a specific event type that match the tool name.
 
@@ -190,3 +201,83 @@ class HookManager:
 
         # Return final chained result
         return PostToolOutput(tool_return=current_output)
+
+    async def execute_pre_run(
+        self,
+        input: str | PromptInputT | None,
+        options: "AgentOptions[LLMClientOptionsT] | None",
+        context: "AgentRunContext",
+    ) -> PreRunOutput[PromptInputT]:
+        """
+        Execute pre-run hooks with proper input chaining.
+
+        Each hook sees the modified input from the previous hook.
+
+        Args:
+            input: The input for the agent run
+            options: The options for the agent run
+            context: The context for the agent run
+
+        Returns:
+            PreRunOutput with final input
+        """
+        hooks = self.get_hooks(EventType.PRE_RUN, None)
+
+        # Start with original input
+        current_input = input
+
+        for hook in hooks:
+            # Create input with current state (chained from previous hook)
+            hook_input = PreRunInput(
+                input=current_input,
+                options=options,
+                context=context,
+            )
+
+            result: PreRunOutput = await hook.execute(hook_input)
+
+            # Chain input for next hook
+            current_input = result.output
+
+        # Return final chained input
+        return PreRunOutput(output=current_input)
+
+    async def execute_post_run(
+        self,
+        result: "AgentResult[PromptOutputT]",
+        options: "AgentOptions[LLMClientOptionsT] | None",
+        context: "AgentRunContext",
+    ) -> PostRunOutput[PromptOutputT]:
+        """
+        Execute post-run hooks with proper result chaining.
+
+        Each hook sees the modified result from the previous hook.
+
+        Args:
+            result: The result from the agent run
+            options: The options for the agent run
+            context: The context for the agent run
+
+        Returns:
+            PostRunOutput with final result
+        """
+        hooks = self.get_hooks(EventType.POST_RUN, None)
+
+        # Start with original result
+        current_result = result
+
+        for hook in hooks:
+            # Create input with current state (chained from previous hook)
+            hook_input = PostRunInput(
+                result=current_result,
+                options=options,
+                context=context,
+            )
+
+            hook_result: PostRunOutput = await hook.execute(hook_input)
+
+            # Chain result for next hook
+            current_result = hook_result.result
+
+        # Return final chained result
+        return PostRunOutput(result=current_result)

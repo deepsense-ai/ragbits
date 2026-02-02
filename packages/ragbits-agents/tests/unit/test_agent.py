@@ -17,7 +17,13 @@ from ragbits.agents.exceptions import (
 from ragbits.agents.hooks import (
     EventType,
     Hook,
+    PostRunHookCallback,
+    PostRunInput,
+    PostRunOutput,
     PostToolHookCallback,
+    PreRunHookCallback,
+    PreRunInput,
+    PreRunOutput,
     PreToolHookCallback,
     PreToolInput,
     PreToolOutput,
@@ -935,3 +941,35 @@ async def test_hook_priority_order(llm_with_tool_call: MockLLM):
     await agent.run()
 
     assert execution_order == [5, 10]
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_pre_run_hook_modifies_input(
+    llm_without_tool_call: MockLLM, method: Callable, modify_input: Callable
+):
+    """Test that a pre-run hook can modify the input."""
+    hook = Hook(event_type=EventType.PRE_RUN, callback=modify_input("Modified"))
+    agent = Agent(llm=llm_without_tool_call, prompt="You are helpful.", hooks=[hook])
+
+    result = await method(agent, "original query")
+
+    # The LLM should receive the modified input
+    assert "Modified: original query" in str(result.history)
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_post_run_hook_modifies_result(llm_without_tool_call: MockLLM, method: Callable):
+    """Test that a post-run hook can modify the result."""
+
+    async def modify_result_hook(input_data: PostRunInput) -> PostRunOutput:
+        # Modify the content
+        modified_result = input_data.result
+        modified_result.content = f"[MODIFIED] {input_data.result.content}"
+        return PostRunOutput(result=modified_result)
+
+    hook = Hook(event_type=EventType.POST_RUN, callback=modify_result_hook)
+    agent = Agent(llm=llm_without_tool_call, prompt="You are helpful.", hooks=[hook])
+
+    result = await method(agent, "test query")
+
+    assert result.content.startswith("[MODIFIED]")

@@ -14,6 +14,7 @@ from ragbits.agents.hooks.manager import CONFIRMATION_ID_LENGTH, HookManager
 from ragbits.agents.hooks.types import (
     EventType,
     PostToolHookCallback,
+    PreRunHookCallback,
     PreToolHookCallback,
     PreToolInput,
     PreToolOutput,
@@ -182,3 +183,52 @@ class TestConfirmationIdGeneration:
 
     def test_correct_length(self):
         assert len(make_confirmation_id("hook", "tool", {})) == CONFIRMATION_ID_LENGTH
+
+
+class TestPreRunExecution:
+    @pytest.mark.asyncio
+    async def test_no_hooks_returns_original_input(self, context: AgentRunContext):
+        result = await HookManager().execute_pre_run(input="test input", options=None, context=context)
+
+        assert result.output == "test input"
+
+    @pytest.mark.asyncio
+    async def test_input_chaining(self, context: AgentRunContext, modify_input: Callable[..., PreRunHookCallback]):
+        manager = HookManager(
+            hooks=[
+                Hook(event_type=EventType.PRE_RUN, callback=modify_input("H1"), priority=1),
+                Hook(event_type=EventType.PRE_RUN, callback=modify_input("H2"), priority=2),
+            ]
+        )
+        result = await manager.execute_pre_run(input="original", options=None, context=context)
+
+        assert result.output == "H2: H1: original"
+
+
+class TestPostRunExecution:
+    @pytest.mark.asyncio
+    async def test_no_hooks_returns_original_result(self, context: AgentRunContext):
+        mock_result = type("AgentResult", (), {"content": "test"})()
+        result = await HookManager().execute_post_run(result=mock_result, options=None, context=context)
+
+        assert result.result == mock_result
+
+    @pytest.mark.asyncio
+    async def test_result_chaining(self, context: AgentRunContext):
+        """Test that post-run hooks can chain and modify results."""
+
+        async def modify_content_hook(input_data):
+            from ragbits.agents.hooks.types import PostRunOutput
+
+            modified = type("AgentResult", (), {"content": f"[modified] {input_data.result.content}"})()
+            return PostRunOutput(result=modified)
+
+        manager = HookManager(
+            hooks=[
+                Hook(event_type=EventType.POST_RUN, callback=modify_content_hook, priority=1),
+            ]
+        )
+        mock_result = type("AgentResult", (), {"content": "test"})()
+        result = await manager.execute_post_run(result=mock_result, options=None, context=context)
+
+        assert result.result.content == "[modified] test"
