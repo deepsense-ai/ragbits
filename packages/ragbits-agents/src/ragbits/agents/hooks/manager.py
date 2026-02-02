@@ -8,11 +8,12 @@ organization, and execution of hooks during lifecycle events.
 import hashlib
 import json
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.hooks.base import Hook
 from ragbits.agents.hooks.types import EventType, PostToolInput, PostToolOutput, PreToolInput, PreToolOutput
+from ragbits.agents.tool import ToolReturn
 from ragbits.core.llms.base import ToolCall
 
 if TYPE_CHECKING:
@@ -156,7 +157,7 @@ class HookManager:
     async def execute_post_tool(
         self,
         tool_call: ToolCall,
-        output: Any,  # noqa: ANN401
+        tool_return: ToolReturn,
         error: Exception | None,
     ) -> PostToolOutput:
         """
@@ -166,7 +167,7 @@ class HookManager:
 
         Args:
             tool_call: The tool call that was executed
-            output: The tool output
+            tool_return: Object representing the output of the tool (with value passed to the LLM and metadata)
             error: Any error that occurred
 
         Returns:
@@ -175,20 +176,20 @@ class HookManager:
         hooks = self.get_hooks(EventType.POST_TOOL, tool_call.name)
 
         # Start with original output
-        current_output = output
+        current_output = tool_return
 
         for hook in hooks:
             # Create input with current state (chained from previous hook)
             hook_input = PostToolInput(
                 tool_call=tool_call,
-                output=current_output,
+                tool_return=current_output,
                 error=error,
             )
 
             result: PostToolOutput = await hook.execute(hook_input)
 
             # Chain output for next hook
-            current_output = result.output
+            current_output = result.tool_return
 
         # Return final chained result
-        return PostToolOutput(output=current_output)
+        return PostToolOutput(tool_return=current_output)

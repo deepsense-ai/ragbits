@@ -13,6 +13,7 @@ from typing import Any
 
 from ragbits.agents import Agent
 from ragbits.agents.hooks import EventType, Hook, PostToolInput, PostToolOutput, PreToolInput, PreToolOutput
+from ragbits.agents.tool import ToolReturn
 from ragbits.core.llms.litellm import LiteLLM
 
 # Track hook actions for demonstration
@@ -89,10 +90,10 @@ async def sanitize_email_domain(input_data: PreToolInput) -> PreToolOutput:
 async def mask_sensitive_data(input_data: PostToolInput) -> PostToolOutput:
     """Mask sensitive information in user search results."""
     if input_data.tool_call.name != "search_user":
-        return PostToolOutput(output=input_data.output)
+        return PostToolOutput(tool_return=input_data.tool_return)
 
     if isinstance(input_data.output, dict) and "ssn" in input_data.output:
-        original_ssn = input_data.output["ssn"]
+        original_ssn = input_data.tool_return.value["ssn"]
         masked_output = input_data.output.copy()
         masked_output["ssn"] = "***-**-****"
 
@@ -106,15 +107,15 @@ async def mask_sensitive_data(input_data: PostToolInput) -> PostToolOutput:
             }
         )
 
-        return PostToolOutput(output=masked_output)
+        return PostToolOutput(tool_return=ToolReturn(masked_output))
 
-    return PostToolOutput(output=input_data.output)
+    return PostToolOutput(tool_return=ToolReturn(input_data.output))
 
 
 async def log_notification(input_data: PostToolInput) -> PostToolOutput:
     """Add logging metadata to notification results."""
     if input_data.tool_call.name != "send_notification":
-        return PostToolOutput(output=input_data.output)
+        return PostToolOutput(tool_return=ToolReturn(value=input_data.output))
 
     original_output = input_data.output
     enhanced_output = f"{input_data.output} [Logged at system]"
@@ -128,7 +129,7 @@ async def log_notification(input_data: PostToolInput) -> PostToolOutput:
         }
     )
 
-    return PostToolOutput(output=enhanced_output)
+    return PostToolOutput(tool_return=ToolReturn(enhanced_output))
 
 
 async def main() -> None:

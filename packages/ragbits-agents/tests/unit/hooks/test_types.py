@@ -13,6 +13,7 @@ from ragbits.agents.hooks.types import (
     PreToolInput,
     PreToolOutput,
 )
+from ragbits.agents.tool import ToolReturn
 from ragbits.core.llms.base import ToolCall
 
 
@@ -71,18 +72,18 @@ class TestPreToolOutput:
 
 class TestPostToolInput:
     def test_creation_with_output_and_error(self, tool_call: ToolCall):
-        input_data = PostToolInput(tool_call=tool_call, output="result")
+        input_data = PostToolInput(tool_call=tool_call, tool_return=ToolReturn(value="result"))
         assert input_data.event_type == EventType.POST_TOOL
         assert input_data.output == "result"
         assert input_data.error is None
 
         error = ValueError("failed")
-        input_with_error = PostToolInput(tool_call=tool_call, output=None, error=error)
+        input_with_error = PostToolInput(tool_call=tool_call, tool_return=ToolReturn(value=None), error=error)
         assert input_with_error.error == error
 
 
 class TestPostToolOutput:
     def test_creation_with_various_outputs(self):
-        assert PostToolOutput(output="string").output == "string"
-        assert PostToolOutput(output={"key": "value"}).output == {"key": "value"}
-        assert PostToolOutput(output=None).output is None
+        assert PostToolOutput(tool_return=ToolReturn("string")).tool_return.value == "string"
+        assert PostToolOutput(tool_return=ToolReturn({"key": "value"})).tool_return.value == {"key": "value"}
+        assert PostToolOutput(tool_return=None).tool_return is None
