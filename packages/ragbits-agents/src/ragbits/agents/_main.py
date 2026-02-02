@@ -1036,12 +1036,11 @@ class Agent(
                 }
 
         # Execute POST_TOOL hooks with chaining
-        post_tool_result = await self.hook_manager.execute_post_tool(
+        post_tool_output = await self.hook_manager.execute_post_tool(
             tool_call=tool_call,
-            output=tool_output,
+            tool_return=tool_return,
             error=tool_error,
         )
-        tool_output = post_tool_result.output
 
         # Raise error after hooks have been executed
         if tool_error:
@@ -1051,8 +1050,8 @@ class Agent(
             id=tool_call.id,
             name=tool_call.name,
             arguments=tool_call.arguments,
-            result=tool_return.value,
-            metadata=tool_return.metadata,
+            result=post_tool_output.tool_return.value if post_tool_output.tool_return else None,
+            metadata=post_tool_output.tool_return.metadata if post_tool_output.tool_return else None,
         )
 
     @requires_dependencies(["a2a.types"], "a2a")
