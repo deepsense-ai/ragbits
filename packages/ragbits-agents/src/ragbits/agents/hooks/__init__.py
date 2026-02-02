@@ -7,6 +7,8 @@ custom logic at various points in the execution lifecycle.
 Available event types:
 - PRE_TOOL: Before a tool is invoked
 - POST_TOOL: After a tool completes
+- PRE_RUN: Before the agent run starts
+- POST_RUN: After the agent run completes
 
 Example usage:
 
@@ -47,9 +49,15 @@ from ragbits.agents.hooks.confirmation import create_confirmation_hook
 from ragbits.agents.hooks.manager import HookManager
 from ragbits.agents.hooks.types import (
     EventType,
+    PostRunHookCallback,
+    PostRunInput,
+    PostRunOutput,
     PostToolHookCallback,
     PostToolInput,
     PostToolOutput,
+    PreRunHookCallback,
+    PreRunInput,
+    PreRunOutput,
     PreToolHookCallback,
     PreToolInput,
     PreToolOutput,
@@ -64,12 +72,18 @@ __all__ = [
     "HookInputT",
     "HookManager",
     "HookOutputT",
+    # Callback type aliases
+    "PostRunHookCallback",
     "PostToolHookCallback",
+    "PreRunHookCallback",
+    "PreToolHookCallback",
     # Input/output types
+    "PostRunInput",
+    "PostRunOutput",
     "PostToolInput",
     "PostToolOutput",
-    # Callback type aliases
-    "PreToolHookCallback",
+    "PreRunInput",
+    "PreRunOutput",
     "PreToolInput",
     "PreToolOutput",
     # Hook factories

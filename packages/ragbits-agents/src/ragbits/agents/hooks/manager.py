@@ -8,11 +8,21 @@ organization, and execution of hooks during lifecycle events.
 import hashlib
 import json
 from collections import defaultdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.hooks.base import Hook
-from ragbits.agents.hooks.types import EventType, PostToolInput, PostToolOutput, PreToolInput, PreToolOutput
+from ragbits.agents.hooks.types import (
+    EventType,
+    PostRunInput,
+    PostRunOutput,
+    PostToolInput,
+    PostToolOutput,
+    PreRunInput,
+    PreRunOutput,
+    PreToolInput,
+    PreToolOutput,
+)
 from ragbits.agents.tool import ToolReturn
 from ragbits.core.llms.base import ToolCall
 
@@ -190,3 +200,89 @@ class HookManager:
 
         # Return final chained result
         return PostToolOutput(tool_return=current_output)
+
+    async def execute_pre_run(
+        self,
+        input: Any,  # noqa: ANN401
+        options: Any,  # noqa: ANN401
+        context: "AgentRunContext",
+    ) -> PreRunOutput:
+        """
+        Execute pre-run hooks with proper input chaining.
+
+        Each hook sees the modified input from the previous hook.
+
+        Args:
+            input: The input for the agent run
+            options: The options for the agent run
+            context: The context for the agent run
+
+        Returns:
+            PreRunOutput with final input
+        """
+        hooks = self.get_hooks(EventType.PRE_RUN, None)
+
+        # Start with original input
+        current_input = input
+
+        for hook in hooks:
+            # Create input with current state (chained from previous hook)
+            hook_input = PreRunInput(
+                input=current_input,
+                options=options,
+                context=context,
+            )
+
+            result: PreRunOutput = await hook.execute(hook_input)
+
+            # Chain input for next hook
+            current_input = result.output
+
+        # Return final chained input
+        return PreRunOutput(output=current_input)
+
+    async def execute_post_run(
+        self,
+        result: Any,  # noqa: ANN401
+        options: Any,  # noqa: ANN401
+        context: "AgentRunContext",
+    ) -> PostRunOutput:
+        """
+        Execute post-run hooks with proper result chaining.
+
+        Each hook sees the modified result from the previous hook.
+        If any hook sets rerun=True, the agent will rerun.
+
+        Args:
+            result: The result from the agent run
+            options: The options for the agent run
+            context: The context for the agent run
+
+        Returns:
+            PostRunOutput with final result and rerun flag
+        """
+        hooks = self.get_hooks(EventType.POST_RUN, None)
+
+        # Start with original result
+        current_result = result
+        should_rerun = False
+
+        for hook in hooks:
+            # Create input with current state (chained from previous hook)
+            hook_input = PostRunInput(
+                result=current_result,
+                options=options,
+                context=context,
+            )
+
+            hook_result: PostRunOutput = await hook.execute(hook_input)
+
+            # Chain result for next hook
+            current_result = hook_result.result
+
+            # If any hook requests rerun, set the flag
+            if hook_result.rerun:
+                should_rerun = True
+
+        # Return final chained result
+        return PostRunOutput(result=current_result, rerun=should_rerun)

@@ -8,11 +8,15 @@ input types, and output types for the hooks system.
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Literal, TypeAlias
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeAlias
 
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.tool import ToolReturn
-from ragbits.core.llms.base import ToolCall
+from ragbits.core.llms.base import LLMClientOptionsT, ToolCall
+from ragbits.core.prompt.prompt import PromptInputT, PromptOutputT
+
+if TYPE_CHECKING:
+    from ragbits.agents._main import AgentOptions, AgentResult, AgentRunContext
 
 
 class EventType(str, Enum):
@@ -22,10 +26,14 @@ class EventType(str, Enum):
     Attributes:
         PRE_TOOL: Triggered before a tool is invoked
         POST_TOOL: Triggered after a tool completes
+        PRE_RUN: Triggered before the agent run starts
+        POST_RUN: Triggered after the agent run completes
     """
 
     PRE_TOOL = "pre_tool"
     POST_TOOL = "post_tool"
+    PRE_RUN = "pre_run"
+    POST_RUN = "post_run"
 
 
 @dataclass
@@ -97,6 +105,74 @@ class PostToolOutput:
     event_type: Literal[EventType.POST_TOOL] = EventType.POST_TOOL
 
 
+@dataclass
+class PreRunInput(Generic[LLMClientOptionsT, PromptInputT]):
+    """
+    Input passed to pre-run hook callbacks.
+
+    Attributes:
+        input: The input for the agent run
+        options: The options for the agent run
+        context: The context for the agent run
+        event_type: Always EventType.PRE_RUN
+    """
+
+    input: str | PromptInputT | None = None
+    options: "AgentOptions[LLMClientOptionsT] | None" = None
+    context: "AgentRunContext | None" = None
+    event_type: Literal[EventType.PRE_RUN] = EventType.PRE_RUN
+
+
+@dataclass
+class PreRunOutput(Generic[PromptInputT]):
+    """
+    Output returned by pre-run hook callbacks.
+
+    Attributes:
+        output: The input to use (original or modified)
+        event_type: Always EventType.PRE_RUN
+    """
+
+    output: str | PromptInputT | None = None
+    event_type: Literal[EventType.PRE_RUN] = EventType.PRE_RUN
+
+
+@dataclass
+class PostRunInput(Generic[LLMClientOptionsT, PromptOutputT]):
+    """
+    Input passed to post-run hook callbacks.
+
+    Attributes:
+        result: The result from the agent run (AgentResult)
+        options: The options for the agent run
+        context: The context for the agent run
+        event_type: Always EventType.POST_RUN
+    """
+
+    result: "AgentResult[PromptOutputT]"
+    options: "AgentOptions[LLMClientOptionsT] | None" = None
+    context: "AgentRunContext | None" = None
+    event_type: Literal[EventType.POST_RUN] = EventType.POST_RUN
+
+
+@dataclass
+class PostRunOutput(Generic[PromptOutputT]):
+    """
+    Output returned by post-run hook callbacks.
+
+    Attributes:
+        result: The result to use (original or modified AgentResult)
+        rerun: If True, triggers a rerun of the agent
+        event_type: Always EventType.POST_RUN
+    """
+
+    result: "AgentResult[PromptOutputT]"
+    rerun: bool = False
+    event_type: Literal[EventType.POST_RUN] = EventType.POST_RUN
+
+
 # Type aliases for hook callbacks
 PreToolHookCallback: TypeAlias = Callable[["PreToolInput"], Awaitable["PreToolOutput"]]
 PostToolHookCallback: TypeAlias = Callable[["PostToolInput"], Awaitable["PostToolOutput"]]
+PreRunHookCallback: TypeAlias = Callable[["PreRunInput"], Awaitable["PreRunOutput"]]
+PostRunHookCallback: TypeAlias = Callable[["PostRunInput"], Awaitable["PostRunOutput"]]
