@@ -92,9 +92,9 @@ async def mask_sensitive_data(input_data: PostToolInput) -> PostToolOutput:
     if input_data.tool_call.name != "search_user":
         return PostToolOutput(tool_return=input_data.tool_return)
 
-    if isinstance(input_data.output, dict) and "ssn" in input_data.output:
+    if isinstance(input_data.tool_return.value, dict) and "ssn" in input_data.tool_return.value:
         original_ssn = input_data.tool_return.value["ssn"]
-        masked_output = input_data.output.copy()
+        masked_output = input_data.tool_return.value.copy()
         masked_output["ssn"] = "***-**-****"
 
         hook_actions.append(
@@ -109,16 +109,16 @@ async def mask_sensitive_data(input_data: PostToolInput) -> PostToolOutput:
 
         return PostToolOutput(tool_return=ToolReturn(masked_output))
 
-    return PostToolOutput(tool_return=ToolReturn(input_data.output))
+    return PostToolOutput(tool_return=input_data.tool_return)
 
 
 async def log_notification(input_data: PostToolInput) -> PostToolOutput:
     """Add logging metadata to notification results."""
     if input_data.tool_call.name != "send_notification":
-        return PostToolOutput(tool_return=ToolReturn(value=input_data.output))
+        return PostToolOutput(tool_return=ToolReturn(value=input_data.tool_return.value))
 
-    original_output = input_data.output
-    enhanced_output = f"{input_data.output} [Logged at system]"
+    original_output = input_data.tool_return.value
+    enhanced_output = f"{input_data.tool_return.value} [Logged at system]"
 
     hook_actions.append(
         {
