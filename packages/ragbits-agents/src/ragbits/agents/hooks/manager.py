@@ -157,8 +157,7 @@ class HookManager:
     async def execute_post_tool(
         self,
         tool_call: ToolCall,
-        tool_return: ToolReturn | None,
-        error: Exception | None,
+        tool_return: ToolReturn,
     ) -> PostToolOutput:
         """
         Execute post-tool hooks with proper output chaining.
@@ -168,7 +167,6 @@ class HookManager:
         Args:
             tool_call: The tool call that was executed
             tool_return: Object representing the output of the tool (with value passed to the LLM and metadata)
-            error: Any error that occurred
 
         Returns:
             PostToolOutput with final output
@@ -183,7 +181,6 @@ class HookManager:
             hook_input = PostToolInput(
                 tool_call=tool_call,
                 tool_return=current_output,
-                error=error,
             )
 
             result: PostToolOutput = await hook.execute(hook_input)

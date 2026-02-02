@@ -155,7 +155,7 @@ class TestPostToolExecution:
                 Hook(event_type=EventType.POST_TOOL, callback=append_output(" + h2"), priority=2),
             ]
         )
-        result = await manager.execute_post_tool(tool_call, tool_return=ToolReturn(value="Original"), error=None)
+        result = await manager.execute_post_tool(tool_call, tool_return=ToolReturn(value="Original"))
 
         assert result.tool_return is not None
         assert result.tool_return.value == "Original + h1 + h2"
