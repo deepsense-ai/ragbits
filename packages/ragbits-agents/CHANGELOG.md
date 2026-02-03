@@ -19,6 +19,7 @@
 - Add support for confirmation requests in agents (#853) (#914)
 - Add hooks system (pre- and post-tool) for lifecycle event interception (#914)
 - Add ToolReturn allowing the control which part of the tool output we pass to LLM (#920)
+- Add the option to stream events from tools using generators and async generators (#921)
 
 ## 1.3.0 (2025-09-11)
 
