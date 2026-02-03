@@ -1,6 +1,6 @@
 [project]
 name = "ragbits-document-search"
-version = "1.4.0.dev202601130240"
+version = "1.4.0"
 description = "Document Search module for Ragbits"
 readme = "README.md"
 requires-python = ">=3.10"
