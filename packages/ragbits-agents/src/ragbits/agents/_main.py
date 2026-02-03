@@ -20,8 +20,8 @@ from typing_extensions import Self
 from ragbits import agents
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.exceptions import (
-    AgentInvalidPostProcessorError,
     AgentInvalidPromptInputError,
+    AgentMaxRerunsExceededError,
     AgentMaxTokensExceededError,
     AgentMaxTurnsExceededError,
     AgentNextPromptOverLimitError,
@@ -37,8 +37,6 @@ from ragbits.agents.hooks import (
 from ragbits.agents.mcp.server import MCPServer, MCPServerStdio, MCPServerStreamableHttp
 from ragbits.agents.mcp.utils import get_tools
 from ragbits.agents.post_processors.base import (
-    BasePostProcessor,
-    PostProcessor,
     StreamingPostProcessor,
     stream_with_post_processing,
 )
@@ -122,6 +120,9 @@ class AgentOptions(Options, Generic[LLMClientOptionsT]):
     max_turns: int | None | NotGiven = NOT_GIVEN
     """The maximum number of turns the agent can take, if NOT_GIVEN,
     it defaults to 10, if None, agent will run forever"""
+    max_reruns: int | NotGiven = NOT_GIVEN
+    """The maximum number of reruns allowed by post-run hooks, if NOT_GIVEN,
+    it defaults to 3"""
     max_total_tokens: int | None | NotGiven = NOT_GIVEN
     """The maximum number of tokens the agent can use, if NOT_GIVEN
     or None, agent will run forever"""
@@ -432,7 +433,6 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     @overload
@@ -442,7 +442,6 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]: ...
 
     async def run(
@@ -451,7 +450,6 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[PostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResult[PromptOutputT]:
         """
         Run the agent. The method is experimental, inputs and outputs may change in the future.
@@ -468,7 +466,6 @@ class Agent(
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - Callable: one of provided tools
-            post_processors: List of post-processors to apply to the response in order.
 
         Returns:
             The result of the agent run.
@@ -479,16 +476,70 @@ class Agent(
             AgentToolNotAvailableError: If the selected tool is not available.
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
             AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
+            AgentMaxRerunsExceededError: If the maximum number of reruns is exceeded.
         """
-        result = await self._run_without_post_processing(input, options, context, tool_choice)
+        if context is None:
+            context = AgentRunContext()
 
-        if post_processors:
-            for processor in post_processors:
-                result = await processor.process(result, self, options, context)
+        input = cast(PromptInputT, input)
+        merged_options = (self.default_options | options) if options else self.default_options
+
+        # Execute PRE_RUN hooks
+        pre_run_result = await self.hook_manager.execute_pre_run(
+            input=input,
+            options=merged_options,
+            context=context,
+        )
+
+        # Use potentially modified input
+        input = pre_run_result.output
+
+        # Save original history for potential restoration
+        original_history = deepcopy(self.history)
+
+        # Execute run loop with POST_RUN hooks
+        max_reruns = merged_options.max_reruns if merged_options.max_reruns is not NOT_GIVEN else 3
+        rerun_count = 0
+        accumulated_tool_calls: list = []
+        current_tool_choice = tool_choice
+
+        while True:
+            # Run the agent
+            result = await self._run_internal(input, merged_options, context, current_tool_choice)
+
+            # Accumulate tool calls across all runs
+            accumulated_tool_calls.extend(result.tool_calls or [])
+            result.tool_calls = accumulated_tool_calls or None
+
+            # Set history for potential rerun
+            self.history = result.history
+
+            # Execute POST_RUN hooks
+            post_run_result = await self.hook_manager.execute_post_run(
+                result=result,
+                options=merged_options,
+                context=context,
+            )
+            result = post_run_result.result
+
+            if not post_run_result.rerun:
+                break
+
+            if rerun_count >= max_reruns:
+                raise AgentMaxRerunsExceededError(max_reruns)
+
+            # Prepare for rerun with optional correction prompt
+            input = post_run_result.correction_prompt
+            current_tool_choice = None
+            rerun_count += 1
+
+        # Restore history based on keep_history
+        if not self.keep_history:
+            self.history = original_history
 
         return result
 
-    async def _run_without_post_processing(
+    async def _run_internal(
         self,
         input: str | PromptInputT | None,
         options: AgentOptions[LLMClientOptionsT] | None = None,
@@ -496,14 +547,9 @@ class Agent(
         tool_choice: ToolChoice | None = None,
     ) -> AgentResult[PromptOutputT]:
         """
-        Run the agent without applying post-processors.
+        Execute the core LLM loop with tool calls.
         """
-        if context is None:
-            context = AgentRunContext()
-
-        input = cast(PromptInputT, input)
-        merged_options = (self.default_options | options) if options else self.default_options
-        llm_options = merged_options.llm_options or self.llm.default_options
+        llm_options = options.llm_options or self.llm.default_options
 
         prompt_with_history = self._get_prompt_with_history(input)
         tools_mapping = await self._get_all_tools()
@@ -511,30 +557,30 @@ class Agent(
         reasoning_traces: list[str] = []
 
         turn_count = 0
-        max_turns = merged_options.max_turns
+        max_turns = options.max_turns
         max_turns = 10 if max_turns is NOT_GIVEN else max_turns
-        with trace(input=input, options=merged_options) as outputs:
+        with trace(input=input, options=options) as outputs:
             while not max_turns or turn_count < max_turns:
-                self._check_token_limits(merged_options, context.usage, prompt_with_history, self.llm)
+                self._check_token_limits(options, context.usage, prompt_with_history, self.llm)
                 response = cast(
                     LLMResponseWithMetadata[PromptOutputT],
                     await self.llm.generate_with_metadata(
                         prompt=prompt_with_history,
                         tools=[tool.to_function_schema() for tool in tools_mapping.values()],
                         tool_choice=tool_choice if tool_choice and turn_count == 0 else None,
-                        options=self._get_llm_options(llm_options, merged_options, context.usage),
+                        options=self._get_llm_options(llm_options, options, context.usage),
                     ),
                 )
                 context.usage += response.usage or Usage()
 
-                if merged_options.log_reasoning and response.reasoning:
+                if options.log_reasoning and response.reasoning:
                     reasoning_traces.append(response.reasoning)
 
                 if not response.tool_calls:
                     break
 
                 async for result in self._execute_tool_calls(
-                    response.tool_calls, tools_mapping, context, merged_options.parallel_tool_calling
+                    response.tool_calls, tools_mapping, context, options.parallel_tool_calling
                 ):
                     if isinstance(result, ToolCallResult):
                         tool_calls.append(result)
@@ -551,7 +597,7 @@ class Agent(
                 "metadata": response.metadata,
                 "tool_calls": tool_calls or None,
             }
-            if merged_options.log_reasoning and reasoning_traces:
+            if options.log_reasoning and reasoning_traces:
                 outputs.result["reasoning_traces"] = reasoning_traces
 
             prompt_with_history = prompt_with_history.add_assistant_message(response.content)
@@ -576,20 +622,6 @@ class Agent(
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
         post_processors: list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
-        *,
-        allow_non_streaming: bool = False,
-    ) -> AgentResultStreaming: ...
-
-    @overload
-    def run_streaming(
-        self: "Agent[LLMClientOptionsT, None, PromptOutputT]",
-        input: str | None = None,
-        options: AgentOptions[LLMClientOptionsT] | None = None,
-        context: AgentRunContext | None = None,
-        tool_choice: ToolChoice | None = None,
-        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
-        *,
-        allow_non_streaming: Literal[True],
     ) -> AgentResultStreaming: ...
 
     @overload
@@ -600,20 +632,6 @@ class Agent(
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
         post_processors: list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
-        *,
-        allow_non_streaming: bool = False,
-    ) -> AgentResultStreaming: ...
-
-    @overload
-    def run_streaming(
-        self: "Agent[LLMClientOptionsT, PromptInputT, PromptOutputT]",
-        input: PromptInputT,
-        options: AgentOptions[LLMClientOptionsT] | None = None,
-        context: AgentRunContext | None = None,
-        tool_choice: ToolChoice | None = None,
-        post_processors: list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
-        *,
-        allow_non_streaming: Literal[True],
     ) -> AgentResultStreaming: ...
 
     def run_streaming(
@@ -622,13 +640,7 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: (
-            list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
-            | list[BasePostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]]
-            | None
-        ) = None,
-        *,
-        allow_non_streaming: bool = False,
+        post_processors: list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResultStreaming:
         """
         This method returns an `AgentResultStreaming` object that can be asynchronously
@@ -643,8 +655,7 @@ class Agent(
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - Callable: one of provided tools
-            post_processors: List of post-processors to apply to the response in order.
-            allow_non_streaming: Whether to allow non-streaming post-processors.
+            post_processors: List of streaming post-processors for chunk-level processing.
 
         Returns:
             A `StreamingResult` object for iteration and collection.
@@ -655,28 +666,147 @@ class Agent(
             AgentToolNotAvailableError: If the selected tool is not available.
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
             AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
-            AgentInvalidPostProcessorError: If the post-processor is invalid.
+            AgentMaxRerunsExceededError: If the maximum number of reruns is exceeded.
         """
-        generator = self._stream_internal(
+        if context is None:
+            context = AgentRunContext()
+
+        context.register_agent(cast(Agent[Any, Any, str], self))
+        merged_options = (self.default_options | options) if options else self.default_options
+
+        generator = self._run_streaming_with_hooks(
+            input=input,
+            options=merged_options,
+            context=context,
+            tool_choice=tool_choice,
+            post_processors=post_processors,
+        )
+
+        return AgentResultStreaming(generator)
+
+    async def _run_streaming_with_hooks(
+        self,
+        input: str | PromptInputT | None,
+        options: AgentOptions[LLMClientOptionsT],
+        context: AgentRunContext,
+        tool_choice: ToolChoice | None = None,
+        post_processors: list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
+    ) -> AsyncGenerator[
+        str
+        | ToolCall
+        | ToolCallResult
+        | DownstreamAgentResult
+        | SimpleNamespace
+        | BasePrompt
+        | Usage
+        | ConfirmationRequest,
+        None,
+    ]:
+        """
+        Run streaming with pre-run hooks, post-processors, and post-run hooks with rerun support.
+        """
+        # Execute PRE_RUN hooks
+        pre_run_result = await self.hook_manager.execute_pre_run(
             input=input,
             options=options,
             context=context,
-            tool_choice=tool_choice,
         )
 
-        if post_processors:
-            if not allow_non_streaming and any(not p.supports_streaming for p in post_processors):
-                raise AgentInvalidPostProcessorError(
-                    reason="Non-streaming post-processors are not allowed when allow_non_streaming is False"
-                )
+        # Use potentially modified input
+        input = pre_run_result.output
 
-            generator = cast(
-                _AG[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage | ConfirmationRequest],
-                generator,
+        # Save original history for potential restoration
+        original_history = deepcopy(self.history)
+
+        # Execute run loop with POST_RUN hooks
+        max_reruns = options.max_reruns if options.max_reruns is not NOT_GIVEN else 3
+        rerun_count = 0
+        accumulated_tool_calls: list[ToolCallResult] = []
+        current_tool_choice = tool_choice
+        current_input = input
+
+        while True:
+            # Create the streaming generator
+            generator = self._stream_internal(
+                input=current_input,
+                options=options,
+                context=context,
+                tool_choice=current_tool_choice,
             )
-            generator = stream_with_post_processing(generator, post_processors, self)
 
-        return AgentResultStreaming(generator)
+            # Apply post-processors only on first run
+            if rerun_count == 0 and post_processors:
+                generator = cast(
+                    _AG[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage | ConfirmationRequest],
+                    generator,
+                )
+                generator = stream_with_post_processing(generator, post_processors, self)
+
+            # Accumulate data from stream
+            accumulated_content = ""
+            tool_call_results: list[ToolCallResult] = []
+            usage: Usage = Usage()
+            prompt_with_history: BasePrompt | None = None
+            metadata: dict = {}
+
+            # Stream all items
+            async for item in generator:
+                if isinstance(item, str):
+                    accumulated_content += item
+                elif isinstance(item, ToolCallResult):
+                    tool_call_results.append(item)
+                elif isinstance(item, Usage):
+                    usage = item
+                elif isinstance(item, BasePrompt):
+                    prompt_with_history = item
+                elif isinstance(item, SimpleNamespace):
+                    result_dict = getattr(item, "result", {})
+                    accumulated_content = result_dict.get("content", accumulated_content)
+                    metadata = result_dict.get("metadata", metadata)
+                    tool_call_results = result_dict.get("tool_calls", tool_call_results) or []
+
+                yield item
+
+            # Build AgentResult for post-run hooks
+            if prompt_with_history is None:
+                break
+
+            # Accumulate tool calls across all runs
+            accumulated_tool_calls.extend(tool_call_results)
+
+            agent_result = AgentResult(
+                content=cast(PromptOutputT, accumulated_content),
+                metadata=metadata,
+                tool_calls=accumulated_tool_calls or None,
+                history=prompt_with_history.chat,
+                usage=usage,
+            )
+
+            # Set history for potential rerun
+            self.history = agent_result.history
+
+            # Execute POST_RUN hooks
+            post_run_result = await self.hook_manager.execute_post_run(
+                result=agent_result,
+                options=options,
+                context=context,
+            )
+            current_result = post_run_result.result
+
+            if not post_run_result.rerun:
+                break
+
+            if rerun_count >= max_reruns:
+                raise AgentMaxRerunsExceededError(max_reruns)
+
+            # Prepare for rerun with optional correction prompt
+            current_input = post_run_result.correction_prompt
+            current_tool_choice = None
+            rerun_count += 1
+
+        # Restore history based on keep_history
+        if not self.keep_history:
+            self.history = original_history
 
     async def _stream_internal(  # noqa: PLR0912, PLR0915
         self,
@@ -695,12 +825,12 @@ class Agent(
         | ConfirmationRequest,
         None,
     ]:
+        """
+        Execute the core streaming LLM loop with tool calls.
+        """
         if context is None:
             context = AgentRunContext()
 
-        context.register_agent(cast(Agent[Any, Any, str], self))
-
-        input = cast(PromptInputT, input)
         merged_options = (self.default_options | options) if options else self.default_options
         llm_options = merged_options.llm_options or self.llm.default_options
 

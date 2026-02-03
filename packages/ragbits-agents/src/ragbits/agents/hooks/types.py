@@ -163,11 +163,13 @@ class PostRunOutput(Generic[PromptOutputT]):
     Attributes:
         result: The result to use (original or modified AgentResult)
         rerun: If True, triggers a rerun of the agent
+        correction_prompt: Optional correction prompt to guide the rerun (used as input for the next run)
         event_type: Always EventType.POST_RUN
     """
 
     result: "AgentResult[PromptOutputT]"
     rerun: bool = False
+    correction_prompt: str | None = None
     event_type: Literal[EventType.POST_RUN] = EventType.POST_RUN
 
 
