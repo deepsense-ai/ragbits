@@ -8,7 +8,7 @@ organization, and execution of hooks during lifecycle events.
 import hashlib
 import json
 from collections import defaultdict
-from typing import TYPE_CHECKING, Generic
+from typing import TYPE_CHECKING, Any, Generic
 
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.hooks.base import Hook
@@ -204,9 +204,9 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
 
     async def execute_pre_run(
         self,
-        input: str | PromptInputT | None,
+        _input: str | PromptInputT | None,
         options: "AgentOptions[LLMClientOptionsT] | None",
-        context: "AgentRunContext",
+        context: "AgentRunContext | None",
     ) -> PreRunOutput[PromptInputT]:
         """
         Execute pre-run hooks with proper input chaining.
@@ -214,7 +214,7 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         Each hook sees the modified input from the previous hook.
 
         Args:
-            input: The input for the agent run
+            _input: The input for the agent run
             options: The options for the agent run
             context: The context for the agent run
 
@@ -224,17 +224,17 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         hooks = self.get_hooks(EventType.PRE_RUN, None)
 
         # Start with original input
-        current_input = input
+        current_input: Any = _input
 
         for hook in hooks:
             # Create input with current state (chained from previous hook)
-            hook_input = PreRunInput(
+            hook_input: PreRunInput = PreRunInput(
                 input=current_input,
                 options=options,
                 context=context,
             )
 
-            result: PreRunOutput = await hook.execute(hook_input)
+            result: PreRunOutput[PromptInputT] = await hook.execute(hook_input)
 
             # Chain input for next hook
             current_input = result.output
@@ -246,7 +246,7 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         self,
         result: "AgentResult[PromptOutputT]",
         options: "AgentOptions[LLMClientOptionsT] | None",
-        context: "AgentRunContext",
+        context: "AgentRunContext | None",
     ) -> PostRunOutput[PromptOutputT]:
         """
         Execute post-run hooks with proper result chaining.
@@ -264,17 +264,17 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         hooks = self.get_hooks(EventType.POST_RUN, None)
 
         # Start with original result
-        current_result = result
+        current_result: Any = result
 
         for hook in hooks:
             # Create input with current state (chained from previous hook)
-            hook_input = PostRunInput(
+            hook_input: PostRunInput = PostRunInput(
                 result=current_result,
                 options=options,
                 context=context,
             )
 
-            hook_result: PostRunOutput = await hook.execute(hook_input)
+            hook_result: PostRunOutput[PromptOutputT] = await hook.execute(hook_input)
 
             # Chain result for next hook
             current_result = hook_result.result
