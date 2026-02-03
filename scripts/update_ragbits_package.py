@@ -118,7 +118,7 @@ def _sync_ragbits_deps(pkg_name: str, pkg_version: str, pkg_new_version: str, up
     update_type = _check_update_type(pkg_version, pkg_new_version)
 
     if pkg_name in ragbits_deps:
-        idx = ragbits_pkg_project["project"]["dependencies"].index(f"{pkg_name}=={pkg_version}")
+        idx = ragbits_deps.index(pkg_name)
         del ragbits_pkg_project["project"]["dependencies"][idx]
         ragbits_pkg_project["project"]["dependencies"].insert(idx, f"{pkg_name}=={pkg_new_version}")
         _add_updated_dependency_to_changelog("ragbits", pkg_name, pkg_new_version)
