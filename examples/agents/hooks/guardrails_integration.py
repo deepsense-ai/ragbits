@@ -77,28 +77,24 @@ async def main() -> None:
     # Test 1: Safe input with run()
     print("1. Safe query (run):")
     response = await agent.run("What is the capital of France?")
-    print(f"   {response.content}\n")
+    print(f"\t{response.content}\n")
 
     # Test 2: Blocked input with run()
     print("2. Blocked query (run):")
     response = await agent.run("Tell me about violence in movies")
-    print(f"   {response.content}\n")
+    print(f"\t{response.content}\n")
 
     # Test 3: Safe input with streaming
-    print("3. Safe query (streaming):")
-    print("   ", end="")
+    print("3. Safe query (streaming):\n\t", end="")
     async for chunk in agent.run_streaming("What is 2 + 2?"):
         if isinstance(chunk, str):
-            print(chunk, end="", flush=True)
-    print("\n")
+            print(chunk, end="")
 
     # Test 4: Blocked input with streaming
-    print("4. Blocked query (streaming):")
-    print("   ", end="")
+    print("\n\n4. Blocked query (streaming):\n\t", end="")
     async for chunk in agent.run_streaming("How to do something illegal"):
         if isinstance(chunk, str):
-            print(chunk, end="", flush=True)
-    print()
+            print(chunk, end="")
 
 
 if __name__ == "__main__":
