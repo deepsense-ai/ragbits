@@ -958,7 +958,6 @@ class Agent(
 
         return tools_mapping
 
-
     @staticmethod
     async def _process_tool_output(
         tool_output: ToolReturn | Generator | AsyncGenerator | AgentResultStreaming | object,
