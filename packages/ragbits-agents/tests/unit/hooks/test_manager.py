@@ -13,7 +13,9 @@ from ragbits.agents.hooks.base import Hook
 from ragbits.agents.hooks.manager import CONFIRMATION_ID_LENGTH, HookManager
 from ragbits.agents.hooks.types import (
     EventType,
+    PostRunHookCallback,
     PostToolHookCallback,
+    PreRunHookCallback,
     PreToolHookCallback,
     PreToolInput,
     PreToolOutput,
@@ -182,3 +184,60 @@ class TestConfirmationIdGeneration:
 
     def test_correct_length(self):
         assert len(make_confirmation_id("hook", "tool", {})) == CONFIRMATION_ID_LENGTH
+
+
+class TestPreRunExecution:
+    @pytest.mark.asyncio
+    async def test_no_hooks_returns_original_input(self, context: AgentRunContext):
+        result = await HookManager().execute_pre_run(input="test input", options=None, context=context)
+
+        assert result.output == "test input"
+
+    @pytest.mark.asyncio
+    async def test_input_chaining(self, context: AgentRunContext, modify_input: Callable[..., PreRunHookCallback]):
+        manager = HookManager(
+            hooks=[
+                Hook(event_type=EventType.PRE_RUN, callback=modify_input("H1"), priority=1),
+                Hook(event_type=EventType.PRE_RUN, callback=modify_input("H2"), priority=2),
+            ]
+        )
+        result = await manager.execute_pre_run(input="original", options=None, context=context)
+
+        assert result.output == "H2: H1: original"
+
+
+class TestPostRunExecution:
+    @pytest.mark.asyncio
+    async def test_no_hooks_returns_original_result(self, context: AgentRunContext):
+        mock_result = type("AgentResult", (), {"content": "test"})()
+        result = await HookManager().execute_post_run(result=mock_result, options=None, context=context)
+
+        assert result.result == mock_result
+        assert result.rerun is False
+        assert result.correction_prompt is None
+
+    @pytest.mark.asyncio
+    async def test_rerun_flag_propagates(self, context: AgentRunContext, post_run_rerun: Callable):
+        manager = HookManager(hooks=[Hook(event_type=EventType.POST_RUN, callback=post_run_rerun("Fix this"))])
+        mock_result = type("AgentResult", (), {"content": "test"})()
+        result = await manager.execute_post_run(result=mock_result, options=None, context=context)
+
+        assert result.rerun is True
+        assert result.correction_prompt == "Fix this"
+
+    @pytest.mark.asyncio
+    async def test_correction_prompt_from_last_rerun_hook(
+        self, context: AgentRunContext, post_run_pass: PostRunHookCallback, post_run_rerun: Callable
+    ):
+        manager = HookManager(
+            hooks=[
+                Hook(event_type=EventType.POST_RUN, callback=post_run_rerun("First correction"), priority=1),
+                Hook(event_type=EventType.POST_RUN, callback=post_run_pass, priority=2),
+                Hook(event_type=EventType.POST_RUN, callback=post_run_rerun("Last correction"), priority=3),
+            ]
+        )
+        mock_result = type("AgentResult", (), {"content": "test"})()
+        result = await manager.execute_post_run(result=mock_result, options=None, context=context)
+
+        assert result.rerun is True
+        assert result.correction_prompt == "Last correction"

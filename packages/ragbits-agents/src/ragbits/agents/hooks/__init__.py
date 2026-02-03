@@ -74,16 +74,16 @@ __all__ = [
     "HookOutputT",
     # Callback type aliases
     "PostRunHookCallback",
-    "PostToolHookCallback",
-    "PreRunHookCallback",
-    "PreToolHookCallback",
     # Input/output types
     "PostRunInput",
     "PostRunOutput",
+    "PostToolHookCallback",
     "PostToolInput",
     "PostToolOutput",
+    "PreRunHookCallback",
     "PreRunInput",
     "PreRunOutput",
+    "PreToolHookCallback",
     "PreToolInput",
     "PreToolOutput",
     # Hook factories

@@ -7,8 +7,12 @@ import pytest
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.hooks.types import (
     EventType,
+    PostRunInput,
+    PostRunOutput,
     PostToolInput,
     PostToolOutput,
+    PreRunInput,
+    PreRunOutput,
     PreToolInput,
     PreToolOutput,
 )
@@ -80,3 +84,45 @@ class TestPostToolOutput:
 
         dict_output = PostToolOutput(tool_return=ToolReturn({"key": "value"}))
         assert dict_output.tool_return.value == {"key": "value"}
+
+
+class TestPreRunInput:
+    def test_creation(self):
+        input_data = PreRunInput(input="test query", options=None, context=None)
+
+        assert input_data.event_type == EventType.PRE_RUN
+        assert input_data.input == "test query"
+
+
+class TestPreRunOutput:
+    def test_creation(self):
+        output = PreRunOutput(output="modified query")
+
+        assert output.event_type == EventType.PRE_RUN
+        assert output.output == "modified query"
+
+
+class TestPostRunInput:
+    def test_creation(self):
+        mock_result = type("AgentResult", (), {"content": "response"})()
+        input_data = PostRunInput(result=mock_result, options=None, context=None)
+
+        assert input_data.event_type == EventType.POST_RUN
+        assert input_data.result.content == "response"
+
+
+class TestPostRunOutput:
+    def test_creation(self):
+        mock_result = type("AgentResult", (), {"content": "response"})()
+        output = PostRunOutput(result=mock_result)
+
+        assert output.event_type == EventType.POST_RUN
+        assert output.rerun is False
+        assert output.correction_prompt is None
+
+    def test_with_rerun_and_correction(self):
+        mock_result = type("AgentResult", (), {"content": "response"})()
+        output = PostRunOutput(result=mock_result, rerun=True, correction_prompt="Please fix this")
+
+        assert output.rerun is True
+        assert output.correction_prompt == "Please fix this"

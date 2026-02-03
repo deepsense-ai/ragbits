@@ -266,6 +266,7 @@ class HookManager:
         # Start with original result
         current_result = result
         should_rerun = False
+        correction_prompt: str | None = None
 
         for hook in hooks:
             # Create input with current state (chained from previous hook)
@@ -280,9 +281,11 @@ class HookManager:
             # Chain result for next hook
             current_result = hook_result.result
 
-            # If any hook requests rerun, set the flag
+            # If any hook requests rerun, set the flag and capture correction prompt
             if hook_result.rerun:
                 should_rerun = True
+                if hook_result.correction_prompt:
+                    correction_prompt = hook_result.correction_prompt
 
         # Return final chained result
-        return PostRunOutput(result=current_result, rerun=should_rerun)
+        return PostRunOutput(result=current_result, rerun=should_rerun, correction_prompt=correction_prompt)

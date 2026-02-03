@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
-from typing import Any, ClassVar, Generic, Literal, TypeVar, Union, cast, overload
+from typing import Any, ClassVar, Generic, TypeVar, Union, cast, overload
 
 from pydantic import (
     BaseModel,
@@ -326,7 +326,9 @@ class AgentResultStreaming(
                     if isinstance(item.item, str | ToolCall | ToolCallResult):
                         self.downstream[item.agent_id].append(item.item)
                 case BasePrompt():
-                    item.add_assistant_message(self.content)
+                    # Only add assistant message if not already present (avoid duplicates on re-yield)
+                    if not item.chat or item.chat[-1].get("role") != "assistant":
+                        item.add_assistant_message(self.content)
                     self.history = item.chat
                 case Usage():
                     self.usage = item
@@ -672,6 +674,8 @@ class Agent(
             context = AgentRunContext()
 
         context.register_agent(cast(Agent[Any, Any, str], self))
+
+        input = cast(PromptInputT, input)
         merged_options = (self.default_options | options) if options else self.default_options
 
         generator = self._run_streaming_with_hooks(
@@ -724,6 +728,7 @@ class Agent(
         accumulated_tool_calls: list[ToolCallResult] = []
         current_tool_choice = tool_choice
         current_input = input
+        current_result: AgentResult[PromptOutputT] | None = None
 
         while True:
             # Create the streaming generator
@@ -734,8 +739,8 @@ class Agent(
                 tool_choice=current_tool_choice,
             )
 
-            # Apply post-processors only on first run
-            if rerun_count == 0 and post_processors:
+            # Apply post-processors
+            if post_processors:
                 generator = cast(
                     _AG[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage | ConfirmationRequest],
                     generator,
@@ -808,6 +813,18 @@ class Agent(
         if not self.keep_history:
             self.history = original_history
 
+        # Yield the final result from POST_RUN hooks (may be modified)
+        if current_result is not None and prompt_with_history is not None:
+            yield current_result.usage
+            yield prompt_with_history
+            yield SimpleNamespace(
+                result={
+                    "content": current_result.content,
+                    "metadata": current_result.metadata,
+                    "tool_calls": current_result.tool_calls,
+                }
+            )
+
     async def _stream_internal(  # noqa: PLR0912, PLR0915
         self,
         input: str | PromptInputT | None = None,
@@ -828,20 +845,16 @@ class Agent(
         """
         Execute the core streaming LLM loop with tool calls.
         """
-        if context is None:
-            context = AgentRunContext()
-
-        merged_options = (self.default_options | options) if options else self.default_options
-        llm_options = merged_options.llm_options or self.llm.default_options
+        llm_options = options.llm_options or self.llm.default_options
 
         prompt_with_history = self._get_prompt_with_history(input)
         tools_mapping = await self._get_all_tools()
         turn_count = 0
-        max_turns = merged_options.max_turns
+        max_turns = options.max_turns
         max_turns = 10 if max_turns is NOT_GIVEN else max_turns
         reasoning_traces: list[str] = []
 
-        with trace(input=input, options=merged_options) as outputs:
+        with trace(input=input, options=options) as outputs:
             # Track confirmation IDs that have been requested to detect loops
             requested_confirmation_ids: set[str] = set()
             # Track if we should generate text-only summary (no tools)
@@ -849,7 +862,7 @@ class Agent(
 
             while not max_turns or turn_count < max_turns:
                 returned_tool_call = False
-                self._check_token_limits(merged_options, context.usage, prompt_with_history, self.llm)
+                self._check_token_limits(options, context.usage, prompt_with_history, self.llm)
 
                 # Determine tool choice for this turn
                 current_tool_choice: ToolChoice | None
@@ -871,11 +884,11 @@ class Agent(
                     prompt=prompt_with_history,
                     tools=current_tools,
                     tool_choice=current_tool_choice,
-                    options=self._get_llm_options(llm_options, merged_options, context.usage),
+                    options=self._get_llm_options(llm_options, options, context.usage),
                 )
                 tool_chunks = []
                 async for chunk in streaming_result:
-                    if isinstance(chunk, Reasoning) and merged_options.log_reasoning:
+                    if isinstance(chunk, Reasoning) and options.log_reasoning:
                         reasoning_traces.append(str(chunk))
                     yield chunk
                     if isinstance(chunk, ToolCall):
@@ -886,7 +899,7 @@ class Agent(
                     current_turn_confirmation_ids: set[str] = set()
 
                     async for result in self._execute_tool_calls(
-                        tool_chunks, tools_mapping, context, merged_options.parallel_tool_calling
+                        tool_chunks, tools_mapping, context, options.parallel_tool_calling
                     ):
                         yield result
                         if isinstance(result, ConfirmationRequest):
@@ -930,7 +943,7 @@ class Agent(
             if self.keep_history:
                 self.history = prompt_with_history.chat
 
-            if merged_options.log_reasoning and reasoning_traces:
+            if options.log_reasoning and reasoning_traces:
                 outputs.result = {"reasoning_traces": reasoning_traces}
 
             yield outputs

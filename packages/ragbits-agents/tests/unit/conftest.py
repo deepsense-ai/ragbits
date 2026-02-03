@@ -3,9 +3,15 @@
 import pytest
 
 from ragbits.agents.hooks.types import (
+    PostRunHookCallback,
+    PostRunInput,
+    PostRunOutput,
     PostToolHookCallback,
     PostToolInput,
     PostToolOutput,
+    PreRunHookCallback,
+    PreRunInput,
+    PreRunOutput,
     PreToolHookCallback,
     PreToolInput,
     PreToolOutput,
@@ -67,6 +73,46 @@ def append_output():
             if prepend:
                 return PostToolOutput(tool_return=ToolReturn(f"{text}{tool_return_value}"))
             return PostToolOutput(tool_return=ToolReturn(f"{tool_return_value}{text}"))
+
+        return hook
+
+    return factory
+
+
+# Run hooks fixtures
+
+
+@pytest.fixture
+def modify_input():
+    """Factory to create pre-run hooks that modify input."""
+
+    def factory(prefix: str) -> PreRunHookCallback:
+        async def hook(input_data: PreRunInput) -> PreRunOutput:
+            modified = f"{prefix}: {input_data.input}" if input_data.input else prefix
+            return PreRunOutput(output=modified)
+
+        return hook
+
+    return factory
+
+
+@pytest.fixture
+def post_run_pass() -> PostRunHookCallback:
+    """Post-run hook that passes without rerun."""
+
+    async def hook(input_data: PostRunInput) -> PostRunOutput:
+        return PostRunOutput(result=input_data.result)
+
+    return hook
+
+
+@pytest.fixture
+def post_run_rerun():
+    """Factory to create post-run hooks that trigger rerun with correction prompt."""
+
+    def factory(correction: str) -> PostRunHookCallback:
+        async def hook(input_data: PostRunInput) -> PostRunOutput:
+            return PostRunOutput(result=input_data.result, rerun=True, correction_prompt=correction)
 
         return hook
 

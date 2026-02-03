@@ -17,7 +17,13 @@ from ragbits.agents.exceptions import (
 from ragbits.agents.hooks import (
     EventType,
     Hook,
+    PostRunHookCallback,
+    PostRunInput,
+    PostRunOutput,
     PostToolHookCallback,
+    PreRunHookCallback,
+    PreRunInput,
+    PreRunOutput,
     PreToolHookCallback,
     PreToolInput,
     PreToolOutput,
@@ -935,3 +941,62 @@ async def test_hook_priority_order(llm_with_tool_call: MockLLM):
     await agent.run()
 
     assert execution_order == [5, 10]
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_pre_run_hook_modifies_input(
+    llm_without_tool_call: MockLLM, method: Callable, modify_input: Callable
+):
+    """Test that a pre-run hook can modify the input."""
+    hook = Hook(event_type=EventType.PRE_RUN, callback=modify_input("Modified"))
+    agent = Agent(llm=llm_without_tool_call, prompt="You are helpful.", hooks=[hook])
+
+    result = await method(agent, "original query")
+
+    # The LLM should receive the modified input
+    assert "Modified: original query" in str(result.history)
+
+
+@pytest.mark.parametrize("method", [_run, _run_streaming])
+async def test_post_run_hook_triggers_rerun(llm_without_tool_call: MockLLM, method: Callable):
+    """Test that a post-run hook can trigger a rerun with correction prompt."""
+    rerun_count = 0
+
+    async def rerun_once_hook(input_data: PostRunInput) -> PostRunOutput:
+        nonlocal rerun_count
+        if rerun_count == 0:
+            rerun_count += 1
+            return PostRunOutput(
+                result=input_data.result, rerun=True, correction_prompt="Please be more specific."
+            )
+        return PostRunOutput(result=input_data.result)
+
+    hook = Hook(event_type=EventType.POST_RUN, callback=rerun_once_hook)
+    agent = Agent(llm=llm_without_tool_call, prompt="You are helpful.", hooks=[hook])
+
+    await method(agent, "test query")
+
+    assert rerun_count == 1
+
+
+async def test_post_run_hook_correction_prompt_appears_in_history(llm_without_tool_call: MockLLM):
+    """Test that correction prompt is added to history on rerun."""
+    rerun_count = 0
+
+    async def rerun_hook(input_data: PostRunInput) -> PostRunOutput:
+        nonlocal rerun_count
+        if rerun_count == 0:
+            rerun_count += 1
+            return PostRunOutput(
+                result=input_data.result, rerun=True, correction_prompt="Be more concise."
+            )
+        return PostRunOutput(result=input_data.result)
+
+    hook = Hook(event_type=EventType.POST_RUN, callback=rerun_hook)
+    agent = Agent(llm=llm_without_tool_call, prompt="You are helpful.", hooks=[hook])
+
+    result = await agent.run("test query")
+
+    # Correction prompt should appear in history as a user message
+    history_str = str(result.history)
+    assert "Be more concise" in history_str
