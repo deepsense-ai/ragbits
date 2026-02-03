@@ -417,7 +417,7 @@ class Agent(
         self.mcp_servers = mcp_servers or []
         self.history = history or []
         self.keep_history = keep_history
-        self.hook_manager = HookManager(hooks)
+        self.hook_manager: HookManager[LLMClientOptionsT, PromptInputT, PromptOutputT] = HookManager(hooks)
 
         if getattr(self, "system_prompt", None) and not getattr(self, "input_type", None):
             raise ValueError(
@@ -484,13 +484,13 @@ class Agent(
 
         # Execute PRE_RUN hooks
         pre_run_result = await self.hook_manager.execute_pre_run(
-            input=input,
+            _input=input,
             options=merged_options,
             context=context,
         )
 
         # Use potentially modified input
-        input = pre_run_result.output
+        input = cast(PromptInputT, pre_run_result.output)
 
         # Run the agent
         result = await self._run_internal(input, merged_options, context, tool_choice)
@@ -506,9 +506,9 @@ class Agent(
 
     async def _run_internal(
         self,
-        input: str | PromptInputT | None,
-        options: AgentOptions[LLMClientOptionsT] | None = None,
-        context: AgentRunContext | None = None,
+        input: PromptInputT,
+        options: AgentOptions[LLMClientOptionsT],
+        context: AgentRunContext,
         tool_choice: ToolChoice | None = None,
     ) -> AgentResult[PromptOutputT]:
         """
@@ -769,13 +769,13 @@ class Agent(
         """
         # Execute PRE_RUN hooks
         pre_run_result = await self.hook_manager.execute_pre_run(
-            input=input,
+            _input=input,
             options=options,
             context=context,
         )
 
         # Use potentially modified input
-        input = pre_run_result.output
+        input = cast(PromptInputT, pre_run_result.output)
 
         llm_options = options.llm_options or self.llm.default_options
 

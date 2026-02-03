@@ -17,13 +17,9 @@ from ragbits.agents.exceptions import (
 from ragbits.agents.hooks import (
     EventType,
     Hook,
-    PostRunHookCallback,
     PostRunInput,
     PostRunOutput,
     PostToolHookCallback,
-    PreRunHookCallback,
-    PreRunInput,
-    PreRunOutput,
     PreToolHookCallback,
     PreToolInput,
     PreToolOutput,
@@ -859,10 +855,10 @@ async def test_pre_tool_hook_denies_only_matching_tool(
 
 @pytest.mark.parametrize("method", [_run, _run_streaming])
 async def test_pre_tool_hook_modifies_arguments(
-    llm_with_tool_call: MockLLM, method: Callable, add_field: Callable[..., PreToolHookCallback]
+    llm_with_tool_call: MockLLM, method: Callable, pre_tool_add_field: Callable[..., PreToolHookCallback]
 ):
     """Test that a pre-tool hook can modify tool arguments."""
-    hook = Hook(event_type=EventType.PRE_TOOL, callback=add_field("location", "New York"))
+    hook = Hook(event_type=EventType.PRE_TOOL, callback=pre_tool_add_field("location", "New York"))
     agent = Agent(llm=llm_with_tool_call, prompt=CustomPrompt, tools=[get_weather], hooks=[hook])
 
     result = await method(agent)
@@ -872,10 +868,10 @@ async def test_pre_tool_hook_modifies_arguments(
 
 @pytest.mark.parametrize("method", [_run, _run_streaming])
 async def test_post_tool_hook_modifies_output(
-    llm_with_tool_call: MockLLM, method: Callable, append_output: Callable[..., PostToolHookCallback]
+    llm_with_tool_call: MockLLM, method: Callable, post_tool_append: Callable[..., PostToolHookCallback]
 ):
     """Test that a post-tool hook can modify tool output."""
-    hook = Hook(event_type=EventType.POST_TOOL, callback=append_output("[MODIFIED]", prepend=True))
+    hook = Hook(event_type=EventType.POST_TOOL, callback=post_tool_append("[MODIFIED]", prepend=True))
     agent = Agent(llm=llm_with_tool_call, prompt=CustomPrompt, tools=[get_weather], hooks=[hook])
 
     result = await method(agent)
@@ -944,12 +940,10 @@ async def test_hook_priority_order(llm_with_tool_call: MockLLM):
 
 
 @pytest.mark.parametrize("method", [_run, _run_streaming])
-async def test_pre_run_hook_modifies_input(
-    llm_without_tool_call: MockLLM, method: Callable, modify_input: Callable
-):
+async def test_pre_run_hook_modifies_input(llm_without_tool_call: MockLLM, method: Callable, pre_run_modify: Callable):
     """Test that a pre-run hook can modify the input."""
-    hook = Hook(event_type=EventType.PRE_RUN, callback=modify_input("Modified"))
-    agent = Agent(llm=llm_without_tool_call, prompt="You are helpful.", hooks=[hook])
+    hook = Hook(event_type=EventType.PRE_RUN, callback=pre_run_modify("Modified"))
+    agent: Agent = Agent(llm=llm_without_tool_call, prompt="You are helpful.", hooks=[hook])
 
     result = await method(agent, "original query")
 
@@ -962,13 +956,12 @@ async def test_post_run_hook_modifies_result(llm_without_tool_call: MockLLM, met
     """Test that a post-run hook can modify the result."""
 
     async def modify_result_hook(input_data: PostRunInput) -> PostRunOutput:
-        # Modify the content
         modified_result = input_data.result
         modified_result.content = f"[MODIFIED] {input_data.result.content}"
         return PostRunOutput(result=modified_result)
 
     hook = Hook(event_type=EventType.POST_RUN, callback=modify_result_hook)
-    agent = Agent(llm=llm_without_tool_call, prompt="You are helpful.", hooks=[hook])
+    agent: Agent = Agent(llm=llm_without_tool_call, prompt="You are helpful.", hooks=[hook])
 
     result = await method(agent, "test query")
 

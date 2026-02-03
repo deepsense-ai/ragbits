@@ -88,7 +88,7 @@ class TestPostToolOutput:
 
 class TestPreRunInput:
     def test_creation(self):
-        input_data = PreRunInput(input="test query", options=None, context=None)
+        input_data: PreRunInput = PreRunInput(input="test query", options=None, context=None)
 
         assert input_data.event_type == EventType.PRE_RUN
         assert input_data.input == "test query"
@@ -96,7 +96,7 @@ class TestPreRunInput:
 
 class TestPreRunOutput:
     def test_creation(self):
-        output = PreRunOutput(output="modified query")
+        output: PreRunOutput = PreRunOutput(output="modified query")
 
         assert output.event_type == EventType.PRE_RUN
         assert output.output == "modified query"
@@ -105,7 +105,7 @@ class TestPreRunOutput:
 class TestPostRunInput:
     def test_creation(self):
         mock_result = type("AgentResult", (), {"content": "response"})()
-        input_data = PostRunInput(result=mock_result, options=None, context=None)
+        input_data: PostRunInput = PostRunInput(result=mock_result, options=None, context=None)
 
         assert input_data.event_type == EventType.POST_RUN
         assert input_data.result.content == "response"
