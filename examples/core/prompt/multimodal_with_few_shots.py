@@ -78,7 +78,7 @@ class ImagePrompt(Prompt[ImagePromptInput, ImagePromptOutput]):
             ImagePromptInput(
                 theme="sci-fi",
                 image=Attachment(
-                    url="https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Bruce_McCandless_II_during_EVA_in_1984.jpg/2560px-Bruce_McCandless_II_during_EVA_in_1984.jpg"
+                    url="https://upload.wikimedia.org/wikipedia/commons/9/91/Bruce_McCandless_II_during_EVA_in_1984.jpg"
                 ),
             ),
             ImagePromptOutput(
