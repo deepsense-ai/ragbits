@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.3.1 (2026-02-04)
+
+### Changed
+
+- ragbits-core updated to version v1.3.1
+
 - Feat: introduce agent evaluation pipelines and metrics (HotpotQA, HumanEval, GAIA) (#829)
 
 - Feat: introduce agent simulation module with utilities for agent-to-agent conversation and evaluation scenarios (#857)

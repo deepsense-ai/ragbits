@@ -1,6 +1,12 @@
 # CHANGELOG
 
 ## Unreleased
+
+## 1.3.1 (2026-02-04)
+### Changed
+
+- ragbits-core updated to version v1.3.1
+
 - Autoreload support for UI during development (#924)
 - Decoupling of components from ragbits specific logic. Introduction of slot based plugin architecture. Minimal history store implementation (#917)
 - Add timezone field to ChatContext, automatically populated from browser (#916)
