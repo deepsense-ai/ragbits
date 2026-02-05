@@ -6,7 +6,7 @@ class SequentialIngestStrategy(BatchedIngestStrategy):
     Ingest strategy that processes documents in sequence, one at a time.
     """
 
-    def __init__(self, num_retries: int = 3, backoff_multiplier: int = 1, backoff_max: int = 60) -> None:
+    def __init__(self, num_retries: int = 0, backoff_multiplier: int = 1, backoff_max: int = 60) -> None:
         """
         Initialize the SequentialIngestStrategy instance.
 

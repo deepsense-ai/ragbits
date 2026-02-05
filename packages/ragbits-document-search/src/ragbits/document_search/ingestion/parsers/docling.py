@@ -1,6 +1,16 @@
 from docling.chunking import HierarchicalChunker
 from docling.datamodel.base_models import InputFormat
-from docling.datamodel.pipeline_options import AcceleratorOptions, EasyOcrOptions, PdfPipelineOptions, PipelineOptions
+from docling.datamodel.pipeline_options import (
+    AcceleratorOptions,
+    EasyOcrOptions,
+    PdfPipelineOptions,
+    PipelineOptions,
+)
+
+try:
+    from docling.datamodel.pipeline_options import ConvertPipelineOptions  # type: ignore[attr-defined]
+except ImportError:
+    ConvertPipelineOptions = PipelineOptions  # type: ignore[misc, assignment]
 from docling.document_converter import (
     DocumentConverter,
     ExcelFormatOption,
@@ -91,7 +101,7 @@ class DoclingDocumentParser(DocumentParser):
         else:
             # Build default format options
             accelerator_options = AcceleratorOptions(num_threads=self.num_threads)
-            pipeline_options = PipelineOptions(accelerator_options=accelerator_options)
+            pipeline_options = ConvertPipelineOptions(accelerator_options=accelerator_options)
             pdf_pipeline_options = PdfPipelineOptions(
                 images_scale=2,
                 generate_page_images=True,
