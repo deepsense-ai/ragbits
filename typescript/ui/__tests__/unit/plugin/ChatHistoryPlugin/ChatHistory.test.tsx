@@ -27,8 +27,8 @@ import userEvent from "@testing-library/user-event";
 import { useHistoryActions } from "../../../../src/core/stores/HistoryStore/selectors";
 import { useHistoryStore } from "../../../../src/core/stores/HistoryStore/useHistoryStore";
 import ChatHistory from "../../../../src/plugins/ChatHistoryPlugin/components/ChatHistory";
-import { HistoryStore } from "../../../../src/types/history";
-import { isTemporaryConversation } from "../../../../src/core/stores/HistoryStore/historyStore";
+import { HistoryStore } from "../../../../src/core/types/history";
+import { isTemporaryConversation } from "../../../../src/core/stores/HistoryStore/utils";
 
 const MOCK_CONVERSATIONS: HistoryStore["conversations"] = {
   "mock-id-1": {

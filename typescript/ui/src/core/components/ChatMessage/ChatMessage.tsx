@@ -11,12 +11,12 @@ import LoadingIndicator from "./LoadingIndicator.tsx";
 import ConfirmationDialogs from "./ConfirmationDialogs.tsx";
 import {
   useConversationProperty,
+  useHistoryActions,
   useMessage,
 } from "../../stores/HistoryStore/selectors.ts";
 import { MessageRole } from "@ragbits/api-client";
 import TodoList from "../TodoList.tsx";
 import { AnimatePresence, motion } from "framer-motion";
-import { useHistoryStore } from "../../stores/HistoryStore/useHistoryStore.ts";
 import { useRagbitsContext } from "@ragbits/api-client-react";
 
 type ChatMessageProps = {
@@ -34,9 +34,7 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
     const lastMessageId = useConversationProperty((s) => s.lastMessageId);
     const isHistoryLoading = useConversationProperty((s) => s.isLoading);
     const message = useMessage(messageId);
-    const sendSilentConfirmation = useHistoryStore(
-      (s) => s.actions.sendSilentConfirmation,
-    );
+    const { sendSilentConfirmation } = useHistoryActions();
     const { client: ragbitsClient } = useRagbitsContext();
 
     if (!message) {

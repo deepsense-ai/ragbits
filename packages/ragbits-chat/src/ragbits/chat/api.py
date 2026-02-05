@@ -3,6 +3,7 @@ import importlib
 import json
 import logging
 import re
+import tempfile
 import time
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, suppress
@@ -10,7 +11,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI, HTTPException, Request, UploadFile, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, StreamingResponse
@@ -181,34 +182,23 @@ class RagbitsAPI:
 
                     return await self._handle_oauth2_callback(code, state, backend)
 
-            @self.app.post("/api/chat", response_class=StreamingResponse)
-            async def chat_message(
-                request: Request,
-                chat_request: ChatMessageRequest,
-            ) -> StreamingResponse:
-                return await self._handle_chat_message(chat_request, request)
+        @self.app.post("/api/chat", response_class=StreamingResponse)
+        async def chat_message(
+            request: Request,
+            chat_request: ChatMessageRequest,
+        ) -> StreamingResponse:
+            return await self._handle_chat_message(chat_request, request)
 
-            @self.app.post("/api/feedback", response_class=JSONResponse)
-            async def feedback(
-                request: Request,
-                feedback_request: FeedbackRequest,
-            ) -> JSONResponse:
-                return await self._handle_feedback(feedback_request, request)
-        else:
+        @self.app.post("/api/feedback", response_class=JSONResponse)
+        async def feedback(
+            request: Request,
+            feedback_request: FeedbackRequest,
+        ) -> JSONResponse:
+            return await self._handle_feedback(feedback_request, request)
 
-            @self.app.post("/api/chat", response_class=StreamingResponse)
-            async def chat_message(
-                request: Request,
-                chat_request: ChatMessageRequest,
-            ) -> StreamingResponse:
-                return await self._handle_chat_message(chat_request, request)
-
-            @self.app.post("/api/feedback", response_class=JSONResponse)
-            async def feedback(
-                request: Request,
-                feedback_request: FeedbackRequest,
-            ) -> JSONResponse:
-                return await self._handle_feedback(feedback_request, request)
+        @self.app.post("/api/upload", response_class=JSONResponse)
+        async def upload_file(file: UploadFile) -> JSONResponse:
+            return await self._handle_file_upload(file)
 
         @self.app.get("/api/config", response_class=JSONResponse)
         async def config() -> JSONResponse:
@@ -278,6 +268,7 @@ class RagbitsAPI:
                     auth_types=auth_types,
                     oauth2_providers=oauth2_providers,
                 ),
+                supports_upload=self.chat_interface.upload_handler is not None,
             )
 
             return JSONResponse(content=config_response.model_dump())
@@ -568,6 +559,31 @@ class RagbitsAPI:
                 error_type=type(e).__name__,
             )
             raise HTTPException(status_code=500, detail="Internal server error") from None
+
+    async def _handle_file_upload(self, file: UploadFile) -> JSONResponse:
+        """
+        Handle file upload requests.
+
+        Args:
+            file: The uploaded file.
+
+        Returns:
+            JSONResponse with status.
+        """
+        if self.chat_interface.upload_handler is None:
+            raise HTTPException(status_code=400, detail="File upload not supported")
+
+        try:
+            # Check if handler is async and call it
+            if asyncio.iscoroutinefunction(self.chat_interface.upload_handler):
+                await self.chat_interface.upload_handler(file)
+            else:
+                await asyncio.to_thread(self.chat_interface.upload_handler, file)
+
+            return JSONResponse(content={"status": "success", "filename": file.filename})
+        except Exception as e:
+            logger.error(f"File upload error: {e}")
+            raise HTTPException(status_code=500, detail=str(e)) from e
 
     async def get_current_user_from_cookie(self, request: Request) -> User | None:
         """
@@ -929,8 +945,67 @@ class RagbitsAPI:
     def run(self, host: str = "127.0.0.1", port: int = 8000) -> None:
         """
         Used for starting the API
+
+        Args:
+            host: Host to bind the API server to
+            port: Port to bind the API server to
         """
         uvicorn.run(self.app, host=host, port=port)
+
+    @staticmethod
+    def run_with_reload(
+        host: str,
+        port: int,
+        chat_interface: str | None = None,
+        cors_origins: list[str] | None = None,
+        ui_build_dir: str | None = None,
+        debug_mode: bool = False,
+        auth_backend: str | None = None,
+        theme_path: str | None = None,
+    ) -> None:
+        """
+        Run the API server with auto-reload enabled for development.
+
+        This method creates a temporary Python file with the API configuration
+        that uvicorn can import and reload when code changes are detected.
+
+        Args:
+            host: Host to bind the API server to
+            port: Port to bind the API server to
+            chat_interface: Path to chat interface module
+            cors_origins: List of allowed CORS origins
+            ui_build_dir: Path to custom UI build directory
+            debug_mode: Enable debug mode
+            auth_backend: Path to authentication backend module
+            theme_path: Path to theme configuration file
+        """
+        temp_file_path: Path | None = None
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".py", delete=False, dir=".", prefix="_ragbits_app_"
+            ) as temp_file:
+                temp_file_path = Path(temp_file.name)
+                temp_file.write(
+                    f"""# Auto-generated file for ragbits reload mode - DO NOT EDIT
+from ragbits.chat.api import RagbitsAPI
+
+api = RagbitsAPI(
+    chat_interface={repr(chat_interface)},
+    cors_origins={repr(cors_origins)},
+    ui_build_dir={repr(ui_build_dir)},
+    debug_mode={repr(debug_mode)},
+    auth_backend={repr(auth_backend)},
+    theme_path={repr(theme_path)},
+)
+app = api.app
+"""
+                )
+
+            module_name = temp_file_path.stem
+            uvicorn.run(f"{module_name}:app", host=host, port=port, reload=True)
+        finally:
+            if temp_file_path:
+                temp_file_path.unlink(missing_ok=True)
 
     @staticmethod
     def _convert_heroui_json_to_css(json_content: str) -> str:

@@ -13,4 +13,5 @@ export const ExamplePlugin = createPlugin({
   onDeactivate: () => {
     console.log("ExamplePlugin deactivated");
   },
+  slots: [],
 });

@@ -1,6 +1,4 @@
 import asyncio
-import hashlib
-import json
 import types
 import uuid
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
@@ -32,6 +30,10 @@ from ragbits.agents.exceptions import (
     AgentToolNotAvailableError,
     AgentToolNotSupportedError,
 )
+from ragbits.agents.hooks import (
+    Hook,
+    HookManager,
+)
 from ragbits.agents.mcp.server import MCPServer, MCPServerStdio, MCPServerStreamableHttp
 from ragbits.agents.mcp.utils import get_tools
 from ragbits.agents.post_processors.base import (
@@ -40,7 +42,7 @@ from ragbits.agents.post_processors.base import (
     StreamingPostProcessor,
     stream_with_post_processing,
 )
-from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice
+from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice, ToolReturn
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import (
     LLM,
@@ -64,10 +66,6 @@ with suppress(ImportError):
     from pydantic_ai import mcp
 
     from ragbits.core.llms import LiteLLM
-
-# Confirmation ID length: 16 hex chars provides sufficient uniqueness
-# while being compact for display and storage
-CONFIRMATION_ID_LENGTH = 16
 
 _Input = TypeVar("_Input", bound=BaseModel)
 _Output = TypeVar("_Output")
@@ -212,9 +210,10 @@ class AgentRunContext(BaseModel, Generic[DepsT]):
     """Whether to stream events from downstream agents when tools execute other agents."""
     downstream_agents: dict[str, "Agent"] = Field(default_factory=dict)
     """Registry of all agents that participated in this run"""
-    confirmed_tools: list[dict[str, Any]] | None = Field(
-        default=None,
-        description="List of confirmed/declined tools from the frontend",
+    tool_confirmations: list[dict[str, Any]] = Field(
+        default_factory=list,
+        description="List of confirmed/declined tool executions. Each entry has 'confirmation_id' and 'confirmed' "
+        "(bool)",
     )
 
     def register_agent(self, agent: "Agent") -> None:
@@ -375,6 +374,7 @@ class Agent(
         keep_history: bool = False,
         tools: list[Callable] | None = None,
         mcp_servers: list[MCPServer] | None = None,
+        hooks: list[Hook] | None = None,
         default_options: AgentOptions[LLMClientOptionsT] | None = None,
     ) -> None:
         """
@@ -394,6 +394,7 @@ class Agent(
             keep_history: Whether to keep the history of the agent.
             tools: The tools available to the agent.
             mcp_servers: The MCP servers available to the agent.
+            hooks: List of tool hooks to register for tool lifecycle events.
             default_options: The default options for the agent run.
         """
         super().__init__(default_options)
@@ -416,6 +417,7 @@ class Agent(
         self.mcp_servers = mcp_servers or []
         self.history = history or []
         self.keep_history = keep_history
+        self.hook_manager = HookManager(hooks)
 
         if getattr(self, "system_prompt", None) and not getattr(self, "input_type", None):
             raise ValueError(
@@ -536,7 +538,9 @@ class Agent(
                 ):
                     if isinstance(result, ToolCallResult):
                         tool_calls.append(result)
-                        prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
+                        prompt_with_history = prompt_with_history.add_tool_use_message(
+                            id=result.id, name=result.name, arguments=result.arguments, result=result.result
+                        )
 
                 turn_count += 1
             else:
@@ -762,7 +766,9 @@ class Agent(
                         elif isinstance(result, ToolCallResult):
                             # Add ALL tool results to history (including pending confirmations)
                             # This allows the agent to see them in the next turn
-                            prompt_with_history = prompt_with_history.add_tool_use_message(**result.__dict__)
+                            prompt_with_history = prompt_with_history.add_tool_use_message(
+                                id=result.id, name=result.name, arguments=result.arguments, result=result.result
+                            )
                             returned_tool_call = True
 
                     # If we have pending confirmations, prepare for text-only summary generation
@@ -958,54 +964,37 @@ class Agent(
 
         tool = tools_mapping[tool_call.name]
 
-        # Check if tool requires confirmation
-        if tool.requires_confirmation:
-            # Check if this tool has been confirmed in the context
-            confirmed_tools = context.confirmed_tools or []
+        # Execute PRE_TOOL hooks with chaining
+        pre_tool_result = await self.hook_manager.execute_pre_tool(
+            tool_call=tool_call,
+            context=context,
+        )
 
-            # Generate a stable confirmation ID based on tool name and arguments
-            confirmation_id = hashlib.sha256(
-                f"{tool_call.name}:{json.dumps(tool_call.arguments, sort_keys=True)}".encode()
-            ).hexdigest()[:CONFIRMATION_ID_LENGTH]
-
-            # Check if this specific tool call has been confirmed or declined
-            is_confirmed = any(
-                ct.get("confirmation_id") == confirmation_id and ct.get("confirmed") for ct in confirmed_tools
+        # Check decision
+        if pre_tool_result.decision == "deny":
+            yield ToolCallResult(
+                id=tool_call.id,
+                name=tool_call.name,
+                arguments=tool_call.arguments,
+                result=pre_tool_result.reason or "Tool execution denied",
             )
-            is_declined = any(
-                ct.get("confirmation_id") == confirmation_id and not ct.get("confirmed", True) for ct in confirmed_tools
+            return
+        # Handle "ask" decision from hooks
+        elif pre_tool_result.decision == "ask" and pre_tool_result.confirmation_request is not None:
+            yield pre_tool_result.confirmation_request
+
+            yield ToolCallResult(
+                id=tool_call.id,
+                name=tool_call.name,
+                arguments=tool_call.arguments,
+                result=pre_tool_result.reason or "Hook requires user confirmation",
             )
+            return
 
-            if is_declined:
-                # Tool was explicitly declined - skip execution entirely
-                yield ToolCallResult(
-                    id=tool_call.id,
-                    name=tool_call.name,
-                    arguments=tool_call.arguments,
-                    result="❌ Action declined by user",
-                )
-                return
+        # Always update arguments (chained from hooks)
+        tool_call.arguments = pre_tool_result.arguments
 
-            if not is_confirmed:
-                # Tool not confirmed yet - create and yield confirmation request
-                request = ConfirmationRequest(
-                    confirmation_id=confirmation_id,
-                    tool_name=tool_call.name,
-                    tool_description=tool.description or "",
-                    arguments=tool_call.arguments,
-                )
-
-                # Yield confirmation request (will be streamed to frontend)
-                yield request
-
-                # Yield a pending result and exit without executing
-                yield ToolCallResult(
-                    id=tool_call.id,
-                    name=tool_call.name,
-                    arguments=tool_call.arguments,
-                    result="⏳ Awaiting user confirmation",
-                )
-                return
+        tool_error: Exception | None = None
 
         with trace(agent_id=self.id, tool_name=tool_call.name, tool_arguments=tool_call.arguments) as outputs:
             try:
@@ -1019,35 +1008,50 @@ class Agent(
                     else asyncio.to_thread(tool.on_tool_call, **call_args)
                 )
 
-                if isinstance(tool_output, AgentResultStreaming):
+                if isinstance(tool_output, ToolReturn):
+                    tool_return = tool_output
+                elif isinstance(tool_output, AgentResultStreaming):
                     async for downstream_item in tool_output:
                         if context.stream_downstream_events:
                             yield DownstreamAgentResult(agent_id=tool.id, item=downstream_item)
-
-                    tool_output = {
-                        "content": tool_output.content,
+                    metadata = {
                         "metadata": tool_output.metadata,
                         "tool_calls": tool_output.tool_calls,
                         "usage": tool_output.usage,
                     }
+                    tool_return = ToolReturn(value=tool_output.content, metadata=metadata)
+                else:
+                    tool_return = ToolReturn(value=tool_output, metadata=None)
 
                 outputs.result = {
-                    "tool_output": tool_output,
+                    "tool_output": tool_return.value,
                     "tool_call_id": tool_call.id,
                 }
 
             except Exception as e:
+                tool_error = e
                 outputs.result = {
                     "error": str(e),
                     "tool_call_id": tool_call.id,
                 }
-                raise AgentToolExecutionError(tool_call.name, e) from e
+
+        # Execute POST_TOOL hooks with chaining
+        post_tool_output = await self.hook_manager.execute_post_tool(
+            tool_call=tool_call,
+            tool_return=tool_return,
+            error=tool_error,
+        )
+
+        # Raise error after hooks have been executed
+        if tool_error:
+            raise AgentToolExecutionError(tool_call.name, tool_error) from tool_error
 
         yield ToolCallResult(
             id=tool_call.id,
             name=tool_call.name,
             arguments=tool_call.arguments,
-            result=tool_output,
+            result=post_tool_output.tool_return.value if post_tool_output.tool_return else None,
+            metadata=post_tool_output.tool_return.metadata if post_tool_output.tool_return else None,
         )
 
     @requires_dependencies(["a2a.types"], "a2a")

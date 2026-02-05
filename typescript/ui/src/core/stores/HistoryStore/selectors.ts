@@ -1,5 +1,5 @@
 import { useShallow } from "zustand/shallow";
-import { Conversation } from "../../../types/history";
+import { Conversation } from "../../types/history";
 import { useHistoryStore } from "./useHistoryStore";
 
 export const useHistoryActions = () => useHistoryStore((s) => s.actions);
