@@ -189,10 +189,10 @@ class LiteLLM(LLM[LiteLLMOptions], LazyLiteLLM):
             LLMNotSupportingPdfsError: If the model does not support PDFs.
             LLMNotSupportingToolUseError: If the model does not support tool use.
         """
-        if any(p.list_images() for p in prompt) and not self._litellm.supports_vision(self.model_name):
+        if any(p.list_images() for p in prompt) and not self._litellm.utils.supports_vision(self.model_name):
             raise LLMNotSupportingImagesError()
 
-        if any(p.list_pdfs() for p in prompt) and not self._litellm.supports_pdf_input(self.model_name):
+        if any(p.list_pdfs() for p in prompt) and not self._litellm.utils.supports_pdf_input(self.model_name):
             raise LLMNotSupportingPdfsError()
 
         if tools and not self._litellm.supports_function_calling(self.model_name):
