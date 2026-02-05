@@ -8,6 +8,9 @@
 
 - ragbits-core updated to version v1.4.0
 
+- fix: fixed handling pipeline options for docling >= 2.53.0 (which introduced a breaking change)
+
+
 ## 1.3.0 (2025-09-11)
 
 ### Changed

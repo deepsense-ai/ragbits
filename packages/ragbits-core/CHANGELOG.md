@@ -8,6 +8,7 @@
 - Add support for confirmation requests in chat (#853)
 - Add name parameter and slightly refactor HuggingFace dataloder (#829)
 - Fix trace context managers not closing properly when streaming (#922)
+- Fixed litellm calls to supports_pdf_input and supports_vision
 
 ## 1.3.0 (2025-09-11)
 
