@@ -1,75 +1,96 @@
 # Section 1: LLM Proxy — Streaming Chat API
 
-In this section, you'll build a working chat application with an API that proxies requests to any LLM provider. This establishes the foundational pattern that all subsequent sections build upon, showing how Ragbits eliminates boilerplate so you can focus on business logic.
+In this tutorial, you'll build a streaming chat application from scratch. We'll start with the simplest possible implementation and progressively add capabilities until we have a fully functional chat app with LLM integration and conversation history.
 
-**What you get at the end:**
+By the end, you'll understand how Ragbits handles the infrastructure so you can focus on your application logic.
 
-- FastAPI-powered REST endpoint at `/chat` accepting messages and returning streamed responses
-- Built-in web UI served at root (`/`) with no frontend code required
-- Provider-agnostic LLM access via LiteLLM (OpenAI, Anthropic, Azure, Bedrock, Ollama, 100+ providers)
-- Streaming token delivery with Server-Sent Events (SSE) for real-time UX
-- Typed response generation using `create_text_response()` for consistent output formatting
+## What You'll Build
 
-## Installation
+A chat application that:
+
+- Streams responses from any LLM provider in real-time
+- Maintains conversation history across messages
+- Provides a web UI out of the box
+- Exposes a REST API for programmatic access
+
+## Prerequisites
+
+Before starting, make sure you have:
+
+- Python 3.10 or higher installed
+- An OpenAI API key (or another LLM provider key)
 
 Install Ragbits:
 
-```bash
-pip install ragbits
-```
+=== "pip"
 
-## Configuration
+    ```bash
+    pip install ragbits
+    ```
 
-Set your LLM provider credentials. For OpenAI:
+=== "uv"
+
+    ```bash
+    uv add ragbits
+    ```
+
+Set your API key:
 
 ```bash
 export OPENAI_API_KEY="your-api-key"
 ```
 
-Ragbits uses [LiteLLM](https://docs.litellm.ai/docs/providers) under the hood, so you can use any of 100+ supported providers by setting the appropriate environment variables.
-
 !!! tip "Other Providers"
-    For Anthropic: `export ANTHROPIC_API_KEY="your-key"`
+    Ragbits uses [LiteLLM](https://docs.litellm.ai/docs/providers) under the hood, supporting 100+ providers:
 
-    For Azure OpenAI: `export AZURE_API_KEY="your-key"` and `export AZURE_API_BASE="your-endpoint"`
+    - Anthropic: `export ANTHROPIC_API_KEY="your-key"`
+    - Azure OpenAI: `export AZURE_API_KEY="your-key"` and `export AZURE_API_BASE="your-endpoint"`
+    - Ollama (local): No API key needed, just have Ollama running
 
-    For local models with Ollama: No API key needed, just have Ollama running.
+## Step 1: Create a Minimal Chat Interface
 
-## The Complete Application
+Create a new file called `main.py` with the following code:
 
-Here's the entire application in about 30 lines of code:
-
-[View full source on GitHub](https://github.com/deepsense-ai/ragbits-example/blob/fc0bd1122f6c71eca9acf357f4b7c0f76727d71c/src/ragbits_example/main.py)
-
-```python title="src/ragbits_example/main.py" linenums="1"
---8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/fc0bd1122f6c71eca9acf357f4b7c0f76727d71c/src/ragbits_example/main.py"
+```python
+--8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/944f1dc/src/ragbits_example/main.py:10:28"
 ```
 
-Let's break down each component.
+This is the core contract in Ragbits. The `ChatInterface` class requires you to implement one method: `chat()`. This method:
 
-## Understanding the Components
+- Receives the user's `message`
+- Receives the conversation `history` (we'll use this later)
+- Receives additional `context` (user info, settings, etc.)
+- Yields `ChatResponse` objects
 
-### ChatInterface Contract
+The `create_text_response()` helper creates a properly formatted response. Since `chat()` is an async generator (note the `yield`), Ragbits can stream responses to the client as they're generated.
 
-The `ChatInterface` abstract class enforces a clean separation between framework and implementation.
+### Launch the Application
 
-[View on GitHub](https://github.com/deepsense-ai/ragbits-example/blob/fc0bd1122f6c71eca9acf357f4b7c0f76727d71c/src/ragbits_example/main.py#L23-L24)
+To run your chat interface, wrap it with `RagbitsAPI`. Add this to the bottom of your file:
 
-```python linenums="23"
---8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/fc0bd1122f6c71eca9acf357f4b7c0f76727d71c/src/ragbits_example/main.py:23:24"
+```python
+--8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/944f1dc/src/ragbits_example/main.py:31:33"
 ```
 
-You implement the `chat()` method as an async generator, and Ragbits handles everything else: the REST API, streaming, CORS, and the web UI. This is the contract you'll use throughout the Builder Journal, adding capabilities without changing the core pattern.
+Run the application:
 
-### LiteLLM Integration
-
-[View on GitHub](https://github.com/deepsense-ai/ragbits-example/blob/fc0bd1122f6c71eca9acf357f4b7c0f76727d71c/src/ragbits_example/main.py#L26-L28)
-
-```python linenums="26"
---8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/fc0bd1122f6c71eca9acf357f4b7c0f76727d71c/src/ragbits_example/main.py:26:28"
+```bash
+python main.py
 ```
 
-`LiteLLM` provides a unified interface across 100+ LLM providers. Switch models by changing the `model_name` parameter with no other code changes required:
+Open http://127.0.0.1:8000 in your browser. You'll see a chat interface. Type a message and you'll get back "Hello! You said: [your message]".
+
+This works, but it's not very useful yet. Let's add an actual LLM.
+
+## Step 2: Add an LLM
+
+Ragbits uses `LiteLLM` to provide a unified interface to 100+ LLM providers. Add the import and an `__init__` method to your class:
+
+```python hl_lines="6 12-14"
+--8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/b69d2a3/src/ragbits_example/main.py:10:33"
+```
+
+The `model_name` parameter accepts any model supported by LiteLLM:
 
 | Provider | Model Name |
 |----------|------------|
@@ -77,145 +98,109 @@ You implement the `chat()` method as an async generator, and Ragbits handles eve
 | Anthropic | `claude-sonnet-4-20250514`, `claude-3-5-haiku-20241022` |
 | Azure | `azure/gpt-4o` |
 | Ollama | `ollama/llama3.2` |
-| Bedrock | `bedrock/anthropic.claude-3-sonnet` |
 
-The library handles prompt formatting differences between providers, token counting, cost tracking hooks, and automatic retries on transient failures.
+The LLM is ready, but we're not using it yet. Let's connect it to our chat method.
 
-### The chat() Method
+## Step 3: Connect the LLM to Chat
 
-[View on GitHub](https://github.com/deepsense-ai/ragbits-example/blob/fc0bd1122f6c71eca9acf357f4b7c0f76727d71c/src/ragbits_example/main.py#L30-L35)
+Now let's make the LLM actually respond to messages. Update the `chat()` method:
 
-```python linenums="30"
---8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/fc0bd1122f6c71eca9acf357f4b7c0f76727d71c/src/ragbits_example/main.py:30:35"
+```python hl_lines="7-10"
+--8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/93b8999/src/ragbits_example/main.py:26:37"
 ```
 
-This is where your business logic lives. The method receives:
+Here's what changed:
 
-- **message**: The current user message
-- **history**: Previous messages in OpenAI-compatible format (`ChatFormat`)
-- **context**: Additional context including user info, settings, and state
+1. We create a `conversation` list with the user's message in OpenAI's chat format
+2. We call `generate_streaming()` which returns an async generator
+3. We iterate over the stream, yielding each chunk as it arrives
 
-It yields `ChatResponse` objects, one for each chunk of streamed content.
+Run the app again and try it. You'll see the LLM's response stream in real-time, token by token.
 
-### Conversation History
+But there's a problem: the LLM doesn't remember previous messages. Each message is treated as a new conversation. Let's fix that.
 
-[View on GitHub](https://github.com/deepsense-ai/ragbits-example/blob/fc0bd1122f6c71eca9acf357f4b7c0f76727d71c/src/ragbits_example/main.py#L47-L50)
+## Step 4: Add Conversation History
 
-```python linenums="47"
---8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/fc0bd1122f6c71eca9acf357f4b7c0f76727d71c/src/ragbits_example/main.py:47:50"
+The `history` parameter contains all previous messages in the conversation. Update the `chat()` method to include history:
+
+```python hl_lines="18"
+--8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/ade4e2b/src/ragbits_example/main.py:30:50"
 ```
 
-The `history` parameter uses `ChatFormat`, which is OpenAI's message format:
+The key change is spreading the `history` list before the current message:
+
+```python
+[*history, {"role": "user", "content": message}]
+```
+
+The `history` parameter uses the OpenAI chat format:
 
 ```python
 [
-    {"role": "system", "content": "You are a helpful assistant."},
     {"role": "user", "content": "Hello!"},
     {"role": "assistant", "content": "Hi there! How can I help?"},
+    {"role": "user", "content": "What's the weather like?"},
+    # ... and so on
 ]
 ```
 
-By appending the current message to history, you maintain full conversation context. Ragbits handles storing and passing this history between requests.
+Ragbits automatically manages this history for you. Each time the user sends a message, the previous messages are passed to your `chat()` method.
 
-### Streaming Responses
+Run the app and have a multi-turn conversation. The LLM now remembers what you discussed earlier.
 
-[View on GitHub](https://github.com/deepsense-ai/ragbits-example/blob/fc0bd1122f6c71eca9acf357f4b7c0f76727d71c/src/ragbits_example/main.py#L47-L50)
+## Running with the CLI
 
-```python linenums="47"
---8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/fc0bd1122f6c71eca9acf357f4b7c0f76727d71c/src/ragbits_example/main.py:47:50"
+So far we've been running the app with `python main.py`. Ragbits also provides a CLI that offers more options:
+
+```bash
+ragbits api run main:SimpleChat
 ```
 
-The `generate_streaming()` method returns an async generator that yields text chunks as they arrive from the LLM. By using `yield` in an async generator, you enable real-time token delivery to the client.
-
-The `create_text_response()` helper ensures your output conforms to the expected schema. Ragbits automatically converts these to Server-Sent Events (SSE) that the built-in UI handles.
-
-## Running the Application
-
-You have two options for running your chat app:
-
-=== "CLI (Recommended)"
-
-    ```bash
-    ragbits api run ragbits_example.main:SimpleStreamingChat
-    ```
-
-    The format is `module.path:ClassName`. This is the recommended approach for development and production.
-
-=== "Programmatic"
-
-    ```bash
-    python -m ragbits_example.main
-    ```
-
-    This uses the `if __name__ == "__main__"` block ([view on GitHub](https://github.com/deepsense-ai/ragbits-example/blob/fc0bd1122f6c71eca9acf357f4b7c0f76727d71c/src/ragbits_example/main.py#L53-L55)):
-
-    ```python linenums="53"
-   --8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/fc0bd1122f6c71eca9acf357f4b7c0f76727d71c/src/ragbits_example/main.py:53:55"
-    ```
-
-Both methods start a FastAPI server on `http://127.0.0.1:8000` with:
-
-- **Web UI** at `/` for the chat interface
-- **API endpoint** at `/chat` for programmatic access
-- **Health check** at `/health` for deployment monitoring
-
-### Server Options
-
-Customize the server with CLI flags:
+The format is `module.path:ClassName`. The CLI supports additional flags:
 
 ```bash
 # Custom host and port
-ragbits api run ragbits_example.main:SimpleStreamingChat --host 0.0.0.0 --port 9000
+ragbits api run main:SimpleChat --host 0.0.0.0 --port 9000
 
-# Enable auto-reload for development
-ragbits api run ragbits_example.main:SimpleStreamingChat --reload
+# Auto-reload when code changes (useful for development)
+ragbits api run main:SimpleChat --reload
 
 # Enable debug mode
-ragbits api run ragbits_example.main:SimpleStreamingChat --debug
-
-# Enable CORS for frontend development
-ragbits api run ragbits_example.main:SimpleStreamingChat --cors-origin http://localhost:3000
+ragbits api run main:SimpleChat --debug
 ```
 
-Or programmatically:
+## The Complete Application
 
-```python
-api = RagbitsAPI(SimpleStreamingChat)
-api.run(host="0.0.0.0", port=9000)
+Here's the final code that includes everything we built:
+
+[View full source on GitHub](https://github.com/deepsense-ai/ragbits-example/blob/ade4e2b/src/ragbits_example/main.py)
+
+```python title="main.py" linenums="1"
+--8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/ade4e2b/src/ragbits_example/main.py"
 ```
 
-## Try It Out
+## What You've Learned
 
-1. Start the server:
-   ```bash
-   ragbits api run ragbits_example.main:SimpleStreamingChat
-   ```
+In this tutorial, you:
 
-2. Open `http://127.0.0.1:8000` in your browser
+1. Created a minimal `ChatInterface` implementation
+2. Launched it with `RagbitsAPI` to get a web UI and REST API
+3. Integrated an LLM using `LiteLLM`
+4. Added streaming responses for real-time output
+5. Enabled conversation history for multi-turn chats
 
-3. Type a message and watch tokens stream in real-time
-
-4. Send multiple messages and see conversation history maintained automatically
-
-## Milestone Checklist
-
-- [x] Ragbits installed, at least one LLM provider key configured
-- [x] ChatInterface subclass created with streaming `chat()` implementation
-- [x] Server running via CLI or code
-- [x] Web UI accessible and functional
-- [x] Multi-turn conversation works (history passed to LLM)
-- [x] Response streams token-by-token in the UI
+The key insight: Ragbits handles the infrastructure (API server, streaming, UI, history management) so you can focus on your application logic. Your `chat()` method is where your business logic lives.
 
 ## What's Next
 
-You now have a working chat application with streaming responses and a web UI, all in about 30 lines of code. In the next section, you'll add structured output to get type-safe, predictable responses from your LLM.
+You now have a working chat application with streaming responses and conversation history. In the next section, you'll add structured output to get type-safe, predictable responses from your LLM.
 
 ## Reference
 
 | Component | Package | Purpose |
 |-----------|---------|---------|
-| `LiteLLM` | ragbits-core | Unified interface to 100+ LLM providers with automatic retries and fallbacks |
-| `ChatInterface` | ragbits-chat | Abstract base class defining the `chat()` contract and response helpers |
-| `RagbitsAPI` | ragbits-chat | FastAPI application factory with built-in UI serving and CORS handling |
-| `ChatFormat` | ragbits-core | OpenAI-compatible message format for conversation history |
-| `ChatResponse` | ragbits-chat | Typed response envelope for text, references, tool calls, and state updates |
+| `ChatInterface` | ragbits-chat | Abstract base class defining the `chat()` contract |
+| `RagbitsAPI` | ragbits-chat | FastAPI application with built-in UI and streaming |
+| `LiteLLM` | ragbits-core | Unified interface to 100+ LLM providers |
+| `ChatFormat` | ragbits-core | OpenAI-compatible message format |
+| `ChatResponse` | ragbits-chat | Response envelope for streaming content |
