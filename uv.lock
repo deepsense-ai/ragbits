@@ -31,7 +31,6 @@ resolution-markers = [
 
 [manifest]
 members = [
-    "ragbits",
     "ragbits-agents",
     "ragbits-chat",
     "ragbits-cli",
@@ -5412,127 +5411,16 @@ wheels = [
 
 [[package]]
 name = "ragbits"
-version = "1.4.0.dev202602030301"
-source = { editable = "packages/ragbits" }
-dependencies = [
-    { name = "ragbits-agents" },
-    { name = "ragbits-chat" },
-    { name = "ragbits-cli" },
-    { name = "ragbits-core" },
-    { name = "ragbits-document-search" },
-    { name = "ragbits-evaluate" },
-    { name = "ragbits-guardrails" },
+version = "0.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/21/f7/4dfc757e4d7adff14a8fad9989f47a88c063ca88456d0525d0d5d3593f54/ragbits-0.0.1.tar.gz", hash = "sha256:673b663730ee2ef0d2813ffe1d1619f3ce5042748a4c02c094c787f499f4c886", size = 1378, upload-time = "2024-09-13T15:27:07.347Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/96/e1/2cef0ba62827617ebcd183ebe3a7b3ca7cfee8d45f99c953b4db005b9a88/ragbits-0.0.1-py2.py3-none-any.whl", hash = "sha256:101ef35803f4b78b600b7381cf8f3c86f18018fa54156055d9b6e95f708475bf", size = 1354, upload-time = "2024-09-13T15:27:05.758Z" },
 ]
-
-[package.optional-dependencies]
-a2a = [
-    { name = "ragbits-agents", extra = ["a2a"] },
-]
-azure = [
-    { name = "ragbits-core", extra = ["azure"] },
-]
-chroma = [
-    { name = "ragbits-core", extra = ["chroma"] },
-]
-cli = [
-    { name = "ragbits-agents", extra = ["cli"] },
-]
-fastembed = [
-    { name = "ragbits-core", extra = ["fastembed"] },
-]
-fastembed-gpu = [
-    { name = "ragbits-core", extra = ["fastembed-gpu"] },
-]
-gcs = [
-    { name = "ragbits-core", extra = ["gcs"] },
-]
-google-drive = [
-    { name = "ragbits-core", extra = ["google-drive"] },
-]
-hf = [
-    { name = "ragbits-core", extra = ["hf"] },
-]
-local = [
-    { name = "ragbits-core", extra = ["local"] },
-]
-logfire = [
-    { name = "ragbits-core", extra = ["logfire"] },
-]
-mcp = [
-    { name = "ragbits-agents", extra = ["mcp"] },
-]
-openai = [
-    { name = "ragbits-guardrails", extra = ["openai"] },
-]
-otel = [
-    { name = "ragbits-core", extra = ["otel"] },
-]
-pgvector = [
-    { name = "ragbits-core", extra = ["pgvector"] },
-]
-promptfoo = [
-    { name = "ragbits-core", extra = ["promptfoo"] },
-]
-qdrant = [
-    { name = "ragbits-core", extra = ["qdrant"] },
-]
-ray = [
-    { name = "ragbits-document-search", extra = ["ray"] },
-]
-relari = [
-    { name = "ragbits-evaluate", extra = ["relari"] },
-]
-s3 = [
-    { name = "ragbits-core", extra = ["s3"] },
-]
-sql = [
-    { name = "ragbits-chat", extra = ["sql"] },
-]
-unstructured = [
-    { name = "ragbits-document-search", extra = ["unstructured"] },
-]
-weaviate = [
-    { name = "ragbits-core", extra = ["weaviate"] },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "ragbits-agents", editable = "packages/ragbits-agents" },
-    { name = "ragbits-agents", extras = ["a2a"], marker = "extra == 'a2a'", editable = "packages/ragbits-agents" },
-    { name = "ragbits-agents", extras = ["cli"], marker = "extra == 'cli'", editable = "packages/ragbits-agents" },
-    { name = "ragbits-agents", extras = ["mcp"], marker = "extra == 'mcp'", editable = "packages/ragbits-agents" },
-    { name = "ragbits-chat", editable = "packages/ragbits-chat" },
-    { name = "ragbits-chat", extras = ["sql"], marker = "extra == 'sql'", editable = "packages/ragbits-chat" },
-    { name = "ragbits-cli", editable = "packages/ragbits-cli" },
-    { name = "ragbits-core", editable = "packages/ragbits-core" },
-    { name = "ragbits-core", extras = ["azure"], marker = "extra == 'azure'", editable = "packages/ragbits-core" },
-    { name = "ragbits-core", extras = ["chroma"], marker = "extra == 'chroma'", editable = "packages/ragbits-core" },
-    { name = "ragbits-core", extras = ["fastembed"], marker = "extra == 'fastembed'", editable = "packages/ragbits-core" },
-    { name = "ragbits-core", extras = ["fastembed-gpu"], marker = "extra == 'fastembed-gpu'", editable = "packages/ragbits-core" },
-    { name = "ragbits-core", extras = ["gcs"], marker = "extra == 'gcs'", editable = "packages/ragbits-core" },
-    { name = "ragbits-core", extras = ["google-drive"], marker = "extra == 'google-drive'", editable = "packages/ragbits-core" },
-    { name = "ragbits-core", extras = ["hf"], marker = "extra == 'hf'", editable = "packages/ragbits-core" },
-    { name = "ragbits-core", extras = ["local"], marker = "extra == 'local'", editable = "packages/ragbits-core" },
-    { name = "ragbits-core", extras = ["logfire"], marker = "extra == 'logfire'", editable = "packages/ragbits-core" },
-    { name = "ragbits-core", extras = ["otel"], marker = "extra == 'otel'", editable = "packages/ragbits-core" },
-    { name = "ragbits-core", extras = ["pgvector"], marker = "extra == 'pgvector'", editable = "packages/ragbits-core" },
-    { name = "ragbits-core", extras = ["promptfoo"], marker = "extra == 'promptfoo'", editable = "packages/ragbits-core" },
-    { name = "ragbits-core", extras = ["qdrant"], marker = "extra == 'qdrant'", editable = "packages/ragbits-core" },
-    { name = "ragbits-core", extras = ["s3"], marker = "extra == 's3'", editable = "packages/ragbits-core" },
-    { name = "ragbits-core", extras = ["weaviate"], marker = "extra == 'weaviate'", editable = "packages/ragbits-core" },
-    { name = "ragbits-document-search", editable = "packages/ragbits-document-search" },
-    { name = "ragbits-document-search", extras = ["ray"], marker = "extra == 'ray'", editable = "packages/ragbits-document-search" },
-    { name = "ragbits-document-search", extras = ["unstructured"], marker = "extra == 'unstructured'", editable = "packages/ragbits-document-search" },
-    { name = "ragbits-evaluate", editable = "packages/ragbits-evaluate" },
-    { name = "ragbits-evaluate", extras = ["relari"], marker = "extra == 'relari'", editable = "packages/ragbits-evaluate" },
-    { name = "ragbits-guardrails", editable = "packages/ragbits-guardrails" },
-    { name = "ragbits-guardrails", extras = ["openai"], marker = "extra == 'openai'", editable = "packages/ragbits-guardrails" },
-]
-provides-extras = ["chroma", "hf", "s3", "gcs", "azure", "local", "openai", "otel", "logfire", "promptfoo", "qdrant", "relari", "fastembed", "fastembed-gpu", "pgvector", "ray", "unstructured", "sql", "a2a", "mcp", "weaviate", "google-drive", "cli"]
 
 [[package]]
 name = "ragbits-agents"
-version = "1.4.0.dev202602030301"
+version = "1.4.0.dev202601010248"
 source = { editable = "packages/ragbits-agents" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5568,7 +5456,7 @@ provides-extras = ["a2a", "mcp", "openai", "cli"]
 
 [[package]]
 name = "ragbits-chat"
-version = "1.4.0.dev202602030301"
+version = "1.4.0.dev202601010248"
 source = { editable = "packages/ragbits-chat" }
 dependencies = [
     { name = "bcrypt" },
@@ -5584,6 +5472,15 @@ sql = [
     { name = "sqlalchemy" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pip-licenses" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "bcrypt", specifier = ">=4.2.0" },
@@ -5596,9 +5493,18 @@ requires-dist = [
 ]
 provides-extras = ["sql"]
 
+[package.metadata.requires-dev]
+dev = [
+    { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
+    { name = "pre-commit", specifier = "~=3.8.0" },
+    { name = "pytest", specifier = "~=8.3.3" },
+    { name = "pytest-asyncio", specifier = "~=0.24.0" },
+    { name = "pytest-cov", specifier = "~=5.0.0" },
+]
+
 [[package]]
 name = "ragbits-cli"
-version = "1.4.0.dev202602030301"
+version = "1.4.0.dev202601010248"
 source = { editable = "packages/ragbits-cli" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5613,7 +5519,7 @@ requires-dist = [
 
 [[package]]
 name = "ragbits-core"
-version = "1.4.0.dev202602030301"
+version = "1.4.0.dev202601010248"
 source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "aiohttp" },
@@ -5694,6 +5600,15 @@ weaviate = [
     { name = "weaviate-client" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pip-licenses" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "accelerate", marker = "extra == 'local'", specifier = ">=1.7.0" },
@@ -5732,16 +5647,25 @@ requires-dist = [
     { name = "qdrant-client", marker = "extra == 'qdrant'", specifier = ">=1.12.1,<2.0.0" },
     { name = "sentence-transformers", marker = "extra == 'local'", specifier = ">=4.0.2,<5.0.0" },
     { name = "tomli", specifier = ">=2.0.2,<3.0.0" },
-    { name = "torch", marker = "extra == 'local'", specifier = ">=2.2.2,<3.0.0" },
+    { name = "torch", marker = "extra == 'local'", specifier = ">=2.2.1,<3.0.0" },
     { name = "transformers", marker = "extra == 'local'", specifier = ">=4.44.2,<5.0.0" },
     { name = "typer", specifier = ">=0.12.5,<1.0.0" },
     { name = "weaviate-client", marker = "extra == 'weaviate'", specifier = ">=4.15.4,<5.0.0" },
 ]
 provides-extras = ["chroma", "local", "fastembed", "promptfoo", "otel", "logfire", "phoenix", "qdrant", "pgvector", "fastembed-gpu", "azure", "gcs", "hf", "s3", "google-drive", "weaviate"]
 
+[package.metadata.requires-dev]
+dev = [
+    { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
+    { name = "pre-commit", specifier = "~=3.8.0" },
+    { name = "pytest", specifier = "~=8.3.3" },
+    { name = "pytest-asyncio", specifier = "~=0.24.0" },
+    { name = "pytest-cov", specifier = "~=5.0.0" },
+]
+
 [[package]]
 name = "ragbits-document-search"
-version = "1.4.0.dev202602030301"
+version = "1.4.0.dev202601010248"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
     { name = "docling" },
@@ -5761,9 +5685,19 @@ unstructured = [
     { name = "unstructured-client" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pip-licenses" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "ragbits" },
+]
+
 [package.metadata]
 requires-dist = [
-    { name = "docling", extras = ["easyocr"], specifier = ">=2.15.1,<3.0.0" },
+    { name = "docling", specifier = ">=2.15.1,<3.0.0" },
     { name = "filetype", specifier = ">=1.2.0,<2.0.0" },
     { name = "opencv-python", specifier = ">=4.11.0.86,<5.0.0.0" },
     { name = "python-pptx", specifier = ">=1.0.0,<2.0.0" },
@@ -5775,9 +5709,19 @@ requires-dist = [
 ]
 provides-extras = ["unstructured", "ray"]
 
+[package.metadata.requires-dev]
+dev = [
+    { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
+    { name = "pre-commit", specifier = "~=3.8.0" },
+    { name = "pytest", specifier = "~=8.3.3" },
+    { name = "pytest-asyncio", specifier = "~=0.24.0" },
+    { name = "pytest-cov", specifier = "~=5.0.0" },
+    { name = "ragbits", extras = ["local"] },
+]
+
 [[package]]
 name = "ragbits-evaluate"
-version = "1.4.0.dev202602030301"
+version = "1.4.0.dev202601010248"
 source = { editable = "packages/ragbits-evaluate" }
 dependencies = [
     { name = "datasets" },
@@ -5794,6 +5738,15 @@ relari = [
     { name = "continuous-eval" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pip-licenses" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "continuous-eval", marker = "extra == 'relari'", specifier = ">=0.3.12,<1.0.0" },
@@ -5807,9 +5760,18 @@ requires-dist = [
 ]
 provides-extras = ["relari"]
 
+[package.metadata.requires-dev]
+dev = [
+    { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
+    { name = "pre-commit", specifier = "~=3.8.0" },
+    { name = "pytest", specifier = "~=8.3.3" },
+    { name = "pytest-asyncio", specifier = "~=0.24.0" },
+    { name = "pytest-cov", specifier = "~=5.0.0" },
+]
+
 [[package]]
 name = "ragbits-guardrails"
-version = "1.4.0.dev202602030301"
+version = "1.4.0.dev202601010248"
 source = { editable = "packages/ragbits-guardrails" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5820,12 +5782,30 @@ openai = [
     { name = "openai" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "pip-licenses" },
+    { name = "pre-commit" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.91.0,<2.0.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
 ]
 provides-extras = ["openai"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pip-licenses", specifier = ">=4.0.0,<5.0.0" },
+    { name = "pre-commit", specifier = "~=3.8.0" },
+    { name = "pytest", specifier = "~=8.3.3" },
+    { name = "pytest-asyncio", specifier = "~=0.24.0" },
+    { name = "pytest-cov", specifier = "~=5.0.0" },
+]
 
 [[package]]
 name = "ragbits-workspace"
