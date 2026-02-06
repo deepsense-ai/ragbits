@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Fix FastAPI installation by adding `standard` extras to ensure all required dependencies are included
 
 ## 1.4.0 (2026-02-04)
 ### Changed
