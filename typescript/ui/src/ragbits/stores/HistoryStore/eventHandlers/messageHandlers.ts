@@ -9,7 +9,7 @@ import {
   MessageUsageChatResponse,
   ReferenceChatResponse,
   TextChatResponse,
-  TodoItemChatResonse,
+  PlanItemChatResponse,
 } from "@ragbits/api-client-react";
 import { PrimaryHandler } from "./eventHandlerRegistry";
 import { produce } from "immer";
@@ -118,7 +118,7 @@ export const handleUsage: PrimaryHandler<MessageUsageChatResponse> = (
   message.usage = response.content.usage;
 };
 
-export const handleTodoItem: PrimaryHandler<TodoItemChatResonse> = (
+export const handlePlanItem: PrimaryHandler<PlanItemChatResponse> = (
   { content },
   draft,
   ctx,
