@@ -201,7 +201,7 @@ def _generate_chat_response_union_type() -> str:
         ("ImageChatResponse", "image", "Image"),
         ("MessageUsageChatResponse", "usage", "UsageContent"),
         ("ClearMessageChatResponse", "clear_message", "unknown"),
-        ("TodoItemChatResonse", "todo_item", "TodoItemContent"),
+        ("PlanItemChatResponse", "plan_item", "PlanItemContent"),
         ("ConversationSummaryResponse", "conversation_summary", "ConversationSummaryContent"),
         ("ConfirmationRequestChatResponse", "confirmation_request", "ConfirmationRequestContent"),
         ("ErrorChatResponse", "error", "ErrorContent"),
