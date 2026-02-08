@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.4.1 (2026-02-08)
+
 ## 1.4.0 (2026-02-04)
 
 - Add Support for Thinking in agents (#837)

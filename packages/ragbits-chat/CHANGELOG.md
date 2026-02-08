@@ -1,6 +1,12 @@
 # CHANGELOG
 
 ## Unreleased
+
+## 1.4.1 (2026-02-08)
+### Changed
+
+- ragbits-core updated to version v1.4.1
+
 - Fix FastAPI installation by adding `standard` extras to ensure all required dependencies are included
 
 ## 1.4.0 (2026-02-04)
