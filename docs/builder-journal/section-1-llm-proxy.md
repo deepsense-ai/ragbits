@@ -86,11 +86,11 @@ This works, but it's not very useful yet. Let's add an actual LLM.
 
 Ragbits uses `LiteLLM` to provide a unified interface to 100+ LLM providers. Add the import and an `__init__` method to your class:
 
-```python hl_lines="6 12-14"
---8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/b69d2a3/src/ragbits_example/main.py:10:33"
+```python hl_lines="6 13-14"
+--8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/9cd7d8a/src/ragbits_example/main.py:10:32"
 ```
 
-The `model_name` parameter accepts any model supported by LiteLLM:
+You can change `"gpt-4o-mini"` to any model supported by LiteLLM:
 
 | Provider | Model Name |
 |----------|------------|
@@ -106,7 +106,7 @@ The LLM is ready, but we're not using it yet. Let's connect it to our chat metho
 Now let's make the LLM actually respond to messages. Update the `chat()` method:
 
 ```python hl_lines="7-10"
---8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/93b8999/src/ragbits_example/main.py:26:37"
+--8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/79dc6be/src/ragbits_example/main.py:25:36"
 ```
 
 Here's what changed:
@@ -124,7 +124,7 @@ But there's a problem: the LLM doesn't remember previous messages. Each message 
 The `history` parameter contains all previous messages in the conversation. Update the `chat()` method to include history:
 
 ```python hl_lines="18"
---8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/ade4e2b/src/ragbits_example/main.py:30:50"
+--8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/19716ef/src/ragbits_example/main.py:29:49"
 ```
 
 The key change is spreading the `history` list before the current message:
@@ -173,10 +173,10 @@ ragbits api run main:SimpleStreamingChat --debug
 
 Here's the final code that includes everything we built:
 
-[View full source on GitHub](https://github.com/deepsense-ai/ragbits-example/blob/ade4e2b/src/ragbits_example/main.py)
+[View full source on GitHub](https://github.com/deepsense-ai/ragbits-example/blob/19716ef/src/ragbits_example/main.py)
 
 ```python title="main.py" linenums="1"
---8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/ade4e2b/src/ragbits_example/main.py"
+--8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/19716ef/src/ragbits_example/main.py"
 ```
 
 ## What You've Learned

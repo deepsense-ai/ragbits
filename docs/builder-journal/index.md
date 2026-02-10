@@ -12,6 +12,8 @@ This journal walks you through building a real GenAI application using Ragbits, 
 
 - **Focus on your app, not infrastructure.** Ragbits handles the API server, UI, streaming, and state management so you can focus on business logic.
 
+- **Follow along in code.** Each section and step corresponds to a commit in the [ragbits-example](https://github.com/deepsense-ai/ragbits-example/commits/main/) companion repository, so you can browse the full source at any point.
+
 ## Sections
 
 | Section | What You Add | What You Get |

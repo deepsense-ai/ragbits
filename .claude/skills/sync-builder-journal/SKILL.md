@@ -58,7 +58,7 @@ Commits in ragbits-example use format `Section X.Y: Description`:
 | ---------- | ------- | ------ | ------------------------------ |
 | 1 (class)  | 944f1dc | 10:28  | Imports + ChatInterface class  |
 | 1 (launch) | 944f1dc | 31:33  | `if __name__` block            |
-| 2          | b69d2a3 | 10:33  | Full class with `__init__`     |
-| 3          | 93b8999 | 26:37  | `chat()` method with streaming |
-| 4          | ade4e2b | 30:50  | `chat()` method with history   |
-| Complete   | ade4e2b | (full) | Entire file                    |
+| 2          | 9cd7d8a | 10:32  | Full class with `__init__`     |
+| 3          | 79dc6be | 25:36  | `chat()` method with streaming |
+| 4          | 19716ef | 29:49  | `chat()` method with history   |
+| Complete   | 19716ef | (full) | Entire file                    |
