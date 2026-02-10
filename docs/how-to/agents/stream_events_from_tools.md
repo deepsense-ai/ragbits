@@ -16,7 +16,7 @@ from collections.abc import Generator
 from ragbits.agents.tool import ToolReturn
 from ragbits.chat.interface.types import TextContent, TextResponse
 
---8<-- "examples/agents/stream_events_from_tools.py:61:74"
+--8<-- "examples/agents/stream_events_from_tools.py:61:75"
 ```
 
 You can also define custom events by inheriting `ChatResponse` class with a custom `ResponseContent`. The content can
@@ -27,7 +27,7 @@ Ragbits UI with your own event handlers.
 
 Now, we will implement a [`ChatInterface`][ragbits.chat.interface.ChatInterface] that uses the agent with the streaming tool.
 You can serve and test it via `RagbitsAPI`. Since we used a TextResponse that is understood by the Ragbits UI, we can
-deploy the app right away and test the agent right away.
+deploy the app and test the agent right away.
 
 ```python
 from collections.abc import AsyncGenerator
