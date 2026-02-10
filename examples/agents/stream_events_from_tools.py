@@ -29,9 +29,8 @@ from ragbits.agents.tool import ToolReturn
 from ragbits.chat.api import RagbitsAPI
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse, TextContent, TextResponse
-from ragbits.core.prompt.base import ChatFormat
 from ragbits.core.llms import LiteLLM
-
+from ragbits.core.prompt.base import ChatFormat
 
 # ---------------------------------------------------------------------------
 # Mock data source
@@ -40,12 +39,14 @@ from ragbits.core.llms import LiteLLM
 
 @dataclass
 class RevenueData:
+    """Represent revenue data from each quarter."""
+
     quarters: list[str]
     revenue: list[float]
 
 
 def fetch_revenue_data(year: int) -> RevenueData | None:
-    """Return fake quarterly revenue data for a given year."""
+    """Return dummy quarterly revenue data for a given year."""
     catalog = {
         2023: RevenueData(quarters=["Q1", "Q2", "Q3", "Q4"], revenue=[100.0, 150.0, 120.0, 180.0]),
         2024: RevenueData(quarters=["Q1", "Q2", "Q3", "Q4"], revenue=[200.0, 250.0, 220.0, 300.0]),
@@ -68,7 +69,7 @@ def display_revenue_table(year: int) -> Generator[TextResponse | ToolReturn]:
     if data is None:
         yield ToolReturn(value=f"No data for year {year}")
     else:
-        rows = "\n".join(f"| {q} | {v} |" for q, v in zip(data.quarters, data.revenue))
+        rows = "\n".join(f"| {q} | {v} |" for q, v in zip(data.quarters, data.revenue, strict=False))
         table = f"\n\n| Quarter | Value |\n|---------|-------|\n{rows}\n\n"
         yield TextResponse(content=TextContent(text=table))
         yield ToolReturn(value={"year": year, "total": sum(data.revenue)})
@@ -101,6 +102,7 @@ class RevenueChatInterface(ChatInterface):
         history: ChatFormat,
         context: ChatContext,
     ) -> AsyncGenerator[ChatResponse, None]:
+        """Handles interaction with the user."""
         async for chunk in self.agent.run_streaming(message):
             if isinstance(chunk, str):
                 yield self.create_text_response(chunk)

@@ -36,6 +36,7 @@ class ToolEvent:
     """
     Event emitted from the generator tool.
     """
+
     content: Any
 
 

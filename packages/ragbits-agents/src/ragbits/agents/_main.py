@@ -42,7 +42,7 @@ from ragbits.agents.post_processors.base import (
     StreamingPostProcessor,
     stream_with_post_processing,
 )
-from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice, ToolReturn, ToolEvent
+from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice, ToolEvent, ToolReturn
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import (
     LLM,
@@ -83,6 +83,7 @@ class DownstreamAgentResult:
         str,
         ToolCall,
         ToolCallResult,
+        ToolEvent,
         "DownstreamAgentResult",
         BasePrompt,
         Usage,
@@ -299,7 +300,7 @@ class AgentResultStreaming(
     async def __anext__(  # noqa: PLR0912
         self,
     ) -> (
-        str
+        str  # noqa: ANN401
         | ToolCall
         | ToolCallResult
         | BasePrompt
@@ -828,7 +829,7 @@ class Agent(
         tools_mapping: dict[str, Tool],
         context: AgentRunContext,
         parallel_tool_calling: bool,
-    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult | ConfirmationRequest, None]:
+    ) -> AsyncGenerator[ToolCallResult | ToolEvent | DownstreamAgentResult | ConfirmationRequest, None]:
         """Execute tool calls either in parallel or sequentially based on `parallel_tool_calling` value."""
         if parallel_tool_calling:
             queue: asyncio.Queue = asyncio.Queue()

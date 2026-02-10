@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 from ragbits.agents import Agent
 from ragbits.agents._main import DownstreamAgentResult
 from ragbits.agents.confirmation import ConfirmationRequest
-from ragbits.agents.tool import ToolCallResult
+from ragbits.agents.tool import ToolCallResult, ToolEvent
 from ragbits.core.llms import ToolCall
 from ragbits.core.llms.base import Usage
 from ragbits.core.prompt.base import BasePrompt
@@ -61,6 +61,7 @@ StreamingResponseType = (
     | TodoResult
     | ToolCall
     | ToolCallResult
+    | ToolEvent
     | BasePrompt
     | Usage
     | SimpleNamespace
