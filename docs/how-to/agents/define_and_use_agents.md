@@ -211,9 +211,29 @@ async def main() -> None:
 See the runnable example in `examples/agents/dependencies.py`.
 
 ## Streaming agent responses
-For use cases where you want to process partial outputs from the LLM as they arrive (e.g., in chat UIs), the [`Agent`][ragbits.agents.Agent] class supports streaming through the `run_streaming()` method.
+For use cases where you want to process partial outputs from the LLM as they arrive (e.g., in chat UIs),
+the [`Agent`][ragbits.agents.Agent] class supports streaming through the `run_streaming()` method.
 
-This method returns an `AgentResultStreaming` object — an async iterator that yields parts of the LLM response and tool-related events in real time.
+This method returns an `AgentResultStreaming` object — an async iterator that yields parts of the LLM response and
+tool-related events in real time.
+
+```python
+from ragbits.agents import Agent, ToolCall, ToolCallResult
+from ragbits.core.llms import LiteLLM
+
+async def main() -> None:
+    """Run the weather agent with streaming output."""
+    llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
+    agent = Agent(llm=llm, prompt=WeatherPrompt, tools=[get_weather])
+
+    async for chunk in agent.run_streaming(WeatherPromptInput(location="Paris")):
+        if isinstance(chunk, ToolCall):
+            print(f"Calling tool: {chunk.name}({chunk.arguments})")
+        elif isinstance(chunk, ToolCallResult):
+            print(f"Tool result: {chunk.result}")
+        elif isinstance(chunk, str):
+            print(chunk, end="", flush=True)
+```
 
 ## Native OpenAI tools
 Ragbits supports selected native OpenAI tools (web_search_preview, image_generation and code_interpreter). You can use them together with your tools.
