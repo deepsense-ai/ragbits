@@ -42,6 +42,7 @@ nav:
         - "Serve agents with A2A": how-to/agents/serve_ragbits_agents.md
         - "Use post-processors": how-to/agents/use_post_processors.md
         - "Stream downstream agents": how-to/agents/stream_downstream_agents.md
+        - "Stream events from tools": how-to/agents/stream_events_from_tools.md
       - Guardrails:
         - "Setup guardrails": how-to/guardrails/use_guardrails.md
       - Chatbots:
