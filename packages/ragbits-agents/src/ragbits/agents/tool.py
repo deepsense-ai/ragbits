@@ -32,6 +32,14 @@ class ToolReturn:
 
 
 @dataclass
+class ToolEvent:
+    """
+    Event emitted from the generator tool.
+    """
+    content: Any
+
+
+@dataclass
 class ToolCallResult:
     """
     Result of the tool call.

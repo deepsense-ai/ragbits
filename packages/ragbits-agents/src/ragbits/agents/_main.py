@@ -42,7 +42,7 @@ from ragbits.agents.post_processors.base import (
     StreamingPostProcessor,
     stream_with_post_processing,
 )
-from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice, ToolReturn
+from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice, ToolReturn, ToolEvent
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import (
     LLM,
@@ -243,6 +243,7 @@ class AgentResultStreaming(
         str
         | ToolCall
         | ToolCallResult
+        | ToolEvent
         | BasePrompt
         | Usage
         | SimpleNamespace
@@ -262,6 +263,7 @@ class AgentResultStreaming(
             str
             | ToolCall
             | ToolCallResult
+            | ToolEvent
             | DownstreamAgentResult
             | SimpleNamespace
             | BasePrompt
@@ -273,6 +275,7 @@ class AgentResultStreaming(
         self._generator = generator
         self.content: str = ""
         self.tool_calls: list[ToolCallResult] | None = None
+        self.tool_events: list[Any] | None = None
         self.downstream: dict[str | None, list[str | ToolCall | ToolCallResult]] = {}
         self.metadata: dict = {}
         self.history: ChatFormat
@@ -284,6 +287,7 @@ class AgentResultStreaming(
         str
         | ToolCall
         | ToolCallResult
+        | ToolEvent
         | BasePrompt
         | Usage
         | SimpleNamespace
@@ -303,6 +307,7 @@ class AgentResultStreaming(
         | SimpleNamespace
         | DownstreamAgentResult
         | ConfirmationRequest
+        | Any
     ):
         try:
             item = await self._generator.__anext__()
@@ -336,9 +341,13 @@ class AgentResultStreaming(
                     self.content = result_dict.get("content", self.content)
                     self.metadata = result_dict.get("metadata", self.metadata)
                     self.tool_calls = result_dict.get("tool_calls", self.tool_calls)
+                case ToolEvent():
+                    if self.tool_events is None:
+                        self.tool_events = []
+                    self.tool_events.append(item.content)
+                    return item.content
                 case _:
                     raise ValueError(f"Unexpected item: {item}")
-
             return item
 
         except StopAsyncIteration:
@@ -695,6 +704,7 @@ class Agent(
         str
         | ToolCall
         | ToolCallResult
+        | ToolEvent
         | DownstreamAgentResult
         | SimpleNamespace
         | BasePrompt
@@ -1002,7 +1012,7 @@ class Agent(
         tool_call: ToolCall,
         tools_mapping: dict[str, Tool],
         context: AgentRunContext,
-    ) -> AsyncGenerator[Any, None]:
+    ) -> AsyncGenerator[ConfirmationRequest | ToolCallResult | ToolEvent, None]:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
         if tool_call.name not in tools_mapping:
@@ -1058,8 +1068,10 @@ class Agent(
                 async for tool_output_event in self._process_tool_output(tool_output, tool, context):
                     if isinstance(tool_output_event, ToolReturn):
                         tool_return = tool_output_event
-                    else:
+                    elif isinstance(tool_output_event, ToolEvent):
                         yield tool_output_event
+                    else:
+                        yield ToolEvent(content=tool_output_event)
 
                 outputs.result = {
                     "tool_output": tool_return.value,
