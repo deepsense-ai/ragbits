@@ -1,16 +1,16 @@
 # How-To: Use hooks to customize agent behavior
 
-Ragbits provides a hook system that lets you intercept and modify agent behavior at key points in the execution lifecycle. Hooks allow you to validate inputs, modify arguments, mask outputs, enforce guardrails, require user confirmation, and more — all without changing the agent or tool code itself.
+Ragbits provides a hook system that lets you intercept and modify agent behavior at key points in the execution lifecycle. Hooks allow you to validate inputs, modify arguments, mask outputs, enforce guardrails, require user confirmation, and more, all without changing the agent or tool code itself.
 
 The hook system supports five event types:
 
-- **`PRE_TOOL`** — triggered before a tool is invoked
-- **`POST_TOOL`** — triggered after a tool completes
-- **`PRE_RUN`** — triggered before the agent run starts
-- **`POST_RUN`** — triggered after the agent run completes
-- **`ON_EVENT`** — triggered for each streaming event during `run_streaming()`
+- **`PRE_TOOL`** - triggered before a tool is invoked
+- **`POST_TOOL`** - triggered after a tool completes
+- **`PRE_RUN`** - triggered before the agent run starts
+- **`POST_RUN`** - triggered after the agent run completes
+- **`ON_EVENT`** - triggered for each streaming event during `run_streaming()`
 
-Hooks are executed in priority order (lower numbers first) and support **chaining** — each hook receives the output of the previous one, enabling composable pipelines of transformations.
+Hooks are executed in priority order (lower numbers first) and support **chaining**. Each hook receives the output of the previous one, enabling composable pipelines of transformations.
 
 ## How to create and register a hook
 
@@ -44,18 +44,18 @@ agent = Agent(
 
 The `Hook` constructor accepts:
 
-- **`event_type`** — one of `EventType.PRE_TOOL`, `POST_TOOL`, `PRE_RUN`, `POST_RUN` or `ON_EVENT`
-- **`callback`** — an async function matching the corresponding callback protocol
-- **`tool_names`** — optional list of tool names this hook applies to. If `None`, the hook runs for every tool. This parameter is only relevant for `PRE_TOOL` and `POST_TOOL` hooks.
-- **`priority`** — execution order; lower numbers execute first (default: `100`)
+- **`event_type`** - one of `EventType.PRE_TOOL`, `POST_TOOL`, `PRE_RUN`, `POST_RUN` or `ON_EVENT`
+- **`callback`** - an async function matching the corresponding callback protocol
+- **`tool_names`** - optional list of tool names this hook applies to. If `None`, the hook runs for every tool. This parameter is only relevant for `PRE_TOOL` and `POST_TOOL` hooks.
+- **`priority`** - execution order; lower numbers execute first (default: `100`)
 
 ## How to validate and modify tool inputs with pre-tool hooks
 
 Pre-tool hooks receive a `ToolCall` and return a `ToolCall`. The returned `ToolCall` can have a **decision** field that controls whether the tool executes:
 
-- `"pass"` — allow the tool to run (optionally with modified arguments) — this is the default
-- `"deny"` — block the tool from running (requires a `reason`)
-- `"ask"` — request user confirmation before proceeding (requires a `reason`)
+- `"pass"` - allow the tool to run (optionally with modified arguments). This is the default.
+- `"deny"` - block the tool from running (requires a `reason`)
+- `"ask"` - request user confirmation before proceeding (requires a `reason`)
 
 ### Validate inputs
 
@@ -127,7 +127,7 @@ A common use case is integrating guardrails to block unsafe or policy-violating 
 --8<-- "examples/agents/hooks/guardrails_integration.py:47:62"
 ```
 
-To block the agent from processing the input, the hook returns a replacement message. This message becomes the agent's final output — no LLM call or tool execution happens.
+To block the agent from processing the input, the hook returns a replacement message. This message becomes the agent's final output. No LLM call or tool execution happens.
 
 Register it with the agent:
 
@@ -246,10 +246,10 @@ agent = Agent(
 
 When the agent attempts to call one of the specified tools, the hook returns a `ConfirmationRequest` containing:
 
-- `confirmation_id` — a deterministic ID based on the hook, tool name, and arguments
-- `tool_name` — the name of the tool being called
-- `tool_description` — a description of why confirmation is needed
-- `arguments` — the tool arguments
+- `confirmation_id` - a deterministic ID based on the hook, tool name, and arguments
+- `tool_name` - the name of the tool being called
+- `tool_description` - a description of why confirmation is needed
+- `arguments` - the tool arguments
 
 The agent yields the `ConfirmationRequest` and pauses. You can then resume the agent with the user's decision by including it in the `AgentRunContext.tool_confirmations` list.
 
@@ -261,9 +261,9 @@ All hook types support **chaining**: hooks execute in priority order (lower numb
 Hook A (priority=10) → modified data → Hook B (priority=20) → modified data → Hook C (priority=100)
 ```
 
-For **pre-tool hooks**, the chained value is the `ToolCall` (including its `arguments`). For **post-tool hooks**, it is the `ToolReturn`. For **pre-run hooks**, it is the agent input. For **post-run hooks**, it is the `AgentResult`. For **on-event hooks**, the hooks are composed as a pipeline of async generators — each hook wraps the previous one, so events flow through the entire chain without intermediate collection.
+For **pre-tool hooks**, the chained value is the `ToolCall` (including its `arguments`). For **post-tool hooks**, it is the `ToolReturn`. For **pre-run hooks**, it is the agent input. For **post-run hooks**, it is the `AgentResult`. For **on-event hooks**, the hooks are composed as a pipeline of async generators. Each hook wraps the previous one, so events flow through the entire chain without intermediate collection.
 
 This makes it possible to compose independent hooks that each handle one concern (validation, sanitization, logging, etc.) into a clean pipeline.
 
 !!! warning
-    For pre-tool hooks, if any hook in the chain returns `"deny"`, execution stops immediately and subsequent hooks do not run. Design your hooks with this in mind — place critical validation hooks at lower priority numbers so they run first.
+    For pre-tool hooks, if any hook in the chain returns `"deny"`, execution stops immediately and subsequent hooks do not run. Design your hooks with this in mind. Place critical validation hooks at lower priority numbers so they run first.
