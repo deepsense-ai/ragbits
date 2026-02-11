@@ -49,7 +49,7 @@ The `Hook` constructor accepts:
 
 ## How to validate and modify tool inputs with pre-tool hooks
 
-Pre-tool hooks receive a [`PreToolInput`][ragbits.agents.hooks.PreToolInput] and return a [`PreToolOutput`][ragbits.agents.hooks.PreToolOutput]. The output includes a **decision** field that controls whether the tool executes:
+Pre-tool hooks receive a `PreToolInput` and return a `PreToolOutput`. The output includes a **decision** field that controls whether the tool executes:
 
 - `"pass"` — allow the tool to run (optionally with modified arguments)
 - `"deny"` — block the tool from running (requires a `reason`)
@@ -89,7 +89,7 @@ You can find the complete code example in the Ragbits repository [here](https://
 
 ## How to modify tool outputs with post-tool hooks
 
-Post-tool hooks receive a [`PostToolInput`][ragbits.agents.hooks.PostToolInput] (containing the original `tool_call` and the `tool_return`) and return a [`PostToolOutput`][ragbits.agents.hooks.PostToolOutput] with the (possibly modified) tool output.
+Post-tool hooks receive a `PostToolInput` (containing the original `tool_call` and the `tool_return`) and return a `PostToolOutput` with the (possibly modified) tool output.
 
 ### Mask sensitive data
 
@@ -117,7 +117,7 @@ You can find the complete code example in the Ragbits repository [here](https://
 
 ## How to validate agent input with pre-run hooks
 
-Pre-run hooks execute before the agent starts processing. They receive a [`PreRunInput`][ragbits.agents.hooks.PreRunInput] (containing the user input, options, and context) and return a [`PreRunOutput`][ragbits.agents.hooks.PreRunOutput].
+Pre-run hooks execute before the agent starts processing. They receive a `PreRunInput` (containing the user input, options, and context) and return a `PreRunOutput`.
 
 A common use case is integrating guardrails to block unsafe or policy-violating inputs:
 
@@ -140,7 +140,7 @@ You can find the complete code example in the Ragbits repository [here](https://
 
 ## How to modify agent results with post-run hooks
 
-Post-run hooks execute after the agent completes its run. They receive a [`PostRunInput`][ragbits.agents.hooks.PostRunInput] (containing the `AgentResult`, options, and context) and return a [`PostRunOutput`][ragbits.agents.hooks.PostRunOutput].
+Post-run hooks execute after the agent completes its run. They receive a `PostRunInput` (containing the `AgentResult`, options, and context) and return a `PostRunOutput`.
 
 Use post-run hooks to transform, enrich, or log final results:
 
@@ -160,7 +160,7 @@ hook = Hook(event_type=EventType.POST_RUN, callback=enrich_result)
 
 ## How to require user confirmation before tool execution
 
-Ragbits includes a built-in [`create_confirmation_hook`][ragbits.agents.hooks.create_confirmation_hook] factory that creates a pre-tool hook requiring user approval before a tool runs:
+Ragbits includes a built-in `create_confirmation_hook` factory that creates a pre-tool hook requiring user approval before a tool runs:
 
 ```python
 from ragbits.agents import Agent
@@ -188,7 +188,7 @@ The agent yields the `ConfirmationRequest` and pauses. You can then resume the a
 
 ## How hook chaining works
 
-All hook types support **chaining**: hooks execute in priority order, and each hook receives the output of the previous one.
+All hook types support **chaining**: hooks execute in priority order (lower numbers first), and each hook receives the output of the previous one. When hooks share the same priority (the default is `100`), they execute in the order they were defined.
 
 ```
 Hook A (priority=10) → modified data → Hook B (priority=20) → modified data → Hook C (priority=100)

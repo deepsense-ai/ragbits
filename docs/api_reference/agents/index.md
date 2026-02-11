@@ -12,4 +12,6 @@
 
 ::: ragbits.agents.a2a.server.create_agent_server
 
-::: ragbits.agents.hooks
+::: ragbits.agents.hooks.Hook
+
+::: ragbits.agents.hooks.EventType
