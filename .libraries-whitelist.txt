@@ -16,3 +16,11 @@ sse-starlette
 google-genai
 ollama
 pytest-xdist
+arize-phoenix
+arize-phoenix-evals
+psycopg-binary
+sqlean.py
+ldap3
+prometheus_client
+aioitertools
+typing_extensions
