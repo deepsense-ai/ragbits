@@ -17,3 +17,4 @@ jobs:
           gh pr edit ${{ github.event.pull_request.number }} --base develop
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_REPO: ${{ github.repository }}

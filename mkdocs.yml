@@ -11,6 +11,9 @@ nav:
     - "Retrieval-Augmented Generation": tutorials/rag.md
     - "Multi-Agent system with A2A and MCP": tutorials/agents.md
     - "Tool-Powered Chat Interfaces": tutorials/chat.md
+  - Builder Journal:
+    - "Overview": builder-journal/index.md
+    - "1. LLM Proxy": builder-journal/section-1-llm-proxy.md
   - How-to:
       - "Prompts":
         - "Define and use prompts": how-to/prompts/use_prompting.md
@@ -145,7 +148,8 @@ markdown_extensions:
           class: mermaid
   - admonition
   - pymdownx.superfences
-  - pymdownx.snippets
+  - pymdownx.snippets:
+      url_download: true
   - pymdownx.inlinehilite
   - attr_list
   - md_in_html
