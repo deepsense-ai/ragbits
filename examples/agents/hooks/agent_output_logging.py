@@ -14,13 +14,13 @@ from ragbits.core.llms import LiteLLM
 
 async def log_agent_output(input_data: PostToolInput) -> PostToolOutput:
     """Log output from agent tools after they complete."""
-    output = input_data.output
+    output = input_data.tool_return.value
 
     if isinstance(output, dict):
         output = output.get("content", output)
 
     print(f"\n{'='*60}\n[{input_data.tool_call.name}] output:\n{'-'*60}\n{output}\n{'='*60}")
-    return PostToolOutput(output=input_data.output)
+    return PostToolOutput(tool_return=input_data.tool_return)
 
 
 async def main() -> None:
