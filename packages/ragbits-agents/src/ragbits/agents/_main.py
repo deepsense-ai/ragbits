@@ -1,7 +1,7 @@
 import asyncio
-import logging
 import types
 import uuid
+import warnings
 from collections.abc import AsyncGenerator, AsyncIterator, Callable, Generator
 from collections.abc import AsyncGenerator as _AG
 from contextlib import suppress
@@ -70,8 +70,6 @@ with suppress(ImportError):
 
 _Input = TypeVar("_Input", bound=BaseModel)
 _Output = TypeVar("_Output")
-
-logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -977,7 +975,7 @@ class Agent(
         tool_output: ToolReturn | Generator | AsyncGenerator | AgentResultStreaming | ToolEvent,
         tool: Tool,
         context: AgentRunContext,
-    ) -> AsyncGenerator[ToolReturn | Any, None]:
+    ) -> AsyncGenerator[ToolReturn | DownstreamAgentResult | ToolEvent, None]:
         """
         Process the output from a tool call and yield events if the tool output is an agent, generator or async
         generator.
@@ -1004,10 +1002,10 @@ class Agent(
             yield tool_output
         elif isinstance(tool_output, Generator):
             for event in tool_output:
-                yield ToolEvent(content=event)
+                yield event if isinstance(event, ToolReturn) else ToolEvent(content=event)
         elif isinstance(tool_output, AsyncGenerator):
             async for event in tool_output:
-                yield ToolEvent(content=event)
+                yield event if isinstance(event, ToolReturn) else ToolEvent(content=event)
         else:
             yield ToolReturn(value=tool_output, metadata=None)
 
@@ -1016,7 +1014,7 @@ class Agent(
         tool_call: ToolCall,
         tools_mapping: dict[str, Tool],
         context: AgentRunContext,
-    ) -> AsyncGenerator[ConfirmationRequest | ToolCallResult | ToolEvent, None]:
+    ) -> AsyncGenerator[ConfirmationRequest | ToolCallResult | DownstreamAgentResult | ToolEvent, None]:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
         if tool_call.name not in tools_mapping:
@@ -1072,12 +1070,12 @@ class Agent(
                 async for tool_output_event in self._process_tool_output(tool_output, tool, context):
                     if isinstance(tool_output_event, ToolReturn):
                         if tool_return is not None:
-                            logger.warning(
+                            warnings.warn(
                                 f"Received more than one ToolReturn! Previous: {tool_return}. "
                                 f"Current: {tool_output_event}. Using only the latter"
                             )
                         tool_return = tool_output_event
-                    elif isinstance(tool_output_event, ToolEvent):
+                    else:
                         yield tool_output_event
 
                 if tool_return is None:
