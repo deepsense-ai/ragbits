@@ -3,13 +3,16 @@
 # ruff: noqa: PLR6301
 
 import pytest
-from pydantic import ValidationError
 
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.hooks.types import (
     EventType,
+    PostRunInput,
+    PostRunOutput,
     PostToolInput,
     PostToolOutput,
+    PreRunInput,
+    PreRunOutput,
     PreToolInput,
     PreToolOutput,
 )
@@ -18,14 +21,11 @@ from ragbits.core.llms.base import ToolCall
 
 
 class TestPreToolInput:
-    def test_creation_with_frozen_event_type(self, tool_call: ToolCall):
+    def test_creation(self, tool_call: ToolCall):
         input_data = PreToolInput(tool_call=tool_call)
 
         assert input_data.event_type == EventType.PRE_TOOL
         assert input_data.tool_call.name == "test_tool"
-
-        with pytest.raises(ValidationError):
-            input_data.event_type = EventType.POST_TOOL  # type: ignore[assignment]
 
 
 class TestPreToolOutput:
@@ -37,7 +37,7 @@ class TestPreToolOutput:
         assert output.confirmation_request is None
 
     def test_deny_decision_requires_reason(self):
-        with pytest.raises(ValidationError, match="reason is required"):
+        with pytest.raises(ValueError, match="reason is required"):
             PreToolOutput(arguments={}, decision="deny")
 
         output = PreToolOutput(arguments={}, decision="deny", reason="Not allowed")
@@ -45,7 +45,7 @@ class TestPreToolOutput:
         assert output.reason == "Not allowed"
 
     def test_ask_decision_requires_reason(self):
-        with pytest.raises(ValidationError, match="reason is required"):
+        with pytest.raises(ValueError, match="reason is required"):
             PreToolOutput(arguments={}, decision="ask")
 
         output = PreToolOutput(arguments={}, decision="ask", reason="Confirm?")
@@ -71,26 +71,50 @@ class TestPreToolOutput:
 
 
 class TestPostToolInput:
-    def test_creation_with_output_and_error(self, tool_call: ToolCall):
+    def test_creation_with_output(self, tool_call: ToolCall):
         input_data = PostToolInput(tool_call=tool_call, tool_return=ToolReturn(value="result"))
         assert input_data.event_type == EventType.POST_TOOL
-        assert input_data.tool_return is not None
         assert input_data.tool_return.value == "result"
-        assert input_data.error is None
-
-        error = ValueError("failed")
-        input_with_error = PostToolInput(tool_call=tool_call, tool_return=None, error=error)
-        assert input_with_error.error == error
 
 
 class TestPostToolOutput:
     def test_creation_with_various_outputs(self):
         string_output = PostToolOutput(tool_return=ToolReturn("string"))
-        assert string_output.tool_return is not None
         assert string_output.tool_return.value == "string"
 
         dict_output = PostToolOutput(tool_return=ToolReturn({"key": "value"}))
-        assert dict_output.tool_return is not None
         assert dict_output.tool_return.value == {"key": "value"}
 
-        assert PostToolOutput(tool_return=None).tool_return is None
+
+class TestPreRunInput:
+    def test_creation(self):
+        input_data: PreRunInput = PreRunInput(input="test query", options=None, context=None)
+
+        assert input_data.event_type == EventType.PRE_RUN
+        assert input_data.input == "test query"
+
+
+class TestPreRunOutput:
+    def test_creation(self):
+        output: PreRunOutput = PreRunOutput(output="modified query")
+
+        assert output.event_type == EventType.PRE_RUN
+        assert output.output == "modified query"
+
+
+class TestPostRunInput:
+    def test_creation(self):
+        mock_result = type("AgentResult", (), {"content": "response"})()
+        input_data: PostRunInput = PostRunInput(result=mock_result, options=None, context=None)
+
+        assert input_data.event_type == EventType.POST_RUN
+        assert input_data.result.content == "response"
+
+
+class TestPostRunOutput:
+    def test_creation(self):
+        mock_result = type("AgentResult", (), {"content": "response"})()
+        output = PostRunOutput(result=mock_result)
+
+        assert output.event_type == EventType.POST_RUN
+        assert output.result == mock_result

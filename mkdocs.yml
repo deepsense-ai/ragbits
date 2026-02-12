@@ -38,9 +38,9 @@ nav:
         - "Search documents": how-to/document_search/search-documents.md
       - Agents:
         - "Define and use agents": how-to/agents/define_and_use_agents.md
+        - "Use hooks to customize behavior": how-to/agents/use_hooks.md
         - "Provide tools with MCP": how-to/agents/provide_mcp_tools.md
         - "Serve agents with A2A": how-to/agents/serve_ragbits_agents.md
-        - "Use post-processors": how-to/agents/use_post_processors.md
         - "Stream downstream agents": how-to/agents/stream_downstream_agents.md
       - Guardrails:
         - "Setup guardrails": how-to/guardrails/use_guardrails.md

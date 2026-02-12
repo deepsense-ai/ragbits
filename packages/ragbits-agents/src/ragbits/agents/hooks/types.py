@@ -6,14 +6,17 @@ input types, and output types for the hooks system.
 """
 
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Literal, TypeAlias
-
-from pydantic import BaseModel, Field, model_validator
+from typing import TYPE_CHECKING, Any, Generic, Literal, TypeAlias
 
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.tool import ToolReturn
-from ragbits.core.llms.base import ToolCall
+from ragbits.core.llms.base import LLMClientOptionsT, ToolCall
+from ragbits.core.prompt.prompt import PromptInputT, PromptOutputT
+
+if TYPE_CHECKING:
+    from ragbits.agents._main import AgentOptions, AgentResult, AgentRunContext
 
 
 class EventType(str, Enum):
@@ -23,120 +26,151 @@ class EventType(str, Enum):
     Attributes:
         PRE_TOOL: Triggered before a tool is invoked
         POST_TOOL: Triggered after a tool completes
+        PRE_RUN: Triggered before the agent run starts
+        POST_RUN: Triggered after the agent run completes
     """
 
     PRE_TOOL = "pre_tool"
     POST_TOOL = "post_tool"
+    PRE_RUN = "pre_run"
+    POST_RUN = "post_run"
 
 
-class HookEventIO(BaseModel):
-    """
-    Base class for hook inputs and outputs.
-
-    Contains the common event_type attribute shared by all hook events.
-
-    Attributes:
-        event_type: The type of event
-    """
-
-    model_config = {"arbitrary_types_allowed": True}
-
-    event_type: EventType
-
-
-class PreToolInput(HookEventIO):
+@dataclass
+class PreToolInput:
     """
     Input passed to pre-tool hook callbacks.
 
-    This is provided before a tool is invoked, allowing hooks to:
-    - Inspect the tool call
-    - Modify tool arguments
-    - Deny execution
-
     Attributes:
-        event_type: Always EventType.PRE_TOOL (unchangeable)
         tool_call: The complete tool call (contains name, arguments, id, type)
+        event_type: Always EventType.PRE_TOOL
     """
 
-    event_type: Literal[EventType.PRE_TOOL] = Field(default=EventType.PRE_TOOL, frozen=True)
     tool_call: ToolCall
+    event_type: Literal[EventType.PRE_TOOL] = EventType.PRE_TOOL
 
 
-class PostToolInput(HookEventIO):
+@dataclass
+class PostToolInput:
     """
     Input passed to post-tool hook callbacks.
 
-    This is provided after a tool completes, allowing hooks to:
-    - Inspect the tool result
-    - Modify tool output
-    - Handle errors
-
     Attributes:
-        event_type: Always EventType.POST_TOOL (unchangeable)
         tool_call: The original tool call
-        tool_return: The result returned by the tool (None if error occurred)
-        error: Any error that occurred during execution (None if successful)
+        tool_return: The result returned by the tool
+        event_type: Always EventType.POST_TOOL
     """
 
-    event_type: Literal[EventType.POST_TOOL] = Field(default=EventType.POST_TOOL, frozen=True)
     tool_call: ToolCall
-    tool_return: ToolReturn | None = None
-    error: Exception | None = None
+    tool_return: ToolReturn
+    event_type: Literal[EventType.POST_TOOL] = EventType.POST_TOOL
 
 
-class PreToolOutput(HookEventIO):
+@dataclass
+class PreToolOutput:
     """
     Output returned by pre-tool hook callbacks.
 
-    This allows hooks to control tool execution. The output always contains
-    arguments (either original or modified).
-
     Attributes:
-        event_type: Always EventType.PRE_TOOL (unchangeable)
-        arguments: Tool arguments to use (original or modified) - always present
+        arguments: Tool arguments to use (original or modified)
         decision: The decision on tool execution ("pass", "ask", "deny")
-        reason: Explanation for ask/deny decisions (required for "ask" and "deny", can be None for "pass")
-        confirmation_request: Full confirmation request when decision is "ask" (set by HookManager)
+        reason: Explanation for ask/deny decisions
+        confirmation_request: Full confirmation request when decision is "ask"
+        event_type: Always EventType.PRE_TOOL
     """
 
-    event_type: Literal[EventType.PRE_TOOL] = Field(default=EventType.PRE_TOOL, frozen=True)  # type: ignore[assignment]
     arguments: dict[str, Any]
     decision: Literal["pass", "ask", "deny"] = "pass"
     reason: str | None = None
     confirmation_request: ConfirmationRequest | None = None
+    event_type: Literal[EventType.PRE_TOOL] = EventType.PRE_TOOL
 
-    @model_validator(mode="after")
-    def validate_reason(self) -> "PreToolOutput":
+    def __post_init__(self) -> None:
         """Validate that reason is provided for ask and deny decisions."""
         if self.decision in ("ask", "deny") and not self.reason:
             raise ValueError(f"reason is required when decision='{self.decision}'")
-        return self
 
 
-class PostToolOutput(HookEventIO):
+@dataclass
+class PostToolOutput:
     """
     Output returned by post-tool hook callbacks.
 
-    The output always contains the tool output (either original or modified).
-
     Attributes:
+        tool_return: Tool output to use (original or modified)
         event_type: Always EventType.POST_TOOL (unchangeable)
-        tool_return: Tool output to use (original or modified) - None if the tool execution failed
-
-    Example:
-        ```python
-        # Pass through unchanged
-        return PostToolOutput(tool_return=input.tool_return)
-
-        # Modify output
-        return PostToolOutput(tool_return=ToolReturn(value={"filtered": data}))
-        ```
     """
 
-    event_type: Literal[EventType.POST_TOOL] = Field(default=EventType.POST_TOOL, frozen=True)  # type: ignore[assignment]
-    tool_return: ToolReturn | None
+    tool_return: ToolReturn
+    event_type: Literal[EventType.POST_TOOL] = EventType.POST_TOOL
+
+
+@dataclass
+class PreRunInput(Generic[LLMClientOptionsT, PromptInputT]):
+    """
+    Input passed to pre-run hook callbacks.
+
+    Attributes:
+        input: The input for the agent run
+        options: The options for the agent run
+        context: The context for the agent run
+        event_type: Always EventType.PRE_RUN
+    """
+
+    input: str | PromptInputT | None = None
+    options: "AgentOptions[LLMClientOptionsT] | None" = None
+    context: "AgentRunContext | None" = None
+    event_type: Literal[EventType.PRE_RUN] = EventType.PRE_RUN
+
+
+@dataclass
+class PreRunOutput(Generic[PromptInputT]):
+    """
+    Output returned by pre-run hook callbacks.
+
+    Attributes:
+        output: The input to use (original or modified)
+        event_type: Always EventType.PRE_RUN
+    """
+
+    output: str | PromptInputT | None = None
+    event_type: Literal[EventType.PRE_RUN] = EventType.PRE_RUN
+
+
+@dataclass
+class PostRunInput(Generic[LLMClientOptionsT, PromptOutputT]):
+    """
+    Input passed to post-run hook callbacks.
+
+    Attributes:
+        result: The result from the agent run (AgentResult)
+        options: The options for the agent run
+        context: The context for the agent run
+        event_type: Always EventType.POST_RUN
+    """
+
+    result: "AgentResult[PromptOutputT]"
+    options: "AgentOptions[LLMClientOptionsT] | None" = None
+    context: "AgentRunContext | None" = None
+    event_type: Literal[EventType.POST_RUN] = EventType.POST_RUN
+
+
+@dataclass
+class PostRunOutput(Generic[PromptOutputT]):
+    """
+    Output returned by post-run hook callbacks.
+
+    Attributes:
+        result: The result to use (original or modified AgentResult)
+        event_type: Always EventType.POST_RUN
+    """
+
+    result: "AgentResult[PromptOutputT]"
+    event_type: Literal[EventType.POST_RUN] = EventType.POST_RUN
 
 
 # Type aliases for hook callbacks
 PreToolHookCallback: TypeAlias = Callable[["PreToolInput"], Awaitable["PreToolOutput"]]
 PostToolHookCallback: TypeAlias = Callable[["PostToolInput"], Awaitable["PostToolOutput"]]
+PreRunHookCallback: TypeAlias = Callable[["PreRunInput"], Awaitable["PreRunOutput"]]
+PostRunHookCallback: TypeAlias = Callable[["PostRunInput"], Awaitable["PostRunOutput"]]

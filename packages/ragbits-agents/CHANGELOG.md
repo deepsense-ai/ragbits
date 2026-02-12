@@ -4,7 +4,6 @@
 
 - Support wrapping downstream agents as tools (#818)
 - Add syntax sugar allowing easier Agents definition (#820)
-- Add post-processors (#821)
 - Support streaming from downstream agents (#812)
 - Add supervisor post-processor (#830)
 - Add parallel tool calling support to agents for concurrent tool execution (#836)
@@ -13,6 +12,7 @@
 - Allow passing Tool objects directly to Agent
 - Add hooks system (pre- and post-tool) for lifecycle event interception (#914)
 - Add ToolReturn allowing the control which part of the tool output we pass to LLM (#920)
+- Add hooks system for agent lifecycle interception (PRE_TOOL, POST_TOOL, PRE_RUN, POST_RUN) (#914) (#926)
 
 ## 1.4.1 (2026-02-08)
 

@@ -14,8 +14,7 @@ from ragbits.agents.hooks import (
     Hook,
     HookManager,
 )
-from ragbits.agents.post_processors.base import PostProcessor, StreamingPostProcessor
-from ragbits.agents.tool import requires_confirmation
+from ragbits.agents.post_processors.base import StreamingPostProcessor
 from ragbits.agents.types import QuestionAnswerAgent, QuestionAnswerPromptInput, QuestionAnswerPromptOutput
 
 __all__ = [
@@ -29,12 +28,10 @@ __all__ = [
     "EventType",
     "Hook",
     "HookManager",
-    "PostProcessor",
     "QuestionAnswerAgent",
     "QuestionAnswerPromptInput",
     "QuestionAnswerPromptOutput",
     "StreamingPostProcessor",
     "ToolCall",
     "ToolCallResult",
-    "requires_confirmation",
 ]
