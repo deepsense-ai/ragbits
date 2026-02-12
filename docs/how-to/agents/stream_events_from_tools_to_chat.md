@@ -1,4 +1,4 @@
-# How-To: Stream events from tools
+# How-To: Streaming events from tools and using them in the client
 
 In this document, we will build a tool that is able to send custom commands to the UI and display a Markdown table
 to the user.
@@ -16,7 +16,7 @@ from collections.abc import Generator
 from ragbits.agents.tool import ToolReturn
 from ragbits.chat.interface.types import TextContent, TextResponse
 
---8<-- "examples/agents/stream_events_from_tools.py:61:75"
+--8<-- "examples/agents/stream_events_from_tools_to_chat.py:61:75"
 ```
 
 You can also define custom events by inheriting `ChatResponse` class with a custom `ResponseContent`. The content can
@@ -39,5 +39,7 @@ from ragbits.chat.interface.types import ChatContext, ChatResponse, TextResponse
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt.base import ChatFormat
 
---8<-- "examples/agents/stream_events_from_tools.py:82:111"
+--8<-- "examples/agents/stream_events_from_tools_to_chat.py:82:111"
 ```
+
+Note, that the system receiving the events may be completely different from Ragbits frontend.
