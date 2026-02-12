@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import types
 import uuid
 from collections.abc import AsyncGenerator, AsyncIterator, Callable, Generator
@@ -69,6 +70,8 @@ with suppress(ImportError):
 
 _Input = TypeVar("_Input", bound=BaseModel)
 _Output = TypeVar("_Output")
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -1053,7 +1056,7 @@ class Agent(
 
         tool_error: Exception | None = None
 
-        tool_return: ToolReturn = ToolReturn(value=None, metadata=None)
+        tool_return: ToolReturn | None = None
         with trace(agent_id=self.id, tool_name=tool_call.name, tool_arguments=tool_call.arguments) as outputs:
             try:
                 call_args = tool_call.arguments.copy()
@@ -1068,12 +1071,19 @@ class Agent(
 
                 async for tool_output_event in self._process_tool_output(tool_output, tool, context):
                     if isinstance(tool_output_event, ToolReturn):
+                        if tool_return is not None:
+                            logger.warning(
+                                f"Received more than one ToolReturn! Previous: {tool_return}. "
+                                f"Current: {tool_output_event}. Using only the latter"
+                            )
                         tool_return = tool_output_event
                     elif isinstance(tool_output_event, ToolEvent):
                         yield tool_output_event
                     else:
                         yield ToolEvent(content=tool_output_event)
 
+                if tool_return is None:
+                    tool_return = ToolReturn(value=None)
                 outputs.result = {
                     "tool_output": tool_return.value,
                     "tool_call_id": tool_call.id,
