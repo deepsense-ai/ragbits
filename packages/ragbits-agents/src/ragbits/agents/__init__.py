@@ -14,7 +14,7 @@ from ragbits.agents.hooks import (
     Hook,
     HookManager,
 )
-from ragbits.agents.post_processors.base import PostProcessor, StreamingPostProcessor
+from ragbits.agents.post_processors.base import StreamingPostProcessor
 from ragbits.agents.tools import LongTermMemory, MemoryEntry, create_memory_tools
 from ragbits.agents.types import QuestionAnswerAgent, QuestionAnswerPromptInput, QuestionAnswerPromptOutput
 
@@ -31,7 +31,6 @@ __all__ = [
     "HookManager",
     "LongTermMemory",
     "MemoryEntry",
-    "PostProcessor",
     "QuestionAnswerAgent",
     "QuestionAnswerPromptInput",
     "QuestionAnswerPromptOutput",
