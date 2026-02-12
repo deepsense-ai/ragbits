@@ -235,7 +235,7 @@ async def main() -> None:
             print(chunk, end="", flush=True)
 ```
 
-### Streaming custom events from tools
+## Streaming custom events from tools
 Tools can emit custom events during execution that are surfaced through the streaming loop.
 To do this, define your tool as an async generator that yields intermediate events and a final
 `ToolReturn` value:
@@ -247,7 +247,7 @@ from pydantic import BaseModel
 
 from ragbits.agents.tool import ToolReturn
 
---8<-- "examples/agents/stream_events_from_tools.py:31:43"
+--8<-- "examples/agents/stream_events_from_tools.py:30:44"
 ```
 
 Events yielded before the `ToolReturn` are collected and available via `result.tool_events`
@@ -257,7 +257,7 @@ after the stream completes:
 from ragbits.agents import Agent
 from ragbits.core.llms import LiteLLM
 
---8<-- "examples/agents/stream_events_from_tools.py:46:53"
+--8<-- "examples/agents/stream_events_from_tools.py:46:55"
 ```
 
 You can find the complete code example in the Ragbits repository [here](https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/stream_events_from_tools.py).

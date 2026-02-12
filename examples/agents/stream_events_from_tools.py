@@ -29,6 +29,8 @@ from ragbits.core.llms import LiteLLM
 
 
 class MyEvent(BaseModel):
+    """Custom event that we want to stream from an agent"""
+
     name: str
     description: str
 
@@ -43,7 +45,8 @@ async def my_tool() -> AsyncGenerator[ToolReturn | str | int | MyEvent]:
     yield ToolReturn(value="Successfully called my_tool! Your lucky number is 7")
 
 
-async def main():
+async def main() -> None:
+    """Run the agent with streaming events from the tools"""
     llm = LiteLLM(model_name="gpt-4o")
     agent = Agent(llm, prompt="Call my_tool for every answer", tools=[my_tool])
     result = agent.run_streaming("Hello, please call my_tool and tell me what is the number it returned!")

@@ -974,7 +974,7 @@ class Agent(
 
     @staticmethod
     async def _process_tool_output(
-        tool_output: ToolReturn | Generator | AsyncGenerator | AgentResultStreaming | object,
+        tool_output: ToolReturn | Generator | AsyncGenerator | AgentResultStreaming | ToolEvent,
         tool: Tool,
         context: AgentRunContext,
     ) -> AsyncGenerator[ToolReturn | Any, None]:
@@ -1004,10 +1004,10 @@ class Agent(
             yield tool_output
         elif isinstance(tool_output, Generator):
             for event in tool_output:
-                yield event
+                yield ToolEvent(content=event)
         elif isinstance(tool_output, AsyncGenerator):
             async for event in tool_output:
-                yield event
+                yield ToolEvent(content=event)
         else:
             yield ToolReturn(value=tool_output, metadata=None)
 
@@ -1079,8 +1079,6 @@ class Agent(
                         tool_return = tool_output_event
                     elif isinstance(tool_output_event, ToolEvent):
                         yield tool_output_event
-                    else:
-                        yield ToolEvent(content=tool_output_event)
 
                 if tool_return is None:
                     tool_return = ToolReturn(value=None)
