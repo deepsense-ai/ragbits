@@ -9,8 +9,8 @@
 - Add Support for Thinking in agents (#837)
 - Add support for confirmation requests in agents (#853) (#914)
 - Allow passing Tool objects directly to Agent
-- Add hooks system (pre- and post-tool) for lifecycle event interception (#914)
 - Add ToolReturn allowing the control which part of the tool output we pass to LLM (#920)
+- Add hooks system for agent lifecycle interception (PRE_TOOL, POST_TOOL, PRE_RUN, POST_RUN) (#914) (#926)
 
 ## 1.4.2 (2026-02-18)
 
