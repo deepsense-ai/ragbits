@@ -29,6 +29,7 @@ from ragbits.agents.exceptions import (
     AgentToolNotSupportedError,
 )
 from ragbits.agents.hooks import (
+    EventType,
     Hook,
     HookManager,
 )
@@ -316,7 +317,9 @@ class AgentResultStreaming(
                     if isinstance(item.item, str | ToolCall | ToolCallResult):
                         self.downstream[item.agent_id].append(item.item)
                 case BasePrompt():
-                    item.add_assistant_message(self.content)
+                    # Only add assistant message if not already present (avoid duplicates on re-yield)
+                    if not item.chat or item.chat[-1].get("role") != "assistant":
+                        item.add_assistant_message(self.content)
                     self.history = item.chat
                 case Usage():
                     self.usage = item
@@ -408,7 +411,7 @@ class Agent(
         self.mcp_servers = mcp_servers or []
         self.history = history or []
         self.keep_history = keep_history
-        self.hook_manager = HookManager(hooks)
+        self.hook_manager: HookManager[LLMClientOptionsT, PromptInputT, PromptOutputT] = HookManager(hooks)
 
         if getattr(self, "system_prompt", None) and not getattr(self, "input_type", None):
             raise ValueError(
@@ -472,7 +475,40 @@ class Agent(
 
         input = cast(PromptInputT, input)
         merged_options = (self.default_options | options) if options else self.default_options
-        llm_options = merged_options.llm_options or self.llm.default_options
+
+        # Execute PRE_RUN hooks
+        pre_run_result = await self.hook_manager.execute_pre_run(
+            _input=input,
+            options=merged_options,
+            context=context,
+        )
+
+        # Use potentially modified input
+        input = cast(PromptInputT, pre_run_result.output)
+
+        # Run the agent
+        result = await self._run_internal(input, merged_options, context, tool_choice)
+
+        # Execute POST_RUN hooks
+        post_run_result = await self.hook_manager.execute_post_run(
+            result=result,
+            options=merged_options,
+            context=context,
+        )
+
+        return post_run_result.result
+
+    async def _run_internal(
+        self,
+        input: PromptInputT,
+        options: AgentOptions[LLMClientOptionsT],
+        context: AgentRunContext,
+        tool_choice: ToolChoice | None = None,
+    ) -> AgentResult[PromptOutputT]:
+        """
+        Execute the core LLM loop with tool calls.
+        """
+        llm_options = options.llm_options or self.llm.default_options
 
         prompt_with_history = self._get_prompt_with_history(input)
         tools_mapping = await self._get_all_tools()
@@ -480,30 +516,30 @@ class Agent(
         reasoning_traces: list[str] = []
 
         turn_count = 0
-        max_turns = merged_options.max_turns
+        max_turns = options.max_turns
         max_turns = 10 if max_turns is NOT_GIVEN else max_turns
-        with trace(input=input, options=merged_options) as outputs:
+        with trace(input=input, options=options) as outputs:
             while not max_turns or turn_count < max_turns:
-                self._check_token_limits(merged_options, context.usage, prompt_with_history, self.llm)
+                self._check_token_limits(options, context.usage, prompt_with_history, self.llm)
                 response = cast(
                     LLMResponseWithMetadata[PromptOutputT],
                     await self.llm.generate_with_metadata(
                         prompt=prompt_with_history,
                         tools=[tool.to_function_schema() for tool in tools_mapping.values()],
                         tool_choice=tool_choice if tool_choice and turn_count == 0 else None,
-                        options=self._get_llm_options(llm_options, merged_options, context.usage),
+                        options=self._get_llm_options(llm_options, options, context.usage),
                     ),
                 )
                 context.usage += response.usage or Usage()
 
-                if merged_options.log_reasoning and response.reasoning:
+                if options.log_reasoning and response.reasoning:
                     reasoning_traces.append(response.reasoning)
 
                 if not response.tool_calls:
                     break
 
                 async for result in self._execute_tool_calls(
-                    response.tool_calls, tools_mapping, context, merged_options.parallel_tool_calling
+                    response.tool_calls, tools_mapping, context, options.parallel_tool_calling
                 ):
                     if isinstance(result, ToolCallResult):
                         tool_calls.append(result)
@@ -520,7 +556,7 @@ class Agent(
                 "metadata": response.metadata,
                 "tool_calls": tool_calls or None,
             }
-            if merged_options.log_reasoning and reasoning_traces:
+            if options.log_reasoning and reasoning_traces:
                 outputs.result["reasoning_traces"] = reasoning_traces
 
             prompt_with_history = prompt_with_history.add_assistant_message(response.content)
@@ -586,19 +622,118 @@ class Agent(
             AgentInvalidPromptInputError: If the prompt/input combination is invalid.
             AgentMaxTurnsExceededError: If the maximum number of turns is exceeded.
         """
+        if context is None:
+            context = AgentRunContext()
+
+        context.register_agent(cast(Agent[Any, Any, str], self))
+
+        input = cast(PromptInputT, input)
+        merged_options = (self.default_options | options) if options else self.default_options
+
         generator = self._stream_internal(
             input=input,
-            options=options,
+            options=merged_options,
             context=context,
             tool_choice=tool_choice,
         )
+
+        # Apply POST_RUN hooks wrapper if any registered
+        if self.hook_manager.get_hooks(EventType.POST_RUN):
+            generator = self._run_streaming_with_hooks(generator, merged_options, context)
+
         return AgentResultStreaming(generator)
+
+    async def _run_streaming_with_hooks(
+        self,
+        generator: AsyncGenerator[
+            str
+            | ToolCall
+            | ToolCallResult
+            | DownstreamAgentResult
+            | SimpleNamespace
+            | BasePrompt
+            | Usage
+            | ConfirmationRequest,
+            None,
+        ],
+        options: AgentOptions[LLMClientOptionsT],
+        context: AgentRunContext,
+    ) -> AsyncGenerator[
+        str
+        | ToolCall
+        | ToolCallResult
+        | DownstreamAgentResult
+        | SimpleNamespace
+        | BasePrompt
+        | Usage
+        | ConfirmationRequest,
+        None,
+    ]:
+        """
+        Wrap a streaming generator with POST_RUN hooks.
+
+        Accumulates data from the stream, yields all items, then executes POST_RUN hooks
+        and yields the final (potentially modified) result.
+        """
+        # Accumulate data from stream
+        accumulated_content = ""
+        tool_call_results: list[ToolCallResult] = []
+        usage: Usage = Usage()
+        prompt_with_history: BasePrompt | None = None
+        metadata: dict = {}
+
+        # Stream all items
+        async for item in generator:
+            if isinstance(item, str):
+                accumulated_content += item
+            elif isinstance(item, ToolCallResult):
+                tool_call_results.append(item)
+            elif isinstance(item, Usage):
+                usage = item
+            elif isinstance(item, BasePrompt):
+                prompt_with_history = item
+            elif isinstance(item, SimpleNamespace):
+                result_dict = getattr(item, "result", {})
+                accumulated_content = result_dict.get("content", accumulated_content)
+                metadata = result_dict.get("metadata", metadata)
+                tool_call_results = result_dict.get("tool_calls", tool_call_results) or []
+
+            yield item
+
+        # Build AgentResult for post-run hooks
+        if prompt_with_history is not None:
+            agent_result = AgentResult(
+                content=cast(PromptOutputT, accumulated_content),
+                metadata=metadata,
+                tool_calls=tool_call_results or None,
+                history=prompt_with_history.chat,
+                usage=usage,
+            )
+
+            # Execute POST_RUN hooks
+            post_run_result = await self.hook_manager.execute_post_run(
+                result=agent_result,
+                options=options,
+                context=context,
+            )
+            final_result = post_run_result.result
+
+            # Yield the final result from POST_RUN hooks (may be modified)
+            yield final_result.usage
+            yield prompt_with_history
+            yield SimpleNamespace(
+                result={
+                    "content": final_result.content,
+                    "metadata": final_result.metadata,
+                    "tool_calls": final_result.tool_calls,
+                }
+            )
 
     async def _stream_internal(  # noqa: PLR0912, PLR0915
         self,
-        input: str | PromptInputT | None = None,
-        options: AgentOptions[LLMClientOptionsT] | None = None,
-        context: AgentRunContext | None = None,
+        input: PromptInputT,
+        options: AgentOptions[LLMClientOptionsT],
+        context: AgentRunContext,
         tool_choice: ToolChoice | None = None,
     ) -> AsyncGenerator[
         str
@@ -611,23 +746,29 @@ class Agent(
         | ConfirmationRequest,
         None,
     ]:
-        if context is None:
-            context = AgentRunContext()
+        """
+        Execute the core streaming LLM loop with tool calls.
+        """
+        # Execute PRE_RUN hooks
+        pre_run_result = await self.hook_manager.execute_pre_run(
+            _input=input,
+            options=options,
+            context=context,
+        )
 
-        context.register_agent(cast(Agent[Any, Any, str], self))
+        # Use potentially modified input
+        input = cast(PromptInputT, pre_run_result.output)
 
-        input = cast(PromptInputT, input)
-        merged_options = (self.default_options | options) if options else self.default_options
-        llm_options = merged_options.llm_options or self.llm.default_options
+        llm_options = options.llm_options or self.llm.default_options
 
         prompt_with_history = self._get_prompt_with_history(input)
         tools_mapping = await self._get_all_tools()
         turn_count = 0
-        max_turns = merged_options.max_turns
+        max_turns = options.max_turns
         max_turns = 10 if max_turns is NOT_GIVEN else max_turns
         reasoning_traces: list[str] = []
 
-        with trace(input=input, options=merged_options) as outputs:
+        with trace(input=input, options=options) as outputs:
             # Track confirmation IDs that have been requested to detect loops
             requested_confirmation_ids: set[str] = set()
             # Track if we should generate text-only summary (no tools)
@@ -635,7 +776,7 @@ class Agent(
 
             while not max_turns or turn_count < max_turns:
                 returned_tool_call = False
-                self._check_token_limits(merged_options, context.usage, prompt_with_history, self.llm)
+                self._check_token_limits(options, context.usage, prompt_with_history, self.llm)
 
                 # Determine tool choice for this turn
                 current_tool_choice: ToolChoice | None
@@ -657,11 +798,11 @@ class Agent(
                     prompt=prompt_with_history,
                     tools=current_tools,
                     tool_choice=current_tool_choice,
-                    options=self._get_llm_options(llm_options, merged_options, context.usage),
+                    options=self._get_llm_options(llm_options, options, context.usage),
                 )
                 tool_chunks = []
                 async for chunk in streaming_result:
-                    if isinstance(chunk, Reasoning) and merged_options.log_reasoning:
+                    if isinstance(chunk, Reasoning) and options.log_reasoning:
                         reasoning_traces.append(str(chunk))
                     yield chunk
                     if isinstance(chunk, ToolCall):
@@ -672,7 +813,7 @@ class Agent(
                     current_turn_confirmation_ids: set[str] = set()
 
                     async for result in self._execute_tool_calls(
-                        tool_chunks, tools_mapping, context, merged_options.parallel_tool_calling
+                        tool_chunks, tools_mapping, context, options.parallel_tool_calling
                     ):
                         yield result
                         if isinstance(result, ConfirmationRequest):
@@ -716,7 +857,7 @@ class Agent(
             if self.keep_history:
                 self.history = prompt_with_history.chat
 
-            if merged_options.log_reasoning and reasoning_traces:
+            if options.log_reasoning and reasoning_traces:
                 outputs.result = {"reasoning_traces": reasoning_traces}
 
             yield outputs
@@ -910,8 +1051,6 @@ class Agent(
         # Always update arguments (chained from hooks)
         tool_call.arguments = pre_tool_result.arguments
 
-        tool_error: Exception | None = None
-
         with trace(agent_id=self.id, tool_name=tool_call.name, tool_arguments=tool_call.arguments) as outputs:
             try:
                 call_args = tool_call.arguments.copy()
@@ -945,29 +1084,24 @@ class Agent(
                 }
 
             except Exception as e:
-                tool_error = e
                 outputs.result = {
                     "error": str(e),
                     "tool_call_id": tool_call.id,
                 }
+                raise AgentToolExecutionError(tool_call.name, e) from e
 
         # Execute POST_TOOL hooks with chaining
         post_tool_output = await self.hook_manager.execute_post_tool(
             tool_call=tool_call,
             tool_return=tool_return,
-            error=tool_error,
         )
-
-        # Raise error after hooks have been executed
-        if tool_error:
-            raise AgentToolExecutionError(tool_call.name, tool_error) from tool_error
 
         yield ToolCallResult(
             id=tool_call.id,
             name=tool_call.name,
             arguments=tool_call.arguments,
-            result=post_tool_output.tool_return.value if post_tool_output.tool_return else None,
-            metadata=post_tool_output.tool_return.metadata if post_tool_output.tool_return else None,
+            result=post_tool_output.tool_return.value,
+            metadata=post_tool_output.tool_return.metadata,
         )
 
     @requires_dependencies(["a2a.types"], "a2a")
