@@ -8,7 +8,7 @@ types for the hooks system.
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Protocol, Union, runtime_checkable
 
-from ragbits.agents.tool import ToolReturn
+from ragbits.agents.tool import ToolCallResult, ToolReturn
 from ragbits.core.llms.base import ToolCall
 
 if TYPE_CHECKING:
@@ -24,12 +24,14 @@ class EventType(str, Enum):
         POST_TOOL: Triggered after a tool completes
         PRE_RUN: Triggered before the agent run starts
         POST_RUN: Triggered after the agent run completes
+        ON_EVENT: Triggered for each streaming event (str, ToolCall, ToolCallResult)
     """
 
     PRE_TOOL = "pre_tool"
     POST_TOOL = "post_tool"
     PRE_RUN = "pre_run"
     POST_RUN = "post_run"
+    ON_EVENT = "on_event"
 
 
 @runtime_checkable
@@ -83,4 +85,19 @@ class PostRunCallback(Protocol):
     ) -> "AgentResult": ...
 
 
-HookCallback = Union[PreToolCallback, PostToolCallback, PreRunCallback, PostRunCallback]
+@runtime_checkable
+class OnEventCallback(Protocol):
+    """Protocol for on-event hook callbacks.
+
+    Receives a streaming event and the accumulated content so far.
+    Returns a (potentially modified) event, or None to suppress the chunk.
+    """
+
+    async def __call__(
+        self,
+        event: str | ToolCall | ToolCallResult,
+        accumulated_content: str,
+    ) -> str | ToolCall | ToolCallResult | None: ...
+
+
+HookCallback = Union[PreToolCallback, PostToolCallback, PreRunCallback, PostRunCallback, OnEventCallback]

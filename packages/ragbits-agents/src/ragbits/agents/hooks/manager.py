@@ -8,16 +8,19 @@ organization, and execution of hooks during lifecycle events.
 import hashlib
 import json
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any
+from collections.abc import AsyncGenerator
+from types import SimpleNamespace
+from typing import TYPE_CHECKING, Any, Union
 
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.hooks.base import Hook
 from ragbits.agents.hooks.types import EventType
-from ragbits.agents.tool import ToolReturn
-from ragbits.core.llms.base import ToolCall
+from ragbits.agents.tool import ToolCallResult, ToolReturn
+from ragbits.core.llms.base import ToolCall, Usage
+from ragbits.core.prompt.base import BasePrompt
 
 if TYPE_CHECKING:
-    from ragbits.agents._main import AgentOptions, AgentResult, AgentRunContext
+    from ragbits.agents._main import AgentOptions, AgentResult, AgentRunContext, DownstreamAgentResult
 
 # Confirmation ID length: 16 hex chars provides sufficient uniqueness
 # while being compact for display and storage
@@ -231,3 +234,86 @@ class HookManager:
             current_result = await hook.callback(current_result, options, context)  # type: ignore[call-arg]
 
         return current_result
+
+    async def execute_on_event(
+        self,
+        generator: AsyncGenerator[
+            Union[
+                str,
+                ToolCall,
+                ToolCallResult,
+                "DownstreamAgentResult",
+                SimpleNamespace,
+                BasePrompt,
+                Usage,
+                ConfirmationRequest,
+            ],
+            None,
+        ],
+    ) -> AsyncGenerator[
+        Union[
+            str,
+            ToolCall,
+            ToolCallResult,
+            "DownstreamAgentResult",
+            SimpleNamespace,
+            BasePrompt,
+            Usage,
+            ConfirmationRequest,
+        ],
+        None,
+    ]:
+        """
+        Process streaming events through ON_EVENT hooks.
+
+        Iterates over the source generator and applies ON_EVENT hooks to
+        str, ToolCall, and ToolCallResult events. Infrastructure events
+        (Usage, BasePrompt, SimpleNamespace, ConfirmationRequest, DownstreamAgentResult)
+        pass through without hook processing.
+
+        Args:
+            generator: The source async generator of streaming events
+
+        Yields:
+            Processed streaming events (potentially modified by hooks)
+        """
+        from ragbits.agents._main import DownstreamAgentResult
+
+        accumulated_content: str = ""
+
+        async for event in generator:
+            # Infrastructure events pass through unchanged
+            if isinstance(event, (Usage, BasePrompt, SimpleNamespace, ConfirmationRequest, DownstreamAgentResult)):
+                yield event
+                continue
+
+            # Determine tool_name for hook filtering
+            # For str events, only universal hooks (tool_names=None) should fire
+            if isinstance(event, (ToolCall, ToolCallResult)):
+                hooks = self.get_hooks(EventType.ON_EVENT, event.name)
+            else:
+                hooks = [h for h in self.get_hooks(EventType.ON_EVENT) if h.tool_names is None]
+
+            if not hooks:
+                # No hooks, pass through and track content
+                if isinstance(event, str):
+                    accumulated_content += event
+                yield event
+                continue
+
+            # Chain hooks in priority order
+            current_event: str | ToolCall | ToolCallResult | None = event
+            for hook in hooks:
+                if current_event is None:
+                    break
+                current_event = await hook.callback(current_event, accumulated_content)  # type: ignore[call-arg]
+
+            # Suppressed by a hook
+            if current_event is None:
+                continue
+
+            # Update accumulated content for str chunks
+            if isinstance(current_event, str):
+                accumulated_content += current_event
+
+            yield current_event

@@ -45,6 +45,7 @@ from ragbits.agents.hooks.manager import HookManager
 from ragbits.agents.hooks.types import (
     EventType,
     HookCallback,
+    OnEventCallback,
     PostRunCallback,
     PostToolCallback,
     PreRunCallback,
@@ -59,6 +60,7 @@ __all__ = [
     "HookCallback",
     "HookManager",
     # Callback protocols
+    "OnEventCallback",
     "PostRunCallback",
     "PostToolCallback",
     "PreRunCallback",

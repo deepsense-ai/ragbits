@@ -17,6 +17,7 @@ from ragbits.agents.exceptions import (
 from ragbits.agents.hooks import (
     EventType,
     Hook,
+    OnEventCallback,
     PostToolCallback,
     PreToolCallback,
 )
@@ -876,9 +877,7 @@ async def test_post_tool_hook_modifies_output(
     assert result.tool_calls[0].result.startswith("[MODIFIED]")
 
 
-async def test_pre_tool_hook_ask_yields_confirmation_request(
-    llm_with_tool_call: MockLLM, ask_hook: PreToolCallback
-):
+async def test_pre_tool_hook_ask_yields_confirmation_request(llm_with_tool_call: MockLLM, ask_hook: PreToolCallback):
     """Test that ask decision yields a ConfirmationRequest."""
     hook = Hook(event_type=EventType.PRE_TOOL, callback=ask_hook)
     agent = Agent(llm=llm_with_tool_call, prompt=CustomPrompt, tools=[get_weather], hooks=[hook])
@@ -962,3 +961,90 @@ async def test_post_run_hook_modifies_result(llm_without_tool_call: MockLLM, met
     result = await method(agent, "test query")
 
     assert result.content.startswith("[MODIFIED]")
+
+
+async def test_on_event_hook_modifies_streaming_content(
+    llm_without_tool_call: MockLLM,
+    on_event_modify_chunk: Callable[..., OnEventCallback],
+):
+    """Test that an ON_EVENT hook modifies text chunks during streaming."""
+    hook = Hook(event_type=EventType.ON_EVENT, callback=on_event_modify_chunk("[P]"))
+    agent: Agent = Agent(llm=llm_without_tool_call, prompt="Test prompt", hooks=[hook])
+
+    chunks = []
+    async for chunk in agent.run_streaming():
+        if isinstance(chunk, str):
+            chunks.append(chunk)
+
+    assert all(c.startswith("[P]") for c in chunks)
+
+
+async def test_on_event_hook_suppresses_chunk(llm_without_tool_call: MockLLM):
+    """Test that an ON_EVENT hook can suppress chunks."""
+
+    async def suppress_all_str(
+        event: str | ToolCallModel | ToolCallResult, accumulated_content: str
+    ) -> str | ToolCallModel | ToolCallResult | None:
+        if isinstance(event, str):
+            return None
+        return event
+
+    hook = Hook(event_type=EventType.ON_EVENT, callback=suppress_all_str)
+    agent: Agent = Agent(llm=llm_without_tool_call, prompt="Test prompt", hooks=[hook])
+
+    str_chunks = []
+    async for chunk in agent.run_streaming():
+        if isinstance(chunk, str):
+            str_chunks.append(chunk)
+
+    assert str_chunks == []
+
+
+async def test_on_event_hook_filters_tool_call_result(
+    llm_with_tool_call: MockLLM,
+):
+    """Test that an ON_EVENT hook can modify tool call results during streaming."""
+
+    async def modify_tool_result(
+        event: str | ToolCallModel | ToolCallResult, accumulated_content: str
+    ) -> str | ToolCallModel | ToolCallResult | None:
+        if isinstance(event, ToolCallResult):
+            return ToolCallResult(
+                id=event.id,
+                name=event.name,
+                arguments=event.arguments,
+                result=f"[FILTERED] {event.result}",
+            )
+        return event
+
+    hook = Hook(event_type=EventType.ON_EVENT, callback=modify_tool_result)
+    agent: Agent = Agent(llm=llm_with_tool_call, prompt=CustomPrompt, tools=[get_weather], hooks=[hook])
+
+    result = agent.run_streaming()
+    tool_call_results = []
+    async for chunk in result:
+        if isinstance(chunk, ToolCallResult):
+            tool_call_results.append(chunk)
+
+    assert len(tool_call_results) == 1
+    assert tool_call_results[0].result.startswith("[FILTERED]")
+
+
+async def test_on_event_hook_word_filter_use_case(
+    llm_without_tool_call: MockLLM,
+    on_event_word_filter: Callable[..., OnEventCallback],
+):
+    """Test practical word filtering via ON_EVENT hook during streaming."""
+    # MockLLM response is "Test LLM output"
+    hook = Hook(event_type=EventType.ON_EVENT, callback=on_event_word_filter("LLM", "AI"))
+    agent: Agent = Agent(llm=llm_without_tool_call, prompt="Test prompt", hooks=[hook])
+
+    result = agent.run_streaming()
+    content_chunks = []
+    async for chunk in result:
+        if isinstance(chunk, str):
+            content_chunks.append(chunk)
+
+    full_content = "".join(content_chunks)
+    assert "LLM" not in full_content
+    assert "AI" in full_content

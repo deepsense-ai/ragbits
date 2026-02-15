@@ -5,12 +5,13 @@ from collections.abc import Callable
 import pytest
 
 from ragbits.agents.hooks.types import (
+    OnEventCallback,
     PostRunCallback,
     PostToolCallback,
     PreRunCallback,
     PreToolCallback,
 )
-from ragbits.agents.tool import ToolReturn
+from ragbits.agents.tool import ToolCallResult, ToolReturn
 from ragbits.core.llms.base import ToolCall
 
 
@@ -99,5 +100,41 @@ def post_run_modify() -> Callable[..., PostRunCallback]:
             return modified
 
         return modify_result_hook
+
+    return factory
+
+
+@pytest.fixture
+def on_event_word_filter() -> Callable[..., OnEventCallback]:
+    """Factory to create ON_EVENT callbacks that filter words from str chunks."""
+
+    def factory(word: str, replacement: str = "***") -> OnEventCallback:
+        async def word_filter_hook(
+            event: str | ToolCall | ToolCallResult,
+            accumulated_content: str,
+        ) -> str | ToolCall | ToolCallResult | None:
+            if isinstance(event, str):
+                return event.replace(word, replacement)
+            return event
+
+        return word_filter_hook
+
+    return factory
+
+
+@pytest.fixture
+def on_event_modify_chunk() -> Callable[..., OnEventCallback]:
+    """Factory to create ON_EVENT callbacks that modify str chunks with a prefix."""
+
+    def factory(prefix: str) -> OnEventCallback:
+        async def modify_chunk_hook(
+            event: str | ToolCall | ToolCallResult,
+            accumulated_content: str,
+        ) -> str | ToolCall | ToolCallResult | None:
+            if isinstance(event, str):
+                return f"{prefix}{event}"
+            return event
+
+        return modify_chunk_hook
 
     return factory

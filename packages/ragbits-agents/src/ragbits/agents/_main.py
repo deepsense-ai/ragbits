@@ -3,7 +3,6 @@ import types
 import uuid
 import warnings
 from collections.abc import AsyncGenerator, AsyncIterator, Callable, Generator
-from collections.abc import AsyncGenerator as _AG
 from contextlib import suppress
 from copy import deepcopy
 from dataclasses import dataclass
@@ -37,10 +36,6 @@ from ragbits.agents.hooks import (
 )
 from ragbits.agents.mcp.server import MCPServer, MCPServerStdio, MCPServerStreamableHttp
 from ragbits.agents.mcp.utils import get_tools
-from ragbits.agents.post_processors.base import (
-    StreamingPostProcessor,
-    stream_with_post_processing,
-)
 from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice, ToolEvent, ToolReturn
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import (
@@ -602,7 +597,6 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResultStreaming: ...
 
     @overload
@@ -612,7 +606,6 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResultStreaming: ...
 
     def run_streaming(
@@ -621,7 +614,6 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResultStreaming:
         """
         This method returns an `AgentResultStreaming` object that can be asynchronously
@@ -636,7 +628,6 @@ class Agent(
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - Callable: one of provided tools
-            post_processors: List of streaming post-processors for chunk-level processing.
 
         Returns:
             A `StreamingResult` object for iteration and collection.
@@ -663,13 +654,9 @@ class Agent(
             tool_choice=tool_choice,
         )
 
-        # Apply post-processors
-        if post_processors:
-            generator = cast(
-                _AG[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage | ConfirmationRequest],
-                generator,
-            )
-            generator = stream_with_post_processing(generator, post_processors, self)
+        # Apply ON_EVENT hooks if any registered
+        if self.hook_manager.get_hooks(EventType.ON_EVENT):
+            generator = self.hook_manager.execute_on_event(generator)
 
         # Apply POST_RUN hooks wrapper if any registered
         if self.hook_manager.get_hooks(EventType.POST_RUN):
