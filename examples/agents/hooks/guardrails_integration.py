@@ -9,11 +9,10 @@ To run this example, execute:
 """
 
 import asyncio
-from collections.abc import Callable, Coroutine
 from typing import Any
 
 from ragbits.agents import Agent
-from ragbits.agents.hooks import EventType, Hook, PreRunInput, PreRunOutput
+from ragbits.agents.hooks import EventType, Hook
 from ragbits.core.llms import LiteLLM
 from ragbits.guardrails.base import Guardrail, GuardrailManager, GuardrailVerificationResult
 
@@ -45,19 +44,23 @@ class BlockedTopicsGuardrail(Guardrail):
 
 def create_guardrail_hook(
     guardrail_manager: GuardrailManager,
-) -> Callable[[PreRunInput], Coroutine[Any, Any, PreRunOutput]]:
+) -> Any:
     """Create a pre-run hook that validates input using guardrails."""
 
-    async def guardrail_hook(input_data: PreRunInput) -> PreRunOutput:
+    async def guardrail_hook(
+        input: str | None,
+        options: Any,
+        context: Any,
+    ) -> str | None:
         """Validate input against guardrails before agent processes it."""
-        user_input = str(input_data.input or "")
+        user_input = str(input or "")
         results = await guardrail_manager.verify(user_input)
 
         for result in results:
             if not result.succeeded:
-                return PreRunOutput(output=f"I cannot help with that request. Reason: {result.fail_reason}")
+                return f"I cannot help with that request. Reason: {result.fail_reason}"
 
-        return PreRunOutput(output=input_data.input)
+        return input
 
     return guardrail_hook
 

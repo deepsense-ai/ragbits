@@ -2,16 +2,10 @@
 Base classes for the hooks system.
 """
 
-from collections.abc import Awaitable, Callable
-from typing import Generic, TypeVar
-
-from ragbits.agents.hooks.types import EventType
-
-HookInputT = TypeVar("HookInputT")
-HookOutputT = TypeVar("HookOutputT")
+from ragbits.agents.hooks.types import EventType, HookCallback
 
 
-class Hook(Generic[HookInputT, HookOutputT]):
+class Hook:
     """
     A hook that intercepts execution at various lifecycle points.
 
@@ -31,16 +25,17 @@ class Hook(Generic[HookInputT, HookOutputT]):
 
     Example:
         ```python
-        from ragbits.agents.hooks import Hook, EventType, PreToolInput, PreToolOutput
+        from ragbits.agents.hooks import Hook, EventType
+        from ragbits.core.llms.base import ToolCall
 
 
-        async def validate_input(input_data: PreToolInput) -> PreToolOutput:
-            if input_data.tool_call.name == "dangerous_tool":
-                return PreToolOutput(arguments=input_data.tool_call.arguments, decision="deny", reason="Not allowed")
-            return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
+        async def validate_input(tool_call: ToolCall) -> ToolCall:
+            if tool_call.name == "dangerous_tool":
+                return tool_call.model_copy(update={"decision": "deny", "reason": "Not allowed"})
+            return tool_call
 
 
-        hook: Hook[PreToolInput, PreToolOutput] = Hook(
+        hook = Hook(
             event_type=EventType.PRE_TOOL, callback=validate_input, tool_names=["dangerous_tool"], priority=10
         )
         ```
@@ -49,7 +44,7 @@ class Hook(Generic[HookInputT, HookOutputT]):
     def __init__(
         self,
         event_type: EventType,
-        callback: Callable[[HookInputT], Awaitable[HookOutputT]],
+        callback: HookCallback,
         tool_names: list[str] | None = None,
         priority: int = 100,
     ) -> None:
@@ -80,15 +75,3 @@ class Hook(Generic[HookInputT, HookOutputT]):
         if self.tool_names is None:
             return True
         return tool_name in self.tool_names
-
-    async def execute(self, hook_input: HookInputT) -> HookOutputT:
-        """
-        Execute the hook callback with the given input.
-
-        Args:
-            hook_input: The input to pass to the callback
-
-        Returns:
-            The output from the callback
-        """
-        return await self.callback(hook_input)

@@ -12,8 +12,9 @@ import re
 from typing import Any
 
 from ragbits.agents import Agent
-from ragbits.agents.hooks import EventType, Hook, PostToolInput, PostToolOutput, PreToolInput, PreToolOutput
+from ragbits.agents.hooks import EventType, Hook
 from ragbits.agents.tool import ToolReturn
+from ragbits.core.llms.base import ToolCall
 from ragbits.core.llms.litellm import LiteLLM
 
 # Track hook actions for demonstration
@@ -34,38 +35,39 @@ def send_notification(email: str, message: str) -> str:
     return f"Email sent to {email}: {message}"
 
 
-async def validate_email(input_data: PreToolInput) -> PreToolOutput:
+async def validate_email(tool_call: ToolCall) -> ToolCall:
     """Validate email format before sending."""
-    if input_data.tool_call.name != "send_notification":
-        return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
+    if tool_call.name != "send_notification":
+        return tool_call
 
-    email = input_data.tool_call.arguments.get("email", "")
+    email = tool_call.arguments.get("email", "")
     email_pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
 
     if not re.match(email_pattern, email):
         hook_actions.append({"hook": "validate_email", "action": "denied", "email": email})
-        return PreToolOutput(
-            arguments=input_data.tool_call.arguments,
-            decision="deny",
-            reason=f"Invalid email format: {email}",
+        return tool_call.model_copy(
+            update={
+                "decision": "deny",
+                "reason": f"Invalid email format: {email}",
+            }
         )
 
     hook_actions.append({"hook": "validate_email", "action": "passed", "email": email})
-    return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
+    return tool_call
 
 
-async def sanitize_email_domain(input_data: PreToolInput) -> PreToolOutput:
+async def sanitize_email_domain(tool_call: ToolCall) -> ToolCall:
     """Ensure emails only go to approved domains."""
-    if input_data.tool_call.name != "send_notification":
-        return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
+    if tool_call.name != "send_notification":
+        return tool_call
 
-    email = input_data.tool_call.arguments.get("email", "")
+    email = tool_call.arguments.get("email", "")
     approved_domains = ["example.com", "test.com"]
 
     domain = email.split("@")[-1] if "@" in email else ""
     if domain not in approved_domains:
         modified_email = email.split("@")[0] + "@example.com"
-        modified_args = input_data.tool_call.arguments.copy()
+        modified_args = tool_call.arguments.copy()
         modified_args["email"] = modified_email
 
         hook_actions.append(
@@ -77,24 +79,20 @@ async def sanitize_email_domain(input_data: PreToolInput) -> PreToolOutput:
             }
         )
 
-        return PreToolOutput(
-            arguments=modified_args,
-            decision="pass",
-            reason=f"Redirected {email} to approved domain: {modified_email}",
-        )
+        return tool_call.model_copy(update={"arguments": modified_args})
 
     hook_actions.append({"hook": "sanitize_email_domain", "action": "passed", "email": email})
-    return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
+    return tool_call
 
 
-async def mask_sensitive_data(input_data: PostToolInput) -> PostToolOutput:
+async def mask_sensitive_data(tool_call: ToolCall, tool_return: ToolReturn) -> ToolReturn:
     """Mask sensitive information in user search results."""
-    if input_data.tool_call.name != "search_user":
-        return PostToolOutput(tool_return=input_data.tool_return)
+    if tool_call.name != "search_user":
+        return tool_return
 
-    if isinstance(input_data.tool_return.value, dict) and "ssn" in input_data.tool_return.value:
-        original_ssn = input_data.tool_return.value["ssn"]
-        masked_output = input_data.tool_return.value.copy()
+    if isinstance(tool_return.value, dict) and "ssn" in tool_return.value:
+        original_ssn = tool_return.value["ssn"]
+        masked_output = tool_return.value.copy()
         masked_output["ssn"] = "***-**-****"
 
         hook_actions.append(
@@ -107,18 +105,18 @@ async def mask_sensitive_data(input_data: PostToolInput) -> PostToolOutput:
             }
         )
 
-        return PostToolOutput(tool_return=ToolReturn(masked_output))
+        return ToolReturn(masked_output)
 
-    return PostToolOutput(tool_return=input_data.tool_return)
+    return tool_return
 
 
-async def log_notification(input_data: PostToolInput) -> PostToolOutput:
+async def log_notification(tool_call: ToolCall, tool_return: ToolReturn) -> ToolReturn:
     """Add logging metadata to notification results."""
-    if input_data.tool_call.name != "send_notification":
-        return PostToolOutput(tool_return=input_data.tool_return)
+    if tool_call.name != "send_notification":
+        return tool_return
 
-    original_output = input_data.tool_return.value
-    enhanced_output = f"{input_data.tool_return.value} [Logged at system]"
+    original_output = tool_return.value
+    enhanced_output = f"{tool_return.value} [Logged at system]"
 
     hook_actions.append(
         {
@@ -129,7 +127,7 @@ async def log_notification(input_data: PostToolInput) -> PostToolOutput:
         }
     )
 
-    return PostToolOutput(tool_return=ToolReturn(enhanced_output))
+    return ToolReturn(enhanced_output)
 
 
 async def main() -> None:

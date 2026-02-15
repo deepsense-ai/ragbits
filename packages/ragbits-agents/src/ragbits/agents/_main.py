@@ -501,26 +501,24 @@ class Agent(
         merged_options = (self.default_options | options) if options else self.default_options
 
         # Execute PRE_RUN hooks
-        pre_run_result = await self.hook_manager.execute_pre_run(
-            _input=input,
-            options=merged_options,
-            context=context,
+        input = cast(
+            PromptInputT,
+            await self.hook_manager.execute_pre_run(
+                _input=input,
+                options=merged_options,
+                context=context,
+            ),
         )
-
-        # Use potentially modified input
-        input = cast(PromptInputT, pre_run_result.output)
 
         # Run the agent
         result = await self._run_internal(input, merged_options, context, tool_choice)
 
         # Execute POST_RUN hooks
-        post_run_result = await self.hook_manager.execute_post_run(
+        return await self.hook_manager.execute_post_run(
             result=result,
             options=merged_options,
             context=context,
         )
-
-        return post_run_result.result
 
     async def _run_internal(
         self,
@@ -749,12 +747,11 @@ class Agent(
             )
 
             # Execute POST_RUN hooks
-            post_run_result = await self.hook_manager.execute_post_run(
+            final_result = await self.hook_manager.execute_post_run(
                 result=agent_result,
                 options=options,
                 context=context,
             )
-            final_result = post_run_result.result
 
             # Yield the final result from POST_RUN hooks (may be modified)
             yield final_result.usage
@@ -789,14 +786,14 @@ class Agent(
         Execute the core streaming LLM loop with tool calls.
         """
         # Execute PRE_RUN hooks
-        pre_run_result = await self.hook_manager.execute_pre_run(
-            _input=input,
-            options=options,
-            context=context,
+        input = cast(
+            PromptInputT,
+            await self.hook_manager.execute_pre_run(
+                _input=input,
+                options=options,
+                context=context,
+            ),
         )
-
-        # Use potentially modified input
-        input = cast(PromptInputT, pre_run_result.output)
 
         llm_options = options.llm_options or self.llm.default_options
 
@@ -1100,7 +1097,7 @@ class Agent(
         tool = tools_mapping[tool_call.name]
 
         # Execute PRE_TOOL hooks with chaining
-        pre_tool_result = await self.hook_manager.execute_pre_tool(
+        pre_tool_result, confirmation_request = await self.hook_manager.execute_pre_tool(
             tool_call=tool_call,
             context=context,
         )
@@ -1115,8 +1112,8 @@ class Agent(
             )
             return
         # Handle "ask" decision from hooks
-        elif pre_tool_result.decision == "ask" and pre_tool_result.confirmation_request is not None:
-            yield pre_tool_result.confirmation_request
+        elif pre_tool_result.decision == "ask" and confirmation_request is not None:
+            yield confirmation_request
 
             yield ToolCallResult(
                 id=tool_call.id,
@@ -1168,7 +1165,7 @@ class Agent(
                 raise AgentToolExecutionError(tool_call.name, e) from e
 
         # Execute POST_TOOL hooks with chaining
-        post_tool_output = await self.hook_manager.execute_post_tool(
+        post_tool_result = await self.hook_manager.execute_post_tool(
             tool_call=tool_call,
             tool_return=tool_return,
         )
@@ -1177,8 +1174,8 @@ class Agent(
             id=tool_call.id,
             name=tool_call.name,
             arguments=tool_call.arguments,
-            result=post_tool_output.tool_return.value,
-            metadata=post_tool_output.tool_return.metadata,
+            result=post_tool_result.value,
+            metadata=post_tool_result.metadata,
         )
 
     @requires_dependencies(["a2a.types"], "a2a")

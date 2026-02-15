@@ -5,61 +5,54 @@ from collections.abc import Callable
 import pytest
 
 from ragbits.agents.hooks.types import (
-    PostRunHookCallback,
-    PostRunInput,
-    PostRunOutput,
-    PostToolHookCallback,
-    PostToolInput,
-    PostToolOutput,
-    PreRunHookCallback,
-    PreRunInput,
-    PreRunOutput,
-    PreToolHookCallback,
-    PreToolInput,
-    PreToolOutput,
+    PostRunCallback,
+    PostToolCallback,
+    PreRunCallback,
+    PreToolCallback,
 )
 from ragbits.agents.tool import ToolReturn
+from ragbits.core.llms.base import ToolCall
 
 
 @pytest.fixture
-def pass_hook() -> PreToolHookCallback:
+def pass_hook() -> PreToolCallback:
     """Pre-tool hook that allows execution to proceed."""
 
-    async def pass_hook(input_data: PreToolInput) -> PreToolOutput:
-        return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
+    async def pass_hook(tool_call: ToolCall) -> ToolCall:
+        return tool_call
 
     return pass_hook
 
 
 @pytest.fixture
-def deny_hook() -> PreToolHookCallback:
+def deny_hook() -> PreToolCallback:
     """Pre-tool hook that blocks execution."""
 
-    async def deny_hook(input_data: PreToolInput) -> PreToolOutput:
-        return PreToolOutput(arguments=input_data.tool_call.arguments, decision="deny", reason="Blocked by hook")
+    async def deny_hook(tool_call: ToolCall) -> ToolCall:
+        return tool_call.model_copy(update={"decision": "deny", "reason": "Blocked by hook"})
 
     return deny_hook
 
 
 @pytest.fixture
-def ask_hook() -> PreToolHookCallback:
+def ask_hook() -> PreToolCallback:
     """Pre-tool hook that requests user confirmation."""
 
-    async def ask_hook(input_data: PreToolInput) -> PreToolOutput:
-        return PreToolOutput(arguments=input_data.tool_call.arguments, decision="ask", reason="Needs confirmation")
+    async def ask_hook(tool_call: ToolCall) -> ToolCall:
+        return tool_call.model_copy(update={"decision": "ask", "reason": "Needs confirmation"})
 
     return ask_hook
 
 
 @pytest.fixture
-def pre_tool_add_field() -> Callable[..., PreToolHookCallback]:
+def pre_tool_add_field() -> Callable[..., PreToolCallback]:
     """Factory to create pre-tool hooks that add a field to arguments."""
 
-    def factory(field: str, value: str = "added") -> PreToolHookCallback:
-        async def add_field_hook(input_data: PreToolInput) -> PreToolOutput:
-            args = dict(input_data.tool_call.arguments)
+    def factory(field: str, value: str = "added") -> PreToolCallback:
+        async def add_field_hook(tool_call: ToolCall) -> ToolCall:
+            args = dict(tool_call.arguments)
             args[field] = value
-            return PreToolOutput(arguments=args, decision="pass")
+            return tool_call.model_copy(update={"arguments": args})
 
         return add_field_hook
 
@@ -67,15 +60,15 @@ def pre_tool_add_field() -> Callable[..., PreToolHookCallback]:
 
 
 @pytest.fixture
-def post_tool_append() -> Callable[..., PostToolHookCallback]:
+def post_tool_append() -> Callable[..., PostToolCallback]:
     """Factory to create post-tool hooks that append/prepend to output."""
 
-    def factory(text: str, prepend: bool = False) -> PostToolHookCallback:
-        async def append_output_hook(input_data: PostToolInput) -> PostToolOutput:
-            tool_return_value = input_data.tool_return.value if input_data.tool_return is not None else None
+    def factory(text: str, prepend: bool = False) -> PostToolCallback:
+        async def append_output_hook(tool_call: ToolCall, tool_return: ToolReturn) -> ToolReturn:
+            tool_return_value = tool_return.value if tool_return is not None else None
             if prepend:
-                return PostToolOutput(tool_return=ToolReturn(f"{text}{tool_return_value}"))
-            return PostToolOutput(tool_return=ToolReturn(f"{tool_return_value}{text}"))
+                return ToolReturn(f"{text}{tool_return_value}")
+            return ToolReturn(f"{tool_return_value}{text}")
 
         return append_output_hook
 
@@ -83,13 +76,13 @@ def post_tool_append() -> Callable[..., PostToolHookCallback]:
 
 
 @pytest.fixture
-def pre_run_modify() -> Callable[..., PreRunHookCallback]:
+def pre_run_modify() -> Callable[..., PreRunCallback]:
     """Factory to create pre-run hooks that modify input with a prefix."""
 
-    def factory(prefix: str) -> PreRunHookCallback:
-        async def modify_input_hook(input_data: PreRunInput) -> PreRunOutput:
-            modified = f"{prefix}: {input_data.input}" if input_data.input else prefix
-            return PreRunOutput(output=modified)
+    def factory(prefix: str) -> PreRunCallback:
+        async def modify_input_hook(input: str | None, options: object, context: object) -> str | None:
+            modified = f"{prefix}: {input}" if input else prefix
+            return modified
 
         return modify_input_hook
 
@@ -97,13 +90,13 @@ def pre_run_modify() -> Callable[..., PreRunHookCallback]:
 
 
 @pytest.fixture
-def post_run_modify() -> Callable[..., PostRunHookCallback]:
+def post_run_modify() -> Callable[..., PostRunCallback]:
     """Factory to create post-run hooks that modify the result content."""
 
-    def factory(prefix: str) -> PostRunHookCallback:
-        async def modify_result_hook(input_data: PostRunInput) -> PostRunOutput:
-            modified = type("AgentResult", (), {"content": f"{prefix}: {input_data.result.content}"})()
-            return PostRunOutput(result=modified)
+    def factory(prefix: str) -> PostRunCallback:
+        async def modify_result_hook(result: object, options: object, context: object) -> object:
+            modified = type("AgentResult", (), {"content": f"{prefix}: {result.content}"})()
+            return modified
 
         return modify_result_hook
 

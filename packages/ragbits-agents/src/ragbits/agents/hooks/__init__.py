@@ -12,25 +12,20 @@ Available event types:
 
 Example usage:
 
-    from ragbits.agents.hooks import (
-        EventType,
-        Hook,
-        PreToolInput,
-        PreToolOutput,
-    )
+    from ragbits.agents.hooks import EventType, Hook
+    from ragbits.core.llms.base import ToolCall
 
     # Create a pre-tool hook callback
-    async def validate_input(input_data: PreToolInput) -> PreToolOutput:
-        if input_data.tool_call.name == "dangerous_tool":
-            return PreToolOutput(
-                arguments=input_data.tool_call.arguments,
-                decision="deny",
-                reason="This tool is not allowed"
-            )
-        return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
+    async def validate_input(tool_call: ToolCall) -> ToolCall:
+        if tool_call.name == "dangerous_tool":
+            return tool_call.model_copy(update={
+                "decision": "deny",
+                "reason": "This tool is not allowed",
+            })
+        return tool_call
 
-    # Create hook instance with proper type annotation
-    hook: Hook[PreToolInput, PreToolOutput] = Hook(
+    # Create hook instance
+    hook = Hook(
         event_type=EventType.PRE_TOOL,
         callback=validate_input,
         tool_names=["dangerous_tool"],
@@ -44,23 +39,16 @@ Example usage:
     )
 """
 
-from ragbits.agents.hooks.base import Hook, HookInputT, HookOutputT
+from ragbits.agents.hooks.base import Hook
 from ragbits.agents.hooks.confirmation import create_confirmation_hook
 from ragbits.agents.hooks.manager import HookManager
 from ragbits.agents.hooks.types import (
     EventType,
-    PostRunHookCallback,
-    PostRunInput,
-    PostRunOutput,
-    PostToolHookCallback,
-    PostToolInput,
-    PostToolOutput,
-    PreRunHookCallback,
-    PreRunInput,
-    PreRunOutput,
-    PreToolHookCallback,
-    PreToolInput,
-    PreToolOutput,
+    HookCallback,
+    PostRunCallback,
+    PostToolCallback,
+    PreRunCallback,
+    PreToolCallback,
 )
 
 __all__ = [
@@ -68,24 +56,13 @@ __all__ = [
     "EventType",
     # Core classes
     "Hook",
-    # Type variables
-    "HookInputT",
+    "HookCallback",
     "HookManager",
-    "HookOutputT",
-    # Callback type aliases
-    "PostRunHookCallback",
-    # Input/output types
-    "PostRunInput",
-    "PostRunOutput",
-    "PostToolHookCallback",
-    "PostToolInput",
-    "PostToolOutput",
-    "PreRunHookCallback",
-    "PreRunInput",
-    "PreRunOutput",
-    "PreToolHookCallback",
-    "PreToolInput",
-    "PreToolOutput",
+    # Callback protocols
+    "PostRunCallback",
+    "PostToolCallback",
+    "PreRunCallback",
+    "PreToolCallback",
     # Hook factories
     "create_confirmation_hook",
 ]

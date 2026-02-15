@@ -8,19 +8,21 @@ Setup: 1 parent agent with 2 expert child agents as tools.
 import asyncio
 
 from ragbits.agents import Agent
-from ragbits.agents.hooks import EventType, Hook, PostToolInput, PostToolOutput
+from ragbits.agents.hooks import EventType, Hook
+from ragbits.agents.tool import ToolReturn
 from ragbits.core.llms import LiteLLM
+from ragbits.core.llms.base import ToolCall
 
 
-async def log_agent_output(input_data: PostToolInput) -> PostToolOutput:
+async def log_agent_output(tool_call: ToolCall, tool_return: ToolReturn) -> ToolReturn:
     """Log output from agent tools after they complete."""
-    output = input_data.tool_return.value
+    output = tool_return.value
 
     if isinstance(output, dict):
         output = output.get("content", output)
 
-    print(f"\n{'='*60}\n[{input_data.tool_call.name}] output:\n{'-'*60}\n{output}\n{'='*60}")
-    return PostToolOutput(tool_return=input_data.tool_return)
+    print(f"\n{'='*60}\n[{tool_call.name}] output:\n{'-'*60}\n{output}\n{'='*60}")
+    return tool_return
 
 
 async def main() -> None:

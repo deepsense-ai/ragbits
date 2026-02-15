@@ -17,13 +17,14 @@ A hook is an instance of [`Hook`][ragbits.agents.hooks.Hook] that binds an async
 
 ```python
 from ragbits.agents import Agent
-from ragbits.agents.hooks import EventType, Hook, PreToolInput, PreToolOutput
+from ragbits.agents.hooks import EventType, Hook
 from ragbits.core.llms import LiteLLM
+from ragbits.core.llms.base import ToolCall
 
 
-async def my_hook(input_data: PreToolInput) -> PreToolOutput:
+async def my_hook(tool_call: ToolCall) -> ToolCall:
     """A simple pre-tool hook that passes all calls through."""
-    return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
+    return tool_call  # decision defaults to "pass"
 
 
 agent = Agent(
@@ -43,15 +44,15 @@ agent = Agent(
 The `Hook` constructor accepts:
 
 - **`event_type`** — one of `EventType.PRE_TOOL`, `POST_TOOL`, `PRE_RUN`, or `POST_RUN`
-- **`callback`** — an async function matching the corresponding input/output types
+- **`callback`** — an async function matching the corresponding callback protocol
 - **`tool_names`** — optional list of tool names this hook applies to. If `None`, the hook runs for every tool. This parameter is only relevant for `PRE_TOOL` and `POST_TOOL` hooks.
 - **`priority`** — execution order; lower numbers execute first (default: `100`)
 
 ## How to validate and modify tool inputs with pre-tool hooks
 
-Pre-tool hooks receive a `PreToolInput` and return a `PreToolOutput`. The output includes a **decision** field that controls whether the tool executes:
+Pre-tool hooks receive a `ToolCall` and return a `ToolCall`. The returned `ToolCall` can have a **decision** field that controls whether the tool executes:
 
-- `"pass"` — allow the tool to run (optionally with modified arguments)
+- `"pass"` — allow the tool to run (optionally with modified arguments) — this is the default
 - `"deny"` — block the tool from running (requires a `reason`)
 - `"ask"` — request user confirmation before proceeding (requires a `reason`)
 
@@ -60,27 +61,27 @@ Pre-tool hooks receive a `PreToolInput` and return a `PreToolOutput`. The output
 This hook validates that an email argument has a correct format before allowing the `send_notification` tool to execute:
 
 ```python
---8<-- "examples/agents/hooks/validation_and_sanitization.py:37:54"
+--8<-- "examples/agents/hooks/validation_and_sanitization.py:37:53"
 ```
 
-If validation fails, the hook returns `decision="deny"` which immediately stops tool execution and returns the reason to the LLM.
+If validation fails, the hook returns a `ToolCall` with `decision="deny"` which immediately stops tool execution and returns the reason to the LLM.
 
 ### Modify arguments
 
 This hook rewrites email domains to an approved list, demonstrating how pre-tool hooks can modify tool arguments:
 
 ```python
---8<-- "examples/agents/hooks/validation_and_sanitization.py:57:87"
+--8<-- "examples/agents/hooks/validation_and_sanitization.py:56:82"
 ```
 
-The modified `arguments` dict is passed to the next hook in the chain (or to the tool itself if this is the last hook).
+The modified arguments are passed to the next hook in the chain (or to the tool itself if this is the last hook).
 
 ### Chain multiple pre-tool hooks
 
-When multiple pre-tool hooks are registered, they execute in priority order and each hook sees the arguments modified by the previous one. If any hook returns `"deny"`, execution stops immediately:
+When multiple pre-tool hooks are registered, they execute in priority order and each hook sees the `ToolCall` modified by the previous one. If any hook returns `"deny"`, execution stops immediately:
 
 ```python
---8<-- "examples/agents/hooks/validation_and_sanitization.py:139:152"
+--8<-- "examples/agents/hooks/validation_and_sanitization.py:131:144"
 ```
 
 In this example, `validate_email` (priority 10) runs first. If it passes, `sanitize_email_domain` (priority 20) runs next and may modify the email argument before the tool executes.
@@ -89,14 +90,14 @@ You can find the complete code example in the Ragbits repository [here](https://
 
 ## How to modify tool outputs with post-tool hooks
 
-Post-tool hooks receive a `PostToolInput` (containing the original `tool_call` and the `tool_return`) and return a `PostToolOutput` with the (possibly modified) tool output.
+Post-tool hooks receive the original `ToolCall` and the `ToolReturn`, and return a (possibly modified) `ToolReturn`.
 
 ### Mask sensitive data
 
 This hook replaces sensitive fields in search results before they reach the LLM:
 
 ```python
---8<-- "examples/agents/hooks/validation_and_sanitization.py:90:112"
+--8<-- "examples/agents/hooks/validation_and_sanitization.py:85:104"
 ```
 
 ### Log tool outputs
@@ -104,28 +105,28 @@ This hook replaces sensitive fields in search results before they reach the LLM:
 This hook logs the output of specific agent tools without modifying the result:
 
 ```python
---8<-- "examples/agents/hooks/agent_output_logging.py:15:23"
+--8<-- "examples/agents/hooks/agent_output_logging.py:18:24"
 ```
 
 To apply it only to specific tools, use the `tool_names` parameter:
 
 ```python
---8<-- "examples/agents/hooks/agent_output_logging.py:45:50"
+--8<-- "examples/agents/hooks/agent_output_logging.py:44:49"
 ```
 
 You can find the complete code example in the Ragbits repository [here](https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/hooks/agent_output_logging.py).
 
 ## How to validate agent input with pre-run hooks
 
-Pre-run hooks execute before the agent starts processing. They receive a `PreRunInput` (containing the user input, options, and context) and return a `PreRunOutput`.
+Pre-run hooks execute before the agent starts processing. They receive the user input, options, and context as separate arguments, and return the (potentially modified) input directly.
 
 A common use case is integrating guardrails to block unsafe or policy-violating inputs:
 
 ```python
---8<-- "examples/agents/hooks/guardrails_integration.py:46:62"
+--8<-- "examples/agents/hooks/guardrails_integration.py:47:62"
 ```
 
-To block the agent from processing the input, the hook returns a `PreRunOutput` with a replacement message. This message becomes the agent's final output — no LLM call or tool execution happens.
+To block the agent from processing the input, the hook returns a replacement message. This message becomes the agent's final output — no LLM call or tool execution happens.
 
 Register it with the agent:
 
@@ -140,19 +141,19 @@ You can find the complete code example in the Ragbits repository [here](https://
 
 ## How to modify agent results with post-run hooks
 
-Post-run hooks execute after the agent completes its run. They receive a `PostRunInput` (containing the `AgentResult`, options, and context) and return a `PostRunOutput`.
+Post-run hooks execute after the agent completes its run. They receive the `AgentResult`, options, and context as separate arguments, and return the (potentially modified) `AgentResult`.
 
 Use post-run hooks to transform, enrich, or log final results:
 
 ```python
-from ragbits.agents.hooks import EventType, Hook, PostRunInput, PostRunOutput
+from ragbits.agents._main import AgentResult
+from ragbits.agents.hooks import EventType, Hook
 
 
-async def enrich_result(input_data: PostRunInput) -> PostRunOutput:
+async def enrich_result(result: AgentResult, options: object, context: object) -> AgentResult:
     """Add metadata to the agent result."""
-    result = input_data.result
     result.metadata["processed_by"] = "post_run_hook"
-    return PostRunOutput(result=result)
+    return result
 
 
 hook = Hook(event_type=EventType.POST_RUN, callback=enrich_result)
@@ -194,7 +195,7 @@ All hook types support **chaining**: hooks execute in priority order (lower numb
 Hook A (priority=10) → modified data → Hook B (priority=20) → modified data → Hook C (priority=100)
 ```
 
-For **pre-tool hooks**, the chained value is the `arguments` dict. For **post-tool hooks**, it is the `tool_return`. For **pre-run hooks**, it is the agent `input`. For **post-run hooks**, it is the `AgentResult`.
+For **pre-tool hooks**, the chained value is the `ToolCall` (including its `arguments`). For **post-tool hooks**, it is the `ToolReturn`. For **pre-run hooks**, it is the agent input. For **post-run hooks**, it is the `AgentResult`.
 
 This makes it possible to compose independent hooks that each handle one concern (validation, sanitization, logging, etc.) into a clean pipeline.
 
