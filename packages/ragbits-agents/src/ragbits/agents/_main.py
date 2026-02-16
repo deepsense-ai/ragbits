@@ -1,7 +1,8 @@
 import asyncio
 import types
 import uuid
-from collections.abc import AsyncGenerator, AsyncIterator, Callable
+import warnings
+from collections.abc import AsyncGenerator, AsyncIterator, Callable, Generator
 from collections.abc import AsyncGenerator as _AG
 from contextlib import suppress
 from copy import deepcopy
@@ -40,7 +41,7 @@ from ragbits.agents.post_processors.base import (
     StreamingPostProcessor,
     stream_with_post_processing,
 )
-from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice, ToolReturn
+from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice, ToolEvent, ToolReturn
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import (
     LLM,
@@ -81,6 +82,7 @@ class DownstreamAgentResult:
         str,
         ToolCall,
         ToolCallResult,
+        ToolEvent,
         "DownstreamAgentResult",
         BasePrompt,
         Usage,
@@ -241,6 +243,7 @@ class AgentResultStreaming(
         str
         | ToolCall
         | ToolCallResult
+        | ToolEvent
         | BasePrompt
         | Usage
         | SimpleNamespace
@@ -260,6 +263,7 @@ class AgentResultStreaming(
             str
             | ToolCall
             | ToolCallResult
+            | ToolEvent
             | DownstreamAgentResult
             | SimpleNamespace
             | BasePrompt
@@ -271,6 +275,7 @@ class AgentResultStreaming(
         self._generator = generator
         self.content: str = ""
         self.tool_calls: list[ToolCallResult] | None = None
+        self.tool_events: list[Any] | None = None
         self.downstream: dict[str | None, list[str | ToolCall | ToolCallResult]] = {}
         self.metadata: dict = {}
         self.history: ChatFormat
@@ -282,6 +287,7 @@ class AgentResultStreaming(
         str
         | ToolCall
         | ToolCallResult
+        | ToolEvent
         | BasePrompt
         | Usage
         | SimpleNamespace
@@ -293,7 +299,7 @@ class AgentResultStreaming(
     async def __anext__(  # noqa: PLR0912
         self,
     ) -> (
-        str
+        str  # noqa: ANN401
         | ToolCall
         | ToolCallResult
         | BasePrompt
@@ -301,6 +307,7 @@ class AgentResultStreaming(
         | SimpleNamespace
         | DownstreamAgentResult
         | ConfirmationRequest
+        | Any
     ):
         try:
             item = await self._generator.__anext__()
@@ -336,9 +343,13 @@ class AgentResultStreaming(
                     self.content = result_dict.get("content", self.content)
                     self.metadata = result_dict.get("metadata", self.metadata)
                     self.tool_calls = result_dict.get("tool_calls", self.tool_calls)
+                case ToolEvent():
+                    if self.tool_events is None:
+                        self.tool_events = []
+                    self.tool_events.append(item.content)
+                    return item.content
                 case _:
                     raise ValueError(f"Unexpected item: {item}")
-
             return item
 
         except StopAsyncIteration:
@@ -372,7 +383,7 @@ class Agent(
         *,
         history: ChatFormat | None = None,
         keep_history: bool = False,
-        tools: list[Callable] | None = None,
+        tools: list["Callable | Tool | Agent"] | None = None,
         mcp_servers: list[MCPServer] | None = None,
         hooks: list[Hook] | None = None,
         default_options: AgentOptions[LLMClientOptionsT] | None = None,
@@ -392,7 +403,15 @@ class Agent(
                 - None: No predefined prompt. The input provided to run() will be used as the complete prompt.
             history: The history of the agent.
             keep_history: Whether to keep the history of the agent.
-            tools: The tools available to the agent.
+            tools: The tools available to the agent. Can be one of:
+                * Callable - a function with typing of parameters and a docstring that will be sent to the LLM
+                    The output from the callable will be sent to the LLM as a result of a tool.
+                    To specify additional values to return, that are not passed to the LLM, use ToolReturn.
+                    If this callable returns a generator or async generator, the yielded values are yielded from the
+                    streaming agent as well. The exception is a ToolReturn, which is used to send the result to the LLM.
+                    The ToolReturn is expected to be yielded only once.
+                * Agent - another instance of an Agent, with name and description
+                * Tool - raw instance of a Tool
             mcp_servers: The MCP servers available to the agent.
             hooks: List of tool hooks to register for tool lifecycle events.
             default_options: The default options for the agent run.
@@ -405,15 +424,14 @@ class Agent(
         self.description = description
         self.tools = []
         for tool in tools or []:
-            if isinstance(tool, tuple):
-                agent, kwargs = tool
-                self.tools.append(Tool.from_agent(agent, **kwargs))
-            elif isinstance(tool, Agent):
+            if isinstance(tool, Agent):
                 self.tools.append(Tool.from_agent(tool))
             elif isinstance(tool, Tool):
                 self.tools.append(tool)
-            else:
+            elif callable(tool):
                 self.tools.append(Tool.from_callable(tool))
+            else:
+                raise ValueError(f"Unsupported type of a tool: {type(tool)}. Should be a Callable, Agent, or Tool")
         self.mcp_servers = mcp_servers or []
         self.history = history or []
         self.keep_history = keep_history
@@ -667,6 +685,7 @@ class Agent(
             str
             | ToolCall
             | ToolCallResult
+            | ToolEvent
             | DownstreamAgentResult
             | SimpleNamespace
             | BasePrompt
@@ -680,6 +699,7 @@ class Agent(
         str
         | ToolCall
         | ToolCallResult
+        | ToolEvent
         | DownstreamAgentResult
         | SimpleNamespace
         | BasePrompt
@@ -757,6 +777,7 @@ class Agent(
         str
         | ToolCall
         | ToolCallResult
+        | ToolEvent
         | DownstreamAgentResult
         | SimpleNamespace
         | BasePrompt
@@ -886,7 +907,7 @@ class Agent(
         tools_mapping: dict[str, Tool],
         context: AgentRunContext,
         parallel_tool_calling: bool,
-    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult | ConfirmationRequest, None]:
+    ) -> AsyncGenerator[ToolCallResult | ToolEvent | DownstreamAgentResult | ConfirmationRequest, None]:
         """Execute tool calls either in parallel or sequentially based on `parallel_tool_calling` value."""
         if parallel_tool_calling:
             queue: asyncio.Queue = asyncio.Queue()
@@ -1026,12 +1047,51 @@ class Agent(
 
         return tools_mapping
 
+    @staticmethod
+    async def _process_tool_output(
+        tool_output: ToolReturn | Generator | AsyncGenerator | AgentResultStreaming | ToolEvent,
+        tool: Tool,
+        context: AgentRunContext,
+    ) -> AsyncGenerator[ToolReturn | DownstreamAgentResult | ToolEvent, None]:
+        """
+        Process the output from a tool call and yield events if the tool output is an agent, generator or async
+        generator.
+
+        Args:
+            tool_output: The raw output from the tool call.
+            tool: The tool that was called.
+            context: The agent run context.
+
+        Yields:
+            ToolReturn with the final result, and any intermediate events or downstream results.
+        """
+        if isinstance(tool_output, AgentResultStreaming):
+            async for downstream_item in tool_output:
+                if context.stream_downstream_events:
+                    yield DownstreamAgentResult(agent_id=tool.id, item=downstream_item)
+            metadata = {
+                "metadata": tool_output.metadata,
+                "tool_calls": tool_output.tool_calls,
+                "usage": tool_output.usage,
+            }
+            yield ToolReturn(value=tool_output.content, metadata=metadata)
+        elif isinstance(tool_output, ToolReturn):
+            yield tool_output
+        elif isinstance(tool_output, Generator):
+            for event in tool_output:
+                yield event if isinstance(event, ToolReturn) else ToolEvent(content=event)
+        elif isinstance(tool_output, AsyncGenerator):
+            async for event in tool_output:
+                yield event if isinstance(event, ToolReturn) else ToolEvent(content=event)
+        else:
+            yield ToolReturn(value=tool_output, metadata=None)
+
     async def _execute_tool(
         self,
         tool_call: ToolCall,
         tools_mapping: dict[str, Tool],
         context: AgentRunContext,
-    ) -> AsyncGenerator[ToolCallResult | DownstreamAgentResult | ConfirmationRequest, None]:
+    ) -> AsyncGenerator[ConfirmationRequest | ToolCallResult | DownstreamAgentResult | ToolEvent, None]:
         if tool_call.type != "function":
             raise AgentToolNotSupportedError(tool_call.type)
         if tool_call.name not in tools_mapping:
@@ -1069,6 +1129,7 @@ class Agent(
         # Always update arguments (chained from hooks)
         tool_call.arguments = pre_tool_result.arguments
 
+        tool_return: ToolReturn | None = None
         with trace(agent_id=self.id, tool_name=tool_call.name, tool_arguments=tool_call.arguments) as outputs:
             try:
                 call_args = tool_call.arguments.copy()
@@ -1081,21 +1142,19 @@ class Agent(
                     else asyncio.to_thread(tool.on_tool_call, **call_args)
                 )
 
-                if isinstance(tool_output, ToolReturn):
-                    tool_return = tool_output
-                elif isinstance(tool_output, AgentResultStreaming):
-                    async for downstream_item in tool_output:
-                        if context.stream_downstream_events:
-                            yield DownstreamAgentResult(agent_id=tool.id, item=downstream_item)
-                    metadata = {
-                        "metadata": tool_output.metadata,
-                        "tool_calls": tool_output.tool_calls,
-                        "usage": tool_output.usage,
-                    }
-                    tool_return = ToolReturn(value=tool_output.content, metadata=metadata)
-                else:
-                    tool_return = ToolReturn(value=tool_output, metadata=None)
+                async for tool_output_event in self._process_tool_output(tool_output, tool, context):
+                    if isinstance(tool_output_event, ToolReturn):
+                        if tool_return is not None:
+                            warnings.warn(
+                                f"Received more than one ToolReturn! Previous: {tool_return}. "
+                                f"Current: {tool_output_event}. Using only the latter"
+                            )
+                        tool_return = tool_output_event
+                    else:
+                        yield tool_output_event
 
+                if tool_return is None:
+                    tool_return = ToolReturn(value=None)
                 outputs.result = {
                     "tool_output": tool_return.value,
                     "tool_call_id": tool_call.id,

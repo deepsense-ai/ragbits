@@ -18,6 +18,7 @@
 - Add long-term semantic memory tools for agents (#839)
 - Add support for confirmation requests in agents (#853) (#914)
 - Add ToolReturn allowing the control which part of the tool output we pass to LLM (#920)
+- Add the option to stream events from tools using generators and async generators (#921)
 - Add hooks system for agent lifecycle interception (PRE_TOOL, POST_TOOL, PRE_RUN, POST_RUN) (#914) (#926)
 
 ## 1.3.0 (2025-09-11)
