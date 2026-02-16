@@ -10,14 +10,22 @@ import json
 from collections import defaultdict
 from collections.abc import AsyncGenerator
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Union
+from typing import TYPE_CHECKING, Any, Generic, Literal, Union, overload
 
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.hooks.base import Hook
-from ragbits.agents.hooks.types import EventType
+from ragbits.agents.hooks.types import (
+    EventType,
+    OnEventCallback,
+    PostRunCallback,
+    PostToolCallback,
+    PreRunCallback,
+    PreToolCallback,
+)
 from ragbits.agents.tool import ToolCallResult, ToolReturn
-from ragbits.core.llms.base import ToolCall, Usage
+from ragbits.core.llms.base import LLMClientOptionsT, ToolCall, Usage
 from ragbits.core.prompt.base import BasePrompt
+from ragbits.core.prompt.prompt import PromptInputT, PromptOutputT
 
 if TYPE_CHECKING:
     from ragbits.agents._main import AgentOptions, AgentResult, AgentRunContext, DownstreamAgentResult
@@ -27,7 +35,7 @@ if TYPE_CHECKING:
 CONFIRMATION_ID_LENGTH = 16
 
 
-class HookManager:
+class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
     """
     Manages registration and execution of hooks for an agent.
 
@@ -60,6 +68,31 @@ class HookManager:
         """
         self._hooks[hook.event_type].append(hook)
         self._hooks[hook.event_type].sort(key=lambda h: h.priority)
+
+    @overload
+    def get_hooks(
+        self, event_type: Literal[EventType.PRE_TOOL], tool_name: str | None = ...
+    ) -> list[Hook[PreToolCallback]]: ...
+
+    @overload
+    def get_hooks(
+        self, event_type: Literal[EventType.POST_TOOL], tool_name: str | None = ...
+    ) -> list[Hook[PostToolCallback]]: ...
+
+    @overload
+    def get_hooks(
+        self, event_type: Literal[EventType.PRE_RUN], tool_name: str | None = ...
+    ) -> list[Hook[PreRunCallback]]: ...
+
+    @overload
+    def get_hooks(
+        self, event_type: Literal[EventType.POST_RUN], tool_name: str | None = ...
+    ) -> list[Hook[PostRunCallback]]: ...
+
+    @overload
+    def get_hooks(
+        self, event_type: Literal[EventType.ON_EVENT], tool_name: str | None = ...
+    ) -> list[Hook[OnEventCallback]]: ...
 
     def get_hooks(self, event_type: EventType, tool_name: str | None = None) -> list[Hook]:
         """
@@ -109,7 +142,7 @@ class HookManager:
             )
             confirmation_id = hashlib.sha256(confirmation_id_str.encode()).hexdigest()[:CONFIRMATION_ID_LENGTH]
 
-            result: ToolCall = await hook.callback(current_tool_call)  # type: ignore[call-arg]
+            result: ToolCall = await hook.callback(current_tool_call)
 
             # Validation (moved from PreToolOutput.__post_init__)
             if result.decision in ("ask", "deny") and not result.reason:
@@ -175,14 +208,14 @@ class HookManager:
         current_output = tool_return
 
         for hook in hooks:
-            current_output = await hook.callback(tool_call, current_output)  # type: ignore[call-arg]
+            current_output = await hook.callback(tool_call, current_output)
 
         return current_output
 
     async def execute_pre_run(
         self,
         _input: Any,
-        options: "AgentOptions",
+        options: "AgentOptions[LLMClientOptionsT]",
         context: "AgentRunContext",
     ) -> Any:
         """
@@ -203,16 +236,16 @@ class HookManager:
         current_input: Any = _input
 
         for hook in hooks:
-            current_input = await hook.callback(current_input, options, context)  # type: ignore[call-arg]
+            current_input = await hook.callback(current_input, options, context)
 
         return current_input
 
     async def execute_post_run(
         self,
-        result: "AgentResult",
-        options: "AgentOptions",
+        result: "AgentResult[PromptOutputT]",
+        options: "AgentOptions[LLMClientOptionsT]",
         context: "AgentRunContext",
-    ) -> "AgentResult":
+    ) -> "AgentResult[PromptOutputT]":
         """
         Execute post-run hooks with proper result chaining.
 
@@ -228,10 +261,10 @@ class HookManager:
         """
         hooks = self.get_hooks(EventType.POST_RUN, None)
 
-        current_result: Any = result
+        current_result: "AgentResult[PromptOutputT]" = result
 
         for hook in hooks:
-            current_result = await hook.callback(current_result, options, context)  # type: ignore[call-arg]
+            current_result = await hook.callback(current_result, options, context)
 
         return current_result
 
@@ -306,7 +339,7 @@ class HookManager:
             for hook in hooks:
                 if current_event is None:
                     break
-                current_event = await hook.callback(current_event, accumulated_content)  # type: ignore[call-arg]
+                current_event = await hook.callback(current_event, accumulated_content)
 
             # Suppressed by a hook
             if current_event is None:

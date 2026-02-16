@@ -2,10 +2,14 @@
 Base classes for the hooks system.
 """
 
-from ragbits.agents.hooks.types import EventType, HookCallback
+from typing import Generic, TypeVar
+
+from ragbits.agents.hooks.types import EventType
+
+CallbackT = TypeVar("CallbackT")
 
 
-class Hook:
+class Hook(Generic[CallbackT]):
     """
     A hook that intercepts execution at various lifecycle points.
 
@@ -44,7 +48,7 @@ class Hook:
     def __init__(
         self,
         event_type: EventType,
-        callback: HookCallback,
+        callback: CallbackT,
         tool_names: list[str] | None = None,
         priority: int = 100,
     ) -> None:
@@ -58,7 +62,7 @@ class Hook:
             priority: Execution priority (lower numbers execute first, default: 100)
         """
         self.event_type = event_type
-        self.callback = callback
+        self.callback: CallbackT = callback
         self.tool_names = tool_names
         self.priority = priority
 
