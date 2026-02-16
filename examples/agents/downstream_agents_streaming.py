@@ -106,7 +106,7 @@ qa_agent = Agent(
     name="qa_agent",
     llm=llm,
     prompt=QAPrompt,
-    tools=[(time_agent, {"name": "time_agent"})],
+    tools=[time_agent],
     default_options=AgentOptions(max_total_tokens=1000, max_turns=5),
 )
 

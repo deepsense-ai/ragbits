@@ -147,9 +147,56 @@ async def main() -> None:
 See the runnable example in `examples/agents/dependencies.py`.
 
 ## Streaming agent responses
-For use cases where you want to process partial outputs from the LLM as they arrive (e.g., in chat UIs), the [`Agent`][ragbits.agents.Agent] class supports streaming through the `run_streaming()` method.
+For use cases where you want to process partial outputs from the LLM as they arrive (e.g., in chat UIs),
+the [`Agent`][ragbits.agents.Agent] class supports streaming through the `run_streaming()` method.
 
-This method returns an `AgentResultStreaming` object — an async iterator that yields parts of the LLM response and tool-related events in real time.
+This method returns an `AgentResultStreaming` object — an async iterator that yields parts of the LLM response and
+tool-related events in real time.
+
+```python
+from ragbits.agents import Agent, ToolCall, ToolCallResult
+from ragbits.core.llms import LiteLLM
+
+async def main() -> None:
+    """Run the weather agent with streaming output."""
+    llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
+    agent = Agent(llm=llm, prompt=WeatherPrompt, tools=[get_weather])
+
+    async for chunk in agent.run_streaming(WeatherPromptInput(location="Paris")):
+        if isinstance(chunk, ToolCall):
+            print(f"Calling tool: {chunk.name}({chunk.arguments})")
+        elif isinstance(chunk, ToolCallResult):
+            print(f"Tool result: {chunk.result}")
+        elif isinstance(chunk, str):
+            print(chunk, end="", flush=True)
+```
+
+## Streaming custom events from tools
+Tools can emit custom events during execution that are surfaced through the streaming loop.
+To do this, define your tool as an async generator that yields intermediate events and a final
+`ToolReturn` value:
+
+```python
+from collections.abc import AsyncGenerator
+
+from pydantic import BaseModel
+
+from ragbits.agents.tool import ToolReturn
+
+--8<-- "examples/agents/stream_events_from_tools.py:30:44"
+```
+
+Events yielded before the `ToolReturn` are collected and available via `result.tool_events`
+after the stream completes:
+
+```python
+from ragbits.agents import Agent
+from ragbits.core.llms import LiteLLM
+
+--8<-- "examples/agents/stream_events_from_tools.py:46:55"
+```
+
+You can find the complete code example in the Ragbits repository [here](https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/stream_events_from_tools.py).
 
 ## Native OpenAI tools
 Ragbits supports selected native OpenAI tools (web_search_preview, image_generation and code_interpreter). You can use them together with your tools.
