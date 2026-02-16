@@ -264,9 +264,9 @@ export interface UsageContent {
 }
 
 /**
- * Todo item content wrapper.
+ * Plan item content wrapper.
  */
-export interface TodoItemContent {
+export interface PlanItemContent {
     task: Task
 }
 
@@ -597,9 +597,9 @@ export interface ClearMessageChatResponse {
     content: unknown
 }
 
-export interface TodoItemChatResonse {
-    type: 'todo_item'
-    content: TodoItemContent
+export interface PlanItemChatResponse {
+    type: 'plan_item'
+    content: PlanItemContent
 }
 
 export interface ConversationSummaryResponse {
@@ -636,7 +636,7 @@ export type ChatResponse =
     | ImageChatResponse
     | MessageUsageChatResponse
     | ClearMessageChatResponse
-    | TodoItemChatResonse
+    | PlanItemChatResponse
     | ConversationSummaryResponse
     | ConfirmationRequestChatResponse
     | ErrorChatResponse

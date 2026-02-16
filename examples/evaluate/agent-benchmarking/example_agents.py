@@ -7,115 +7,55 @@ declared at the bottom so they can be imported via the CLI helper
 
   - file path:    "examples/evaluate/agent-benchmarking/example_agents.py:gaia_agent"
 
-Todo-augmented variants are exported as `<name>_todo_agent` and wrap the base
-agent with the `TodoAgent` orchestrator.
+Planning-augmented variants are exported as `<name>_planning_agent` and include
+planning tools that allow the agent to break down complex tasks.
 """
 
 from collections.abc import Callable
 from typing import Any, cast
 
-from ragbits.agents import Agent, AgentOptions, AgentResult
-from ragbits.agents.tool import ToolCallResult
+from ragbits.agents import Agent, AgentOptions
 from ragbits.agents.tools.openai import get_web_search_tool
-from ragbits.agents.tools.todo import TodoOrchestrator, TodoResult
+from ragbits.agents.tools.planning import PlanningState, create_planning_tools
 from ragbits.core.llms import LiteLLM
-from ragbits.core.llms.base import LLMClientOptionsT, Usage
-from ragbits.core.prompt.base import BasePrompt
 
 
-class TodoAgent(Agent[LLMClientOptionsT, None, str]):
+def build_planning_agent(
+    base_prompt: str,
+    tools: list[Callable[..., Any]] | None = None,
+    max_turns: int = 50,
+) -> Agent:
     """
-    Agent wrapper that uses TodoOrchestrator to optionally decompose a query
-    into tasks and aggregate a final answer, while remaining compatible with
-    existing EvaluationPipelines that expect an Agent.
+    Build an agent with planning capabilities.
+
+    Args:
+        base_prompt: The base system prompt for the agent.
+        tools: Additional tools to provide to the agent.
+        max_turns: Maximum number of turns for the agent.
+
+    Returns:
+        Agent with planning tools included.
     """
+    planning_prompt = f"""{base_prompt}
 
-    def __init__(self, agent: Agent[LLMClientOptionsT, None, str], domain_context: str = "") -> None:
-        super().__init__(
-            llm=agent.llm,
-            prompt=agent.prompt,
-            history=agent.history,
-            keep_history=False,
-            mcp_servers=agent.mcp_servers,
-            default_options=cast(AgentOptions[LLMClientOptionsT] | None, agent.default_options),
-        )
-        self._inner_agent = agent
-        self._domain_context = domain_context
-        self._orchestrator = TodoOrchestrator(domain_context=domain_context)
+For complex requests, use your planning tools:
+1. Use create_plan to break down the task into subtasks
+2. Use get_current_task to see what to work on
+3. Complete each task, then use complete_task with a summary
+4. Continue until all tasks are done
 
-    def __getattr__(self, name: str) -> object:
-        """Proxy missing attributes to the wrapped inner agent."""
-        try:
-            return super().__getattribute__(name)
-        except AttributeError:
-            return getattr(self._inner_agent, name)
+For simple questions, answer directly."""
 
-    async def run(
-        self,
-        input: str | None = None,
-        *_: Any,
-        **__: Any,
-    ) -> AgentResult[str]:
-        """Run the orchestrated flow and return a single final answer."""
-        query = input or ""
+    planning_state = PlanningState()
+    all_tools: list[Callable[..., Any]] = list(tools or [])
+    all_tools.extend(create_planning_tools(planning_state))
 
-        # Accumulate outputs from the orchestrated workflow
-        final_text: str = ""
-        tool_calls: list[ToolCallResult] | None = None
-        total_usage: Usage = Usage()
-        last_prompt: BasePrompt | None = None
-
-        tasks_created = False
-        num_tasks = 0
-        in_final_summary = False
-        final_summary_only: str = ""
-
-        async for item in self._orchestrator.run_todo_workflow_streaming(self._inner_agent, query):
-            match item:
-                case str():
-                    final_text += item
-                    if in_final_summary:
-                        final_summary_only += item
-                case ToolCallResult():
-                    if tool_calls is None:
-                        tool_calls = []
-                    tool_calls.append(item)
-                case Usage():
-                    total_usage += item
-                case BasePrompt():
-                    last_prompt = item
-                case TodoResult():
-                    if item.type == "final_summary_start":
-                        in_final_summary = True
-                        final_summary_only = ""
-                    elif item.type == "final_summary_end":
-                        in_final_summary = False
-                case _:
-                    # Inspect orchestrator internal state to populate metadata
-                    tasks_created = len(self._orchestrator.todo_list.tasks) > 0
-                    num_tasks = len(self._orchestrator.todo_list.tasks)
-
-        # Compose metadata with TODO info
-        complexity = "COMPLEX" if tasks_created else "SIMPLE"
-        todo_meta: dict[str, Any] = {
-            "was_decomposed": bool(tasks_created),
-            "complexity_classification": complexity,
-            "num_tasks": int(num_tasks),
-            "domain_context": self._domain_context,
-        }
-
-        # Build result compatible with existing pipelines
-        history = last_prompt.chat if last_prompt is not None else []
-
-        # If we had tasks and generated a final summary, use that; otherwise use all text
-        content_to_return = final_summary_only.strip() if final_summary_only else final_text.strip()
-        return AgentResult(
-            content=content_to_return,
-            metadata={"todo": todo_meta},
-            tool_calls=tool_calls,
-            history=history,
-            usage=total_usage,
-        )
+    return Agent(
+        llm=LiteLLM("gpt-4.1-mini"),
+        prompt=planning_prompt,
+        tools=all_tools,
+        default_options=AgentOptions(max_turns=max_turns),
+    )
 
 
 class AgentHumanEval:
@@ -305,10 +245,20 @@ class AgentGAIA:
 
 # Export agent instances for import
 humaneval_agent: Agent = AgentHumanEval.build()
-humaneval_todo_agent: Agent = TodoAgent(agent=humaneval_agent, domain_context="python engineer")
+humaneval_planning_agent: Agent = build_planning_agent(
+    base_prompt=AgentHumanEval.build_system_prompt(),
+    max_turns=30,
+)
 
 hotpot_agent: Agent = AgentHotpot.build()
-hotpot_todo_agent: Agent = TodoAgent(agent=hotpot_agent, domain_context="research QA")
+hotpot_planning_agent: Agent = build_planning_agent(
+    base_prompt=AgentHotpot.build_system_prompt(),
+    max_turns=30,
+)
 
 gaia_agent: Agent = AgentGAIA.build()
-gaia_todo_agent: Agent = TodoAgent(agent=gaia_agent, domain_context="general AI assistant")
+gaia_planning_agent: Agent = build_planning_agent(
+    base_prompt=AgentGAIA.build_system_prompt(),
+    tools=AgentGAIA.build_tools(),
+    max_turns=50,
+)

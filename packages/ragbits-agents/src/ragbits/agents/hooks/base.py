@@ -5,10 +5,10 @@ Base classes for the hooks system.
 from collections.abc import Awaitable, Callable
 from typing import Generic, TypeVar
 
-from ragbits.agents.hooks.types import EventType, HookEventIO
+from ragbits.agents.hooks.types import EventType
 
-HookInputT = TypeVar("HookInputT", bound=HookEventIO)
-HookOutputT = TypeVar("HookOutputT", bound=HookEventIO)
+HookInputT = TypeVar("HookInputT")
+HookOutputT = TypeVar("HookOutputT")
 
 
 class Hook(Generic[HookInputT, HookOutputT]):
