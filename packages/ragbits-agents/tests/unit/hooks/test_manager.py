@@ -4,7 +4,7 @@
 
 import hashlib
 import json
-from collections.abc import Callable
+from collections.abc import AsyncGenerator, Callable
 
 import pytest
 
@@ -17,8 +17,9 @@ from ragbits.agents.hooks.types import (
     PostToolCallback,
     PreRunCallback,
     PreToolCallback,
+    StreamingEvent,
 )
-from ragbits.agents.tool import ToolReturn
+from ragbits.agents.tool import ToolCallResult, ToolReturn
 from ragbits.core.llms.base import ToolCall
 
 
@@ -242,3 +243,111 @@ class TestPostRunExecution:
         result = await manager.execute_post_run(result=mock_result, options=options, context=context)
 
         assert result.content == "H2: H1: test"
+
+
+async def _collect(gen: AsyncGenerator[StreamingEvent, None]) -> list[StreamingEvent]:
+    """Helper to collect all items from an async generator."""
+    items: list[StreamingEvent] = []
+    async for item in gen:
+        items.append(item)
+    return items
+
+
+async def _async_gen(*items: StreamingEvent) -> AsyncGenerator[StreamingEvent, None]:
+    """Helper to create an async generator from items."""
+    for item in items:
+        yield item
+
+
+class TestOnEventExecution:
+    @pytest.mark.asyncio
+    async def test_no_hooks(self):
+        manager: HookManager = HookManager()
+        events = await _collect(manager.execute_on_event(_async_gen("hello", "world")))
+
+        assert events == ["hello", "world"]
+
+    @pytest.mark.asyncio
+    async def test_modifies_str_events(self):
+        async def uppercase_hook(event: StreamingEvent) -> StreamingEvent | None:
+            if isinstance(event, str):
+                return event.upper()
+            return event
+
+        manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.ON_EVENT, callback=uppercase_hook)])
+        events = await _collect(manager.execute_on_event(_async_gen("hello", "world")))
+
+        assert events == ["HELLO", "WORLD"]
+
+    @pytest.mark.asyncio
+    async def test_suppresses_events(self):
+        async def suppress_str(event: StreamingEvent) -> StreamingEvent | None:
+            if isinstance(event, str):
+                return None
+            return event
+
+        tool_call_result = ToolCallResult(id="t1", name="tool", arguments={}, result="ok")
+        manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.ON_EVENT, callback=suppress_str)])
+        events = await _collect(manager.execute_on_event(_async_gen("hello", tool_call_result, "world")))
+
+        assert events == [tool_call_result]
+
+    @pytest.mark.asyncio
+    async def test_chaining(self):
+        async def add_prefix(event: StreamingEvent) -> StreamingEvent | None:
+            if isinstance(event, str):
+                return f"[A]{event}"
+            return event
+
+        async def add_suffix(event: StreamingEvent) -> StreamingEvent | None:
+            if isinstance(event, str):
+                return f"{event}[B]"
+            return event
+
+        manager: HookManager = HookManager(
+            hooks=[
+                Hook(event_type=EventType.ON_EVENT, callback=add_prefix, priority=1),
+                Hook(event_type=EventType.ON_EVENT, callback=add_suffix, priority=2),
+            ]
+        )
+        events = await _collect(manager.execute_on_event(_async_gen("hi")))
+
+        assert events == ["[A]hi[B]"]
+
+    @pytest.mark.asyncio
+    async def test_suppression_stops_chain(self):
+        execution_order: list[str] = []
+
+        async def suppressing_hook(event: StreamingEvent) -> StreamingEvent | None:
+            execution_order.append("suppress")
+            return None
+
+        async def never_reached_hook(event: StreamingEvent) -> StreamingEvent | None:
+            execution_order.append("after")
+            return event
+
+        manager: HookManager = HookManager(
+            hooks=[
+                Hook(event_type=EventType.ON_EVENT, callback=suppressing_hook, priority=1),
+                Hook(event_type=EventType.ON_EVENT, callback=never_reached_hook, priority=2),
+            ]
+        )
+        events = await _collect(manager.execute_on_event(_async_gen("hello")))
+
+        assert events == []
+        assert execution_order == ["suppress"]
+
+    @pytest.mark.asyncio
+    async def test_mixed_event_types(self):
+        tool_call = ToolCall(id="t1", name="test", arguments="{}", type="function")  # type: ignore[arg-type]
+        tool_result = ToolCallResult(id="t1", name="test", arguments={}, result="done")
+
+        async def tag_strings(event: StreamingEvent) -> StreamingEvent | None:
+            if isinstance(event, str):
+                return f"[STR]{event}"
+            return event
+
+        manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.ON_EVENT, callback=tag_strings)])
+        events = await _collect(manager.execute_on_event(_async_gen("text", tool_call, tool_result, "more")))
+
+        assert events == ["[STR]text", tool_call, tool_result, "[STR]more"]

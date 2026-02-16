@@ -39,9 +39,7 @@ class Hook(Generic[CallbackT]):
             return tool_call
 
 
-        hook = Hook(
-            event_type=EventType.PRE_TOOL, callback=validate_input, tool_names=["dangerous_tool"], priority=10
-        )
+        hook = Hook(event_type=EventType.PRE_TOOL, callback=validate_input, tool_names=["dangerous_tool"], priority=10)
         ```
     """
 

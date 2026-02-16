@@ -9,9 +9,7 @@ from ragbits.agents.hooks.types import EventType
 from ragbits.core.llms.base import ToolCall
 
 
-def create_confirmation_hook(
-    tool_names: list[str] | None = None, priority: int = 1
-) -> Hook:
+def create_confirmation_hook(tool_names: list[str] | None = None, priority: int = 1) -> Hook:
     """
     Create a hook that requires user confirmation before tool execution.
 

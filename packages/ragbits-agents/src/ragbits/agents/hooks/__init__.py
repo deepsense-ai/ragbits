@@ -9,6 +9,7 @@ Available event types:
 - POST_TOOL: After a tool completes
 - PRE_RUN: Before the agent run starts
 - POST_RUN: After the agent run completes
+- ON_EVENT: For each streaming event during run_streaming
 
 Example usage:
 
@@ -50,21 +51,19 @@ from ragbits.agents.hooks.types import (
     PostToolCallback,
     PreRunCallback,
     PreToolCallback,
+    StreamingEvent,
 )
 
 __all__ = [
-    # Event types
     "EventType",
-    # Core classes
     "Hook",
     "HookCallback",
     "HookManager",
-    # Callback protocols
     "OnEventCallback",
     "PostRunCallback",
     "PostToolCallback",
     "PreRunCallback",
     "PreToolCallback",
-    # Hook factories
+    "StreamingEvent",
     "create_confirmation_hook",
 ]

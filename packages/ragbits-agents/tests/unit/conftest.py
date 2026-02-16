@@ -1,17 +1,20 @@
 """Shared fixtures for agent unit tests."""
 
 from collections.abc import Callable
+from typing import Any
 
 import pytest
 
+from ragbits.agents._main import AgentOptions, AgentResult, AgentRunContext
 from ragbits.agents.hooks.types import (
     OnEventCallback,
     PostRunCallback,
     PostToolCallback,
     PreRunCallback,
     PreToolCallback,
+    StreamingEvent,
 )
-from ragbits.agents.tool import ToolCallResult, ToolReturn
+from ragbits.agents.tool import ToolReturn
 from ragbits.core.llms.base import ToolCall
 
 
@@ -81,8 +84,10 @@ def pre_run_modify() -> Callable[..., PreRunCallback]:
     """Factory to create pre-run hooks that modify input with a prefix."""
 
     def factory(prefix: str) -> PreRunCallback:
-        async def modify_input_hook(input: str | None, options: object, context: object) -> str | None:
-            modified = f"{prefix}: {input}" if input else prefix
+        async def modify_input_hook(
+            _input: str | None, options: AgentOptions[Any], context: AgentRunContext[Any]
+        ) -> str | None:
+            modified = f"{prefix}: {_input}" if _input else prefix
             return modified
 
         return modify_input_hook
@@ -95,9 +100,11 @@ def post_run_modify() -> Callable[..., PostRunCallback]:
     """Factory to create post-run hooks that modify the result content."""
 
     def factory(prefix: str) -> PostRunCallback:
-        async def modify_result_hook(result: object, options: object, context: object) -> object:
-            modified = type("AgentResult", (), {"content": f"{prefix}: {result.content}"})()
-            return modified
+        async def modify_result_hook(
+            result: AgentResult[Any], options: AgentOptions[Any], context: AgentRunContext[Any]
+        ) -> AgentResult[Any]:
+            result.content = f"{prefix}: {result.content}"
+            return result
 
         return modify_result_hook
 
@@ -109,10 +116,7 @@ def on_event_word_filter() -> Callable[..., OnEventCallback]:
     """Factory to create ON_EVENT callbacks that filter words from str chunks."""
 
     def factory(word: str, replacement: str = "***") -> OnEventCallback:
-        async def word_filter_hook(
-            event: str | ToolCall | ToolCallResult,
-            accumulated_content: str,
-        ) -> str | ToolCall | ToolCallResult | None:
+        async def word_filter_hook(event: StreamingEvent) -> StreamingEvent | None:
             if isinstance(event, str):
                 return event.replace(word, replacement)
             return event
@@ -127,10 +131,7 @@ def on_event_modify_chunk() -> Callable[..., OnEventCallback]:
     """Factory to create ON_EVENT callbacks that modify str chunks with a prefix."""
 
     def factory(prefix: str) -> OnEventCallback:
-        async def modify_chunk_hook(
-            event: str | ToolCall | ToolCallResult,
-            accumulated_content: str,
-        ) -> str | ToolCall | ToolCallResult | None:
+        async def modify_chunk_hook(event: StreamingEvent) -> StreamingEvent | None:
             if isinstance(event, str):
                 return f"{prefix}{event}"
             return event

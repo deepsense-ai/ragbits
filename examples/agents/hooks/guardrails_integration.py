@@ -1,8 +1,9 @@
 """
-Example demonstrating guardrails integration using pre-run hooks.
+Example demonstrating guardrails integration using pre-run and on-event hooks.
 
 This example shows how to use the ragbits Guardrail system with agent hooks
-to validate inputs before the agent processes them.
+to validate inputs before the agent processes them and how to use ON_EVENT
+hooks to transform streaming output in real-time.
 
 To run this example, execute:
     uv run python examples/agents/hooks/guardrails_integration.py
@@ -12,7 +13,8 @@ import asyncio
 
 from ragbits.agents import Agent
 from ragbits.agents._main import AgentOptions, AgentRunContext
-from ragbits.agents.hooks import EventType, Hook, PreRunCallback
+from ragbits.agents.hooks import EventType, Hook, OnEventCallback, PreRunCallback
+from ragbits.agents.hooks.types import StreamingEvent
 from ragbits.core.llms import LiteLLM
 from ragbits.guardrails.base import Guardrail, GuardrailManager, GuardrailVerificationResult
 
@@ -65,16 +67,34 @@ def create_guardrail_hook(
     return guardrail_hook
 
 
+def create_upper_words_hook(words: list[str]) -> OnEventCallback:
+    """Create an ON_EVENT hook that upper-cases specified words in streaming text chunks."""
+
+    async def upper_words_hook(event: StreamingEvent) -> StreamingEvent | None:
+        if isinstance(event, str):
+            result = event
+            for word in words:
+                result = result.replace(word, word.upper())
+            return result
+        return event
+
+    return upper_words_hook
+
+
 async def main() -> None:
     """Run the example demonstrating guardrails with hooks."""
-    blocked_topics_guardrail = BlockedTopicsGuardrail(blocked_topics=["violence", "illegal", "harmful"])
+    blocked_topics_guardrail = BlockedTopicsGuardrail(blocked_topics=["politics", "religion"])
     guardrail_manager = GuardrailManager(guardrails=[blocked_topics_guardrail])
     guardrail_hook = create_guardrail_hook(guardrail_manager)
+    upper_hook = create_upper_words_hook(["founded", "party"])
 
     agent = Agent(
         llm=LiteLLM("gpt-4o-mini"),
         prompt="You are a helpful assistant.",
-        hooks=[Hook(event_type=EventType.PRE_RUN, callback=guardrail_hook)],
+        hooks=[
+            Hook(event_type=EventType.PRE_RUN, callback=guardrail_hook),
+            Hook(event_type=EventType.ON_EVENT, callback=upper_hook),
+        ],
     )
 
     # Test 1: Safe input with run()
@@ -84,7 +104,7 @@ async def main() -> None:
 
     # Test 2: Blocked input with run()
     print("2. Blocked query (run):")
-    response = await agent.run("Tell me about violence in movies")
+    response = await agent.run("Tell me about religion in ancient Rome?")
     print(f"\t{response.content}\n")
 
     # Test 3: Safe input with streaming
@@ -93,9 +113,9 @@ async def main() -> None:
         if isinstance(chunk, str):
             print(chunk, end="")
 
-    # Test 4: Blocked input with streaming
-    print("\n\n4. Blocked query (streaming):\n\t", end="")
-    async for chunk in agent.run_streaming("How to do something illegal"):
+    # Test 4: Blocked input with streaming — pre-run hook blocks, on-event hook upper-cases the rejection message
+    print("\n\n4. On event upper-casing (streaming):\n\t", end="")
+    async for chunk in agent.run_streaming("What are the main political parties in the US?"):
         if isinstance(chunk, str):
             print(chunk, end="")
 

@@ -20,6 +20,7 @@ from ragbits.agents.hooks import (
     OnEventCallback,
     PostToolCallback,
     PreToolCallback,
+    StreamingEvent,
 )
 from ragbits.core.llms.base import ToolCall as ToolCallModel
 from ragbits.core.llms.base import Usage, UsageItem
@@ -982,9 +983,7 @@ async def test_on_event_hook_modifies_streaming_content(
 async def test_on_event_hook_suppresses_chunk(llm_without_tool_call: MockLLM):
     """Test that an ON_EVENT hook can suppress chunks."""
 
-    async def suppress_all_str(
-        event: str | ToolCallModel | ToolCallResult, accumulated_content: str
-    ) -> str | ToolCallModel | ToolCallResult | None:
+    async def suppress_all_str(event: StreamingEvent) -> StreamingEvent | None:
         if isinstance(event, str):
             return None
         return event
@@ -1005,9 +1004,7 @@ async def test_on_event_hook_filters_tool_call_result(
 ):
     """Test that an ON_EVENT hook can modify tool call results during streaming."""
 
-    async def modify_tool_result(
-        event: str | ToolCallModel | ToolCallResult, accumulated_content: str
-    ) -> str | ToolCallModel | ToolCallResult | None:
+    async def modify_tool_result(event: StreamingEvent) -> StreamingEvent | None:
         if isinstance(event, ToolCallResult):
             return ToolCallResult(
                 id=event.id,

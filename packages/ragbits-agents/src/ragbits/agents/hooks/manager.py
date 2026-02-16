@@ -9,8 +9,7 @@ import hashlib
 import json
 from collections import defaultdict
 from collections.abc import AsyncGenerator
-from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, Generic, Literal, Union, overload
+from typing import TYPE_CHECKING, Generic, Literal, overload
 
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.hooks.base import Hook
@@ -21,14 +20,14 @@ from ragbits.agents.hooks.types import (
     PostToolCallback,
     PreRunCallback,
     PreToolCallback,
+    StreamingEvent,
 )
-from ragbits.agents.tool import ToolCallResult, ToolReturn
-from ragbits.core.llms.base import LLMClientOptionsT, ToolCall, Usage
-from ragbits.core.prompt.base import BasePrompt
+from ragbits.agents.tool import ToolReturn
+from ragbits.core.llms.base import LLMClientOptionsT, ToolCall
 from ragbits.core.prompt.prompt import PromptInputT, PromptOutputT
 
 if TYPE_CHECKING:
-    from ragbits.agents._main import AgentOptions, AgentResult, AgentRunContext, DownstreamAgentResult
+    from ragbits.agents._main import AgentOptions, AgentResult, AgentRunContext
 
 # Confirmation ID length: 16 hex chars provides sufficient uniqueness
 # while being compact for display and storage
@@ -205,19 +204,17 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         """
         hooks = self.get_hooks(EventType.POST_TOOL, tool_call.name)
 
-        current_output = tool_return
-
         for hook in hooks:
-            current_output = await hook.callback(tool_call, current_output)
+            tool_return = await hook.callback(tool_call, tool_return)
 
-        return current_output
+        return tool_return
 
     async def execute_pre_run(
         self,
-        _input: Any,
+        _input: PromptInputT | str | None,
         options: "AgentOptions[LLMClientOptionsT]",
         context: "AgentRunContext",
-    ) -> Any:
+    ) -> PromptInputT | str | None:
         """
         Execute pre-run hooks with proper input chaining.
 
@@ -233,12 +230,10 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         """
         hooks = self.get_hooks(EventType.PRE_RUN, None)
 
-        current_input: Any = _input
-
         for hook in hooks:
-            current_input = await hook.callback(current_input, options, context)
+            _input = await hook.callback(_input, options, context)
 
-        return current_input
+        return _input
 
     async def execute_post_run(
         self,
@@ -261,48 +256,20 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         """
         hooks = self.get_hooks(EventType.POST_RUN, None)
 
-        current_result: "AgentResult[PromptOutputT]" = result
-
         for hook in hooks:
-            current_result = await hook.callback(current_result, options, context)
+            result = await hook.callback(result, options, context)
 
-        return current_result
+        return result
 
     async def execute_on_event(
         self,
-        generator: AsyncGenerator[
-            Union[
-                str,
-                ToolCall,
-                ToolCallResult,
-                "DownstreamAgentResult",
-                SimpleNamespace,
-                BasePrompt,
-                Usage,
-                ConfirmationRequest,
-            ],
-            None,
-        ],
-    ) -> AsyncGenerator[
-        Union[
-            str,
-            ToolCall,
-            ToolCallResult,
-            "DownstreamAgentResult",
-            SimpleNamespace,
-            BasePrompt,
-            Usage,
-            ConfirmationRequest,
-        ],
-        None,
-    ]:
+        generator: AsyncGenerator[StreamingEvent, None],
+    ) -> AsyncGenerator[StreamingEvent, None]:
         """
         Process streaming events through ON_EVENT hooks.
 
-        Iterates over the source generator and applies ON_EVENT hooks to
-        str, ToolCall, and ToolCallResult events. Infrastructure events
-        (Usage, BasePrompt, SimpleNamespace, ConfirmationRequest, DownstreamAgentResult)
-        pass through without hook processing.
+        Every event from the source generator is passed through all ON_EVENT hooks
+        in priority order. A hook can modify the event or suppress it by returning None.
 
         Args:
             generator: The source async generator of streaming events
@@ -310,43 +277,14 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         Yields:
             Processed streaming events (potentially modified by hooks)
         """
-        from ragbits.agents._main import DownstreamAgentResult
-
-        accumulated_content: str = ""
+        hooks = self.get_hooks(EventType.ON_EVENT)
 
         async for event in generator:
-            # Infrastructure events pass through unchanged
-            if isinstance(event, (Usage, BasePrompt, SimpleNamespace, ConfirmationRequest, DownstreamAgentResult)):
-                yield event
-                continue
-
-            # Determine tool_name for hook filtering
-            # For str events, only universal hooks (tool_names=None) should fire
-            if isinstance(event, (ToolCall, ToolCallResult)):
-                hooks = self.get_hooks(EventType.ON_EVENT, event.name)
-            else:
-                hooks = [h for h in self.get_hooks(EventType.ON_EVENT) if h.tool_names is None]
-
-            if not hooks:
-                # No hooks, pass through and track content
-                if isinstance(event, str):
-                    accumulated_content += event
-                yield event
-                continue
-
-            # Chain hooks in priority order
-            current_event: str | ToolCall | ToolCallResult | None = event
+            current_event: StreamingEvent | None = event
             for hook in hooks:
                 if current_event is None:
                     break
-                current_event = await hook.callback(current_event, accumulated_content)
+                current_event = await hook.callback(current_event)
 
-            # Suppressed by a hook
-            if current_event is None:
-                continue
-
-            # Update accumulated content for str chunks
-            if isinstance(current_event, str):
-                accumulated_content += current_event
-
-            yield current_event
+            if current_event is not None:
+                yield current_event
