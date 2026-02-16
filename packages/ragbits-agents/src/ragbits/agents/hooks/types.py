@@ -1,12 +1,13 @@
 """
 Type definitions for the hooks system.
 
-This module contains all type definitions including EventType and callback Protocol
+This module contains all type definitions including EventType and callback
 types for the hooks system.
 """
 
+from collections.abc import Awaitable, Callable
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Protocol, Union, runtime_checkable
+from typing import TYPE_CHECKING, Any, Union
 
 from ragbits.agents.tool import ToolCallResult, ToolReturn
 from ragbits.core.llms.base import ToolCall
@@ -34,70 +35,13 @@ class EventType(str, Enum):
     ON_EVENT = "on_event"
 
 
-@runtime_checkable
-class PreToolCallback(Protocol):
-    """Protocol for pre-tool hook callbacks.
-
-    Receives a ToolCall and returns a (potentially modified) ToolCall.
-    Set decision/reason on the returned ToolCall to control execution.
-    """
-
-    async def __call__(self, tool_call: ToolCall) -> ToolCall: ...
-
-
-@runtime_checkable
-class PostToolCallback(Protocol):
-    """Protocol for post-tool hook callbacks.
-
-    Receives the original ToolCall and the ToolReturn, returns a (potentially modified) ToolReturn.
-    """
-
-    async def __call__(self, tool_call: ToolCall, tool_return: ToolReturn) -> ToolReturn: ...
-
-
-@runtime_checkable
-class PreRunCallback(Protocol):
-    """Protocol for pre-run hook callbacks.
-
-    Receives the agent input, options, and context. Returns the (potentially modified) input.
-    """
-
-    async def __call__(
-        self,
-        input: Any,
-        options: "AgentOptions | None",
-        context: "AgentRunContext | None",
-    ) -> Any: ...
-
-
-@runtime_checkable
-class PostRunCallback(Protocol):
-    """Protocol for post-run hook callbacks.
-
-    Receives the agent result, options, and context. Returns the (potentially modified) result.
-    """
-
-    async def __call__(
-        self,
-        result: "AgentResult",
-        options: "AgentOptions | None",
-        context: "AgentRunContext | None",
-    ) -> "AgentResult": ...
-
-
-@runtime_checkable
-class OnEventCallback(Protocol):
-    """Protocol for on-event hook callbacks.
-
-    Receives a streaming event and the accumulated content so far.
-    Returns a (potentially modified) event, or None to suppress the chunk.
-    """
-
-    async def __call__(
-        self,
-        event: str | ToolCall | ToolCallResult,
-        accumulated_content: str,
-    ) -> str | ToolCall | ToolCallResult | None: ...
-
+PreToolCallback = Callable[[ToolCall], Awaitable[ToolCall]]
+PostToolCallback = Callable[[ToolCall, ToolReturn], Awaitable[ToolReturn]]
+PreRunCallback = Callable[[Any, "AgentOptions", "AgentRunContext"], Awaitable[Any]]
+PostRunCallback = Callable[["AgentResult", "AgentOptions", "AgentRunContext"], Awaitable["AgentResult"]]
+OnEventCallback = Callable[
+    [Union[str, ToolCall, ToolCallResult], str],
+    Awaitable[Union[str, ToolCall, ToolCallResult, None]],
+]
 
 HookCallback = Union[PreToolCallback, PostToolCallback, PreRunCallback, PostRunCallback, OnEventCallback]

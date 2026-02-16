@@ -9,10 +9,10 @@ To run this example, execute:
 """
 
 import asyncio
-from typing import Any
 
 from ragbits.agents import Agent
-from ragbits.agents.hooks import EventType, Hook
+from ragbits.agents._main import AgentOptions, AgentRunContext
+from ragbits.agents.hooks import EventType, Hook, PreRunCallback
 from ragbits.core.llms import LiteLLM
 from ragbits.guardrails.base import Guardrail, GuardrailManager, GuardrailVerificationResult
 
@@ -44,13 +44,13 @@ class BlockedTopicsGuardrail(Guardrail):
 
 def create_guardrail_hook(
     guardrail_manager: GuardrailManager,
-) -> Any:
+) -> PreRunCallback:
     """Create a pre-run hook that validates input using guardrails."""
 
     async def guardrail_hook(
         input: str | None,
-        options: Any,
-        context: Any,
+        options: AgentOptions,
+        context: AgentRunContext,
     ) -> str | None:
         """Validate input against guardrails before agent processes it."""
         user_input = str(input or "")

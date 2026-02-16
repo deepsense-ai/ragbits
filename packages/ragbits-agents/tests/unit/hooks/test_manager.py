@@ -8,7 +8,7 @@ from collections.abc import Callable
 
 import pytest
 
-from ragbits.agents._main import AgentRunContext
+from ragbits.agents._main import AgentOptions, AgentRunContext
 from ragbits.agents.hooks.base import Hook
 from ragbits.agents.hooks.manager import CONFIRMATION_ID_LENGTH, HookManager
 from ragbits.agents.hooks.types import (
@@ -25,6 +25,11 @@ from ragbits.core.llms.base import ToolCall
 @pytest.fixture
 def context() -> AgentRunContext:
     return AgentRunContext()
+
+
+@pytest.fixture
+def options() -> AgentOptions:
+    return AgentOptions()
 
 
 def make_confirmation_id(hook_name: str, tool_name: str, arguments: dict) -> str:
@@ -195,34 +200,38 @@ class TestConfirmationIdGeneration:
 
 class TestPreRunExecution:
     @pytest.mark.asyncio
-    async def test_no_hooks(self, context: AgentRunContext):
-        result = await HookManager().execute_pre_run(_input="test input", options=None, context=context)
+    async def test_no_hooks(self, options: AgentOptions, context: AgentRunContext):
+        result = await HookManager().execute_pre_run(_input="test input", options=options, context=context)
 
         assert result == "test input"
 
     @pytest.mark.asyncio
-    async def test_chaining(self, context: AgentRunContext, pre_run_modify: Callable[..., PreRunCallback]):
+    async def test_chaining(
+        self, options: AgentOptions, context: AgentRunContext, pre_run_modify: Callable[..., PreRunCallback]
+    ):
         manager: HookManager = HookManager(
             hooks=[
                 Hook(event_type=EventType.PRE_RUN, callback=pre_run_modify("H1"), priority=1),
                 Hook(event_type=EventType.PRE_RUN, callback=pre_run_modify("H2"), priority=2),
             ]
         )
-        result = await manager.execute_pre_run(_input="original", options=None, context=context)
+        result = await manager.execute_pre_run(_input="original", options=options, context=context)
 
         assert result == "H2: H1: original"
 
 
 class TestPostRunExecution:
     @pytest.mark.asyncio
-    async def test_no_hooks(self, context: AgentRunContext):
+    async def test_no_hooks(self, options: AgentOptions, context: AgentRunContext):
         mock_result = type("AgentResult", (), {"content": "test"})()
-        result = await HookManager().execute_post_run(result=mock_result, options=None, context=context)
+        result = await HookManager().execute_post_run(result=mock_result, options=options, context=context)
 
         assert result == mock_result
 
     @pytest.mark.asyncio
-    async def test_chaining(self, context: AgentRunContext, post_run_modify: Callable[..., "PostRunCallback"]):
+    async def test_chaining(
+        self, options: AgentOptions, context: AgentRunContext, post_run_modify: Callable[..., "PostRunCallback"]
+    ):
         manager: HookManager = HookManager(
             hooks=[
                 Hook(event_type=EventType.POST_RUN, callback=post_run_modify("H1"), priority=1),
@@ -230,6 +239,6 @@ class TestPostRunExecution:
             ]
         )
         mock_result = type("AgentResult", (), {"content": "test"})()
-        result = await manager.execute_post_run(result=mock_result, options=None, context=context)
+        result = await manager.execute_post_run(result=mock_result, options=options, context=context)
 
         assert result.content == "H2: H1: test"

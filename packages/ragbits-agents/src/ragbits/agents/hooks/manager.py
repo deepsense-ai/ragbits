@@ -182,8 +182,8 @@ class HookManager:
     async def execute_pre_run(
         self,
         _input: Any,
-        options: "AgentOptions | None",
-        context: "AgentRunContext | None",
+        options: "AgentOptions",
+        context: "AgentRunContext",
     ) -> Any:
         """
         Execute pre-run hooks with proper input chaining.
@@ -210,8 +210,8 @@ class HookManager:
     async def execute_post_run(
         self,
         result: "AgentResult",
-        options: "AgentOptions | None",
-        context: "AgentRunContext | None",
+        options: "AgentOptions",
+        context: "AgentRunContext",
     ) -> "AgentResult":
         """
         Execute post-run hooks with proper result chaining.
