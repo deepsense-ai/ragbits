@@ -5,7 +5,7 @@ This module contains all type definitions including EventType and callback
 types for the hooks system.
 """
 
-from collections.abc import Awaitable, Callable
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from enum import Enum
 from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any, Union
@@ -55,6 +55,6 @@ PreToolCallback = Callable[[ToolCall], Awaitable[ToolCall]]
 PostToolCallback = Callable[[ToolCall, ToolReturn], Awaitable[ToolReturn]]
 PreRunCallback = Callable[[Any, "AgentOptions[Any]", "AgentRunContext"], Awaitable[Any]]
 PostRunCallback = Callable[["AgentResult[Any]", "AgentOptions[Any]", "AgentRunContext"], Awaitable["AgentResult[Any]"]]
-OnEventCallback = Callable[[StreamingEvent], Awaitable[StreamingEvent | None]]
+OnEventCallback = Callable[[StreamingEvent], Awaitable[StreamingEvent | None] | AsyncGenerator[StreamingEvent, None]]
 
 HookCallback = PreToolCallback | PostToolCallback | PreRunCallback | PostRunCallback | OnEventCallback

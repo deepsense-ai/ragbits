@@ -268,7 +268,8 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         Process streaming events through ON_EVENT hooks.
 
         Every event from the source generator is passed through all ON_EVENT hooks
-        in priority order. A hook can modify the event or suppress it by returning None.
+        in priority order. A hook can modify the event, suppress it by returning None,
+        or expand it into multiple events by returning an async generator.
 
         Args:
             generator: The source async generator of streaming events
@@ -279,11 +280,22 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         hooks = self.get_hooks(EventType.ON_EVENT)
 
         async for event in generator:
-            current_event: StreamingEvent | None = event
-            for hook in hooks:
-                if current_event is None:
-                    break
-                current_event = await hook.callback(current_event)
+            current_events: list[StreamingEvent] = [event]
 
-            if current_event is not None:
-                yield current_event
+            for hook in hooks:
+                next_events: list[StreamingEvent] = []
+                for evt in current_events:
+                    result = hook.callback(evt)
+                    if isinstance(result, AsyncGenerator):
+                        async for sub_event in result:
+                            next_events.append(sub_event)
+                    else:
+                        awaited = await result
+                        if awaited is not None:
+                            next_events.append(awaited)
+                current_events = next_events
+                if not current_events:
+                    break
+
+            for evt in current_events:
+                yield evt

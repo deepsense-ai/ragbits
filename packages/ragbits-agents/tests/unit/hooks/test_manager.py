@@ -351,3 +351,76 @@ class TestOnEventExecution:
         events = await _collect(manager.execute_on_event(_async_gen("text", tool_call, tool_result, "more")))
 
         assert events == ["[STR]text", tool_call, tool_result, "[STR]more"]
+
+    @pytest.mark.asyncio
+    async def test_expand_single_event_to_multiple(self):
+        async def split_words(event: StreamingEvent) -> AsyncGenerator[StreamingEvent, None]:
+            if isinstance(event, str) and " " in event:
+                for word in event.split(" "):
+                    yield word
+            else:
+                yield event
+
+        manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.ON_EVENT, callback=split_words)])
+        events = await _collect(manager.execute_on_event(_async_gen("hello world")))
+
+        assert events == ["hello", "world"]
+
+    @pytest.mark.asyncio
+    async def test_expand_chained_with_modify(self):
+        async def split_words(event: StreamingEvent) -> AsyncGenerator[StreamingEvent, None]:
+            if isinstance(event, str) and " " in event:
+                for word in event.split(" "):
+                    yield word
+            else:
+                yield event
+
+        async def uppercase(event: StreamingEvent) -> StreamingEvent | None:
+            if isinstance(event, str):
+                return event.upper()
+            return event
+
+        manager: HookManager = HookManager(
+            hooks=[
+                Hook(event_type=EventType.ON_EVENT, callback=split_words, priority=1),
+                Hook(event_type=EventType.ON_EVENT, callback=uppercase, priority=2),
+            ]
+        )
+        events = await _collect(manager.execute_on_event(_async_gen("hello world")))
+
+        assert events == ["HELLO", "WORLD"]
+
+    @pytest.mark.asyncio
+    async def test_expand_with_partial_suppression(self):
+        async def split_words(event: StreamingEvent) -> AsyncGenerator[StreamingEvent, None]:
+            if isinstance(event, str) and " " in event:
+                for word in event.split(" "):
+                    yield word
+            else:
+                yield event
+
+        async def suppress_short(event: StreamingEvent) -> StreamingEvent | None:
+            if isinstance(event, str) and len(event) <= 2:
+                return None
+            return event
+
+        manager: HookManager = HookManager(
+            hooks=[
+                Hook(event_type=EventType.ON_EVENT, callback=split_words, priority=1),
+                Hook(event_type=EventType.ON_EVENT, callback=suppress_short, priority=2),
+            ]
+        )
+        events = await _collect(manager.execute_on_event(_async_gen("hello to the world")))
+
+        assert events == ["hello", "the", "world"]
+
+    @pytest.mark.asyncio
+    async def test_expand_yields_nothing_suppresses(self):
+        async def to_empty(event: StreamingEvent) -> AsyncGenerator[StreamingEvent, None]:
+            return
+            yield  # noqa: RET504  # make it an async generator
+
+        manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.ON_EVENT, callback=to_empty)])
+        events = await _collect(manager.execute_on_event(_async_gen("hello", "world")))
+
+        assert events == []
