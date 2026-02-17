@@ -143,7 +143,6 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
 
             result: ToolCall = await hook.callback(current_tool_call)
 
-            # Validation (moved from PreToolOutput.__post_init__)
             if result.decision in ("ask", "deny") and not result.reason:
                 raise ValueError(f"reason is required when decision='{result.decision}'")
 

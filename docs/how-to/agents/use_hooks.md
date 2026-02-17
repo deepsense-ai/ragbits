@@ -43,7 +43,7 @@ agent = Agent(
 
 The `Hook` constructor accepts:
 
-- **`event_type`** — one of `EventType.PRE_TOOL`, `POST_TOOL`, `PRE_RUN`, or `POST_RUN`
+- **`event_type`** — one of `EventType.PRE_TOOL`, `POST_TOOL`, `PRE_RUN`, `POST_RUN` or `ON_EVENT`
 - **`callback`** — an async function matching the corresponding callback protocol
 - **`tool_names`** — optional list of tool names this hook applies to. If `None`, the hook runs for every tool. This parameter is only relevant for `PRE_TOOL` and `POST_TOOL` hooks.
 - **`priority`** — execution order; lower numbers execute first (default: `100`)

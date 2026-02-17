@@ -55,10 +55,7 @@ async def main() -> None:
     parent_agent = Agent(
         name="health_assistant",
         llm=llm,
-        tools=[
-            (diet_agent, {"name": "diet_expert"}),
-            (fitness_agent, {"name": "fitness_coach"}),
-        ],
+        tools=[diet_agent, fitness_agent],
         hooks=[hook],
     )
 
