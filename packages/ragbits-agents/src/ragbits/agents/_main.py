@@ -1106,7 +1106,7 @@ class Agent(
                 id=tool_call.id,
                 name=tool_call.name,
                 arguments=tool_call.arguments,
-                result="⏳ Awaiting user confirmation"
+                result="⏳ Awaiting user confirmation",
             )
             return
 

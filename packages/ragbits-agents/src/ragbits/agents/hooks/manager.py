@@ -290,7 +290,6 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
                     if awaited is not None:
                         yield awaited
 
-
         for hook in self.get_hooks(EventType.ON_EVENT):
             generator = apply_hook_to_stream(generator, hook)
 
