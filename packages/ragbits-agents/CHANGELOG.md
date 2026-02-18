@@ -11,7 +11,7 @@
 - Allow passing Tool objects directly to Agent
 - Add ToolReturn allowing the control which part of the tool output we pass to LLM (#920)
 - Add the option to stream events from tools using generators and async generators (#921)
-- Add hooks system for agent lifecycle interception (PRE_TOOL, POST_TOOL, PRE_RUN, POST_RUN) (#914) (#926)
+- Add hooks system for agent lifecycle interception (PRE_TOOL, POST_TOOL, PRE_RUN, POST_RUN, ON_EVENT) (#914) (#926) (#939)
 
 ## 1.4.2 (2026-02-18)
 
@@ -32,6 +32,7 @@
 - ragbits-core updated to version v1.4.0
 
 ## 1.3.0 (2025-09-11)
+
 ### Changed
 
 - ragbits-core updated to version v1.3.0

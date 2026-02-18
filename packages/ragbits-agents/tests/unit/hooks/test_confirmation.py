@@ -5,7 +5,7 @@
 import pytest
 
 from ragbits.agents.hooks.confirmation import create_confirmation_hook
-from ragbits.agents.hooks.types import EventType, PreToolInput
+from ragbits.agents.hooks.types import EventType
 from ragbits.core.llms.base import ToolCall
 
 
@@ -26,9 +26,9 @@ class TestCreateConfirmationHook:
     @pytest.mark.asyncio
     async def test_hook_returns_ask_decision_with_reason(self, tool_call: ToolCall):
         hook = create_confirmation_hook()
-        result = await hook.execute(PreToolInput(tool_call=tool_call))
+        result = await hook.callback(tool_call)
 
         assert result.decision == "ask"
         assert result.arguments == tool_call.arguments
         assert result.reason is not None
-        assert tool_call.name in result.reason
+        assert tool_call.name.replace("_", " ") in result.reason

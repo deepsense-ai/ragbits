@@ -5,12 +5,11 @@ This module provides factory functions for creating commonly used hooks.
 """
 
 from ragbits.agents.hooks.base import Hook
-from ragbits.agents.hooks.types import EventType, PreToolInput, PreToolOutput
+from ragbits.agents.hooks.types import EventType
+from ragbits.core.llms.base import ToolCall
 
 
-def create_confirmation_hook(
-    tool_names: list[str] | None = None, priority: int = 1
-) -> Hook[PreToolInput, PreToolOutput]:
+def create_confirmation_hook(tool_names: list[str] | None = None, priority: int = 1) -> Hook:
     """
     Create a hook that requires user confirmation before tool execution.
 
@@ -35,12 +34,13 @@ def create_confirmation_hook(
         ```
     """
 
-    async def confirm_hook(input_data: PreToolInput) -> PreToolOutput:
+    async def confirm_hook(tool_call: ToolCall) -> ToolCall:
         """Hook that always returns 'ask' to require confirmation."""
-        return PreToolOutput(
-            arguments=input_data.tool_call.arguments,
-            decision="ask",
-            reason=f"Tool '{input_data.tool_call.name}' requires user confirmation",
+        return tool_call.model_copy(
+            update={
+                "decision": "ask",
+                "reason": f"Action '{tool_call.name.replace('_', ' ')}' requires user confirmation",
+            }
         )
 
     return Hook(

@@ -58,6 +58,8 @@ class ToolCall(BaseModel):
     type: str
     name: str
     arguments: dict
+    decision: Literal["pass", "ask", "deny"] = "pass"
+    reason: str | None = None
 
     @field_validator("arguments", mode="before")
     def parse_tool_arguments(cls, tool_arguments: str) -> dict:
