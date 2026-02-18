@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 1.4.2 (2026-02-18)
+
+### Changed
+
+- ragbits-core updated to version v1.4.2
+
+- Fix a UI build that had a hardcoded `127.0.0.1:8000` address
+
 ## 1.4.1 (2026-02-08)
 ### Changed
 

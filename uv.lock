@@ -4960,7 +4960,7 @@ wheels = [
 
 [[package]]
 name = "ragbits"
-version = "1.4.1"
+version = "1.4.2"
 source = { editable = "packages/ragbits" }
 dependencies = [
     { name = "ragbits-agents" },
@@ -5078,11 +5078,11 @@ requires-dist = [
     { name = "ragbits-guardrails", editable = "packages/ragbits-guardrails" },
     { name = "ragbits-guardrails", extras = ["openai"], marker = "extra == 'openai'", editable = "packages/ragbits-guardrails" },
 ]
-provides-extras = ["chroma", "local", "fastembed", "promptfoo", "otel", "logfire", "qdrant", "pgvector", "fastembed-gpu", "azure", "gcs", "hf", "s3", "google-drive", "weaviate", "a2a", "mcp", "openai", "cli", "relari", "unstructured", "ray", "sql"]
+provides-extras = ["openai", "chroma", "local", "fastembed", "promptfoo", "otel", "logfire", "qdrant", "pgvector", "fastembed-gpu", "azure", "gcs", "hf", "s3", "google-drive", "weaviate", "relari", "a2a", "mcp", "cli", "unstructured", "ray", "sql"]
 
 [[package]]
 name = "ragbits-agents"
-version = "1.4.1"
+version = "1.4.2"
 source = { editable = "packages/ragbits-agents" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5118,7 +5118,7 @@ provides-extras = ["a2a", "mcp", "openai", "cli"]
 
 [[package]]
 name = "ragbits-chat"
-version = "1.4.1"
+version = "1.4.2"
 source = { editable = "packages/ragbits-chat" }
 dependencies = [
     { name = "bcrypt" },
@@ -5148,7 +5148,7 @@ provides-extras = ["sql"]
 
 [[package]]
 name = "ragbits-cli"
-version = "1.4.1"
+version = "1.4.2"
 source = { editable = "packages/ragbits-cli" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5163,7 +5163,7 @@ requires-dist = [
 
 [[package]]
 name = "ragbits-core"
-version = "1.4.1"
+version = "1.4.2"
 source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "aiohttp" },
@@ -5283,7 +5283,7 @@ provides-extras = ["chroma", "local", "fastembed", "promptfoo", "otel", "logfire
 
 [[package]]
 name = "ragbits-document-search"
-version = "1.4.1"
+version = "1.4.2"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
     { name = "docling" },
@@ -5319,7 +5319,7 @@ provides-extras = ["unstructured", "ray"]
 
 [[package]]
 name = "ragbits-evaluate"
-version = "1.4.1"
+version = "1.4.2"
 source = { editable = "packages/ragbits-evaluate" }
 dependencies = [
     { name = "datasets" },
@@ -5349,7 +5349,7 @@ provides-extras = ["relari"]
 
 [[package]]
 name = "ragbits-guardrails"
-version = "1.4.1"
+version = "1.4.2"
 source = { editable = "packages/ragbits-guardrails" }
 dependencies = [
     { name = "ragbits-core" },
