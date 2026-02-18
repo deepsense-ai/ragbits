@@ -161,7 +161,7 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
                                 result.model_copy(
                                     update={
                                         "decision": "deny",
-                                        "reason": result.reason or "Tool execution declined by user",
+                                        "reason": "❌ Action declined by user",
                                     }
                                 ),
                                 None,
@@ -171,7 +171,7 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
                     confirmation_request = ConfirmationRequest(
                         confirmation_id=confirmation_id,
                         tool_name=tool_call.name,
-                        tool_description=result.reason or "Hook requires user confirmation",
+                        tool_description=result.reason,  # type: ignore[arg-type]  # guaranteed non-None by ValueError check above
                         arguments=current_tool_call.arguments,
                     )
                     return result, confirmation_request

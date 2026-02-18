@@ -1095,7 +1095,7 @@ class Agent(
                 id=tool_call.id,
                 name=tool_call.name,
                 arguments=tool_call.arguments,
-                result=pre_tool_result.reason or "Tool execution denied",
+                result=pre_tool_result.reason,
             )
             return
         # Handle "ask" decision from hooks
@@ -1106,7 +1106,7 @@ class Agent(
                 id=tool_call.id,
                 name=tool_call.name,
                 arguments=tool_call.arguments,
-                result=pre_tool_result.reason or "Hook requires user confirmation",
+                result="⏳ Awaiting user confirmation"
             )
             return
 

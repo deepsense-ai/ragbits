@@ -31,4 +31,4 @@ class TestCreateConfirmationHook:
         assert result.decision == "ask"
         assert result.arguments == tool_call.arguments
         assert result.reason is not None
-        assert tool_call.name in result.reason
+        assert tool_call.name.replace("_", " ") in result.reason

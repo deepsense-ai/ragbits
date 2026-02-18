@@ -39,7 +39,7 @@ def create_confirmation_hook(tool_names: list[str] | None = None, priority: int 
         return tool_call.model_copy(
             update={
                 "decision": "ask",
-                "reason": f"Tool '{tool_call.name}' requires user confirmation",
+                "reason": f"Action '{tool_call.name.replace('_', ' ')}' requires user confirmation",
             }
         )
 
