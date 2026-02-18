@@ -4,30 +4,33 @@
 
 import hashlib
 import json
-from collections.abc import Callable
+from collections.abc import AsyncGenerator, Callable
 
 import pytest
 
-from ragbits.agents._main import AgentRunContext
+from ragbits.agents._main import AgentOptions, AgentRunContext
 from ragbits.agents.hooks.base import Hook
 from ragbits.agents.hooks.manager import CONFIRMATION_ID_LENGTH, HookManager
 from ragbits.agents.hooks.types import (
     EventType,
-    PostRunHookCallback,
-    PostToolHookCallback,
-    PreRunHookCallback,
-    PreRunOutput,
-    PreToolHookCallback,
-    PreToolInput,
-    PreToolOutput,
+    PostRunCallback,
+    PostToolCallback,
+    PreRunCallback,
+    PreToolCallback,
+    StreamingEvent,
 )
-from ragbits.agents.tool import ToolReturn
+from ragbits.agents.tool import ToolCallResult, ToolReturn
 from ragbits.core.llms.base import ToolCall
 
 
 @pytest.fixture
 def context() -> AgentRunContext:
     return AgentRunContext()
+
+
+@pytest.fixture
+def options() -> AgentOptions:
+    return AgentOptions()
 
 
 def make_confirmation_id(hook_name: str, tool_name: str, arguments: dict) -> str:
@@ -37,7 +40,7 @@ def make_confirmation_id(hook_name: str, tool_name: str, arguments: dict) -> str
 
 
 class TestHookRegistration:
-    def test_register_and_retrieve_hooks(self, pass_hook: PreToolHookCallback):
+    def test_register_and_retrieve_hooks(self, pass_hook: PreToolCallback):
         manager: HookManager = HookManager()
         hook = Hook(event_type=EventType.PRE_TOOL, callback=pass_hook)
         manager.register(hook)
@@ -46,7 +49,7 @@ class TestHookRegistration:
         assert len(hooks) == 1
         assert hooks[0] == hook
 
-    def test_hooks_sorted_by_priority(self, pass_hook: PreToolHookCallback):
+    def test_hooks_sorted_by_priority(self, pass_hook: PreToolCallback):
         manager: HookManager = HookManager(
             hooks=[
                 Hook(event_type=EventType.PRE_TOOL, callback=pass_hook, priority=100),
@@ -60,7 +63,7 @@ class TestHookRegistration:
 
 
 class TestHookRetrieval:
-    def test_filters_by_tool_name(self, pass_hook: PreToolHookCallback):
+    def test_filters_by_tool_name(self, pass_hook: PreToolCallback):
         manager: HookManager = HookManager(
             hooks=[
                 Hook(event_type=EventType.PRE_TOOL, callback=pass_hook, tool_names=["tool1"]),
@@ -77,22 +80,23 @@ class TestHookRetrieval:
 class TestPreToolExecution:
     @pytest.mark.asyncio
     async def test_no_hooks(self, tool_call: ToolCall, context: AgentRunContext):
-        result = await HookManager().execute_pre_tool(tool_call, context)
+        result, confirmation = await HookManager().execute_pre_tool(tool_call, context)
 
         assert result.decision == "pass"
         assert result.arguments == tool_call.arguments
+        assert confirmation is None
 
     @pytest.mark.asyncio
     async def test_deny_stops_chain(self, tool_call: ToolCall, context: AgentRunContext):
         execution_order: list[str] = []
 
-        async def tracking_deny_hook(input_data: PreToolInput) -> PreToolOutput:
+        async def tracking_deny_hook(tool_call: ToolCall) -> ToolCall:
             execution_order.append("deny")
-            return PreToolOutput(arguments=input_data.tool_call.arguments, decision="deny", reason="Denied")
+            return tool_call.model_copy(update={"decision": "deny", "reason": "Denied"})
 
-        async def tracking_pass_hook(input_data: PreToolInput) -> PreToolOutput:
+        async def tracking_pass_hook(tool_call: ToolCall) -> ToolCall:
             execution_order.append("pass")
-            return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
+            return tool_call
 
         manager: HookManager = HookManager(
             hooks=[
@@ -100,25 +104,25 @@ class TestPreToolExecution:
                 Hook(event_type=EventType.PRE_TOOL, callback=tracking_pass_hook, priority=2),
             ]
         )
-        result = await manager.execute_pre_tool(tool_call, context)
+        result, _ = await manager.execute_pre_tool(tool_call, context)
 
         assert result.decision == "deny"
         assert execution_order == ["deny"]
 
     @pytest.mark.asyncio
     async def test_ask_creates_confirmation_request(
-        self, tool_call: ToolCall, context: AgentRunContext, ask_hook: PreToolHookCallback
+        self, tool_call: ToolCall, context: AgentRunContext, ask_hook: PreToolCallback
     ):
         manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.PRE_TOOL, callback=ask_hook)])
-        result = await manager.execute_pre_tool(tool_call, context)
+        result, confirmation = await manager.execute_pre_tool(tool_call, context)
 
         assert result.decision == "ask"
-        assert result.confirmation_request is not None
-        assert result.confirmation_request.tool_name == tool_call.name
-        assert len(result.confirmation_request.confirmation_id) == CONFIRMATION_ID_LENGTH
+        assert confirmation is not None
+        assert confirmation.tool_name == tool_call.name
+        assert len(confirmation.confirmation_id) == CONFIRMATION_ID_LENGTH
 
     @pytest.mark.asyncio
-    async def test_ask_with_prior_confirmation(self, tool_call: ToolCall, ask_hook: PreToolHookCallback):
+    async def test_ask_with_prior_confirmation(self, tool_call: ToolCall, ask_hook: PreToolCallback):
         manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.PRE_TOOL, callback=ask_hook)])
         confirmation_id = make_confirmation_id("ask_hook", "test_tool", {"arg1": "value1"})
 
@@ -126,17 +130,19 @@ class TestPreToolExecution:
         ctx_approved: AgentRunContext = AgentRunContext(
             tool_confirmations=[{"confirmation_id": confirmation_id, "confirmed": True}]
         )
-        assert (await manager.execute_pre_tool(tool_call, ctx_approved)).decision == "pass"
+        result, _ = await manager.execute_pre_tool(tool_call, ctx_approved)
+        assert result.decision == "pass"
 
         # Declined
         ctx_declined: AgentRunContext = AgentRunContext(
             tool_confirmations=[{"confirmation_id": confirmation_id, "confirmed": False}]
         )
-        assert (await manager.execute_pre_tool(tool_call, ctx_declined)).decision == "deny"
+        result, _ = await manager.execute_pre_tool(tool_call, ctx_declined)
+        assert result.decision == "deny"
 
     @pytest.mark.asyncio
     async def test_chaining(
-        self, tool_call: ToolCall, context: AgentRunContext, pre_tool_add_field: Callable[..., PreToolHookCallback]
+        self, tool_call: ToolCall, context: AgentRunContext, pre_tool_add_field: Callable[..., PreToolCallback]
     ):
         manager: HookManager = HookManager(
             hooks=[
@@ -144,7 +150,7 @@ class TestPreToolExecution:
                 Hook(event_type=EventType.PRE_TOOL, callback=pre_tool_add_field("hook2"), priority=2),
             ]
         )
-        result = await manager.execute_pre_tool(tool_call, context)
+        result, _ = await manager.execute_pre_tool(tool_call, context)
 
         assert result.arguments == {"arg1": "value1", "hook1": "added", "hook2": "added"}
 
@@ -154,10 +160,10 @@ class TestPostToolExecution:
     async def test_no_hooks(self, tool_call: ToolCall):
         result = await HookManager().execute_post_tool(tool_call, tool_return=ToolReturn(value="Original"))
 
-        assert result.tool_return.value == "Original"
+        assert result.value == "Original"
 
     @pytest.mark.asyncio
-    async def test_chaining(self, tool_call: ToolCall, post_tool_append: Callable[..., PostToolHookCallback]):
+    async def test_chaining(self, tool_call: ToolCall, post_tool_append: Callable[..., PostToolCallback]):
         manager: HookManager = HookManager(
             hooks=[
                 Hook(event_type=EventType.POST_TOOL, callback=post_tool_append(" + h1"), priority=1),
@@ -166,8 +172,8 @@ class TestPostToolExecution:
         )
         result = await manager.execute_post_tool(tool_call, tool_return=ToolReturn(value="Original"))
 
-        assert result.tool_return is not None
-        assert result.tool_return.value == "Original + h1 + h2"
+        assert result is not None
+        assert result.value == "Original + h1 + h2"
 
 
 class TestConfirmationIdGeneration:
@@ -195,34 +201,38 @@ class TestConfirmationIdGeneration:
 
 class TestPreRunExecution:
     @pytest.mark.asyncio
-    async def test_no_hooks(self, context: AgentRunContext):
-        result: PreRunOutput = await HookManager().execute_pre_run(_input="test input", options=None, context=context)
+    async def test_no_hooks(self, options: AgentOptions, context: AgentRunContext):
+        result = await HookManager().execute_pre_run(_input="test input", options=options, context=context)
 
-        assert result.output == "test input"
+        assert result == "test input"
 
     @pytest.mark.asyncio
-    async def test_chaining(self, context: AgentRunContext, pre_run_modify: Callable[..., PreRunHookCallback]):
+    async def test_chaining(
+        self, options: AgentOptions, context: AgentRunContext, pre_run_modify: Callable[..., PreRunCallback]
+    ):
         manager: HookManager = HookManager(
             hooks=[
                 Hook(event_type=EventType.PRE_RUN, callback=pre_run_modify("H1"), priority=1),
                 Hook(event_type=EventType.PRE_RUN, callback=pre_run_modify("H2"), priority=2),
             ]
         )
-        result = await manager.execute_pre_run(_input="original", options=None, context=context)
+        result = await manager.execute_pre_run(_input="original", options=options, context=context)
 
-        assert result.output == "H2: H1: original"
+        assert result == "H2: H1: original"
 
 
 class TestPostRunExecution:
     @pytest.mark.asyncio
-    async def test_no_hooks(self, context: AgentRunContext):
+    async def test_no_hooks(self, options: AgentOptions, context: AgentRunContext):
         mock_result = type("AgentResult", (), {"content": "test"})()
-        result = await HookManager().execute_post_run(result=mock_result, options=None, context=context)
+        result = await HookManager().execute_post_run(result=mock_result, options=options, context=context)
 
-        assert result.result == mock_result
+        assert result == mock_result
 
     @pytest.mark.asyncio
-    async def test_chaining(self, context: AgentRunContext, post_run_modify: Callable[..., "PostRunHookCallback"]):
+    async def test_chaining(
+        self, options: AgentOptions, context: AgentRunContext, post_run_modify: Callable[..., "PostRunCallback"]
+    ):
         manager: HookManager = HookManager(
             hooks=[
                 Hook(event_type=EventType.POST_RUN, callback=post_run_modify("H1"), priority=1),
@@ -230,6 +240,187 @@ class TestPostRunExecution:
             ]
         )
         mock_result = type("AgentResult", (), {"content": "test"})()
-        result = await manager.execute_post_run(result=mock_result, options=None, context=context)
+        result = await manager.execute_post_run(result=mock_result, options=options, context=context)
 
-        assert result.result.content == "H2: H1: test"
+        assert result.content == "H2: H1: test"
+
+
+async def _collect(gen: AsyncGenerator[StreamingEvent, None]) -> list[StreamingEvent]:
+    """Helper to collect all items from an async generator."""
+    items: list[StreamingEvent] = []
+    async for item in gen:
+        items.append(item)
+    return items
+
+
+async def _async_gen(*items: StreamingEvent) -> AsyncGenerator[StreamingEvent, None]:
+    """Helper to create an async generator from items."""
+    for item in items:
+        yield item
+
+
+class TestOnEventExecution:
+    @pytest.mark.asyncio
+    async def test_no_hooks(self):
+        manager: HookManager = HookManager()
+        events = await _collect(manager.execute_on_event(_async_gen("hello", "world")))
+
+        assert events == ["hello", "world"]
+
+    @pytest.mark.asyncio
+    async def test_modifies_str_events(self):
+        async def uppercase_hook(event: StreamingEvent) -> StreamingEvent | None:
+            if isinstance(event, str):
+                return event.upper()
+            return event
+
+        manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.ON_EVENT, callback=uppercase_hook)])
+        events = await _collect(manager.execute_on_event(_async_gen("hello", "world")))
+
+        assert events == ["HELLO", "WORLD"]
+
+    @pytest.mark.asyncio
+    async def test_suppresses_events(self):
+        async def suppress_str(event: StreamingEvent) -> StreamingEvent | None:
+            if isinstance(event, str):
+                return None
+            return event
+
+        tool_call_result = ToolCallResult(id="t1", name="tool", arguments={}, result="ok")
+        manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.ON_EVENT, callback=suppress_str)])
+        events = await _collect(manager.execute_on_event(_async_gen("hello", tool_call_result, "world")))
+
+        assert events == [tool_call_result]
+
+    @pytest.mark.asyncio
+    async def test_chaining(self):
+        async def add_prefix(event: StreamingEvent) -> StreamingEvent | None:
+            if isinstance(event, str):
+                return f"[A]{event}"
+            return event
+
+        async def add_suffix(event: StreamingEvent) -> StreamingEvent | None:
+            if isinstance(event, str):
+                return f"{event}[B]"
+            return event
+
+        manager: HookManager = HookManager(
+            hooks=[
+                Hook(event_type=EventType.ON_EVENT, callback=add_prefix, priority=1),
+                Hook(event_type=EventType.ON_EVENT, callback=add_suffix, priority=2),
+            ]
+        )
+        events = await _collect(manager.execute_on_event(_async_gen("hi")))
+
+        assert events == ["[A]hi[B]"]
+
+    @pytest.mark.asyncio
+    async def test_suppression_stops_chain(self):
+        execution_order: list[str] = []
+
+        async def suppressing_hook(event: StreamingEvent) -> StreamingEvent | None:
+            execution_order.append("suppress")
+            return None
+
+        async def never_reached_hook(event: StreamingEvent) -> StreamingEvent | None:
+            execution_order.append("after")
+            return event
+
+        manager: HookManager = HookManager(
+            hooks=[
+                Hook(event_type=EventType.ON_EVENT, callback=suppressing_hook, priority=1),
+                Hook(event_type=EventType.ON_EVENT, callback=never_reached_hook, priority=2),
+            ]
+        )
+        events = await _collect(manager.execute_on_event(_async_gen("hello")))
+
+        assert events == []
+        assert execution_order == ["suppress"]
+
+    @pytest.mark.asyncio
+    async def test_mixed_event_types(self):
+        tool_call = ToolCall(id="t1", name="test", arguments="{}", type="function")  # type: ignore[arg-type]
+        tool_result = ToolCallResult(id="t1", name="test", arguments={}, result="done")
+
+        async def tag_strings(event: StreamingEvent) -> StreamingEvent | None:
+            if isinstance(event, str):
+                return f"[STR]{event}"
+            return event
+
+        manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.ON_EVENT, callback=tag_strings)])
+        events = await _collect(manager.execute_on_event(_async_gen("text", tool_call, tool_result, "more")))
+
+        assert events == ["[STR]text", tool_call, tool_result, "[STR]more"]
+
+    @pytest.mark.asyncio
+    async def test_expand_single_event_to_multiple(self):
+        async def split_words(event: StreamingEvent) -> AsyncGenerator[StreamingEvent, None]:
+            if isinstance(event, str) and " " in event:
+                for word in event.split(" "):
+                    yield word
+            else:
+                yield event
+
+        manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.ON_EVENT, callback=split_words)])
+        events = await _collect(manager.execute_on_event(_async_gen("hello world")))
+
+        assert events == ["hello", "world"]
+
+    @pytest.mark.asyncio
+    async def test_expand_chained_with_modify(self):
+        async def split_words(event: StreamingEvent) -> AsyncGenerator[StreamingEvent, None]:
+            if isinstance(event, str) and " " in event:
+                for word in event.split(" "):
+                    yield word
+            else:
+                yield event
+
+        async def uppercase(event: StreamingEvent) -> StreamingEvent | None:
+            if isinstance(event, str):
+                return event.upper()
+            return event
+
+        manager: HookManager = HookManager(
+            hooks=[
+                Hook(event_type=EventType.ON_EVENT, callback=split_words, priority=1),
+                Hook(event_type=EventType.ON_EVENT, callback=uppercase, priority=2),
+            ]
+        )
+        events = await _collect(manager.execute_on_event(_async_gen("hello world")))
+
+        assert events == ["HELLO", "WORLD"]
+
+    @pytest.mark.asyncio
+    async def test_expand_with_partial_suppression(self):
+        async def split_words(event: StreamingEvent) -> AsyncGenerator[StreamingEvent, None]:
+            if isinstance(event, str) and " " in event:
+                for word in event.split(" "):
+                    yield word
+            else:
+                yield event
+
+        async def suppress_short(event: StreamingEvent) -> StreamingEvent | None:
+            if isinstance(event, str) and len(event) <= 2:
+                return None
+            return event
+
+        manager: HookManager = HookManager(
+            hooks=[
+                Hook(event_type=EventType.ON_EVENT, callback=split_words, priority=1),
+                Hook(event_type=EventType.ON_EVENT, callback=suppress_short, priority=2),
+            ]
+        )
+        events = await _collect(manager.execute_on_event(_async_gen("hello to the world")))
+
+        assert events == ["hello", "the", "world"]
+
+    @pytest.mark.asyncio
+    async def test_expand_yields_nothing_suppresses(self):
+        async def to_empty(event: StreamingEvent) -> AsyncGenerator[StreamingEvent, None]:
+            return
+            yield  # noqa: RET504  # make it an async generator
+
+        manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.ON_EVENT, callback=to_empty)])
+        events = await _collect(manager.execute_on_event(_async_gen("hello", "world")))
+
+        assert events == []

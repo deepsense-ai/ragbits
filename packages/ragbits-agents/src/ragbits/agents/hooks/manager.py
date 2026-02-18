@@ -8,20 +8,19 @@ organization, and execution of hooks during lifecycle events.
 import hashlib
 import json
 from collections import defaultdict
-from typing import TYPE_CHECKING, Any, Generic
+from collections.abc import AsyncGenerator
+from typing import TYPE_CHECKING, Generic, Literal, overload
 
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.hooks.base import Hook
 from ragbits.agents.hooks.types import (
     EventType,
-    PostRunInput,
-    PostRunOutput,
-    PostToolInput,
-    PostToolOutput,
-    PreRunInput,
-    PreRunOutput,
-    PreToolInput,
-    PreToolOutput,
+    OnEventCallback,
+    PostRunCallback,
+    PostToolCallback,
+    PreRunCallback,
+    PreToolCallback,
+    StreamingEvent,
 )
 from ragbits.agents.tool import ToolReturn
 from ragbits.core.llms.base import LLMClientOptionsT, ToolCall
@@ -69,6 +68,31 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         self._hooks[hook.event_type].append(hook)
         self._hooks[hook.event_type].sort(key=lambda h: h.priority)
 
+    @overload
+    def get_hooks(
+        self, event_type: Literal[EventType.PRE_TOOL], tool_name: str | None = ...
+    ) -> list[Hook[PreToolCallback]]: ...
+
+    @overload
+    def get_hooks(
+        self, event_type: Literal[EventType.POST_TOOL], tool_name: str | None = ...
+    ) -> list[Hook[PostToolCallback]]: ...
+
+    @overload
+    def get_hooks(
+        self, event_type: Literal[EventType.PRE_RUN], tool_name: str | None = ...
+    ) -> list[Hook[PreRunCallback]]: ...
+
+    @overload
+    def get_hooks(
+        self, event_type: Literal[EventType.POST_RUN], tool_name: str | None = ...
+    ) -> list[Hook[PostRunCallback]]: ...
+
+    @overload
+    def get_hooks(
+        self, event_type: Literal[EventType.ON_EVENT], tool_name: str | None = ...
+    ) -> list[Hook[OnEventCallback]]: ...
+
     def get_hooks(self, event_type: EventType, tool_name: str | None = None) -> list[Hook]:
         """
         Get all hooks for a specific event type that match the tool name.
@@ -91,11 +115,11 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         self,
         tool_call: ToolCall,
         context: "AgentRunContext",
-    ) -> PreToolOutput:
+    ) -> tuple[ToolCall, ConfirmationRequest | None]:
         """
         Execute pre-tool hooks with proper chaining.
 
-        Each hook sees the modified arguments from the previous hook.
+        Each hook sees the modified ToolCall from the previous hook.
         Execution stops immediately if any hook returns "deny" or "ask" (unless confirmed).
 
         Args:
@@ -103,32 +127,25 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
             context: Agent run context containing tool_confirmations
 
         Returns:
-            PreToolOutput with final arguments and decision
+            Tuple of (ToolCall with final arguments and decision, optional ConfirmationRequest)
         """
-        hooks = self.get_hooks(EventType.PRE_TOOL, tool_call.name)
+        current_tool_call = tool_call.model_copy()
 
-        # Start with original arguments
-        current_arguments = tool_call.arguments
-
-        for hook in hooks:
+        for hook in self.get_hooks(EventType.PRE_TOOL, tool_call.name):
             # Generate confirmation_id: hash(hook_function_name + tool_name + arguments)
             hook_name = hook.callback.__name__
-            confirmation_id_str = f"{hook_name}:{tool_call.name}:{json.dumps(current_arguments, sort_keys=True)}"
+            confirmation_id_str = (
+                f"{hook_name}:{tool_call.name}:{json.dumps(current_tool_call.arguments, sort_keys=True)}"
+            )
             confirmation_id = hashlib.sha256(confirmation_id_str.encode()).hexdigest()[:CONFIRMATION_ID_LENGTH]
 
-            # Create input with current state (chained from previous hook)
-            hook_input = PreToolInput(
-                tool_call=tool_call.model_copy(update={"arguments": current_arguments}),
-            )
+            result: ToolCall = await hook.callback(current_tool_call)
 
-            result: PreToolOutput = await hook.execute(hook_input)
+            if result.decision in ("ask", "deny") and not result.reason:
+                raise ValueError(f"reason is required when decision='{result.decision}'")
 
             if result.decision == "deny":
-                return PreToolOutput(
-                    arguments=current_arguments,
-                    decision="deny",
-                    reason=result.reason,
-                )
+                return result, None
 
             elif result.decision == "ask":
                 # Check if already confirmed/declined in context
@@ -136,40 +153,40 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
                     if conf.get("confirmation_id") == confirmation_id:
                         if conf.get("confirmed"):
                             # Approved → convert to "pass" and continue to next hook
-                            result = PreToolOutput(arguments=current_arguments, decision="pass")
+                            result = result.model_copy(update={"decision": "pass"})
                             break
                         else:
                             # Declined → convert to "deny" and stop immediately
-                            return PreToolOutput(
-                                arguments=current_arguments,
-                                decision="deny",
-                                reason=result.reason or "Tool execution declined by user",
+                            return (
+                                result.model_copy(
+                                    update={
+                                        "decision": "deny",
+                                        "reason": "❌ Action declined by user",
+                                    }
+                                ),
+                                None,
                             )
                 else:
-                    # Not in context → return "ask" with full ConfirmationRequest
-                    return PreToolOutput(
-                        arguments=current_arguments,
-                        decision="ask",
-                        reason=result.reason,
-                        confirmation_request=ConfirmationRequest(
-                            confirmation_id=confirmation_id,
-                            tool_name=tool_call.name,
-                            tool_description=result.reason or "Hook requires user confirmation",
-                            arguments=current_arguments,
-                        ),
+                    # Not in context → return "ask" with ConfirmationRequest
+                    confirmation_request = ConfirmationRequest(
+                        confirmation_id=confirmation_id,
+                        tool_name=tool_call.name,
+                        tool_description=result.reason,  # type: ignore[arg-type]  # guaranteed non-None by ValueError check above
+                        arguments=current_tool_call.arguments,
                     )
+                    return result, confirmation_request
 
-            # Chain arguments for next hook
-            current_arguments = result.arguments
+            # Chain: next hook gets the returned ToolCall
+            current_tool_call = result
 
-        # All hooks passed
-        return PreToolOutput(arguments=current_arguments, decision="pass")
+        # All hooks passed — ensure decision is "pass"
+        return current_tool_call.model_copy(update={"decision": "pass"}), None
 
     async def execute_post_tool(
         self,
         tool_call: ToolCall,
         tool_return: ToolReturn,
-    ) -> PostToolOutput:
+    ) -> ToolReturn:
         """
         Execute post-tool hooks with proper output chaining.
 
@@ -180,34 +197,19 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
             tool_return: Object representing the output of the tool (with value passed to the LLM and metadata)
 
         Returns:
-            PostToolOutput with final output
+            ToolReturn with final output
         """
-        hooks = self.get_hooks(EventType.POST_TOOL, tool_call.name)
+        for hook in self.get_hooks(EventType.POST_TOOL, tool_call.name):
+            tool_return = await hook.callback(tool_call, tool_return)
 
-        # Start with original output
-        current_output = tool_return
-
-        for hook in hooks:
-            # Create input with current state (chained from previous hook)
-            hook_input = PostToolInput(
-                tool_call=tool_call,
-                tool_return=current_output,
-            )
-
-            result: PostToolOutput = await hook.execute(hook_input)
-
-            # Chain output for next hook
-            current_output = result.tool_return
-
-        # Return final chained result
-        return PostToolOutput(tool_return=current_output)
+        return tool_return
 
     async def execute_pre_run(
         self,
-        _input: str | PromptInputT | None,
-        options: "AgentOptions[LLMClientOptionsT] | None",
-        context: "AgentRunContext | None",
-    ) -> PreRunOutput[PromptInputT]:
+        _input: PromptInputT | str | None,
+        options: "AgentOptions[LLMClientOptionsT]",
+        context: "AgentRunContext",
+    ) -> PromptInputT | str | None:
         """
         Execute pre-run hooks with proper input chaining.
 
@@ -219,35 +221,19 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
             context: The context for the agent run
 
         Returns:
-            PreRunOutput with final input
+            The final (potentially modified) input
         """
-        hooks = self.get_hooks(EventType.PRE_RUN, None)
+        for hook in self.get_hooks(EventType.PRE_RUN):
+            _input = await hook.callback(_input, options, context)
 
-        # Start with original input
-        current_input: Any = _input
-
-        for hook in hooks:
-            # Create input with current state (chained from previous hook)
-            hook_input: PreRunInput = PreRunInput(
-                input=current_input,
-                options=options,
-                context=context,
-            )
-
-            result: PreRunOutput[PromptInputT] = await hook.execute(hook_input)
-
-            # Chain input for next hook
-            current_input = result.output
-
-        # Return final chained input
-        return PreRunOutput(output=current_input)
+        return _input
 
     async def execute_post_run(
         self,
         result: "AgentResult[PromptOutputT]",
-        options: "AgentOptions[LLMClientOptionsT] | None",
-        context: "AgentRunContext | None",
-    ) -> PostRunOutput[PromptOutputT]:
+        options: "AgentOptions[LLMClientOptionsT]",
+        context: "AgentRunContext",
+    ) -> "AgentResult[PromptOutputT]":
         """
         Execute post-run hooks with proper result chaining.
 
@@ -259,25 +245,53 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
             context: The context for the agent run
 
         Returns:
-            PostRunOutput with final result
+            The final (potentially modified) AgentResult
         """
-        hooks = self.get_hooks(EventType.POST_RUN, None)
+        for hook in self.get_hooks(EventType.POST_RUN):
+            result = await hook.callback(result, options, context)
 
-        # Start with original result
-        current_result: Any = result
+        return result
 
-        for hook in hooks:
-            # Create input with current state (chained from previous hook)
-            hook_input: PostRunInput = PostRunInput(
-                result=current_result,
-                options=options,
-                context=context,
-            )
+    async def execute_on_event(
+        self,
+        generator: AsyncGenerator[StreamingEvent, None],
+    ) -> AsyncGenerator[StreamingEvent, None]:
+        """
+        Process streaming events through ON_EVENT hooks.
 
-            hook_result: PostRunOutput[PromptOutputT] = await hook.execute(hook_input)
+        Hooks are composed as a pipeline of async generators: each hook wraps the previous
+        generator, so events flow through the chain without intermediate collection.
+        A hook callback can either:
+        - Return an awaitable resolving to a StreamingEvent (pass-through / modify)
+        - Return an awaitable resolving to None (suppress the event)
+        - Return an async generator yielding multiple StreamingEvents (expand one event into many)
 
-            # Chain result for next hook
-            current_result = hook_result.result
+        Args:
+            generator: The source async generator of streaming events
 
-        # Return final chained result
-        return PostRunOutput(result=current_result)
+        Yields:
+            Processed streaming events (potentially modified by hooks)
+        """
+
+        async def apply_hook_to_stream(
+            source: AsyncGenerator[StreamingEvent, None],
+            hook: Hook[OnEventCallback],
+        ) -> AsyncGenerator[StreamingEvent, None]:
+            """
+            Apply a single ON_EVENT hook to every event from a source generator.
+            """
+            async for event in source:
+                result = hook.callback(event)
+                if isinstance(result, AsyncGenerator):
+                    async for sub_event in result:
+                        yield sub_event
+                else:
+                    awaited = await result
+                    if awaited is not None:
+                        yield awaited
+
+        for hook in self.get_hooks(EventType.ON_EVENT):
+            generator = apply_hook_to_stream(generator, hook)
+
+        async for event in generator:
+            yield event

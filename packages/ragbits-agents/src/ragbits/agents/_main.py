@@ -3,7 +3,6 @@ import types
 import uuid
 import warnings
 from collections.abc import AsyncGenerator, AsyncIterator, Callable, Generator
-from collections.abc import AsyncGenerator as _AG
 from contextlib import suppress
 from copy import deepcopy
 from dataclasses import dataclass
@@ -37,10 +36,6 @@ from ragbits.agents.hooks import (
 )
 from ragbits.agents.mcp.server import MCPServer, MCPServerStdio, MCPServerStreamableHttp
 from ragbits.agents.mcp.utils import get_tools
-from ragbits.agents.post_processors.base import (
-    StreamingPostProcessor,
-    stream_with_post_processing,
-)
 from ragbits.agents.tool import Tool, ToolCallResult, ToolChoice, ToolEvent, ToolReturn
 from ragbits.core.audit.traces import trace
 from ragbits.core.llms.base import (
@@ -501,26 +496,24 @@ class Agent(
         merged_options = (self.default_options | options) if options else self.default_options
 
         # Execute PRE_RUN hooks
-        pre_run_result = await self.hook_manager.execute_pre_run(
-            _input=input,
-            options=merged_options,
-            context=context,
+        input = cast(
+            PromptInputT,
+            await self.hook_manager.execute_pre_run(
+                _input=input,
+                options=merged_options,
+                context=context,
+            ),
         )
-
-        # Use potentially modified input
-        input = cast(PromptInputT, pre_run_result.output)
 
         # Run the agent
         result = await self._run_internal(input, merged_options, context, tool_choice)
 
         # Execute POST_RUN hooks
-        post_run_result = await self.hook_manager.execute_post_run(
+        return await self.hook_manager.execute_post_run(
             result=result,
             options=merged_options,
             context=context,
         )
-
-        return post_run_result.result
 
     async def _run_internal(
         self,
@@ -604,7 +597,6 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResultStreaming: ...
 
     @overload
@@ -614,7 +606,6 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResultStreaming: ...
 
     def run_streaming(
@@ -623,7 +614,6 @@ class Agent(
         options: AgentOptions[LLMClientOptionsT] | None = None,
         context: AgentRunContext | None = None,
         tool_choice: ToolChoice | None = None,
-        post_processors: list[StreamingPostProcessor[LLMClientOptionsT, PromptInputT, PromptOutputT]] | None = None,
     ) -> AgentResultStreaming:
         """
         This method returns an `AgentResultStreaming` object that can be asynchronously
@@ -638,7 +628,6 @@ class Agent(
                 - "none": do not call tool
                 - "required: enforce tool usage (model decides which one)
                 - Callable: one of provided tools
-            post_processors: List of streaming post-processors for chunk-level processing.
 
         Returns:
             A `StreamingResult` object for iteration and collection.
@@ -665,13 +654,9 @@ class Agent(
             tool_choice=tool_choice,
         )
 
-        # Apply post-processors
-        if post_processors:
-            generator = cast(
-                _AG[str | ToolCall | ToolCallResult | SimpleNamespace | BasePrompt | Usage | ConfirmationRequest],
-                generator,
-            )
-            generator = stream_with_post_processing(generator, post_processors, self)
+        # Apply ON_EVENT hooks if any registered
+        if self.hook_manager.get_hooks(EventType.ON_EVENT):
+            generator = self.hook_manager.execute_on_event(generator)
 
         # Apply POST_RUN hooks wrapper if any registered
         if self.hook_manager.get_hooks(EventType.POST_RUN):
@@ -749,12 +734,11 @@ class Agent(
             )
 
             # Execute POST_RUN hooks
-            post_run_result = await self.hook_manager.execute_post_run(
+            final_result = await self.hook_manager.execute_post_run(
                 result=agent_result,
                 options=options,
                 context=context,
             )
-            final_result = post_run_result.result
 
             # Yield the final result from POST_RUN hooks (may be modified)
             yield final_result.usage
@@ -789,14 +773,14 @@ class Agent(
         Execute the core streaming LLM loop with tool calls.
         """
         # Execute PRE_RUN hooks
-        pre_run_result = await self.hook_manager.execute_pre_run(
-            _input=input,
-            options=options,
-            context=context,
+        input = cast(
+            PromptInputT,
+            await self.hook_manager.execute_pre_run(
+                _input=input,
+                options=options,
+                context=context,
+            ),
         )
-
-        # Use potentially modified input
-        input = cast(PromptInputT, pre_run_result.output)
 
         llm_options = options.llm_options or self.llm.default_options
 
@@ -1100,7 +1084,7 @@ class Agent(
         tool = tools_mapping[tool_call.name]
 
         # Execute PRE_TOOL hooks with chaining
-        pre_tool_result = await self.hook_manager.execute_pre_tool(
+        pre_tool_result, confirmation_request = await self.hook_manager.execute_pre_tool(
             tool_call=tool_call,
             context=context,
         )
@@ -1111,18 +1095,18 @@ class Agent(
                 id=tool_call.id,
                 name=tool_call.name,
                 arguments=tool_call.arguments,
-                result=pre_tool_result.reason or "Tool execution denied",
+                result=pre_tool_result.reason,
             )
             return
         # Handle "ask" decision from hooks
-        elif pre_tool_result.decision == "ask" and pre_tool_result.confirmation_request is not None:
-            yield pre_tool_result.confirmation_request
+        elif pre_tool_result.decision == "ask" and confirmation_request is not None:
+            yield confirmation_request
 
             yield ToolCallResult(
                 id=tool_call.id,
                 name=tool_call.name,
                 arguments=tool_call.arguments,
-                result=pre_tool_result.reason or "Hook requires user confirmation",
+                result="⏳ Awaiting user confirmation",
             )
             return
 
@@ -1168,7 +1152,7 @@ class Agent(
                 raise AgentToolExecutionError(tool_call.name, e) from e
 
         # Execute POST_TOOL hooks with chaining
-        post_tool_output = await self.hook_manager.execute_post_tool(
+        post_tool_result = await self.hook_manager.execute_post_tool(
             tool_call=tool_call,
             tool_return=tool_return,
         )
@@ -1177,8 +1161,8 @@ class Agent(
             id=tool_call.id,
             name=tool_call.name,
             arguments=tool_call.arguments,
-            result=post_tool_output.tool_return.value,
-            metadata=post_tool_output.tool_return.metadata,
+            result=post_tool_result.value,
+            metadata=post_tool_result.metadata,
         )
 
     @requires_dependencies(["a2a.types"], "a2a")
