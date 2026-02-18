@@ -1,0 +1,1 @@
+import{r as e,bB as r}from"./index-Ci_ePHVC.js";const i=()=>{const t=e.useContext(r);if(!t)throw new Error("useInitializeUserStore must be used within a HistoryStoreContextProvider");return t.initializeUserStore};export{i as u};
