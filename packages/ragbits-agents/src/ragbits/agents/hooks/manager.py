@@ -129,11 +129,9 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         Returns:
             Tuple of (ToolCall with final arguments and decision, optional ConfirmationRequest)
         """
-        hooks = self.get_hooks(EventType.PRE_TOOL, tool_call.name)
-
         current_tool_call = tool_call.model_copy()
 
-        for hook in hooks:
+        for hook in self.get_hooks(EventType.PRE_TOOL, tool_call.name):
             # Generate confirmation_id: hash(hook_function_name + tool_name + arguments)
             hook_name = hook.callback.__name__
             confirmation_id_str = (
@@ -201,9 +199,7 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         Returns:
             ToolReturn with final output
         """
-        hooks = self.get_hooks(EventType.POST_TOOL, tool_call.name)
-
-        for hook in hooks:
+        for hook in self.get_hooks(EventType.POST_TOOL, tool_call.name):
             tool_return = await hook.callback(tool_call, tool_return)
 
         return tool_return
@@ -227,9 +223,7 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         Returns:
             The final (potentially modified) input
         """
-        hooks = self.get_hooks(EventType.PRE_RUN, None)
-
-        for hook in hooks:
+        for hook in self.get_hooks(EventType.PRE_RUN):
             _input = await hook.callback(_input, options, context)
 
         return _input
@@ -253,9 +247,7 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         Returns:
             The final (potentially modified) AgentResult
         """
-        hooks = self.get_hooks(EventType.POST_RUN, None)
-
-        for hook in hooks:
+        for hook in self.get_hooks(EventType.POST_RUN):
             result = await hook.callback(result, options, context)
 
         return result
@@ -267,9 +259,12 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         """
         Process streaming events through ON_EVENT hooks.
 
-        Every event from the source generator is passed through all ON_EVENT hooks
-        in priority order. A hook can modify the event, suppress it by returning None,
-        or expand it into multiple events by returning an async generator.
+        Hooks are composed as a pipeline of async generators: each hook wraps the previous
+        generator, so events flow through the chain without intermediate collection.
+        A hook callback can either:
+        - Return an awaitable resolving to a StreamingEvent (pass-through / modify)
+        - Return an awaitable resolving to None (suppress the event)
+        - Return an async generator yielding multiple StreamingEvents (expand one event into many)
 
         Args:
             generator: The source async generator of streaming events
@@ -277,25 +272,27 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         Yields:
             Processed streaming events (potentially modified by hooks)
         """
-        hooks = self.get_hooks(EventType.ON_EVENT)
+
+        async def apply_hook_to_stream(
+            source: AsyncGenerator[StreamingEvent, None],
+            hook: Hook[OnEventCallback],
+        ) -> AsyncGenerator[StreamingEvent, None]:
+            """
+            Apply a single ON_EVENT hook to every event from a source generator.
+            """
+            async for event in source:
+                result = hook.callback(event)
+                if isinstance(result, AsyncGenerator):
+                    async for sub_event in result:
+                        yield sub_event
+                else:
+                    awaited = await result
+                    if awaited is not None:
+                        yield awaited
+
+
+        for hook in self.get_hooks(EventType.ON_EVENT):
+            generator = apply_hook_to_stream(generator, hook)
 
         async for event in generator:
-            current_events: list[StreamingEvent] = [event]
-
-            for hook in hooks:
-                next_events: list[StreamingEvent] = []
-                for evt in current_events:
-                    result = hook.callback(evt)
-                    if isinstance(result, AsyncGenerator):
-                        async for sub_event in result:
-                            next_events.append(sub_event)
-                    else:
-                        awaited = await result
-                        if awaited is not None:
-                            next_events.append(awaited)
-                current_events = next_events
-                if not current_events:
-                    break
-
-            for evt in current_events:
-                yield evt
+            yield event
