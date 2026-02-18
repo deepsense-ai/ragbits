@@ -17,13 +17,12 @@ from ragbits.agents.exceptions import (
 from ragbits.agents.hooks import (
     EventType,
     Hook,
-    PostRunInput,
-    PostRunOutput,
-    PostToolHookCallback,
-    PreToolHookCallback,
-    PreToolInput,
-    PreToolOutput,
+    OnEventCallback,
+    PostToolCallback,
+    PreToolCallback,
+    StreamingEvent,
 )
+from ragbits.core.llms.base import ToolCall as ToolCallModel
 from ragbits.core.llms.base import Usage, UsageItem
 from ragbits.core.llms.mock import MockLLM, MockLLMOptions
 from ragbits.core.prompt.prompt import Prompt
@@ -828,7 +827,7 @@ async def test_input_type_check_with_system_prompt(llm_with_tool_call: MockLLM):
 
 @pytest.mark.parametrize("method", [_run, _run_streaming])
 async def test_pre_tool_hook_denies_execution(
-    llm_with_tool_call: MockLLM, method: Callable, deny_hook: PreToolHookCallback
+    llm_with_tool_call: MockLLM, method: Callable, deny_hook: PreToolCallback
 ):
     """Test that a pre-tool hook can deny tool execution."""
     hook = Hook(event_type=EventType.PRE_TOOL, callback=deny_hook)
@@ -841,7 +840,7 @@ async def test_pre_tool_hook_denies_execution(
 
 @pytest.mark.parametrize("method", [_run, _run_streaming])
 async def test_pre_tool_hook_denies_only_matching_tool(
-    llm_with_tool_call: MockLLM, method: Callable, deny_hook: PreToolHookCallback
+    llm_with_tool_call: MockLLM, method: Callable, deny_hook: PreToolCallback
 ):
     """Test that a hook with tools filter only affects matching tools."""
     hook = Hook(event_type=EventType.PRE_TOOL, callback=deny_hook, tool_names=["other_tool"])
@@ -855,7 +854,7 @@ async def test_pre_tool_hook_denies_only_matching_tool(
 
 @pytest.mark.parametrize("method", [_run, _run_streaming])
 async def test_pre_tool_hook_modifies_arguments(
-    llm_with_tool_call: MockLLM, method: Callable, pre_tool_add_field: Callable[..., PreToolHookCallback]
+    llm_with_tool_call: MockLLM, method: Callable, pre_tool_add_field: Callable[..., PreToolCallback]
 ):
     """Test that a pre-tool hook can modify tool arguments."""
     hook = Hook(event_type=EventType.PRE_TOOL, callback=pre_tool_add_field("location", "New York"))
@@ -868,7 +867,7 @@ async def test_pre_tool_hook_modifies_arguments(
 
 @pytest.mark.parametrize("method", [_run, _run_streaming])
 async def test_post_tool_hook_modifies_output(
-    llm_with_tool_call: MockLLM, method: Callable, post_tool_append: Callable[..., PostToolHookCallback]
+    llm_with_tool_call: MockLLM, method: Callable, post_tool_append: Callable[..., PostToolCallback]
 ):
     """Test that a post-tool hook can modify tool output."""
     hook = Hook(event_type=EventType.POST_TOOL, callback=post_tool_append("[MODIFIED]", prepend=True))
@@ -879,9 +878,7 @@ async def test_post_tool_hook_modifies_output(
     assert result.tool_calls[0].result.startswith("[MODIFIED]")
 
 
-async def test_pre_tool_hook_ask_yields_confirmation_request(
-    llm_with_tool_call: MockLLM, ask_hook: PreToolHookCallback
-):
+async def test_pre_tool_hook_ask_yields_confirmation_request(llm_with_tool_call: MockLLM, ask_hook: PreToolCallback):
     """Test that ask decision yields a ConfirmationRequest."""
     hook = Hook(event_type=EventType.PRE_TOOL, callback=ask_hook)
     agent = Agent(llm=llm_with_tool_call, prompt=CustomPrompt, tools=[get_weather], hooks=[hook])
@@ -895,7 +892,7 @@ async def test_pre_tool_hook_ask_yields_confirmation_request(
     assert confirmation_requests[0].tool_name == "get_weather"
 
 
-async def test_pre_tool_hook_ask_with_confirmation_approved(llm_with_tool_call: MockLLM, ask_hook: PreToolHookCallback):
+async def test_pre_tool_hook_ask_with_confirmation_approved(llm_with_tool_call: MockLLM, ask_hook: PreToolCallback):
     """Test that approved confirmation allows tool execution."""
     hook = Hook(event_type=EventType.PRE_TOOL, callback=ask_hook)
     agent = Agent(llm=llm_with_tool_call, prompt=CustomPrompt, tools=[get_weather], hooks=[hook])
@@ -920,13 +917,13 @@ async def test_hook_priority_order(llm_with_tool_call: MockLLM):
     """Test that hooks execute in priority order (lower first)."""
     execution_order: list[int] = []
 
-    async def hook_priority_10(input_data: PreToolInput) -> PreToolOutput:
+    async def hook_priority_10(tool_call: ToolCallModel) -> ToolCallModel:
         execution_order.append(10)
-        return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
+        return tool_call
 
-    async def hook_priority_5(input_data: PreToolInput) -> PreToolOutput:
+    async def hook_priority_5(tool_call: ToolCallModel) -> ToolCallModel:
         execution_order.append(5)
-        return PreToolOutput(arguments=input_data.tool_call.arguments, decision="pass")
+        return tool_call
 
     hooks = [
         Hook(event_type=EventType.PRE_TOOL, callback=hook_priority_10, priority=10),
@@ -955,10 +952,9 @@ async def test_pre_run_hook_modifies_input(llm_without_tool_call: MockLLM, metho
 async def test_post_run_hook_modifies_result(llm_without_tool_call: MockLLM, method: Callable):
     """Test that a post-run hook can modify the result."""
 
-    async def modify_result_hook(input_data: PostRunInput) -> PostRunOutput:
-        modified_result = input_data.result
-        modified_result.content = f"[MODIFIED] {input_data.result.content}"
-        return PostRunOutput(result=modified_result)
+    async def modify_result_hook(result: AgentResult, options: object, context: object) -> AgentResult:
+        result.content = f"[MODIFIED] {result.content}"
+        return result
 
     hook = Hook(event_type=EventType.POST_RUN, callback=modify_result_hook)
     agent: Agent = Agent(llm=llm_without_tool_call, prompt="You are helpful.", hooks=[hook])
@@ -966,3 +962,86 @@ async def test_post_run_hook_modifies_result(llm_without_tool_call: MockLLM, met
     result = await method(agent, "test query")
 
     assert result.content.startswith("[MODIFIED]")
+
+
+async def test_on_event_hook_modifies_streaming_content(
+    llm_without_tool_call: MockLLM,
+    on_event_modify_chunk: Callable[..., OnEventCallback],
+):
+    """Test that an ON_EVENT hook modifies text chunks during streaming."""
+    hook = Hook(event_type=EventType.ON_EVENT, callback=on_event_modify_chunk("[P]"))
+    agent: Agent = Agent(llm=llm_without_tool_call, prompt="Test prompt", hooks=[hook])
+
+    chunks = []
+    async for chunk in agent.run_streaming():
+        if isinstance(chunk, str):
+            chunks.append(chunk)
+
+    assert all(c.startswith("[P]") for c in chunks)
+
+
+async def test_on_event_hook_suppresses_chunk(llm_without_tool_call: MockLLM):
+    """Test that an ON_EVENT hook can suppress chunks."""
+
+    async def suppress_all_str(event: StreamingEvent) -> StreamingEvent | None:
+        if isinstance(event, str):
+            return None
+        return event
+
+    hook = Hook(event_type=EventType.ON_EVENT, callback=suppress_all_str)
+    agent: Agent = Agent(llm=llm_without_tool_call, prompt="Test prompt", hooks=[hook])
+
+    str_chunks = []
+    async for chunk in agent.run_streaming():
+        if isinstance(chunk, str):
+            str_chunks.append(chunk)
+
+    assert str_chunks == []
+
+
+async def test_on_event_hook_filters_tool_call_result(
+    llm_with_tool_call: MockLLM,
+):
+    """Test that an ON_EVENT hook can modify tool call results during streaming."""
+
+    async def modify_tool_result(event: StreamingEvent) -> StreamingEvent | None:
+        if isinstance(event, ToolCallResult):
+            return ToolCallResult(
+                id=event.id,
+                name=event.name,
+                arguments=event.arguments,
+                result=f"[FILTERED] {event.result}",
+            )
+        return event
+
+    hook = Hook(event_type=EventType.ON_EVENT, callback=modify_tool_result)
+    agent: Agent = Agent(llm=llm_with_tool_call, prompt=CustomPrompt, tools=[get_weather], hooks=[hook])
+
+    result = agent.run_streaming()
+    tool_call_results = []
+    async for chunk in result:
+        if isinstance(chunk, ToolCallResult):
+            tool_call_results.append(chunk)
+
+    assert len(tool_call_results) == 1
+    assert tool_call_results[0].result.startswith("[FILTERED]")
+
+
+async def test_on_event_hook_word_filter_use_case(
+    llm_without_tool_call: MockLLM,
+    on_event_word_filter: Callable[..., OnEventCallback],
+):
+    """Test practical word filtering via ON_EVENT hook during streaming."""
+    # MockLLM response is "Test LLM output"
+    hook = Hook(event_type=EventType.ON_EVENT, callback=on_event_word_filter("LLM", "AI"))
+    agent: Agent = Agent(llm=llm_without_tool_call, prompt="Test prompt", hooks=[hook])
+
+    result = agent.run_streaming()
+    content_chunks = []
+    async for chunk in result:
+        if isinstance(chunk, str):
+            content_chunks.append(chunk)
+
+    full_content = "".join(content_chunks)
+    assert "LLM" not in full_content
+    assert "AI" in full_content
