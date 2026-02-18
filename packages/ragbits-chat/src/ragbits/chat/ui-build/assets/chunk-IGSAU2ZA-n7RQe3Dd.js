@@ -1,5 +1,0 @@
-<<<<<<<< HEAD:packages/ragbits-chat/src/ragbits/chat/ui-build/assets/chunk-IGSAU2ZA-BsgB5I-t.js
-import{l as h,bm as p,R as x,r as i,j as M,Z as R}from"./index-CUygrr3M.js";var s=h((r,o)=>{const{as:t,children:d,className:l,...n}=r,{slots:c,classNames:a,headerId:m,setHeaderMounted:e}=p(),f=x(o),u=t||"header";return i.useEffect(()=>(e(!0),()=>e(!1)),[e]),M.jsx(u,{ref:f,className:c.header({class:R(a?.header,l)}),id:m,...n,children:d})});s.displayName="HeroUI.ModalHeader";var N=s;export{N as m};
-========
-import{l as h,be as p,R as x,r as i,j as M,Z as R}from"./index-dIBRwDEf.js";var s=h((r,o)=>{const{as:t,children:d,className:l,...n}=r,{slots:c,classNames:a,headerId:m,setHeaderMounted:e}=p(),f=x(o),u=t||"header";return i.useEffect(()=>(e(!0),()=>e(!1)),[e]),M.jsx(u,{ref:f,className:c.header({class:R(a?.header,l)}),id:m,...n,children:d})});s.displayName="HeroUI.ModalHeader";var N=s;export{N as m};
->>>>>>>> af5e248c5 (feat: confirm tool (#866)):packages/ragbits-chat/src/ragbits/chat/ui-build/assets/chunk-IGSAU2ZA-n7RQe3Dd.js
