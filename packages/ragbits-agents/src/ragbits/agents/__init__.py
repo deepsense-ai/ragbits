@@ -13,6 +13,7 @@ from ragbits.agents.hooks import (
     EventType,
     Hook,
     HookManager,
+    OnEventCallback,
 )
 from ragbits.agents.types import QuestionAnswerAgent, QuestionAnswerPromptInput, QuestionAnswerPromptOutput
 
@@ -27,6 +28,7 @@ __all__ = [
     "EventType",
     "Hook",
     "HookManager",
+    "OnEventCallback",
     "QuestionAnswerAgent",
     "QuestionAnswerPromptInput",
     "QuestionAnswerPromptOutput",
