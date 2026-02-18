@@ -2,12 +2,13 @@
 
 Ragbits provides a hook system that lets you intercept and modify agent behavior at key points in the execution lifecycle. Hooks allow you to validate inputs, modify arguments, mask outputs, enforce guardrails, require user confirmation, and more — all without changing the agent or tool code itself.
 
-The hook system supports four event types:
+The hook system supports five event types:
 
 - **`PRE_TOOL`** — triggered before a tool is invoked
 - **`POST_TOOL`** — triggered after a tool completes
 - **`PRE_RUN`** — triggered before the agent run starts
 - **`POST_RUN`** — triggered after the agent run completes
+- **`ON_EVENT`** — triggered for each streaming event during `run_streaming()`
 
 Hooks are executed in priority order (lower numbers first) and support **chaining** — each hook receives the output of the previous one, enabling composable pipelines of transformations.
 
@@ -159,6 +160,71 @@ async def enrich_result(result: AgentResult, options: object, context: object) -
 hook = Hook(event_type=EventType.POST_RUN, callback=enrich_result)
 ```
 
+## How to process streaming events with on-event hooks
+
+On-event hooks intercept every event emitted during `agent.run_streaming()`. They receive a `StreamingEvent` and can modify it, suppress it, or expand it into multiple events. This is useful for real-time filtering, transformation, or enrichment of the streaming output.
+
+`StreamingEvent` is a union of all types that can appear in the streaming output: `str` (text chunks), `ToolCall`, `ToolCallResult`, `ToolEvent`, `DownstreamAgentResult`, `SimpleNamespace`, `BasePrompt`, `Usage`, and `ConfirmationRequest`.
+
+### Modify streaming events
+
+An on-event callback receives a single `StreamingEvent` and returns the modified event (or the same event unchanged):
+
+```python
+from ragbits.agents.hooks import EventType, Hook
+from ragbits.agents.hooks.types import StreamingEvent
+
+
+async def redact_keywords(event: StreamingEvent) -> StreamingEvent | None:
+    """Replace sensitive keywords in text chunks."""
+    if isinstance(event, str):
+        return event.replace("SECRET", "***")
+    return event
+
+
+hook = Hook(event_type=EventType.ON_EVENT, callback=redact_keywords)
+```
+
+### Suppress events
+
+Return `None` to remove an event from the stream entirely:
+
+```python
+from ragbits.agents.hooks.types import StreamingEvent
+from ragbits.core.llms.base import Usage
+
+
+async def suppress_usage(event: StreamingEvent) -> StreamingEvent | None:
+    """Remove Usage events from the stream."""
+    if isinstance(event, Usage):
+        return None
+    return event
+```
+
+### Expand a single event into multiple events
+
+An on-event callback can also return an async generator, yielding multiple events from a single input:
+
+```python
+from collections.abc import AsyncGenerator
+
+from ragbits.agents.hooks.types import StreamingEvent
+
+
+async def split_sentences(event: StreamingEvent) -> AsyncGenerator[StreamingEvent, None]:
+    """Split text chunks on sentence boundaries."""
+    if isinstance(event, str) and ". " in event:
+        for sentence in event.split(". "):
+            yield sentence.strip() + "."
+    else:
+        yield event
+```
+
+When chained with other hooks, each yielded event is passed through subsequent hooks individually. For example, a splitting hook at priority 1 followed by an uppercasing hook at priority 2 will uppercase each split fragment separately.
+
+!!! note
+    On-event hooks only run during `agent.run_streaming()`. They have no effect on `agent.run()`.
+
 ## How to require user confirmation before tool execution
 
 Ragbits includes a built-in `create_confirmation_hook` factory that creates a pre-tool hook requiring user approval before a tool runs:
@@ -195,7 +261,7 @@ All hook types support **chaining**: hooks execute in priority order (lower numb
 Hook A (priority=10) → modified data → Hook B (priority=20) → modified data → Hook C (priority=100)
 ```
 
-For **pre-tool hooks**, the chained value is the `ToolCall` (including its `arguments`). For **post-tool hooks**, it is the `ToolReturn`. For **pre-run hooks**, it is the agent input. For **post-run hooks**, it is the `AgentResult`.
+For **pre-tool hooks**, the chained value is the `ToolCall` (including its `arguments`). For **post-tool hooks**, it is the `ToolReturn`. For **pre-run hooks**, it is the agent input. For **post-run hooks**, it is the `AgentResult`. For **on-event hooks**, the hooks are composed as a pipeline of async generators — each hook wraps the previous one, so events flow through the entire chain without intermediate collection.
 
 This makes it possible to compose independent hooks that each handle one concern (validation, sanitization, logging, etc.) into a clean pipeline.
 
