@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.5.0 (2026-02-19)
+
+### Changed
+
+- ragbits-core updated to version v1.5.0
+
 - Add support for confirmation requests in chat (#853) (#914)
 
 ## 1.4.2 (2026-02-18)

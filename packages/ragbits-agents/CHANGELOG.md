@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.5.0 (2026-02-19)
+
+### Changed
+
+- ragbits-core updated to version v1.5.0
+
 - Support wrapping downstream agents as tools (#818)
 - Add syntax sugar allowing easier Agents definition (#820)
 - Support streaming from downstream agents (#812)
