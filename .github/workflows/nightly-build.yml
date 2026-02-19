@@ -19,10 +19,10 @@ jobs:
       commit-hash: ${{ steps.check.outputs.commit-hash }}
       nightly-version: ${{ steps.check.outputs.nightly-version }}
     steps:
-      - name: Checkout develop branch
+      - name: Checkout main branch
         uses: actions/checkout@v4
         with:
-          ref: develop
+          ref: main
           fetch-depth: 0
 
       - name: Install uv
@@ -47,10 +47,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout develop branch
+      - name: Checkout main branch
         uses: actions/checkout@v4
         with:
-          ref: develop
+          ref: main
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
 
@@ -99,7 +99,7 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "chore: update package versions for nightly build ${{ env.NIGHTLY_VERSION }}"
-            git push origin develop
+            git push origin main
           fi
 
           git tag "${{ env.NIGHTLY_VERSION }}"
@@ -126,10 +126,10 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - name: Checkout develop branch
+      - name: Checkout main branch
         uses: actions/checkout@v4
         with:
-          ref: develop
+          ref: main
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
 
@@ -142,12 +142,6 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "lts/*"
-          registry-url: "https://registry.npmjs.org"
 
       - name: Download built packages
         uses: actions/download-artifact@v4
@@ -162,24 +156,6 @@ jobs:
           TWINE_USERNAME: __token__
           TWINE_REPOSITORY_URL: ${{ vars.PYPI_URL || 'https://test.pypi.org/legacy/' }}
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
-
-      - name: Install TypeScript dependencies
-        run: npm ci
-
-      - name: Build npm packages
-        run: npm run build:packages
-
-      - name: Publish @ragbits/api-client (dev)
-        run: npm publish --provenance --access public --tag dev
-        working-directory: typescript/@ragbits/api-client
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Publish @ragbits/api-client-react (dev)
-        run: npm publish --provenance --access public --tag dev
-        working-directory: typescript/@ragbits/api-client-react
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Deploy nightly documentation
         shell: bash
@@ -196,3 +172,15 @@ jobs:
         run: |
           echo "Nightly build failed for commit ${{ needs.check-for-changes.outputs.commit-hash }}"
           echo "Version attempted: ${{ needs.check-for-changes.outputs.nightly-version }}"
+
+  publish-npm:
+    needs: [check-for-changes, test-packages]
+    if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
+    permissions:
+      contents: read
+      id-token: write
+    uses: ./.github/workflows/publish-npm.yml
+    with:
+      tag: dev
+      ref: main
+    secrets: inherit
