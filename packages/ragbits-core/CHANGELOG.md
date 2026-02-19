@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## Unreleased
+
+## 1.5.0 (2026-02-19)
 - Add Support for Thinking in agents (#837)
 - Extended ToolCall with decision/reason fields (#939)
 
