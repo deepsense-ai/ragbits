@@ -10,28 +10,28 @@
       
       
       
-        <link rel="canonical" href="https://ragbits.deepsense.ai/nightly/how-to/agents/use_post_processors/">
+        <link rel="canonical" href="https://ragbits.deepsense.ai/nightly/builder-journal/">
       
       
-        <link rel="prev" href="../serve_ragbits_agents/">
+        <link rel="prev" href="../tutorials/chat/">
       
       
-        <link rel="next" href="../stream_downstream_agents/">
+        <link rel="next" href="section-1-llm-proxy/">
       
       
-      <link rel="icon" href="../../../assets/images/favicon.png">
+      <link rel="icon" href="../assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.39">
     
     
       
-        <title>Use post-processors - Ragbits docs</title>
+        <title>Overview - Ragbits docs</title>
       
     
     
-      <link rel="stylesheet" href="../../../assets/stylesheets/main.8c3ca2c6.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.8c3ca2c6.min.css">
       
         
-        <link rel="stylesheet" href="../../../assets/stylesheets/palette.06af60db.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.06af60db.min.css">
       
       
 
@@ -50,11 +50,11 @@
       
     
     
-      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="../../../stylesheets/extra.css">
+      <link rel="stylesheet" href="../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#how-to-use-post-processors-with-ragbits-agents" class="md-skip">
+        <a href="#builder-journal" class="md-skip">
           Skip to content
         </a>
       
@@ -100,7 +100,7 @@
 
 <header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../../.." title="Ragbits docs" class="md-header__button md-logo" aria-label="Ragbits docs" data-md-component="logo">
+    <a href=".." title="Ragbits docs" class="md-header__button md-logo" aria-label="Ragbits docs" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Use post-processors
+              Overview
             
           </span>
         </div>
@@ -231,7 +231,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../.." class="md-tabs__link">
+      <a href=".." class="md-tabs__link">
         
   
     
@@ -250,7 +250,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../tutorials/intro/" class="md-tabs__link">
+        <a href="../tutorials/intro/" class="md-tabs__link">
           
   
   Tutorials
@@ -269,16 +269,32 @@
   
     
     
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="./" class="md-tabs__link">
+          
+  
+  Builder Journal
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+    
+    
       
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../../prompts/use_prompting/" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../how-to/prompts/use_prompting/" class="md-tabs__link">
           
   
   How-to
@@ -299,7 +315,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../cli/main/" class="md-tabs__link">
+        <a href="../cli/main/" class="md-tabs__link">
           
   
   CLI
@@ -323,7 +339,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../../api_reference/core/prompt/" class="md-tabs__link">
+        <a href="../api_reference/core/prompt/" class="md-tabs__link">
           
   
   API Reference
@@ -367,7 +383,7 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../../.." title="Ragbits docs" class="md-nav__button md-logo" aria-label="Ragbits docs" data-md-component="logo">
+    <a href=".." title="Ragbits docs" class="md-nav__button md-logo" aria-label="Ragbits docs" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -397,7 +413,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../.." class="md-nav__link">
+      <a href=".." class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -455,7 +471,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../tutorials/intro/" class="md-nav__link">
+      <a href="../tutorials/intro/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -476,7 +492,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../tutorials/rag/" class="md-nav__link">
+      <a href="../tutorials/rag/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -497,7 +513,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../tutorials/agents/" class="md-nav__link">
+      <a href="../tutorials/agents/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -518,7 +534,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../tutorials/chat/" class="md-nav__link">
+      <a href="../tutorials/chat/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -568,7 +584,7 @@
             
   
   <span class="md-ellipsis">
-    How-to
+    Builder Journal
   </span>
   
 
@@ -577,6 +593,160 @@
         
         <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Builder Journal
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#how-this-journal-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      How This Journal Works
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sections" class="md-nav__link">
+    <span class="md-ellipsis">
+      Sections
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started" class="md-nav__link">
+    <span class="md-ellipsis">
+      Getting Started
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="section-1-llm-proxy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    1. LLM Proxy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    How-to
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
             <span class="md-nav__icon md-icon"></span>
             How-to
           </label>
@@ -599,10 +769,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_1" >
         
           
-          <label class="md-nav__link" for="__nav_3_1" id="__nav_3_1_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4_1" id="__nav_4_1_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -613,8 +783,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_1_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_1">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_1">
             <span class="md-nav__icon md-icon"></span>
             Prompts
           </label>
@@ -627,7 +797,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../prompts/use_prompting/" class="md-nav__link">
+      <a href="../how-to/prompts/use_prompting/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -648,7 +818,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../prompts/use_attachments_in_prompts/" class="md-nav__link">
+      <a href="../how-to/prompts/use_attachments_in_prompts/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -669,7 +839,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../prompts/promptfoo/" class="md-nav__link">
+      <a href="../how-to/prompts/promptfoo/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -708,10 +878,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_2" >
         
           
-          <label class="md-nav__link" for="__nav_3_2" id="__nav_3_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4_2" id="__nav_4_2_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -722,8 +892,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_2">
             <span class="md-nav__icon md-icon"></span>
             LLMs
           </label>
@@ -736,7 +906,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../llms/use_llms/" class="md-nav__link">
+      <a href="../how-to/llms/use_llms/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -757,7 +927,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../llms/use_tools_with_llms/" class="md-nav__link">
+      <a href="../how-to/llms/use_tools_with_llms/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -778,7 +948,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../llms/use_local_llms/" class="md-nav__link">
+      <a href="../how-to/llms/use_local_llms/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -817,10 +987,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_3" >
         
           
-          <label class="md-nav__link" for="__nav_3_3" id="__nav_3_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4_3" id="__nav_4_3_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -831,8 +1001,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_3">
             <span class="md-nav__icon md-icon"></span>
             Vector Stores
           </label>
@@ -845,7 +1015,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../vector_stores/hybrid/" class="md-nav__link">
+      <a href="../how-to/vector_stores/hybrid/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -866,7 +1036,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../vector_stores/sparse_vectors/" class="md-nav__link">
+      <a href="../how-to/vector_stores/sparse_vectors/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -887,7 +1057,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../vector_stores/use_pgVector_store/" class="md-nav__link">
+      <a href="../how-to/vector_stores/use_pgVector_store/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -926,10 +1096,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_4" >
         
           
-          <label class="md-nav__link" for="__nav_3_4" id="__nav_3_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4_4" id="__nav_4_4_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -940,8 +1110,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_4">
             <span class="md-nav__icon md-icon"></span>
             Data Sources
           </label>
@@ -954,7 +1124,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../sources/load-dataset/" class="md-nav__link">
+      <a href="../how-to/sources/load-dataset/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -975,7 +1145,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../sources/google-drive/" class="md-nav__link">
+      <a href="../how-to/sources/google-drive/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1014,10 +1184,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_5" >
         
           
-          <label class="md-nav__link" for="__nav_3_5" id="__nav_3_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4_5" id="__nav_4_5_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1028,8 +1198,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_5">
             <span class="md-nav__icon md-icon"></span>
             Observability
           </label>
@@ -1042,7 +1212,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../audit/use_tracing/" class="md-nav__link">
+      <a href="../how-to/audit/use_tracing/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1063,7 +1233,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../audit/use_metrics/" class="md-nav__link">
+      <a href="../how-to/audit/use_metrics/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1102,10 +1272,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_6" >
         
           
-          <label class="md-nav__link" for="__nav_3_6" id="__nav_3_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4_6" id="__nav_4_6_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1116,8 +1286,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_6">
             <span class="md-nav__icon md-icon"></span>
             Project Configuration
           </label>
@@ -1130,7 +1300,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../project/component_preferences/" class="md-nav__link">
+      <a href="../how-to/project/component_preferences/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1151,7 +1321,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../project/custom_components/" class="md-nav__link">
+      <a href="../how-to/project/custom_components/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1190,10 +1360,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_7" >
         
           
-          <label class="md-nav__link" for="__nav_3_7" id="__nav_3_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4_7" id="__nav_4_7_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1204,8 +1374,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_7">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_7">
             <span class="md-nav__icon md-icon"></span>
             Document Search
           </label>
@@ -1218,7 +1388,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../document_search/ingest-documents/" class="md-nav__link">
+      <a href="../how-to/document_search/ingest-documents/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1239,318 +1409,11 @@
   
   
     <li class="md-nav__item">
-      <a href="../../document_search/search-documents/" class="md-nav__link">
+      <a href="../how-to/document_search/search-documents/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
     Search documents
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-          </ul>
-        </nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    
-    
-    
-      
-      
-    
-    
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
-      
-        
-        
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_8" checked>
-        
-          
-          <label class="md-nav__link" for="__nav_3_8" id="__nav_3_8_label" tabindex="0">
-            
-  
-  <span class="md-ellipsis">
-    Agents
-  </span>
-  
-
-            <span class="md-nav__icon md-icon"></span>
-          </label>
-        
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_8_label" aria-expanded="true">
-          <label class="md-nav__title" for="__nav_3_8">
-            <span class="md-nav__icon md-icon"></span>
-            Agents
-          </label>
-          <ul class="md-nav__list" data-md-scrollfix>
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../define_and_use_agents/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Define and use agents
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../provide_mcp_tools/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Provide tools with MCP
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../serve_ragbits_agents/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Serve agents with A2A
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-    
-  
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  <span class="md-ellipsis">
-    Use post-processors
-  </span>
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        
-  
-  <span class="md-ellipsis">
-    Use post-processors
-  </span>
-  
-
-      </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-    
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#post-processors-overview" class="md-nav__link">
-    <span class="md-ellipsis">
-      Post-Processors Overview
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Post-Processors Overview">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#implementing-a-custom-post-processor" class="md-nav__link">
-    <span class="md-ellipsis">
-      Implementing a custom Post-Processor
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Implementing a custom Post-Processor">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#post-processor-example" class="md-nav__link">
-    <span class="md-ellipsis">
-      Post-Processor Example
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#streaming-post-processor-example" class="md-nav__link">
-    <span class="md-ellipsis">
-      Streaming Post-Processor Example
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#using-post-processors" class="md-nav__link">
-    <span class="md-ellipsis">
-      Using Post-Processors
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#built-in-post-processors" class="md-nav__link">
-    <span class="md-ellipsis">
-      Built-in Post-Processors
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Built-in Post-Processors">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#supervisor" class="md-nav__link">
-    <span class="md-ellipsis">
-      Supervisor
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Supervisor">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#quick-start" class="md-nav__link">
-    <span class="md-ellipsis">
-      Quick start
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configuration" class="md-nav__link">
-    <span class="md-ellipsis">
-      Configuration
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#custom-structured-validation-and-correction" class="md-nav__link">
-    <span class="md-ellipsis">
-      Custom structured validation and correction
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../stream_downstream_agents/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Stream downstream agents
   </span>
   
 
@@ -1585,10 +1448,182 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_8" >
         
           
-          <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4_8" id="__nav_4_8_label" tabindex="0">
+            
+  
+  <span class="md-ellipsis">
+    Agents
+  </span>
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_8_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_8">
+            <span class="md-nav__icon md-icon"></span>
+            Agents
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/agents/define_and_use_agents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Define and use agents
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/agents/use_hooks/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Use hooks to customize behavior
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/agents/provide_mcp_tools/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Provide tools with MCP
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/agents/serve_ragbits_agents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Serve agents with A2A
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/agents/stream_downstream_agents/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Stream downstream agents
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/agents/stream_events_from_tools_to_chat/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Stream events from tools to chat
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    
+    
+    
+      
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_9" >
+        
+          
+          <label class="md-nav__link" for="__nav_4_9" id="__nav_4_9_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1599,8 +1634,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_9">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_9_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_9">
             <span class="md-nav__icon md-icon"></span>
             Guardrails
           </label>
@@ -1613,7 +1648,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../guardrails/use_guardrails/" class="md-nav__link">
+      <a href="../how-to/guardrails/use_guardrails/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1652,10 +1687,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_10" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_10" >
         
           
-          <label class="md-nav__link" for="__nav_3_10" id="__nav_3_10_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4_10" id="__nav_4_10_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1666,8 +1701,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_10_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_10">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_10_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_10">
             <span class="md-nav__icon md-icon"></span>
             Chatbots
           </label>
@@ -1680,11 +1715,32 @@
   
   
     <li class="md-nav__item">
-      <a href="../../chatbots/api/" class="md-nav__link">
+      <a href="../how-to/chatbots/api/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
     Setup API & UI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../how-to/chatbots/extending-ui/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Extend and customize the UI
   </span>
   
 
@@ -1719,10 +1775,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_11" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4_11" >
         
           
-          <label class="md-nav__link" for="__nav_3_11" id="__nav_3_11_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_4_11" id="__nav_4_11_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1733,8 +1789,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_11_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_3_11">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_4_11_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4_11">
             <span class="md-nav__icon md-icon"></span>
             Evaluate
           </label>
@@ -1747,7 +1803,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../evaluate/evaluate/" class="md-nav__link">
+      <a href="../how-to/evaluate/evaluate/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1768,7 +1824,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../evaluate/agent_simulation/" class="md-nav__link">
+      <a href="../how-to/evaluate/agent_simulation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1789,7 +1845,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../evaluate/custom_evaluation_pipeline/" class="md-nav__link">
+      <a href="../how-to/evaluate/custom_evaluation_pipeline/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1810,7 +1866,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../evaluate/custom_metric/" class="md-nav__link">
+      <a href="../how-to/evaluate/custom_metric/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1831,7 +1887,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../evaluate/custom_dataloader/" class="md-nav__link">
+      <a href="../how-to/evaluate/custom_dataloader/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1852,7 +1908,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../evaluate/generate_dataset/" class="md-nav__link">
+      <a href="../how-to/evaluate/generate_dataset/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1873,7 +1929,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../evaluate/optimize/" class="md-nav__link">
+      <a href="../how-to/evaluate/optimize/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1919,10 +1975,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
         
           
-          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1933,8 +1989,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_4">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
             <span class="md-nav__icon md-icon"></span>
             CLI
           </label>
@@ -1947,7 +2003,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../cli/main/" class="md-nav__link">
+      <a href="../cli/main/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -1985,10 +2041,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
         
           
-          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -1999,8 +2055,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
             <span class="md-nav__icon md-icon"></span>
             API Reference
           </label>
@@ -2023,10 +2079,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1" >
         
           
-          <label class="md-nav__link" for="__nav_5_1" id="__nav_5_1_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_1" id="__nav_6_1_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2037,8 +2093,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_1_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_1">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_1">
             <span class="md-nav__icon md-icon"></span>
             Core
           </label>
@@ -2051,7 +2107,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/core/prompt/" class="md-nav__link">
+      <a href="../api_reference/core/prompt/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2072,7 +2128,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/core/llms/" class="md-nav__link">
+      <a href="../api_reference/core/llms/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2093,7 +2149,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/core/embeddings/" class="md-nav__link">
+      <a href="../api_reference/core/embeddings/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2114,7 +2170,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/core/vector-stores/" class="md-nav__link">
+      <a href="../api_reference/core/vector-stores/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2135,7 +2191,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/core/hybrid/" class="md-nav__link">
+      <a href="../api_reference/core/hybrid/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2156,7 +2212,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/core/sources/" class="md-nav__link">
+      <a href="../api_reference/core/sources/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2187,10 +2243,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_1_7" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1_7" >
         
           
-          <label class="md-nav__link" for="__nav_5_1_7" id="__nav_5_1_7_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_1_7" id="__nav_6_1_7_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2201,8 +2257,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_1_7_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_1_7">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_6_1_7_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_1_7">
             <span class="md-nav__icon md-icon"></span>
             Audit
           </label>
@@ -2215,7 +2271,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/core/audit/traces/" class="md-nav__link">
+      <a href="../api_reference/core/audit/traces/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2236,7 +2292,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/core/audit/metrics/" class="md-nav__link">
+      <a href="../api_reference/core/audit/metrics/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2283,10 +2339,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
         
           
-          <label class="md-nav__link" for="__nav_5_2" id="__nav_5_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2297,8 +2353,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_2">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2">
             <span class="md-nav__icon md-icon"></span>
             Document Search
           </label>
@@ -2311,7 +2367,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/document_search/" class="md-nav__link">
+      <a href="../api_reference/document_search/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2342,10 +2398,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2_2" >
         
           
-          <label class="md-nav__link" for="__nav_5_2_2" id="__nav_5_2_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_2_2" id="__nav_6_2_2_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2356,8 +2412,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_2_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_2_2">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_6_2_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2_2">
             <span class="md-nav__icon md-icon"></span>
             Documents
           </label>
@@ -2370,7 +2426,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/document_search/documents/documents/" class="md-nav__link">
+      <a href="../api_reference/document_search/documents/documents/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2391,7 +2447,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/document_search/documents/elements/" class="md-nav__link">
+      <a href="../api_reference/document_search/documents/elements/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2430,10 +2486,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2_3" >
         
           
-          <label class="md-nav__link" for="__nav_5_2_3" id="__nav_5_2_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_2_3" id="__nav_6_2_3_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2444,8 +2500,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_2_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_2_3">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_6_2_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2_3">
             <span class="md-nav__icon md-icon"></span>
             Ingest
           </label>
@@ -2458,7 +2514,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/document_search/ingest/parsers/" class="md-nav__link">
+      <a href="../api_reference/document_search/ingest/parsers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2479,7 +2535,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/document_search/ingest/enrichers/" class="md-nav__link">
+      <a href="../api_reference/document_search/ingest/enrichers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2500,7 +2556,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/document_search/ingest/strategies/" class="md-nav__link">
+      <a href="../api_reference/document_search/ingest/strategies/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2539,10 +2595,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_2_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2_4" >
         
           
-          <label class="md-nav__link" for="__nav_5_2_4" id="__nav_5_2_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_2_4" id="__nav_6_2_4_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2553,8 +2609,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_2_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_2_4">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_6_2_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2_4">
             <span class="md-nav__icon md-icon"></span>
             Retrieval
           </label>
@@ -2567,7 +2623,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/document_search/retrieval/rephrasers/" class="md-nav__link">
+      <a href="../api_reference/document_search/retrieval/rephrasers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2588,7 +2644,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/document_search/retrieval/rerankers/" class="md-nav__link">
+      <a href="../api_reference/document_search/retrieval/rerankers/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2635,10 +2691,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_3" >
         
           
-          <label class="md-nav__link" for="__nav_5_3" id="__nav_5_3_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_3" id="__nav_6_3_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2649,8 +2705,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_3_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_3">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_3">
             <span class="md-nav__icon md-icon"></span>
             Agents
           </label>
@@ -2663,7 +2719,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/agents/" class="md-nav__link">
+      <a href="../api_reference/agents/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2694,10 +2750,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_3_2" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_3_2" >
         
           
-          <label class="md-nav__link" for="__nav_5_3_2" id="__nav_5_3_2_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_3_2" id="__nav_6_3_2_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2708,8 +2764,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_5_3_2_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_3_2">
+        <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_6_3_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_3_2">
             <span class="md-nav__icon md-icon"></span>
             MCP
           </label>
@@ -2722,7 +2778,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/agents/mcp/" class="md-nav__link">
+      <a href="../api_reference/agents/mcp/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2769,10 +2825,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_4" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_4" >
         
           
-          <label class="md-nav__link" for="__nav_5_4" id="__nav_5_4_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_4" id="__nav_6_4_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2783,8 +2839,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_4_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_4">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_4">
             <span class="md-nav__icon md-icon"></span>
             Evaluate
           </label>
@@ -2797,7 +2853,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/evaluate/" class="md-nav__link">
+      <a href="../api_reference/evaluate/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2818,7 +2874,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/evaluate/dataloaders/" class="md-nav__link">
+      <a href="../api_reference/evaluate/dataloaders/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2839,7 +2895,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/evaluate/pipelines/" class="md-nav__link">
+      <a href="../api_reference/evaluate/pipelines/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2860,7 +2916,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/evaluate/metrics/" class="md-nav__link">
+      <a href="../api_reference/evaluate/metrics/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2881,7 +2937,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/evaluate/agent_simulation/" class="md-nav__link">
+      <a href="../api_reference/evaluate/agent_simulation/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2920,10 +2976,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_5" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_5" >
         
           
-          <label class="md-nav__link" for="__nav_5_5" id="__nav_5_5_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_5" id="__nav_6_5_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -2934,8 +2990,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_5_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_5">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_5">
             <span class="md-nav__icon md-icon"></span>
             Chatbots
           </label>
@@ -2948,7 +3004,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/chat/compressors/base/" class="md-nav__link">
+      <a href="../api_reference/chat/compressors/base/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2969,7 +3025,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/chat/compressors/llm/" class="md-nav__link">
+      <a href="../api_reference/chat/compressors/llm/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -2990,7 +3046,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/chat/interface/chat_interface/" class="md-nav__link">
+      <a href="../api_reference/chat/interface/chat_interface/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3029,10 +3085,10 @@
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5_6" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_6" >
         
           
-          <label class="md-nav__link" for="__nav_5_6" id="__nav_5_6_label" tabindex="0">
+          <label class="md-nav__link" for="__nav_6_6" id="__nav_6_6_label" tabindex="0">
             
   
   <span class="md-ellipsis">
@@ -3043,8 +3099,8 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_5_6_label" aria-expanded="false">
-          <label class="md-nav__title" for="__nav_5_6">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_6">
             <span class="md-nav__icon md-icon"></span>
             Guardrails
           </label>
@@ -3057,7 +3113,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../api_reference/guardrails/" class="md-nav__link">
+      <a href="../api_reference/guardrails/" class="md-nav__link">
         
   
   <span class="md-ellipsis">
@@ -3104,148 +3160,45 @@
   
 
 
-<h1 id="how-to-use-post-processors-with-ragbits-agents">How-To: Use Post-Processors with Ragbits Agents<a class="headerlink" href="#how-to-use-post-processors-with-ragbits-agents" title="Permanent link">#</a></h1>
-<p>Ragbits Agents can be enhanced with post-processors to intercept, validate, log, filter, and modify their outputs. In this guide you will learn how to:</p>
+<h1 id="builder-journal">Builder Journal<a class="headerlink" href="#builder-journal" title="Permanent link">#</a></h1>
+<p>This journal walks you through building a real GenAI application using Ragbits, step by step. Each section adds one capability layer on top of the previous one. You start with the simplest possible chat app and progressively turn it into a production-ready AI system.</p>
+<h2 id="how-this-journal-works">How This Journal Works<a class="headerlink" href="#how-this-journal-works" title="Permanent link">#</a></h2>
 <ul>
-<li>Create custom post-processors (streaming and non-streaming)</li>
-<li>Attach post-processors to agents in run and streaming modes</li>
-<li>Use and configure the built-in Supervisor post-processor</li>
-</ul>
-<h2 id="post-processors-overview">Post-Processors Overview<a class="headerlink" href="#post-processors-overview" title="Permanent link">#</a></h2>
-<p>Ragbits provides two types of post-processors:</p>
-<ul>
-<li><strong>PostProcessor</strong>: Processes the final output after generation, ideal for end-of-run processing.</li>
-<li><strong>StreamingPostProcessor</strong>: Processes outputs as they are generated, suitable for real-time applications.</li>
-</ul>
-<h3 id="implementing-a-custom-post-processor">Implementing a custom Post-Processor<a class="headerlink" href="#implementing-a-custom-post-processor" title="Permanent link">#</a></h3>
-<p>To create a custom post-processor, inherit from the appropriate base class (<a class="autorefs autorefs-internal" href="../../../api_reference/agents/#ragbits.agents.post_processors.base.PostProcessor"><code>PostProcessor</code></a> or <a class="autorefs autorefs-internal" href="../../../api_reference/agents/#ragbits.agents.post_processors.base.StreamingPostProcessor"><code>StreamingPostProcessor</code></a>) and implement the required method.</p>
-<h4 id="post-processor-example">Post-Processor Example<a class="headerlink" href="#post-processor-example" title="Permanent link">#</a></h4>
-<p>A non-streaming post-processor applies transformations after the entire content is generated.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">class</span> <span class="nc">TruncateProcessor</span><span class="p">(</span><span class="n">PostProcessor</span><span class="p">):</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span> <span class="o">=</span> <span class="n">max_length</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">result</span><span class="p">,</span> <span class="n">agent</span><span class="p">,</span> <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="n">content</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="n">content</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">content</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_length</span><span class="p">:</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>            <span class="n">content</span> <span class="o">=</span> <span class="n">content</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">max_length</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;... [TRUNCATED]&quot;</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        <span class="n">result</span><span class="o">.</span><span class="n">content</span> <span class="o">=</span> <span class="n">content</span>
-</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>        <span class="k">return</span> <span class="n">result</span>
-</span></code></pre></div>
-<h4 id="streaming-post-processor-example">Streaming Post-Processor Example<a class="headerlink" href="#streaming-post-processor-example" title="Permanent link">#</a></h4>
-<p>A streaming post-processor can manipulate all information returned during generation, including text, tool calls, etc.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">class</span> <span class="nc">UpperCaseStreamingProcessor</span><span class="p">(</span><span class="n">StreamingPostProcessor</span><span class="p">):</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">process_streaming</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunk</span><span class="p">,</span> <span class="n">agent</span><span class="p">):</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>            <span class="k">return</span> <span class="n">chunk</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>        <span class="k">return</span> <span class="n">chunk</span>
-</span></code></pre></div>
-<h2 id="using-post-processors">Using Post-Processors<a class="headerlink" href="#using-post-processors" title="Permanent link">#</a></h2>
-<p>To use post-processors, pass them to the <code>run</code> or <code>run_streaming</code> methods of the <code>Agent</code> class. If you pass a non-streaming processor to <code>run_streaming</code>, set <code>allow_non_streaming=True</code>. This allows streaming processors to handle content piece by piece during generation, while non-streaming processors apply transformations after the entire output is generated.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="n">llm</span> <span class="o">=</span> <span class="n">LiteLLM</span><span class="p">(</span><span class="s2">&quot;gpt-4.1-mini&quot;</span><span class="p">)</span>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="n">agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span><span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;You are a helpful assistant.&quot;</span><span class="p">)</span>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="n">post_processors</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>        <span class="n">UpperCaseStreamingProcessor</span><span class="p">(),</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>        <span class="n">TruncateProcessor</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">50</span><span class="p">),</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>    <span class="p">]</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>    <span class="n">stream_result</span> <span class="o">=</span> <span class="n">agent</span><span class="o">.</span><span class="n">run_streaming</span><span class="p">(</span>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>        <span class="s2">&quot;Tell me about the history of AI.&quot;</span><span class="p">,</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>        <span class="n">post_processors</span><span class="o">=</span><span class="n">post_processors</span><span class="p">,</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>        <span class="n">allow_non_streaming</span><span class="o">=</span><span class="kc">True</span>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="p">)</span>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    <span class="k">async</span> <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">stream_result</span><span class="p">:</span>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>            <span class="nb">print</span><span class="p">(</span><span class="n">chunk</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
-</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">Final answer:</span><span class="se">\n</span><span class="si">{</span><span class="n">stream_result</span><span class="o">.</span><span class="n">content</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-</span></code></pre></div>
-<p>Post-processors offer a flexible way to tailor agent outputs, whether filtering content in real-time or transforming final outputs.</p>
-<h2 id="built-in-post-processors">Built-in Post-Processors<a class="headerlink" href="#built-in-post-processors" title="Permanent link">#</a></h2>
-<h3 id="supervisor">Supervisor<a class="headerlink" href="#supervisor" title="Permanent link">#</a></h3>
-<p>The <a class="autorefs autorefs-internal" href="../../../api_reference/agents/#ragbits.agents.post_processors.supervisor.SupervisorPostProcessor"><code>SupervisorPostProcessor</code></a> validates the agent’s final response against the executed tool calls and, if needed, triggers an automatic rerun with a correction prompt. It helps catch inconsistencies (e.g., when the response contradicts tool output) and guide the agent to refine its answer. The Supervisor is a non-streaming post-processor: it runs after generation has completed, validating the final output before optionally issuing a correction rerun.</p>
-<p>Key capabilities:</p>
-<ul>
-<li>Validates the last assistant response using an LLM-powered validation prompt</li>
-<li>Optionally reruns the agent with a formatted correction prompt derived from validation feedback</li>
-<li>Supports preserving or pruning intermediate history</li>
-<li>Attaches validation metadata to the final <code>AgentResult</code></li>
-</ul>
-<h4 id="quick-start">Quick start<a class="headerlink" href="#quick-start" title="Permanent link">#</a></h4>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">from</span> <span class="nn">ragbits.agents</span> <span class="kn">import</span> <span class="n">Agent</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="kn">from</span> <span class="nn">ragbits.agents.post_processors</span> <span class="kn">import</span> <span class="n">SupervisorPostProcessor</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="kn">from</span> <span class="nn">ragbits.agents.post_processors.supervisor</span> <span class="kn">import</span> <span class="n">HistoryStrategy</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="kn">from</span> <span class="nn">ragbits.core.llms.litellm</span> <span class="kn">import</span> <span class="n">LiteLLM</span>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="n">llm</span> <span class="o">=</span> <span class="n">LiteLLM</span><span class="p">(</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">,</span> <span class="n">use_structured_output</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="n">supervisor</span> <span class="o">=</span> <span class="n">SupervisorPostProcessor</span><span class="p">(</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>    <span class="n">max_retries</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="n">fail_on_exceed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>    <span class="n">history_strategy</span><span class="o">=</span><span class="n">HistoryStrategy</span><span class="o">.</span><span class="n">PRESERVE</span><span class="p">,</span>  <span class="c1"># Default HistoryStrategy is REMOVE</span>
-</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="p">)</span>
-</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>
-</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="n">agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span>
-</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>    <span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
-</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a>    <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;You are a helpful assistant.&quot;</span><span class="p">,</span>
-</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="p">)</span>
-</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a>
-</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="n">result</span> <span class="o">=</span> <span class="k">await</span> <span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">(</span>
-</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a>    <span class="s2">&quot;What is the weather in Tokyo?&quot;</span><span class="p">,</span>
-</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a>    <span class="n">post_processors</span><span class="o">=</span><span class="p">[</span><span class="n">supervisor</span><span class="p">],</span>
-</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="p">)</span>
-</span></code></pre></div>
-<h4 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link">#</a></h4>
-<ul>
-<li><strong>llm</strong>: LLM used for validation and formatting structured outputs</li>
-<li><strong>validation_prompt</strong>: Optional custom prompt class describing the validation output schema</li>
-<li><strong>correction_prompt</strong>: Optional format string used to create a correction message from validation output</li>
-<li><strong>max_retries</strong>: How many times to attempt correction-driven reruns</li>
-<li><strong>fail_on_exceed</strong>: If <code>True</code>, raises when retries are exhausted; otherwise returns last result with metadata</li>
-<li><strong>history_strategy</strong>:<ul>
-<li><code>PRESERVE</code>: keep all messages, including the correction user message and rerun assistant message</li>
-<li><code>REMOVE</code>: prune the invalid assistant message and the correction user message, keeping the final assistant response succinctly</li>
-</ul>
+<li>
+<p><strong>Every section ships something usable.</strong> No setup-only sections. After each one, you have a working app you can run and test.</p>
+</li>
+<li>
+<p><strong>One concept per section.</strong> Each step adds exactly one new capability, making it easy to learn incrementally or skip ahead.</p>
+</li>
+<li>
+<p><strong>Build on what you have.</strong> Later sections extend earlier code. You won't rewrite anything as you grow, just add new layers.</p>
+</li>
+<li>
+<p><strong>Focus on your app, not infrastructure.</strong> Ragbits handles the API server, UI, streaming, and state management so you can focus on business logic.</p>
+</li>
+<li>
+<p><strong>Follow along in code.</strong> Each section and step corresponds to a commit in the <a href="https://github.com/deepsense-ai/ragbits-example/commits/main/">ragbits-example</a> companion repository, so you can browse the full source at any point.</p>
 </li>
 </ul>
-<h4 id="custom-structured-validation-and-correction">Custom structured validation and correction<a class="headerlink" href="#custom-structured-validation-and-correction" title="Permanent link">#</a></h4>
-<p>You can define a custom validation output model and prompt to shape the supervisor feedback and correction message:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="kn">from</span> <span class="nn">ragbits.core.prompt.prompt</span> <span class="kn">import</span> <span class="n">Prompt</span>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="kn">from</span> <span class="nn">ragbits.agents.post_processors.supervisor</span> <span class="kn">import</span> <span class="n">ValidationInput</span>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="k">class</span> <span class="nc">MyValidationOutput</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="n">is_valid</span><span class="p">:</span> <span class="nb">bool</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>    <span class="n">errors</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>    <span class="n">fixes</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="n">confidence</span><span class="p">:</span> <span class="nb">float</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a><span class="k">class</span> <span class="nc">MyValidationPrompt</span><span class="p">(</span><span class="n">Prompt</span><span class="p">[</span><span class="n">ValidationInput</span><span class="p">,</span> <span class="n">MyValidationOutput</span><span class="p">]):</span>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    <span class="n">system_prompt</span> <span class="o">=</span> <span class="s2">&quot;You are an expert validator. Provide clear, actionable feedback.&quot;</span>
-</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>    <span class="n">user_prompt</span> <span class="o">=</span> <span class="p">(</span>
-</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>        <span class="s2">&quot;Chat History:</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>        <span class="s2">&quot;{</span><span class="si">% f</span><span class="s2">or message in chat_history %}&quot;</span>
-</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>        <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">{{ message.role | title }}: {{ message.content }} (if None it means it&#39;s a tool call)&quot;</span>
-</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>        <span class="s2">&quot;{</span><span class="si">% e</span><span class="s2">ndfor %}&quot;</span>
-</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>        <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">List all errors, possible fixes, and provide a confidence score (0.0-1.0) for your assessment.</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>    <span class="p">)</span>
-</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>
-</span><span id="__span-4-21"><a id="__codelineno-4-21" name="__codelineno-4-21" href="#__codelineno-4-21"></a><span class="n">correction_prompt</span> <span class="o">=</span> <span class="p">(</span>
-</span><span id="__span-4-22"><a id="__codelineno-4-22" name="__codelineno-4-22" href="#__codelineno-4-22"></a>    <span class="s2">&quot;Previous answer had issues:</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="__span-4-23"><a id="__codelineno-4-23" name="__codelineno-4-23" href="#__codelineno-4-23"></a>    <span class="s2">&quot;Errors: </span><span class="si">{errors}</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="__span-4-24"><a id="__codelineno-4-24" name="__codelineno-4-24" href="#__codelineno-4-24"></a>    <span class="s2">&quot;Fixes: </span><span class="si">{fixes}</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="__span-4-25"><a id="__codelineno-4-25" name="__codelineno-4-25" href="#__codelineno-4-25"></a>    <span class="s2">&quot;Confidence: </span><span class="si">{confidence}</span><span class="se">\n</span><span class="s2">&quot;</span>
-</span><span id="__span-4-26"><a id="__codelineno-4-26" name="__codelineno-4-26" href="#__codelineno-4-26"></a>    <span class="s2">&quot;Please answer again using the fixes.&quot;</span>
-</span><span id="__span-4-27"><a id="__codelineno-4-27" name="__codelineno-4-27" href="#__codelineno-4-27"></a><span class="p">)</span>
-</span><span id="__span-4-28"><a id="__codelineno-4-28" name="__codelineno-4-28" href="#__codelineno-4-28"></a>
-</span><span id="__span-4-29"><a id="__codelineno-4-29" name="__codelineno-4-29" href="#__codelineno-4-29"></a><span class="n">supervisor</span> <span class="o">=</span> <span class="n">SupervisorPostProcessor</span><span class="p">(</span>
-</span><span id="__span-4-30"><a id="__codelineno-4-30" name="__codelineno-4-30" href="#__codelineno-4-30"></a>    <span class="n">llm</span><span class="o">=</span><span class="n">llm</span><span class="p">,</span>
-</span><span id="__span-4-31"><a id="__codelineno-4-31" name="__codelineno-4-31" href="#__codelineno-4-31"></a>    <span class="n">validation_prompt</span><span class="o">=</span><span class="n">MyValidationPrompt</span><span class="p">,</span>
-</span><span id="__span-4-32"><a id="__codelineno-4-32" name="__codelineno-4-32" href="#__codelineno-4-32"></a>    <span class="n">correction_prompt</span><span class="o">=</span><span class="n">correction_prompt</span><span class="p">,</span>
-</span><span id="__span-4-33"><a id="__codelineno-4-33" name="__codelineno-4-33" href="#__codelineno-4-33"></a>    <span class="n">max_retries</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-</span><span id="__span-4-34"><a id="__codelineno-4-34" name="__codelineno-4-34" href="#__codelineno-4-34"></a>    <span class="n">history_strategy</span><span class="o">=</span><span class="n">HistoryStrategy</span><span class="o">.</span><span class="n">PRESERVE</span><span class="p">,</span>
-</span><span id="__span-4-35"><a id="__codelineno-4-35" name="__codelineno-4-35" href="#__codelineno-4-35"></a><span class="p">)</span>
-</span></code></pre></div>
-<p>The Supervisor appends validation records to <code>result.metadata</code> under the <code>post_processors.supervisor</code> key as a list of dicts; each entry corresponds to a validation step.</p>
+<h2 id="sections">Sections<a class="headerlink" href="#sections" title="Permanent link">#</a></h2>
+<table>
+<thead>
+<tr>
+<th>Section</th>
+<th>What You Add</th>
+<th>What You Get</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="section-1-llm-proxy/">1. LLM Proxy</a></td>
+<td>Streaming chat API</td>
+<td>Working chat app with web UI</td>
+</tr>
+</tbody>
+</table>
+<h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">#</a></h2>
+<p>Start with <a href="section-1-llm-proxy/">Section 1: LLM Proxy</a> to build your first working chat application.</p>
 
 
 
@@ -3281,7 +3234,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../serve_ragbits_agents/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Serve agents with A2A">
+          <a href="../tutorials/chat/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Tool-Powered Chat Interfaces">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3291,20 +3244,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Serve agents with A2A
+                Tool-Powered Chat Interfaces
               </div>
             </div>
           </a>
         
         
           
-          <a href="../stream_downstream_agents/" class="md-footer__link md-footer__link--next" aria-label="Next: Stream downstream agents">
+          <a href="section-1-llm-proxy/" class="md-footer__link md-footer__link--next" aria-label="Next: 1. LLM Proxy">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Stream downstream agents
+                1. LLM Proxy
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -3412,10 +3365,10 @@
     </div>
     
     
-    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.footer", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "content.code.annotate", "content.code.copy", "toc.integrate", "toc.follow"], "search": "../../../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.footer", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "content.code.annotate", "content.code.copy", "toc.integrate", "toc.follow"], "search": "../assets/javascripts/workers/search.6ce7567c.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../../assets/javascripts/bundle.525ec568.min.js"></script>
+      <script src="../assets/javascripts/bundle.525ec568.min.js"></script>
       
     
   </body>

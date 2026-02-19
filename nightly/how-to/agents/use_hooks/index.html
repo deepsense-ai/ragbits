@@ -10,13 +10,13 @@
       
       
       
-        <link rel="canonical" href="https://ragbits.deepsense.ai/nightly/how-to/agents/provide_mcp_tools/">
+        <link rel="canonical" href="https://ragbits.deepsense.ai/nightly/how-to/agents/use_hooks/">
       
       
-        <link rel="prev" href="../use_hooks/">
+        <link rel="prev" href="../define_and_use_agents/">
       
       
-        <link rel="next" href="../serve_ragbits_agents/">
+        <link rel="next" href="../provide_mcp_tools/">
       
       
       <link rel="icon" href="../../../assets/images/favicon.png">
@@ -24,7 +24,7 @@
     
     
       
-        <title>Provide tools with MCP - Ragbits docs</title>
+        <title>Use hooks to customize behavior - Ragbits docs</title>
       
     
     
@@ -80,7 +80,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#how-to-provide-tools-with-model-context-protocol-mcp" class="md-skip">
+        <a href="#how-to-use-hooks-to-customize-agent-behavior" class="md-skip">
           Skip to content
         </a>
       
@@ -120,7 +120,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Provide tools with MCP
+              Use hooks to customize behavior
             
           </span>
         </div>
@@ -1431,27 +1431,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../use_hooks/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Use hooks to customize behavior
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -1468,7 +1447,7 @@
           
   
   <span class="md-ellipsis">
-    Provide tools with MCP
+    Use hooks to customize behavior
   </span>
   
 
@@ -1479,7 +1458,7 @@
         
   
   <span class="md-ellipsis">
-    Provide tools with MCP
+    Use hooks to customize behavior
   </span>
   
 
@@ -1501,27 +1480,162 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#mcp-servers" class="md-nav__link">
+  <a href="#how-to-create-and-register-a-hook" class="md-nav__link">
     <span class="md-ellipsis">
-      MCP servers
+      How to create and register a hook
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#using-mcp-servers" class="md-nav__link">
+  <a href="#how-to-validate-and-modify-tool-inputs-with-pre-tool-hooks" class="md-nav__link">
     <span class="md-ellipsis">
-      Using MCP servers
+      How to validate and modify tool inputs with pre-tool hooks
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How to validate and modify tool inputs with pre-tool hooks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#validate-inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Validate inputs
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#modify-arguments" class="md-nav__link">
+    <span class="md-ellipsis">
+      Modify arguments
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#chain-multiple-pre-tool-hooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      Chain multiple pre-tool hooks
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-modify-tool-outputs-with-post-tool-hooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      How to modify tool outputs with post-tool hooks
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How to modify tool outputs with post-tool hooks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#mask-sensitive-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      Mask sensitive data
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#log-tool-outputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      Log tool outputs
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-validate-agent-input-with-pre-run-hooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      How to validate agent input with pre-run hooks
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#caching" class="md-nav__link">
+  <a href="#how-to-modify-agent-results-with-post-run-hooks" class="md-nav__link">
     <span class="md-ellipsis">
-      Caching
+      How to modify agent results with post-run hooks
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-process-streaming-events-with-on-event-hooks" class="md-nav__link">
+    <span class="md-ellipsis">
+      How to process streaming events with on-event hooks
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How to process streaming events with on-event hooks">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#modify-streaming-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      Modify streaming events
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#suppress-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      Suppress events
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#expand-a-single-event-into-multiple-events" class="md-nav__link">
+    <span class="md-ellipsis">
+      Expand a single event into multiple events
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-to-require-user-confirmation-before-tool-execution" class="md-nav__link">
+    <span class="md-ellipsis">
+      How to require user confirmation before tool execution
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-hook-chaining-works" class="md-nav__link">
+    <span class="md-ellipsis">
+      How hook chaining works
     </span>
   </a>
   
@@ -1531,6 +1645,27 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../provide_mcp_tools/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Provide tools with MCP
+  </span>
+  
+
+      </a>
     </li>
   
 
@@ -3164,51 +3299,300 @@
   
 
 
-<h1 id="how-to-provide-tools-with-model-context-protocol-mcp">How-To: Provide tools with Model Context Protocol (MCP)<a class="headerlink" href="#how-to-provide-tools-with-model-context-protocol-mcp" title="Permanent link">#</a></h1>
-<p>The <a href="https://modelcontextprotocol.io/introduction">Model Context Protocol</a> (aka MCP) is a way to provide tools and context to the LLM. From the MCP docs:</p>
-<blockquote>
-<p>MCP is an open protocol that standardizes how applications provide context to LLMs. Think of MCP like a USB-C port for AI applications. Just as USB-C provides a standardized way to connect your devices to various peripherals and accessories, MCP provides a standardized way to connect AI models to different data sources and tools.</p>
-</blockquote>
-<p>Ragbits has support for MCP. This enables you to use a wide range of MCP servers to provide tools to your Agents.</p>
-<h2 id="mcp-servers">MCP servers<a class="headerlink" href="#mcp-servers" title="Permanent link">#</a></h2>
-<p>Currently, the MCP spec defines three kinds of servers, based on the transport mechanism they use:</p>
+<h1 id="how-to-use-hooks-to-customize-agent-behavior">How-To: Use hooks to customize agent behavior<a class="headerlink" href="#how-to-use-hooks-to-customize-agent-behavior" title="Permanent link">#</a></h1>
+<p>Ragbits provides a hook system that lets you intercept and modify agent behavior at key points in the execution lifecycle. Hooks allow you to validate inputs, modify arguments, mask outputs, enforce guardrails, require user confirmation, and more — all without changing the agent or tool code itself.</p>
+<p>The hook system supports five event types:</p>
 <ul>
-<li><strong>stdio</strong> servers run as a subprocess of your application. You can think of them as running "locally".</li>
-<li><strong>HTTP over SSE</strong> servers run remotely. You connect to them via a URL.</li>
-<li><strong>Streamable HTTP</strong> servers run remotely using the Streamable HTTP transport defined in the MCP spec.</li>
+<li><strong><code>PRE_TOOL</code></strong> — triggered before a tool is invoked</li>
+<li><strong><code>POST_TOOL</code></strong> — triggered after a tool completes</li>
+<li><strong><code>PRE_RUN</code></strong> — triggered before the agent run starts</li>
+<li><strong><code>POST_RUN</code></strong> — triggered after the agent run completes</li>
+<li><strong><code>ON_EVENT</code></strong> — triggered for each streaming event during <code>run_streaming()</code></li>
 </ul>
-<p>You can use the <a class="autorefs autorefs-internal" href="../../../api_reference/agents/mcp/#ragbits.agents.mcp.server.MCPServerStdio"><code>MCPServerStdio</code></a>, <a class="autorefs autorefs-internal" href="../../../api_reference/agents/mcp/#ragbits.agents.mcp.server.MCPServerSse"><code>MCPServerSse</code></a>, and <a class="autorefs autorefs-internal" href="../../../api_reference/agents/mcp/#ragbits.agents.mcp.server.MCPServerStreamableHttp"><code>MCPServerStreamableHttp</code></a> classes to connect to these servers.</p>
-<p>For example, this is how you'd use the <a href="https://www.npmjs.com/package/@modelcontextprotocol/server-filesystem">official MCP filesystem server</a> (before running, make sure you have Node.js installed on your machine).</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">ragbits.agents.mcp</span> <span class="kn">import</span> <span class="n">MCPServerStdio</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="k">async</span> <span class="k">with</span> <span class="n">MCPServerStdio</span><span class="p">(</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>    <span class="n">params</span><span class="o">=</span><span class="p">{</span>
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>        <span class="s2">&quot;command&quot;</span><span class="p">:</span> <span class="s2">&quot;npx&quot;</span><span class="p">,</span>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>        <span class="s2">&quot;args&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;-y&quot;</span><span class="p">,</span> <span class="s2">&quot;@modelcontextprotocol/server-filesystem&quot;</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">],</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    <span class="p">}</span>
-</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="p">)</span> <span class="k">as</span> <span class="n">server</span><span class="p">:</span>
-</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="n">tools</span> <span class="o">=</span> <span class="k">await</span> <span class="n">server</span><span class="o">.</span><span class="n">list_tools</span><span class="p">()</span>
+<p>Hooks are executed in priority order (lower numbers first) and support <strong>chaining</strong> — each hook receives the output of the previous one, enabling composable pipelines of transformations.</p>
+<h2 id="how-to-create-and-register-a-hook">How to create and register a hook<a class="headerlink" href="#how-to-create-and-register-a-hook" title="Permanent link">#</a></h2>
+<p>A hook is an instance of <a class="autorefs autorefs-internal" href="../../../api_reference/agents/#ragbits.agents.hooks.Hook"><code>Hook</code></a> that binds an async callback to a lifecycle event. You pass hooks directly to the <a class="autorefs autorefs-internal" href="../../../api_reference/agents/#ragbits.agents.Agent"><code>Agent</code></a> constructor:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">ragbits.agents</span> <span class="kn">import</span> <span class="n">Agent</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">from</span> <span class="nn">ragbits.agents.hooks</span> <span class="kn">import</span> <span class="n">EventType</span><span class="p">,</span> <span class="n">Hook</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">from</span> <span class="nn">ragbits.core.llms</span> <span class="kn">import</span> <span class="n">LiteLLM</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kn">from</span> <span class="nn">ragbits.core.llms.base</span> <span class="kn">import</span> <span class="n">ToolCall</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">my_hook</span><span class="p">(</span><span class="n">tool_call</span><span class="p">:</span> <span class="n">ToolCall</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ToolCall</span><span class="p">:</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A simple pre-tool hook that passes all calls through.&quot;&quot;&quot;</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>    <span class="k">return</span> <span class="n">tool_call</span>  <span class="c1"># decision defaults to &quot;pass&quot;</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="n">agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>    <span class="n">llm</span><span class="o">=</span><span class="n">LiteLLM</span><span class="p">(</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">),</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>    <span class="n">tools</span><span class="o">=</span><span class="p">[</span><span class="o">...</span><span class="p">],</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>    <span class="n">hooks</span><span class="o">=</span><span class="p">[</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a>        <span class="n">Hook</span><span class="p">(</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a>            <span class="n">event_type</span><span class="o">=</span><span class="n">EventType</span><span class="o">.</span><span class="n">PRE_TOOL</span><span class="p">,</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a>            <span class="n">callback</span><span class="o">=</span><span class="n">my_hook</span><span class="p">,</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a>            <span class="n">tool_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;my_tool&quot;</span><span class="p">],</span>  <span class="c1"># None = apply to all tools</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a>            <span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>             <span class="c1"># lower runs first (default: 100)</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a>        <span class="p">),</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a>    <span class="p">],</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="p">)</span>
 </span></code></pre></div>
-<p>A complete list of working examples is available <a href="https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/mcp">here</a>.</p>
-<h2 id="using-mcp-servers">Using MCP servers<a class="headerlink" href="#using-mcp-servers" title="Permanent link">#</a></h2>
-<p>MCP servers can be added to Agents. Ragbits will call <code>list_tools()</code> on the MCP servers each time the Agent is run. This makes the LLM aware of the MCP server's tools. When the LLM calls a tool from an MCP server, Ragbits calls <code>call_tool()</code> on that server.</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">from</span> <span class="nn">ragbits.agents</span> <span class="kn">import</span> <span class="n">Agent</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="kn">from</span> <span class="nn">ragbits.agents.mcp</span> <span class="kn">import</span> <span class="n">MCPServerStdio</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="kn">from</span> <span class="nn">ragbits.core.llms</span> <span class="kn">import</span> <span class="n">LiteLLM</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="k">async</span> <span class="k">with</span> <span class="n">MCPServerStdio</span><span class="p">(</span>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">params</span><span class="o">=</span><span class="p">{</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>        <span class="s2">&quot;command&quot;</span><span class="p">:</span> <span class="s2">&quot;npx&quot;</span><span class="p">,</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>        <span class="s2">&quot;args&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;-y&quot;</span><span class="p">,</span> <span class="s2">&quot;@modelcontextprotocol/server-filesystem&quot;</span><span class="p">,</span> <span class="s2">&quot;.&quot;</span><span class="p">],</span>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="p">}</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="p">)</span> <span class="k">as</span> <span class="n">server</span><span class="p">:</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="n">agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span><span class="n">llm</span><span class="o">=</span><span class="n">LiteLLM</span><span class="p">(</span><span class="n">model_name</span><span class="o">=</span><span class="s2">&quot;gpt-4.1-nano&quot;</span><span class="p">),</span> <span class="n">mcp_servers</span><span class="o">=</span><span class="p">[</span><span class="n">server</span><span class="p">])</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="k">await</span> <span class="n">agent</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="s2">&quot;List all files in the current directory.&quot;</span><span class="p">)</span>
+<p>The <code>Hook</code> constructor accepts:</p>
+<ul>
+<li><strong><code>event_type</code></strong> — one of <code>EventType.PRE_TOOL</code>, <code>POST_TOOL</code>, <code>PRE_RUN</code>, <code>POST_RUN</code> or <code>ON_EVENT</code></li>
+<li><strong><code>callback</code></strong> — an async function matching the corresponding callback protocol</li>
+<li><strong><code>tool_names</code></strong> — optional list of tool names this hook applies to. If <code>None</code>, the hook runs for every tool. This parameter is only relevant for <code>PRE_TOOL</code> and <code>POST_TOOL</code> hooks.</li>
+<li><strong><code>priority</code></strong> — execution order; lower numbers execute first (default: <code>100</code>)</li>
+</ul>
+<h2 id="how-to-validate-and-modify-tool-inputs-with-pre-tool-hooks">How to validate and modify tool inputs with pre-tool hooks<a class="headerlink" href="#how-to-validate-and-modify-tool-inputs-with-pre-tool-hooks" title="Permanent link">#</a></h2>
+<p>Pre-tool hooks receive a <code>ToolCall</code> and return a <code>ToolCall</code>. The returned <code>ToolCall</code> can have a <strong>decision</strong> field that controls whether the tool executes:</p>
+<ul>
+<li><code>"pass"</code> — allow the tool to run (optionally with modified arguments) — this is the default</li>
+<li><code>"deny"</code> — block the tool from running (requires a <code>reason</code>)</li>
+<li><code>"ask"</code> — request user confirmation before proceeding (requires a <code>reason</code>)</li>
+</ul>
+<h3 id="validate-inputs">Validate inputs<a class="headerlink" href="#validate-inputs" title="Permanent link">#</a></h3>
+<p>This hook validates that an email argument has a correct format before allowing the <code>send_notification</code> tool to execute:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">tool_call</span><span class="p">:</span> <span class="n">ToolCall</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ToolCall</span><span class="p">:</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate email format before sending.&quot;&quot;&quot;</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="k">if</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;send_notification&quot;</span><span class="p">:</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>        <span class="k">return</span> <span class="n">tool_call</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">email</span> <span class="o">=</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">arguments</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;email&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">email_pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$&quot;</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">email_pattern</span><span class="p">,</span> <span class="n">email</span><span class="p">):</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>        <span class="n">hook_actions</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;hook&quot;</span><span class="p">:</span> <span class="s2">&quot;validate_email&quot;</span><span class="p">,</span> <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;denied&quot;</span><span class="p">,</span> <span class="s2">&quot;email&quot;</span><span class="p">:</span> <span class="n">email</span><span class="p">})</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>        <span class="k">return</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>            <span class="n">update</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>                <span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="s2">&quot;deny&quot;</span><span class="p">,</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>                <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Invalid email format: </span><span class="si">{</span><span class="n">email</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>            <span class="p">}</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>        <span class="p">)</span>
 </span></code></pre></div>
-<p>A complete example for local MCP integration is available <a href="https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/mcp/local.py">here</a>.</p>
-<h2 id="caching">Caching<a class="headerlink" href="#caching" title="Permanent link">#</a></h2>
-<p>Every time an Agent runs, it calls <code>list_tools()</code> on the MCP server. This can be a latency hit, especially if the server is a remote server. To automatically cache the list of tools, you can pass <code>cache_tools_list=True</code> to <a class="autorefs autorefs-internal" href="../../../api_reference/agents/mcp/#ragbits.agents.mcp.server.MCPServerStdio"><code>MCPServerStdio</code></a>, <a class="autorefs autorefs-internal" href="../../../api_reference/agents/mcp/#ragbits.agents.mcp.server.MCPServerSse"><code>MCPServerSse</code></a>, and <a class="autorefs autorefs-internal" href="../../../api_reference/agents/mcp/#ragbits.agents.mcp.server.MCPServerStreamableHttp"><code>MCPServerStreamableHttp</code></a>. You should only do this if you're certain the tool list will not change.</p>
-<p>If you want to invalidate the cache, you can call <code>invalidate_tools_cache()</code> on the servers.</p>
+<p>If validation fails, the hook returns a <code>ToolCall</code> with <code>decision="deny"</code> which immediately stops tool execution and returns the reason to the LLM.</p>
+<h3 id="modify-arguments">Modify arguments<a class="headerlink" href="#modify-arguments" title="Permanent link">#</a></h3>
+<p>This hook rewrites email domains to an approved list, demonstrating how pre-tool hooks can modify tool arguments:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>    <span class="k">return</span> <span class="n">tool_call</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">sanitize_email_domain</span><span class="p">(</span><span class="n">tool_call</span><span class="p">:</span> <span class="n">ToolCall</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ToolCall</span><span class="p">:</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Ensure emails only go to approved domains.&quot;&quot;&quot;</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="k">if</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;send_notification&quot;</span><span class="p">:</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>        <span class="k">return</span> <span class="n">tool_call</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="n">email</span> <span class="o">=</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">arguments</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;email&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="n">approved_domains</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;example.com&quot;</span><span class="p">,</span> <span class="s2">&quot;test.com&quot;</span><span class="p">]</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="n">domain</span> <span class="o">=</span> <span class="n">email</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;@&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;@&quot;</span> <span class="ow">in</span> <span class="n">email</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    <span class="k">if</span> <span class="n">domain</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">approved_domains</span><span class="p">:</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>        <span class="n">modified_email</span> <span class="o">=</span> <span class="n">email</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;@&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;@example.com&quot;</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>        <span class="n">modified_args</span> <span class="o">=</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">arguments</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>        <span class="n">modified_args</span><span class="p">[</span><span class="s2">&quot;email&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">modified_email</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>        <span class="n">hook_actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>            <span class="p">{</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>                <span class="s2">&quot;hook&quot;</span><span class="p">:</span> <span class="s2">&quot;sanitize_email_domain&quot;</span><span class="p">,</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>                <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;modified&quot;</span><span class="p">,</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>                <span class="s2">&quot;original&quot;</span><span class="p">:</span> <span class="n">email</span><span class="p">,</span>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>                <span class="s2">&quot;modified&quot;</span><span class="p">:</span> <span class="n">modified_email</span><span class="p">,</span>
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>            <span class="p">}</span>
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>        <span class="p">)</span>
+</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>
+</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>        <span class="k">return</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;arguments&quot;</span><span class="p">:</span> <span class="n">modified_args</span><span class="p">})</span>
+</span></code></pre></div>
+<p>The modified arguments are passed to the next hook in the chain (or to the tool itself if this is the last hook).</p>
+<h3 id="chain-multiple-pre-tool-hooks">Chain multiple pre-tool hooks<a class="headerlink" href="#chain-multiple-pre-tool-hooks" title="Permanent link">#</a></h3>
+<p>When multiple pre-tool hooks are registered, they execute in priority order and each hook sees the <code>ToolCall</code> modified by the previous one. If any hook returns <code>"deny"</code>, execution stops immediately:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the hooks example demonstrating pre-tool and post-tool hooks.&quot;&quot;&quot;</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">llm</span> <span class="o">=</span> <span class="n">LiteLLM</span><span class="p">(</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">hooks</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>        <span class="n">Hook</span><span class="p">(</span><span class="n">event_type</span><span class="o">=</span><span class="n">EventType</span><span class="o">.</span><span class="n">PRE_TOOL</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">validate_email</span><span class="p">,</span> <span class="n">tool_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;send_notification&quot;</span><span class="p">],</span> <span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>        <span class="n">Hook</span><span class="p">(</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>            <span class="n">event_type</span><span class="o">=</span><span class="n">EventType</span><span class="o">.</span><span class="n">PRE_TOOL</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">sanitize_email_domain</span><span class="p">,</span> <span class="n">tool_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;send_notification&quot;</span><span class="p">],</span> <span class="n">priority</span><span class="o">=</span><span class="mi">20</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>        <span class="p">),</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>        <span class="n">Hook</span><span class="p">(</span><span class="n">event_type</span><span class="o">=</span><span class="n">EventType</span><span class="o">.</span><span class="n">POST_TOOL</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">mask_sensitive_data</span><span class="p">,</span> <span class="n">tool_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;search_user&quot;</span><span class="p">],</span> <span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>        <span class="n">Hook</span><span class="p">(</span><span class="n">event_type</span><span class="o">=</span><span class="n">EventType</span><span class="o">.</span><span class="n">POST_TOOL</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">log_notification</span><span class="p">,</span> <span class="n">tool_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;send_notification&quot;</span><span class="p">],</span> <span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="p">]</span>
+</span></code></pre></div>
+<p>In this example, <code>validate_email</code> (priority 10) runs first. If it passes, <code>sanitize_email_domain</code> (priority 20) runs next and may modify the email argument before the tool executes.</p>
+<p>You can find the complete code example in the Ragbits repository <a href="https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/hooks/validation_and_sanitization.py">here</a>.</p>
+<h2 id="how-to-modify-tool-outputs-with-post-tool-hooks">How to modify tool outputs with post-tool hooks<a class="headerlink" href="#how-to-modify-tool-outputs-with-post-tool-hooks" title="Permanent link">#</a></h2>
+<p>Post-tool hooks receive the original <code>ToolCall</code> and the <code>ToolReturn</code>, and return a (possibly modified) <code>ToolReturn</code>.</p>
+<h3 id="mask-sensitive-data">Mask sensitive data<a class="headerlink" href="#mask-sensitive-data" title="Permanent link">#</a></h3>
+<p>This hook replaces sensitive fields in search results before they reach the LLM:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>    <span class="k">return</span> <span class="n">tool_call</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">mask_sensitive_data</span><span class="p">(</span><span class="n">tool_call</span><span class="p">:</span> <span class="n">ToolCall</span><span class="p">,</span> <span class="n">tool_return</span><span class="p">:</span> <span class="n">ToolReturn</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ToolReturn</span><span class="p">:</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mask sensitive information in user search results.&quot;&quot;&quot;</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="k">if</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;search_user&quot;</span><span class="p">:</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>        <span class="k">return</span> <span class="n">tool_return</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tool_return</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;ssn&quot;</span> <span class="ow">in</span> <span class="n">tool_return</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>        <span class="n">original_ssn</span> <span class="o">=</span> <span class="n">tool_return</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="s2">&quot;ssn&quot;</span><span class="p">]</span>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>        <span class="n">masked_output</span> <span class="o">=</span> <span class="n">tool_return</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>        <span class="n">masked_output</span><span class="p">[</span><span class="s2">&quot;ssn&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;***-**-****&quot;</span>
+</span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>        <span class="n">hook_actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>            <span class="p">{</span>
+</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>                <span class="s2">&quot;hook&quot;</span><span class="p">:</span> <span class="s2">&quot;mask_sensitive_data&quot;</span><span class="p">,</span>
+</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>                <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;masked&quot;</span><span class="p">,</span>
+</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>                <span class="s2">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;ssn&quot;</span><span class="p">,</span>
+</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>                <span class="s2">&quot;original&quot;</span><span class="p">:</span> <span class="n">original_ssn</span><span class="p">,</span>
+</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>                <span class="s2">&quot;masked&quot;</span><span class="p">:</span> <span class="s2">&quot;***-**-****&quot;</span><span class="p">,</span>
+</span></code></pre></div>
+<h3 id="log-tool-outputs">Log tool outputs<a class="headerlink" href="#log-tool-outputs" title="Permanent link">#</a></h3>
+<p>This hook logs the output of specific agent tools without modifying the result:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Log output from agent tools after they complete.&quot;&quot;&quot;</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="n">output</span> <span class="o">=</span> <span class="n">tool_return</span><span class="o">.</span><span class="n">value</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>        <span class="n">output</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;content&quot;</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="se">\n</span><span class="s2">[</span><span class="si">{</span><span class="n">tool_call</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">] output:</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span></code></pre></div>
+<p>To apply it only to specific tools, use the <code>tool_names</code> parameter:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>    <span class="p">)</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="c1"># Hook to log outputs from both agent tools</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">hook</span> <span class="o">=</span> <span class="n">Hook</span><span class="p">(</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>        <span class="n">event_type</span><span class="o">=</span><span class="n">EventType</span><span class="o">.</span><span class="n">POST_TOOL</span><span class="p">,</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>        <span class="n">callback</span><span class="o">=</span><span class="n">log_agent_output</span><span class="p">,</span>
+</span></code></pre></div>
+<p>You can find the complete code example in the Ragbits repository <a href="https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/hooks/agent_output_logging.py">here</a>.</p>
+<h2 id="how-to-validate-agent-input-with-pre-run-hooks">How to validate agent input with pre-run hooks<a class="headerlink" href="#how-to-validate-agent-input-with-pre-run-hooks" title="Permanent link">#</a></h2>
+<p>Pre-run hooks execute before the agent starts processing. They receive the user input, options, and context as separate arguments, and return the (potentially modified) input directly.</p>
+<p>A common use case is integrating guardrails to block unsafe or policy-violating inputs:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">def</span> <span class="nf">create_guardrail_hook</span><span class="p">(</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="n">guardrail_manager</span><span class="p">:</span> <span class="n">GuardrailManager</span><span class="p">,</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PreRunCallback</span><span class="p">:</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a pre-run hook that validates input using guardrails.&quot;&quot;&quot;</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">guardrail_hook</span><span class="p">(</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>        <span class="nb">input</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>        <span class="n">options</span><span class="p">:</span> <span class="n">AgentOptions</span><span class="p">,</span>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>        <span class="n">context</span><span class="p">:</span> <span class="n">AgentRunContext</span><span class="p">,</span>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate input against guardrails before agent processes it.&quot;&quot;&quot;</span>
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>        <span class="n">user_input</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">input</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>        <span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">guardrail_manager</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">user_input</span><span class="p">)</span>
+</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>
+</span><span id="__span-7-15"><a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>        <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+</span><span id="__span-7-16"><a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="o">.</span><span class="n">succeeded</span><span class="p">:</span>
+</span></code></pre></div>
+<p>To block the agent from processing the input, the hook returns a replacement message. This message becomes the agent's final output — no LLM call or tool execution happens.</p>
+<p>Register it with the agent:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Create an ON_EVENT hook that upper-cases specified words in streaming text chunks.&quot;&quot;&quot;</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">upper_words_hook</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">StreamingEvent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamingEvent</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>            <span class="n">result</span> <span class="o">=</span> <span class="n">event</span>
+</span></code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Pre-run hooks also work with streaming via <code>agent.run_streaming()</code>. If a pre-run hook replaces the input, the replacement text is streamed back directly.</p>
+</div>
+<p>You can find the complete code example in the Ragbits repository <a href="https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/hooks/guardrails_integration.py">here</a>.</p>
+<h2 id="how-to-modify-agent-results-with-post-run-hooks">How to modify agent results with post-run hooks<a class="headerlink" href="#how-to-modify-agent-results-with-post-run-hooks" title="Permanent link">#</a></h2>
+<p>Post-run hooks execute after the agent completes its run. They receive the <code>AgentResult</code>, options, and context as separate arguments, and return the (potentially modified) <code>AgentResult</code>.</p>
+<p>Use post-run hooks to transform, enrich, or log final results:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="kn">from</span> <span class="nn">ragbits.agents._main</span> <span class="kn">import</span> <span class="n">AgentResult</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="kn">from</span> <span class="nn">ragbits.agents.hooks</span> <span class="kn">import</span> <span class="n">EventType</span><span class="p">,</span> <span class="n">Hook</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">enrich_result</span><span class="p">(</span><span class="n">result</span><span class="p">:</span> <span class="n">AgentResult</span><span class="p">,</span> <span class="n">options</span><span class="p">:</span> <span class="nb">object</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">object</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AgentResult</span><span class="p">:</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Add metadata to the agent result.&quot;&quot;&quot;</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    <span class="n">result</span><span class="o">.</span><span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;processed_by&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;post_run_hook&quot;</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>    <span class="k">return</span> <span class="n">result</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>
+</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>
+</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a><span class="n">hook</span> <span class="o">=</span> <span class="n">Hook</span><span class="p">(</span><span class="n">event_type</span><span class="o">=</span><span class="n">EventType</span><span class="o">.</span><span class="n">POST_RUN</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">enrich_result</span><span class="p">)</span>
+</span></code></pre></div>
+<h2 id="how-to-process-streaming-events-with-on-event-hooks">How to process streaming events with on-event hooks<a class="headerlink" href="#how-to-process-streaming-events-with-on-event-hooks" title="Permanent link">#</a></h2>
+<p>On-event hooks intercept every event emitted during <code>agent.run_streaming()</code>. They receive a <code>StreamingEvent</code> and can modify it, suppress it, or expand it into multiple events. This is useful for real-time filtering, transformation, or enrichment of the streaming output.</p>
+<p><code>StreamingEvent</code> is a union of all types that can appear in the streaming output: <code>str</code> (text chunks), <code>ToolCall</code>, <code>ToolCallResult</code>, <code>ToolEvent</code>, <code>DownstreamAgentResult</code>, <code>SimpleNamespace</code>, <code>BasePrompt</code>, <code>Usage</code>, and <code>ConfirmationRequest</code>.</p>
+<h3 id="modify-streaming-events">Modify streaming events<a class="headerlink" href="#modify-streaming-events" title="Permanent link">#</a></h3>
+<p>An on-event callback receives a single <code>StreamingEvent</code> and returns the modified event (or the same event unchanged):</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="kn">from</span> <span class="nn">ragbits.agents.hooks</span> <span class="kn">import</span> <span class="n">EventType</span><span class="p">,</span> <span class="n">Hook</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="kn">from</span> <span class="nn">ragbits.agents.hooks.types</span> <span class="kn">import</span> <span class="n">StreamingEvent</span>
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a>
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">redact_keywords</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">StreamingEvent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamingEvent</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Replace sensitive keywords in text chunks.&quot;&quot;&quot;</span>
+</span><span id="__span-10-7"><a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+</span><span id="__span-10-8"><a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a>        <span class="k">return</span> <span class="n">event</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;SECRET&quot;</span><span class="p">,</span> <span class="s2">&quot;***&quot;</span><span class="p">)</span>
+</span><span id="__span-10-9"><a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>    <span class="k">return</span> <span class="n">event</span>
+</span><span id="__span-10-10"><a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
+</span><span id="__span-10-11"><a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a>
+</span><span id="__span-10-12"><a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a><span class="n">hook</span> <span class="o">=</span> <span class="n">Hook</span><span class="p">(</span><span class="n">event_type</span><span class="o">=</span><span class="n">EventType</span><span class="o">.</span><span class="n">ON_EVENT</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">redact_keywords</span><span class="p">)</span>
+</span></code></pre></div>
+<h3 id="suppress-events">Suppress events<a class="headerlink" href="#suppress-events" title="Permanent link">#</a></h3>
+<p>Return <code>None</code> to remove an event from the stream entirely:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="kn">from</span> <span class="nn">ragbits.agents.hooks.types</span> <span class="kn">import</span> <span class="n">StreamingEvent</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="kn">from</span> <span class="nn">ragbits.core.llms.base</span> <span class="kn">import</span> <span class="n">Usage</span>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">suppress_usage</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">StreamingEvent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamingEvent</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Remove Usage events from the stream.&quot;&quot;&quot;</span>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">Usage</span><span class="p">):</span>
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>        <span class="k">return</span> <span class="kc">None</span>
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>    <span class="k">return</span> <span class="n">event</span>
+</span></code></pre></div>
+<h3 id="expand-a-single-event-into-multiple-events">Expand a single event into multiple events<a class="headerlink" href="#expand-a-single-event-into-multiple-events" title="Permanent link">#</a></h3>
+<p>An on-event callback can also return an async generator, yielding multiple events from a single input:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">AsyncGenerator</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="kn">from</span> <span class="nn">ragbits.agents.hooks.types</span> <span class="kn">import</span> <span class="n">StreamingEvent</span>
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a>
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a>
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">split_sentences</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">StreamingEvent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AsyncGenerator</span><span class="p">[</span><span class="n">StreamingEvent</span><span class="p">,</span> <span class="kc">None</span><span class="p">]:</span>
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Split text chunks on sentence boundaries.&quot;&quot;&quot;</span>
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;. &quot;</span> <span class="ow">in</span> <span class="n">event</span><span class="p">:</span>
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a>        <span class="k">for</span> <span class="n">sentence</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;. &quot;</span><span class="p">):</span>
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a>            <span class="k">yield</span> <span class="n">sentence</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">+</span> <span class="s2">&quot;.&quot;</span>
+</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a>        <span class="k">yield</span> <span class="n">event</span>
+</span></code></pre></div>
+<p>When chained with other hooks, each yielded event is passed through subsequent hooks individually. For example, a splitting hook at priority 1 followed by an uppercasing hook at priority 2 will uppercase each split fragment separately.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>On-event hooks only run during <code>agent.run_streaming()</code>. They have no effect on <code>agent.run()</code>.</p>
+</div>
+<h2 id="how-to-require-user-confirmation-before-tool-execution">How to require user confirmation before tool execution<a class="headerlink" href="#how-to-require-user-confirmation-before-tool-execution" title="Permanent link">#</a></h2>
+<p>Ragbits includes a built-in <code>create_confirmation_hook</code> factory that creates a pre-tool hook requiring user approval before a tool runs:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="kn">from</span> <span class="nn">ragbits.agents</span> <span class="kn">import</span> <span class="n">Agent</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="kn">from</span> <span class="nn">ragbits.agents.hooks</span> <span class="kn">import</span> <span class="n">create_confirmation_hook</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="kn">from</span> <span class="nn">ragbits.core.llms</span> <span class="kn">import</span> <span class="n">LiteLLM</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a><span class="n">agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>    <span class="n">llm</span><span class="o">=</span><span class="n">LiteLLM</span><span class="p">(</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">),</span>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>    <span class="n">tools</span><span class="o">=</span><span class="p">[</span><span class="n">delete_file</span><span class="p">,</span> <span class="n">send_email</span><span class="p">],</span>
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>    <span class="n">hooks</span><span class="o">=</span><span class="p">[</span>
+</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>        <span class="n">create_confirmation_hook</span><span class="p">(</span><span class="n">tool_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;delete_file&quot;</span><span class="p">,</span> <span class="s2">&quot;send_email&quot;</span><span class="p">]),</span>
+</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>    <span class="p">],</span>
+</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a><span class="p">)</span>
+</span></code></pre></div>
+<p>When the agent attempts to call one of the specified tools, the hook returns a <code>ConfirmationRequest</code> containing:</p>
+<ul>
+<li><code>confirmation_id</code> — a deterministic ID based on the hook, tool name, and arguments</li>
+<li><code>tool_name</code> — the name of the tool being called</li>
+<li><code>tool_description</code> — a description of why confirmation is needed</li>
+<li><code>arguments</code> — the tool arguments</li>
+</ul>
+<p>The agent yields the <code>ConfirmationRequest</code> and pauses. You can then resume the agent with the user's decision by including it in the <code>AgentRunContext.tool_confirmations</code> list.</p>
+<h2 id="how-hook-chaining-works">How hook chaining works<a class="headerlink" href="#how-hook-chaining-works" title="Permanent link">#</a></h2>
+<p>All hook types support <strong>chaining</strong>: hooks execute in priority order (lower numbers first), and each hook receives the output of the previous one. When hooks share the same priority (the default is <code>100</code>), they execute in the order they were defined.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>Hook A (priority=10) → modified data → Hook B (priority=20) → modified data → Hook C (priority=100)
+</span></code></pre></div>
+<p>For <strong>pre-tool hooks</strong>, the chained value is the <code>ToolCall</code> (including its <code>arguments</code>). For <strong>post-tool hooks</strong>, it is the <code>ToolReturn</code>. For <strong>pre-run hooks</strong>, it is the agent input. For <strong>post-run hooks</strong>, it is the <code>AgentResult</code>. For <strong>on-event hooks</strong>, the hooks are composed as a pipeline of async generators — each hook wraps the previous one, so events flow through the entire chain without intermediate collection.</p>
+<p>This makes it possible to compose independent hooks that each handle one concern (validation, sanitization, logging, etc.) into a clean pipeline.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>For pre-tool hooks, if any hook in the chain returns <code>"deny"</code>, execution stops immediately and subsequent hooks do not run. Design your hooks with this in mind — place critical validation hooks at lower priority numbers so they run first.</p>
+</div>
 
 
 
@@ -3244,7 +3628,7 @@
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../use_hooks/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Use hooks to customize behavior">
+          <a href="../define_and_use_agents/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Define and use agents">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3254,20 +3638,20 @@
                 Previous
               </span>
               <div class="md-ellipsis">
-                Use hooks to customize behavior
+                Define and use agents
               </div>
             </div>
           </a>
         
         
           
-          <a href="../serve_ragbits_agents/" class="md-footer__link md-footer__link--next" aria-label="Next: Serve agents with A2A">
+          <a href="../provide_mcp_tools/" class="md-footer__link md-footer__link--next" aria-label="Next: Provide tools with MCP">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Serve agents with A2A
+                Provide tools with MCP
               </div>
             </div>
             <div class="md-footer__button md-icon">
