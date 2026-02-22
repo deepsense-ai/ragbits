@@ -61,10 +61,6 @@ export interface ChatContext {
     user: User | null
     session_id: string | null
     /**
-     * User's timezone in IANA format (e.g., 'Europe/Warsaw', 'America/New_York')
-     */
-    timezone: string | null
-    /**
      * List of confirmed/declined tool executions from the frontend. Each entry has 'confirmation_id' and 'confirmed' (bool)
      */
     tool_confirmations:
@@ -72,6 +68,10 @@ export interface ChatContext {
               [k: string]: unknown
           }[]
         | null
+    /**
+     * User's timezone in IANA format (e.g., 'Europe/Warsaw', 'America/New_York')
+     */
+    timezone: string | null
     [k: string]: unknown
 }
 
@@ -227,17 +227,17 @@ export interface UsageContent {
 }
 
 /**
- * Error content wrapper for displaying error messages to users.
- */
-export interface ErrorContent {
-    message: string
-}
-
-/**
  * Confirmation request content wrapper.
  */
 export interface ConfirmationRequestContent {
     confirmation_request: ConfirmationRequest
+}
+
+/**
+ * Error content wrapper for displaying error messages to users.
+ */
+export interface ErrorContent {
+    message: string
 }
 
 /**
@@ -558,14 +558,14 @@ export interface ConversationSummaryResponse {
     content: ConversationSummaryContent
 }
 
-export interface ErrorChatResponse {
-    type: 'error'
-    content: ErrorContent
-}
-
 export interface ConfirmationRequestChatResponse {
     type: 'confirmation_request'
     content: ConfirmationRequestContent
+}
+
+export interface ErrorChatResponse {
+    type: 'error'
+    content: ErrorContent
 }
 
 export interface ChunkedChatResponse {
@@ -588,5 +588,5 @@ export type ChatResponse =
     | MessageUsageChatResponse
     | ClearMessageChatResponse
     | ConversationSummaryResponse
-    | ErrorChatResponse
     | ConfirmationRequestChatResponse
+    | ErrorChatResponse
