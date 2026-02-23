@@ -1,13 +1,23 @@
 """
-Example demonstrating guardrails integration using pre-run and on-event hooks.
+Ragbits Agents Example: Guardrails integration with hooks
 
-This example shows how to use the ragbits Guardrail system with agent hooks
-to validate inputs before the agent processes them and how to use ON_EVENT
-hooks to transform streaming output in real-time.
+This example demonstrates how to use the ragbits Guardrail system with agent hooks
+to validate inputs before the agent processes them, and how to use ON_EVENT hooks
+to transform streaming output in real-time.
 
-To run this example, execute:
-    uv run python examples/agents/hooks/guardrails_integration.py
+To execute this script simply run:
+    ```bash
+    uv run examples/agents/hooks/guardrails_integration.py
+    ```
 """
+
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ragbits-agents",
+#     "ragbits-guardrails",
+# ]
+# ///
 
 import asyncio
 

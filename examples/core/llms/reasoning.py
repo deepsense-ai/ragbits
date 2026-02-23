@@ -27,14 +27,14 @@ async def main() -> None:
     Run the example.
     """
     options = LiteLLMOptions(reasoning_effort="medium")
-    model = LiteLLM(model_name="claude-3-7-sonnet-20250219", default_options=options)
+    model = LiteLLM(model_name="claude-haiku-4-5-20251001", default_options=options)
     response = await model.generate_with_metadata(
         "Do you like Jazz?",
     )
     print(f"reasoning: {response.reasoning}")
 
     options = LiteLLMOptions(thinking={"type": "enabled", "budget_tokens": 1024})
-    model = LiteLLM(model_name="claude-3-7-sonnet-20250219", default_options=options)
+    model = LiteLLM(model_name="claude-haiku-4-5-20251001", default_options=options)
     response = await model.generate_with_metadata(
         "Do you like Jazz?",
     )

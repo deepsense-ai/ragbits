@@ -1,9 +1,23 @@
 """
-Example demonstrating a post-tool hook for logging outputs from agent tools.
+Ragbits Agents Example: Post-tool hook for agent output logging
 
-This shows how to log the output returned by downstream agent tools.
-Setup: 1 parent agent with 2 expert child agents as tools.
+This example demonstrates how to use a POST_TOOL hook to log outputs returned
+by downstream agent tools. The setup consists of a parent agent with two expert
+child agents (diet and fitness) registered as tools.
+
+To execute this script simply run:
+    ```bash
+    uv run examples/agents/hooks/agent_output_logging.py
+    ```
 """
+
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ragbits-core",
+#     "ragbits-agents",
+# ]
+# ///
 
 import asyncio
 

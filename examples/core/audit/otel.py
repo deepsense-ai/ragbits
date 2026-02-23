@@ -140,7 +140,7 @@ async def process_request() -> None:
     question = "What's the meaning of life?"
     philosophers = [
         LiteLLM(model_name="gpt-4.1-2025-04-14", use_structured_output=True),
-        LiteLLM(model_name="claude-3-7-sonnet-20250219", use_structured_output=True),
+        LiteLLM(model_name="claude-haiku-4-5-20251001", use_structured_output=True),
         LiteLLM(model_name="gemini-2.0-flash", use_structured_output=True),
     ]
     prompts = [

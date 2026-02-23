@@ -11,10 +11,7 @@ from inspect import iscoroutinefunction
 from types import ModuleType, SimpleNamespace
 from typing import Any, ClassVar, Generic, TypeVar, Union, cast, overload
 
-from pydantic import (
-    BaseModel,
-    Field,
-)
+from pydantic import BaseModel, Field, PrivateAttr
 from typing_extensions import Self
 
 from ragbits import agents
@@ -145,26 +142,20 @@ class AgentDependencies(BaseModel, Generic[DepsT]):
 
     model_config = {"arbitrary_types_allowed": True}
 
-    _frozen: bool
-    _value: DepsT | None
+    _frozen: bool = PrivateAttr(default=False)
+    _value: DepsT | None = PrivateAttr(default=None)
 
     def __init__(self, value: DepsT | None = None) -> None:
         super().__init__()
-        self._value = value
-        self._frozen = False
+        object.__setattr__(self, "_value", value)
+        object.__setattr__(self, "_frozen", False)
 
     def __setattr__(self, name: str, value: object) -> None:
-        is_frozen = False
-        if name != "_frozen":
-            try:
-                is_frozen = object.__getattribute__(self, "_frozen")
-            except AttributeError:
-                is_frozen = False
-
+        is_frozen = object.__getattribute__(self, "_frozen")
         if is_frozen and name not in {"_frozen"}:
             raise RuntimeError("Dependencies are immutable after first access")
 
-        super().__setattr__(name, value)
+        object.__setattr__(self, name, value)
 
     @property
     def value(self) -> DepsT | None:
@@ -183,7 +174,7 @@ class AgentDependencies(BaseModel, Generic[DepsT]):
     def __getattr__(self, name: str) -> object:
         value = object.__getattribute__(self, "_value")
         if value is None:
-            raise AttributeError(name)
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
         self._freeze()
         return getattr(value, name)
 

@@ -7,7 +7,7 @@ loop of an agent.
 To run the script, execute the following command:
 
     ```bash
-    uv run examples/agents/stream_events_form_tools.py
+    uv run examples/agents/stream_events_from_tools.py
     ```
 """
 # /// script
