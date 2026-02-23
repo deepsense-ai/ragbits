@@ -19,6 +19,7 @@ To run the script, execute the following command:
 # ]
 # ///
 import asyncio
+import os
 
 from pydantic import BaseModel
 
@@ -58,7 +59,10 @@ async def main() -> None:
     llm = LiteLLM(model_name=model_name, use_structured_output=True)
     agent = Agent(llm=llm, prompt=SearchPrompt, tools=[get_web_search_tool(model_name)])
     response = await agent.run(SearchPromptInput(query="What date is today?"))
-    print(response)
+    print(response, flush=True)
+    # Force exit to prevent asyncio.run() from hanging during shutdown
+    # on litellm's pending async logging tasks and connection pools.
+    os._exit(0)
 
 
 if __name__ == "__main__":

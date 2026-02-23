@@ -7,7 +7,7 @@ It showcases different response types, including text responses, live updates, a
 To run the script, execute the following command:
 
     ```bash
-    ragbits api run examples.api.chat:MyChat
+    ragbits api run examples.chat.chat:MyChat
     ```
 """
 

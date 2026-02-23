@@ -1,10 +1,21 @@
-"""Simple test agent for CLI testing.
-
-run:
-
-uv run ragbits agents run examples.agents.test_cli_agent:test_agent
-
 """
+Ragbits Agents Example: CLI agent
+
+This example demonstrates how to expose an agent via the ragbits CLI, allowing
+it to be run interactively from the command line with conversation history.
+
+To expose the CLI Agent simply run:
+    ```bash
+    uv run ragbits agents run examples.agents.cli_agent:test_agent
+    ```
+"""
+
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ragbits-agents",
+# ]
+# ///
 
 from ragbits.agents import Agent
 from ragbits.core.llms import LiteLLM
