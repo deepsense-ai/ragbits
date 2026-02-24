@@ -81,7 +81,7 @@ jobs:
         run: |
           uv run ./check_licenses.sh
 
-      - name: Check all examples are documented in README and has '/// script' tag
+      - name: Check all examples are documented in README
         run: |
           bash .github/scripts/check_examples.sh
 

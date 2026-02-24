@@ -1,8 +1,6 @@
 #!/bin/bash
 
-# Check that all example Python files:
-#   1. Are documented in examples/README.md
-#   2. Have the "# /// script" uv inline script metadata tag
+# Check that all example Python files are documented in examples/README.md
 
 EXAMPLES_DIR="examples"
 README="examples/README.md"
