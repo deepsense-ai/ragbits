@@ -24,6 +24,14 @@ To run the script:
     ragbits api run examples.chat.file_explorer_agent:FileExplorerChat
 """
 
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ragbits-chat",
+#     "ragbits-agents",
+# ]
+# ///
+
 import json
 import os
 from collections.abc import AsyncGenerator

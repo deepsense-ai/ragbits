@@ -1,11 +1,22 @@
 """
-Example demonstrating hooks for input validation, sanitization, and output masking.
+Ragbits Agents Example: Input validation, sanitization, and output masking with hooks
 
-This example shows a customer support agent with hooks that:
-- Validate email addresses before sending
-- Sanitize email domains to approved list
-- Mask sensitive user data in responses
+This example demonstrates a customer support agent with PRE_TOOL and POST_TOOL hooks that
+validate email addresses before sending, sanitize email domains to an approved list,
+and mask sensitive user data in tool responses.
+
+To execute this script simply run:
+    ```bash
+    uv run examples/agents/hooks/validation_and_sanitization.py
+    ```
 """
+
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ragbits-agents",
+# ]
+# ///
 
 import asyncio
 import re

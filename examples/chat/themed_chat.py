@@ -11,6 +11,13 @@ SUPER EASY USAGE:
 That's it! No manual conversion needed!
 """
 
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ragbits-chat",
+# ]
+# ///
+
 from collections.abc import AsyncGenerator
 
 from pydantic import BaseModel

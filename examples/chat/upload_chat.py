@@ -11,6 +11,13 @@ To run the script, execute the following command:
     ```
 """
 
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ragbits-chat",
+# ]
+# ///
+
 from collections.abc import AsyncGenerator
 
 from fastapi import UploadFile

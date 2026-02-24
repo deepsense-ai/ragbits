@@ -1,3 +1,23 @@
+"""
+Ragbits Agents Example: Dependencies
+
+This example demonstrates how to use AgentContext and AgentDependencies
+
+To run the script, execute the following command:
+
+    ```bash
+    uv run examples/agents/dependencies.py
+    ```
+"""
+
+# /// script
+# requires-python = ">=3.10"
+# dependencies = [
+#     "ragbits-core",
+#     "ragbits-agents",
+# ]
+# ///
+
 from dataclasses import dataclass
 
 from ragbits.agents import Agent, AgentRunContext
