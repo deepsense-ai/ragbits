@@ -9,7 +9,9 @@ type MarkdownContentProps = {
 
 const MarkdownContent = ({ content, classNames }: MarkdownContentProps) => {
   return (
-    <div style={{ contentVisibility: "auto", containIntrinsicSize: "auto 500px" }}>
+    <div
+      style={{ contentVisibility: "auto", containIntrinsicSize: "auto 500px" }}
+    >
       <Markdown
         className={cn(
           "markdown-container prose dark:prose-invert text-default-900 max-w-full",

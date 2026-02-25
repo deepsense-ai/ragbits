@@ -100,7 +100,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       return {
         ...(serverState ?? {}),
         ...(conversationId &&
-          !isTemporaryConversation(conversation.conversationId)
+        !isTemporaryConversation(conversation.conversationId)
           ? { conversation_id: conversationId }
           : {}),
         ...(chatOptions ? { user_settings: chatOptions } : {}),
@@ -464,9 +464,9 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       const decisionsMap =
         typeof confirmed === "boolean"
           ? idsArray.reduce(
-            (acc, id) => ({ ...acc, [id]: confirmed }),
-            {} as Record<string, boolean>,
-          )
+              (acc, id) => ({ ...acc, [id]: confirmed }),
+              {} as Record<string, boolean>,
+            )
           : confirmed;
 
       // Update confirmation states immediately in the UI
