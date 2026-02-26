@@ -11,6 +11,8 @@ import {
 import { immer } from "zustand/middleware/immer";
 import { omitBy } from "lodash";
 import { ChatHandlerRegistry } from "./eventHandlers/eventHandlerRegistry";
+import { TextChatResponse } from "@ragbits/api-client-react";
+
 import { mapHistoryToMessages } from "../../../core/utils/messageMapper";
 import {
   initialHistoryValues,
@@ -20,6 +22,71 @@ import {
   initialConversationValues,
 } from "../../../core/stores/HistoryStore/utils";
 import { v4 as uuidv4 } from "uuid";
+
+export const FLUSH_INTERVAL_MS = 100;
+
+type BufferedEvent = {
+  response: ChatResponse;
+  conversationIdRef: { current: string };
+  messageId: string;
+};
+
+/**
+ * Queues incoming SSE events and flushes them in batch at a throttled interval.
+ * This decouples the SSE data stream from React rendering, preventing GC
+ * thrashing and renderer overload during high-throughput streams.
+ */
+export class EventBuffer {
+  private queue: BufferedEvent[] = [];
+  private timerId: ReturnType<typeof setTimeout> | null = null;
+  private flushFn: (events: BufferedEvent[]) => void;
+  private intervalMs: number;
+
+  constructor(
+    flushFn: (events: BufferedEvent[]) => void,
+    intervalMs: number = FLUSH_INTERVAL_MS,
+  ) {
+    this.flushFn = flushFn;
+    this.intervalMs = intervalMs;
+  }
+
+  enqueue(
+    response: ChatResponse,
+    conversationIdRef: { current: string },
+    messageId: string,
+  ): void {
+    this.queue.push({ response, conversationIdRef, messageId });
+
+    if (this.timerId === null) {
+      this.timerId = setTimeout(() => {
+        this.timerId = null;
+        this.flush();
+      }, this.intervalMs);
+    }
+  }
+
+  flush(): void {
+    if (this.queue.length === 0) return;
+
+    const events = this.queue;
+    this.queue = [];
+
+    if (this.timerId !== null) {
+      clearTimeout(this.timerId);
+      this.timerId = null;
+    }
+
+    this.flushFn(events);
+  }
+
+  dispose(): void {
+    if (this.timerId !== null) {
+      clearTimeout(this.timerId);
+      this.timerId = null;
+    }
+    this.queue = [];
+  }
+}
 
 export const createHistoryStore = immer<HistoryStore>((set, get) => ({
   ...initialHistoryValues(),
@@ -316,13 +383,50 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         }),
       );
 
+      const buffer = new EventBuffer((events) => {
+        // Separate text events (hot path) from non-text events (rare)
+        const textEvents: TextChatResponse[] = [];
+        const otherEvents: BufferedEvent[] = [];
+        for (const event of events) {
+          if (event.response.type === "text") {
+            textEvents.push(event.response as TextChatResponse);
+          } else {
+            otherEvents.push(event);
+          }
+        }
+
+        // Apply all text chunks in a SINGLE immer produce call
+        if (textEvents.length > 0) {
+          // Build batch string OUTSIDE immer to avoid V8 cons-string chains
+          // and repeated Proxy setter calls
+          const batchText = textEvents.map((t) => t.content.text).join("");
+          set(
+            updateConversation(conversationIdRef.current, (draft) => {
+              const message = draft.history[assistantResponseId];
+              message.content = message.content + batchText;
+            }),
+          );
+        }
+
+        // Non-text events go through the full handler (rare, won't cause OOM)
+        for (const event of otherEvents) {
+          handleResponse(
+            event.conversationIdRef,
+            event.messageId,
+            event.response,
+          );
+        }
+      });
+
       ragbitsClient.makeStreamRequest(
         "/api/chat",
         chatRequest,
         {
           onMessage: (response: ChatResponse) =>
-            handleResponse(conversationIdRef, assistantResponseId, response),
+            buffer.enqueue(response, conversationIdRef, assistantResponseId),
           onError: (error: Error) => {
+            buffer.flush();
+            buffer.dispose();
             handleResponse(conversationIdRef, assistantResponseId, {
               type: "text",
               content: { text: error.message },
@@ -330,6 +434,8 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
             stopAnswering(conversationIdRef.current);
           },
           onClose: () => {
+            buffer.flush();
+            buffer.dispose();
             stopAnswering(conversationIdRef.current);
           },
         },
@@ -424,13 +530,50 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       );
 
       // Use the same assistant message for the response
+      const buffer = new EventBuffer((events) => {
+        // Separate text events (hot path) from non-text events (rare)
+        const textEvents: TextChatResponse[] = [];
+        const otherEvents: BufferedEvent[] = [];
+        for (const event of events) {
+          if (event.response.type === "text") {
+            textEvents.push(event.response as TextChatResponse);
+          } else {
+            otherEvents.push(event);
+          }
+        }
+
+        // Apply all text chunks in a SINGLE immer produce call
+        if (textEvents.length > 0) {
+          // Build batch string OUTSIDE immer to avoid V8 cons-string chains
+          // and repeated Proxy setter calls
+          const batchText = textEvents.map((t) => t.content.text).join("");
+          set(
+            updateConversation(conversationIdRef.current, (draft) => {
+              const message = draft.history[assistantResponseId];
+              message.content = message.content + batchText;
+            }),
+          );
+        }
+
+        // Non-text events go through the full handler (rare, won't cause OOM)
+        for (const event of otherEvents) {
+          handleResponse(
+            event.conversationIdRef,
+            event.messageId,
+            event.response,
+          );
+        }
+      });
+
       ragbitsClient.makeStreamRequest(
         "/api/chat",
         chatRequest,
         {
           onMessage: (response: ChatResponse) =>
-            handleResponse(conversationIdRef, assistantResponseId, response),
+            buffer.enqueue(response, conversationIdRef, assistantResponseId),
           onError: (error: Error) => {
+            buffer.flush();
+            buffer.dispose();
             handleResponse(conversationIdRef, assistantResponseId, {
               type: "text",
               content: { text: error.message },
@@ -438,6 +581,8 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
             stopAnswering(conversationIdRef.current);
           },
           onClose: () => {
+            buffer.flush();
+            buffer.dispose();
             stopAnswering(conversationIdRef.current);
           },
         },
