@@ -1,6 +1,8 @@
 # CHANGELOG
 
 ## Unreleased
+
+- Fix frontend OOM on high-throughput SSE streams by batching text events into single immer produce call and adding `content-visibility: auto` to markdown container
 - Add planner component to the UI, add support for planner events in API (#827) (#907)
 
 ## 1.5.0 (2026-02-19)
