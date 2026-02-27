@@ -11,7 +11,7 @@ from typing import cast
 from pydantic import BaseModel
 
 from ragbits.agents.confirmation import ConfirmationRequest
-from ragbits.agents.tools.todo import Task, TaskStatus
+from ragbits.agents.tools.planning import Task, TaskStatus
 from ragbits.chat.interface.types import AuthType, ConfirmationRequestContent
 
 
@@ -73,6 +73,7 @@ class RagbitsChatModelProvider:
                 MessageRole,
                 MessageUsage,
                 OAuth2ProviderConfig,
+                PlanItemContent,
                 Reference,
                 StateUpdate,
                 TextContent,
@@ -110,6 +111,7 @@ class RagbitsChatModelProvider:
                 "ConversationSummaryContent": ConversationSummaryContent,
                 "FollowupMessagesContent": FollowupMessagesContent,
                 "UsageContent": UsageContent,
+                "PlanItemContent": PlanItemContent,
                 "ConfirmationRequestContent": ConfirmationRequestContent,
                 "ErrorContent": ErrorContent,
                 # Configuration models
@@ -179,6 +181,7 @@ class RagbitsChatModelProvider:
                 "FollowupMessagesContent",
                 "UsageContent",
                 "ClearMessageContent",
+                "PlanItemContent",
                 "ConfirmationRequestContent",
                 "ErrorContent",
             ],

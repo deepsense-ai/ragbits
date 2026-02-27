@@ -46,6 +46,7 @@ All necessary details are provided in the comments at the top of each script.
 | [Basic Document Search Optimization](/examples/evaluate/document-search/basic/optimize.py)       | [ragbits-evaluate](/packages/ragbits-evaluate)        | Example of how to optimize a basic document search pipeline using the `Optimizer` class.                 |
 | [Advanced Document Search Evaluation](/examples/evaluate/document-search/advanced/evaluate.py)   | [ragbits-evaluate](/packages/ragbits-evaluate)        | Example of how to evaluate an advanced document search pipeline using the `Evaluator` class.             |
 | [Advanced Document Search Optimization](/examples/evaluate/document-search/advanced/optimize.py) | [ragbits-evaluate](/packages/ragbits-evaluate)        | Example of how to optimize an advanced document search pipeline using the `Optimizer` class.             |
+| [Agent Benchmarking Agents](/examples/evaluate/agent-benchmarking/example_agents.py)             | [ragbits-evaluate](/packages/ragbits-evaluate)        | Agent definitions (HumanEval, HotpotQA, GAIA) for benchmarking with optional planning capabilities.     |
 
 ### Chat (`examples/chat/`)
 
@@ -61,6 +62,7 @@ All necessary details are provided in the comments at the top of each script.
 | [Tutorial Chat Interface](/examples/chat/tutorial.py)                                  | [ragbits-chat](/packages/ragbits-chat)           | Full-featured chat with authentication, user settings, feedback, live updates, web search and image generation.                  |
 | [Upload Chat Interface](/examples/chat/upload_chat.py)                                  | [ragbits-chat](/packages/ragbits-chat)           | Example of how to use the `ChatInterface` with file upload support via `upload_handler`.                                         |
 | [File Explorer Agent](/examples/chat/file_explorer_agent.py)                            | [ragbits-chat](/packages/ragbits-chat)           | Secure file management agent with path validation and confirmation for all file operations within a restricted directory.        |
+| [Code Planner](/examples/chat/code_planner.py)                                          | [ragbits-chat](/packages/ragbits-chat)           | Example of how to use the `ChatInterface` with planning tools for code architecture tasks.                                      |
 
 ### Agents (`examples/agents/`)
 
@@ -74,6 +76,7 @@ All necessary details are provided in the comments at the top of each script.
 | [Streaming Events from Tools](/examples/agents/stream_events_from_tools.py)                     |  [ragbits-agents](/packages/ragbits-agents)   | Example of how to define a tool that emits custom events that can be streamed from an agent.             |
 | [CLI Agent](/examples/agents/cli_agent.py)                                                      |  [ragbits-agents](/packages/ragbits-agents)   | Example of how to expose an agent via the ragbits CLI for interactive use.                               |
 | [Memory Tool](/examples/agents/memory_tool_example.py)                                          |  [ragbits-agents](/packages/ragbits-agents)   | Example of how to add long-term memory capabilities to an agent using the memory tool. |
+| [Agents Planning Tools](/examples/agents/planning.py)                                           |  [ragbits-agents](/packages/ragbits-agents)   | Example of how to use planning tools for task breakdown and sequential execution. |
 
 #### Hooks (`examples/agents/hooks/`)
 

@@ -1,7 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
-- Add todo list component to the UI, add support for todo events in API (#827)
+- Add planner component to the UI, add support for planner events in API (#827) (#907)
 
 ## 1.5.0 (2026-02-19)
 
@@ -52,7 +52,6 @@
 
 - Make `SummaryGenerator` optional in `ChatInterface` by providing a default no-op implementation.
 - Add automatic topic extraction to be used as conversation title with ability to edit in the client side (#840)
-- Add todo list component to the UI, add support for todo events in API (#827)
 - Add custom response type to the chat interface with full type safety and validation (#849)
   - New class-based response system: `TextResponse`, `ReferenceResponse`, `StateUpdateResponse`, etc.
   - Support for custom response types by extending `ResponseContent` and `ChatResponse`
