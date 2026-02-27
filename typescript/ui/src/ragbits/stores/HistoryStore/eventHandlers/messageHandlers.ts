@@ -9,7 +9,7 @@ import {
   MessageUsageChatResponse,
   ReferenceChatResponse,
   TextChatResponse,
-  TodoItemChatResonse,
+  PlanItemChatResponse,
 } from "@ragbits/api-client-react";
 import { PrimaryHandler } from "./eventHandlerRegistry";
 import { produce } from "immer";
@@ -118,6 +118,26 @@ export const handleUsage: PrimaryHandler<MessageUsageChatResponse> = (
   message.usage = response.content.usage;
 };
 
+export const handlePlanItem: PrimaryHandler<PlanItemChatResponse> = (
+  { content },
+  draft,
+  ctx,
+) => {
+  const message = draft.history[ctx.messageId];
+  const tasks = message.tasks ?? [];
+  const task = content.task;
+  const newTasks = produce(tasks, (tasksDraft) => {
+    const taskIndex = tasksDraft.findIndex((t) => t.id === task.id);
+    if (taskIndex === -1) {
+      tasksDraft.push(task);
+    } else {
+      tasksDraft[taskIndex] = task;
+    }
+  });
+
+  message.tasks = newTasks;
+};
+
 export const handleConfirmationRequest: PrimaryHandler<
   ConfirmationRequestChatResponse
 > = (response, draft, ctx) => {
@@ -151,23 +171,4 @@ export const handleError: PrimaryHandler<ErrorChatResponse> = (
 ) => {
   const message = draft.history[ctx.messageId];
   message.error = response.content.message;
-};
-
-export const handleTodoItem: PrimaryHandler<TodoItemChatResonse> = (
-  { content },
-  draft,
-  ctx,
-) => {
-  const message = draft.history[ctx.messageId];
-  const tasks = message.tasks ?? [];
-  const newTasks = produce(tasks, (tasksDraft) => {
-    const taskIndex = tasksDraft.findIndex((t) => t.id === content.id);
-    if (taskIndex === -1) {
-      tasksDraft.push(content);
-    } else {
-      tasksDraft[taskIndex] = content;
-    }
-  });
-
-  message.tasks = newTasks;
 };

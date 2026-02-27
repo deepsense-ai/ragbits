@@ -2,9 +2,8 @@
 
 ## Unreleased
 
-- TodoOrchestrator & Todo list for agent (#823)
 - Add long-term semantic memory tools for agents (#839)
-
+- Add agent planning capabilities (#823) (#907)
 
 ## 1.5.0 (2026-02-19)
 

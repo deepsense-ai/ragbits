@@ -9,26 +9,6 @@ import type { RJSFSchema } from '@rjsf/utils'
 export type TypeFrom<T> = T[keyof T]
 
 /**
- * Represents the ChatResponseType enum
- */
-export const ChatResponseType = {
-    Text: 'text',
-    Reference: 'reference',
-    StateUpdate: 'state_update',
-    MessageId: 'message_id',
-    ConversationId: 'conversation_id',
-    LiveUpdate: 'live_update',
-    FollowupMessages: 'followup_messages',
-    Image: 'image',
-    ChunkedContent: 'chunked_content',
-    ClearMessage: 'clear_message',
-    Usage: 'usage',
-    TodoItem: 'todo_item',
-} as const
-
-export type ChatResponseType = TypeFrom<typeof ChatResponseType>
-
-/**
  * Represents the FeedbackType enum
  */
 export const FeedbackType = {
@@ -66,6 +46,9 @@ export const TaskStatus = {
     Pending: 'pending',
     InProgress: 'in_progress',
     Completed: 'completed',
+    Failed: 'failed',
+    Cancelled: 'cancelled',
+    Retrying: 'retrying',
 } as const
 
 export type TaskStatus = TypeFrom<typeof TaskStatus>
@@ -92,9 +75,9 @@ export interface ChatContext {
     user: User | null
     session_id: string | null
     /**
-     * List of confirmed/declined tool executions from the frontend. Each entry has 'confirmation_id' and 'confirmed' (bool)
+     * List of confirmed/declined tools from the frontend
      */
-    tool_confirmations:
+    confirmed_tools:
         | {
               [k: string]: unknown
           }[]
@@ -278,6 +261,13 @@ export interface UsageContent {
     usage: {
         [k: string]: MessageUsage
     }
+}
+
+/**
+ * Plan item content wrapper.
+ */
+export interface PlanItemContent {
+    task: Task
 }
 
 /**
@@ -607,6 +597,11 @@ export interface ClearMessageChatResponse {
     content: unknown
 }
 
+export interface PlanItemChatResponse {
+    type: 'plan_item'
+    content: PlanItemContent
+}
+
 export interface ConversationSummaryResponse {
     type: 'conversation_summary'
     content: ConversationSummaryContent
@@ -620,21 +615,6 @@ export interface ConfirmationRequestChatResponse {
 export interface ErrorChatResponse {
     type: 'error'
     content: ErrorContent
-}
-
-export interface TodoItemChatResonse {
-    type: 'todo_item'
-    content: Task
-}
-
-export interface TodoItemChatResonse {
-    type: 'todo_item'
-    content: Task
-}
-
-export interface TodoItemChatResonse {
-    type: 'todo_item'
-    content: Task
 }
 
 export interface ChunkedChatResponse {
@@ -656,7 +636,7 @@ export type ChatResponse =
     | ImageChatResponse
     | MessageUsageChatResponse
     | ClearMessageChatResponse
+    | PlanItemChatResponse
     | ConversationSummaryResponse
     | ConfirmationRequestChatResponse
     | ErrorChatResponse
-    | TodoItemChatResonse
