@@ -250,7 +250,7 @@ def print_summary(packages_to_process: list[str], package_data: dict) -> None:
 
 async def main() -> None:
     """Generate changelog entries for changed packages."""
-    base_branch = sys.argv[1] if len(sys.argv) > 1 else "develop"
+    base_branch = sys.argv[1] if len(sys.argv) > 1 else "main"
 
     console.print(
         "[bold cyan]🚀 Changelog Generator[/bold cyan] "

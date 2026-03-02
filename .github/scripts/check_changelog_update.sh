@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Use the provided base branch or default to 'develop'
-BASE_BRANCH=${1:-develop}
+# Use the provided base branch or default to 'main'
+BASE_BRANCH=${1:-main}
 
 echo "Fetching $BASE_BRANCH branch..."
 git fetch origin $BASE_BRANCH --depth=1

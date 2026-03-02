@@ -5,10 +5,10 @@
 # ]
 # ///
 """
-Script to update all package versions in develop branch after a release.
+Script to update all package versions in main branch after a release.
 
 Usage:
-    uv run scripts/update_develop_versions.py "1.3.0"
+    uv run scripts/update_versions.py "1.3.0"
 """
 
 import sys
@@ -59,8 +59,8 @@ def update_package_version(package_dir: Path, new_base_version: str) -> None:
 def main() -> None:
     """Main function to update all package versions to new base version."""
     if len(sys.argv) != 2:  # noqa: PLR2004
-        print("Usage: python update_develop_versions.py <new_base_version>")
-        print("Example: python update_develop_versions.py '1.3.0'")
+        print("Usage: python update_versions.py <new_base_version>")
+        print("Example: python update_versions.py '1.3.0'")
         sys.exit(1)
 
     new_base_version = sys.argv[1]

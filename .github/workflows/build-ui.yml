@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
   push:
     branches:
-      # UI build is triggered only for `develop` branch, as the commits are carried to main
-      - develop
+      # UI build is triggered only for `main` branch
+      - main
     paths:
       - typescript/ui/**
 
