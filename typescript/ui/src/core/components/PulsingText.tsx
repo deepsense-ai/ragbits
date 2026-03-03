@@ -2,24 +2,24 @@ import { cn } from "@heroui/react";
 import { motion } from "framer-motion";
 import { PropsWithChildren } from "react";
 
-const DEFAULT_SHIMMER_DURATION = 1;
+const DEFAULT_PULSE_DURATION = 1;
 
-interface ShimmerTextProps {
+interface PulsingTextProps {
   duration?: number;
   className?: string;
 }
 
-export default function ShimmerText({
+export default function PulsingText({
   duration,
   className,
   children,
-}: PropsWithChildren<ShimmerTextProps>) {
+}: PropsWithChildren<PulsingTextProps>) {
   return (
     <motion.div
-      className={cn("text-default-500", className)}
+      className={cn(className)}
       animate={{ opacity: [0.4, 1, 0.4] }}
       transition={{
-        duration: duration ?? DEFAULT_SHIMMER_DURATION,
+        duration: duration ?? DEFAULT_PULSE_DURATION,
         repeat: Infinity,
         ease: "easeInOut",
       }}
