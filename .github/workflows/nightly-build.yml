@@ -36,7 +36,6 @@ jobs:
           python-version: "3.10"
 
       - name: Check if nightly build needed
-        if: ${{ inputs.dry-run != true }}
         id: check
         run: uv run scripts/check_nightly_build.py
 
