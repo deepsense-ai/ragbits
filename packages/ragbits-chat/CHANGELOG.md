@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Fix live update emoji icons losing color during shimmer animation by switching from gradient-based to opacity-based effect
 - Fix frontend OOM on high-throughput SSE streams by batching text events into single immer produce call and adding `content-visibility: auto` to markdown container
 - Autoreload support for UI during development (#924)
 - Decoupling of components from ragbits specific logic. Introduction of slot based plugin architecture. Minimal history store implementation (#917)

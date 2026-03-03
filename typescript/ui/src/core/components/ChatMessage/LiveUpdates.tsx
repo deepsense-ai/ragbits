@@ -29,9 +29,11 @@ export default function LiveUpdates({
   const hasMultipleUpdates = updates.length > 1;
   const lastUpdate = updates[updates.length - 1];
   const earlierUpdates = updates.slice(0, -1);
-  const shimmerDuration =
+  const shimmerDuration = Math.min(
     Math.max((lastUpdate.description ?? "").length, lastUpdate.label.length) /
-    10;
+      10,
+    1.5,
+  );
 
   return (
     <div
