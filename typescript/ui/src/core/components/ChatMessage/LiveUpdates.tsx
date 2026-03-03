@@ -83,10 +83,7 @@ export default function LiveUpdates({
       <div className="flex items-center gap-4">
         <div className="relative overflow-hidden bg-transparent">
           {shouldShimmer ? (
-            <PulsingText
-              duration={pulseDuration}
-              className="text-default-500"
-            >
+            <PulsingText duration={pulseDuration} className="text-default-500">
               <div>{lastUpdate.label}</div>
               <Markdown
                 className={cn(
