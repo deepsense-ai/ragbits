@@ -374,6 +374,11 @@ class MountainChatWithUI(ChatInterface):
             "- **Image Generation** for visualizing routes, gear, or concepts\n\n"
             "Ask me anything about mountain hiking!"
         ),
+        starter_questions=[
+            "What are the best trails near me?",
+            "How should I prepare for a day hike?",
+            "What gear do I need for mountain hiking?",
+        ],
         meta=PageMetaCustomization(favicon="🏔️", page_title="Mountain Hiking Assistant"),
     )
 

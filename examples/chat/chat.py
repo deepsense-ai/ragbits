@@ -134,6 +134,11 @@ class MyChat(ChatInterface):
             "You can ask me **anything**! "
             "I can provide information, answer questions, and assist you with various tasks."
         ),
+        starter_questions=[
+            "What can you help me with?",
+            "Show me different response types",
+            "Tell me something interesting",
+        ],
         meta=PageMetaCustomization(favicon="🔨", page_title="Change me!"),
     )
 

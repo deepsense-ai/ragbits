@@ -315,6 +315,10 @@ export interface UICustomization {
      */
     welcome_message: string | null
     /**
+     * Starter questions displayed as clickable buttons on the welcome screen before any conversation.
+     */
+    starter_questions: string[] | null
+    /**
      * Custom meta properties customization
      */
     meta: PageMetaCustomization | null

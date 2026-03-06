@@ -351,6 +351,13 @@ class MyChat(ChatInterface):
             "I can provide information, answer questions, and assist with various tasks."
         ),
 
+        # Starter questions shown as clickable buttons on the welcome screen
+        starter_questions=[
+            "What can you help me with?",
+            "Tell me about your features",
+            "How do I get started?",
+        ],
+
         # Page metadata
         meta=PageMetaCustomization(
             favicon="🤖",
