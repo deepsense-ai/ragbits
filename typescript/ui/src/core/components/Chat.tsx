@@ -111,7 +111,7 @@ export default function Chat() {
 
   const heroComponent = (
     <div className="flex h-full w-full flex-col items-center justify-center">
-      <div className="flex w-full max-w-[600px] flex-col gap-4 mb-8">
+      <div className="mb-8 flex w-full max-w-[600px] flex-col gap-4">
         {customization?.welcome_message && (
           <Markdown
             className="text-large text-default-900 text-center"
