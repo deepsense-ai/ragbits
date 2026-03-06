@@ -4,11 +4,11 @@ import { ComponentProps } from "react";
 import userEvent from "@testing-library/user-event";
 import LiveUpdates from "../../src/core/components/ChatMessage/LiveUpdates";
 import { ChatMessage } from "../../src/core/types/history";
-import ShimmerText from "../../src/core/components/ShimmerText";
+import PulsingText from "../../src/core/components/PulsingText";
 
-vi.mock("../../src/core/components/ShimmerText", () => ({
-  default: ({ children }: ComponentProps<typeof ShimmerText>) => (
-    <div data-testid="shimmer-text">{children}</div>
+vi.mock("../../src/core/components/PulsingText", () => ({
+  default: ({ children }: ComponentProps<typeof PulsingText>) => (
+    <div data-testid="pulsing-text">{children}</div>
   ),
 }));
 
@@ -59,8 +59,8 @@ describe("LiveUpdates", () => {
     });
   });
 
-  it("uses shimmer text when loading", () => {
+  it("uses pulsing text when loading", () => {
     render(<LiveUpdates shouldShimmer={true} liveUpdates={liveUpdates} />);
-    expect(screen.getByTestId("shimmer-text")).toBeInTheDocument();
+    expect(screen.getByTestId("pulsing-text")).toBeInTheDocument();
   });
 });
