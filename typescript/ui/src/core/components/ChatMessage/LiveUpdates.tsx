@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-import ShimmerText from "../ShimmerText";
+import PulsingText from "../PulsingText";
 import { LiveUpdate } from "@ragbits/api-client-react";
 
 type LiveUpdatesProps = {
@@ -29,9 +29,14 @@ export default function LiveUpdates({
   const hasMultipleUpdates = updates.length > 1;
   const lastUpdate = updates[updates.length - 1];
   const earlierUpdates = updates.slice(0, -1);
-  const shimmerDuration =
-    Math.max((lastUpdate.description ?? "").length, lastUpdate.label.length) /
-    10;
+  const pulseDuration = Math.max(
+    0.5,
+    Math.min(
+      Math.max((lastUpdate.description ?? "").length, lastUpdate.label.length) /
+        10,
+      1.5,
+    ),
+  );
 
   return (
     <div
@@ -78,7 +83,7 @@ export default function LiveUpdates({
       <div className="flex items-center gap-4">
         <div className="relative overflow-hidden bg-transparent">
           {shouldShimmer ? (
-            <ShimmerText duration={shimmerDuration}>
+            <PulsingText duration={pulseDuration}>
               <div>{lastUpdate.label}</div>
               <Markdown
                 className={cn(
@@ -89,7 +94,7 @@ export default function LiveUpdates({
               >
                 {lastUpdate.description}
               </Markdown>
-            </ShimmerText>
+            </PulsingText>
           ) : (
             <>
               <div className="text-default-500">{lastUpdate.label}</div>
