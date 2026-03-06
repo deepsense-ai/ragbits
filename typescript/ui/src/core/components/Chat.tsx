@@ -111,7 +111,7 @@ export default function Chat() {
 
   const heroComponent = (
     <div className="flex h-full w-full flex-col items-center justify-center">
-      <div className="mb-8 flex w-full max-w-[600px] flex-col gap-4">
+      <div className="flex w-full max-w-[600px] flex-col gap-4">
         {customization?.welcome_message && (
           <Markdown
             className="text-large text-default-900 text-center"
@@ -125,7 +125,7 @@ export default function Chat() {
         </div>
       </div>
       {starterQuestions && starterQuestions.length > 0 && (
-        <div className="flex w-full max-w-[600px] flex-col gap-4">
+        <div className="mt-8 flex w-full max-w-[600px] flex-col gap-4">
           {starterQuestions.map((text, index) => (
             <Button
               key={index}
