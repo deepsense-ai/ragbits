@@ -1,6 +1,7 @@
 # CHANGELOG
 
 ## Unreleased
+- Add `starter_questions` field to `UICustomization` for displaying clickable suggestion buttons on the welcome screen before any conversation
 - Fix live update emoji icons losing color during shimmer animation by switching from gradient-based to opacity-based pulse effect; rename `ShimmerText` to `PulsingText`
 - Fix frontend OOM on high-throughput SSE streams by batching text events into single immer produce call and adding `content-visibility: auto` to markdown container
 - Autoreload support for UI during development (#924)
