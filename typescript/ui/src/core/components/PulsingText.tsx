@@ -16,10 +16,7 @@ export default function PulsingText({
 }: PropsWithChildren<PulsingTextProps>) {
   return (
     <motion.div
-      className={cn(
-        "text-default-500",
-        className,
-      )}
+      className={cn("text-default-500", className)}
       animate={{ opacity: [0.4, 1, 0.4] }}
       transition={{
         duration: duration ?? DEFAULT_PULSE_DURATION,
