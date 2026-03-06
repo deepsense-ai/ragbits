@@ -107,9 +107,11 @@ export default function Chat() {
     [messageIds],
   );
 
+  const starterQuestions = customization?.starter_questions;
+
   const heroComponent = (
-    <div className="flex h-full w-full items-center justify-center">
-      <div className="flex w-full max-w-[600px] flex-col gap-4">
+    <div className="flex h-full w-full flex-col items-center justify-center">
+      <div className="flex w-full max-w-[600px] flex-col gap-4 mb-8">
         {customization?.welcome_message && (
           <Markdown
             className="text-large text-default-900 text-center"
@@ -122,6 +124,20 @@ export default function Chat() {
           You can start a conversation by typing in the input box below.
         </div>
       </div>
+      {starterQuestions && starterQuestions.length > 0 && (
+        <div className="flex w-full max-w-[600px] flex-col gap-4">
+          {starterQuestions.map((text, index) => (
+            <Button
+              key={index}
+              variant="flat"
+              onPress={() => authorizedSendMessage(text)}
+              aria-label={`Send message: ${text}`}
+            >
+              <p>{text}</p>
+            </Button>
+          ))}
+        </div>
+      )}
     </div>
   );
 

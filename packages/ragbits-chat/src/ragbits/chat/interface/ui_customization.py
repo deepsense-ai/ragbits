@@ -53,4 +53,9 @@ class UICustomization(BaseModel):
         default=None, description="Custom welcome message to be displayed on the UI. It supports Markdown."
     )
     """Custom welcome message to be displayed on the UI. It supports Markdown."""
+    starter_questions: list[str] | None = Field(
+        default=None,
+        description="Starter questions displayed as clickable buttons on the welcome screen before any conversation.",
+    )
+    """Starter questions displayed as clickable buttons on the welcome screen before any conversation."""
     meta: PageMetaCustomization | None = Field(default=None, description="Custom meta properties customization")
