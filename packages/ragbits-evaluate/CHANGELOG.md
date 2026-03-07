@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix: make `ragbits-agents` and `ragbits-document-search` optional dependencies to prevent `ModuleNotFoundError` breaking all CLI commands when either package is not installed. Both are now available as extras: `pip install ragbits-evaluate[agents]` and `pip install ragbits-evaluate[document-search]`.
+
 - Feat: introduce agent evaluation pipelines and metrics (HotpotQA, HumanEval, GAIA) (#829)
 
 - Feat: introduce agent simulation module with utilities for agent-to-agent conversation and evaluation scenarios (#857)
