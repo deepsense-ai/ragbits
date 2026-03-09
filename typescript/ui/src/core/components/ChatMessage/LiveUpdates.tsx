@@ -6,6 +6,7 @@ import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 import PulsingText from "../PulsingText";
+import { markdownComponents } from "../markdownComponents";
 import { LiveUpdate } from "@ragbits/api-client-react";
 
 type LiveUpdatesProps = {
@@ -72,6 +73,7 @@ export default function LiveUpdates({
                   classNames?.liveUpdates,
                 )}
                 remarkPlugins={[remarkGfm]}
+                components={markdownComponents}
               >
                 {update.description}
               </Markdown>
@@ -91,6 +93,7 @@ export default function LiveUpdates({
                   classNames?.liveUpdates,
                 )}
                 remarkPlugins={[remarkGfm]}
+                components={markdownComponents}
               >
                 {lastUpdate.description}
               </Markdown>
@@ -104,6 +107,7 @@ export default function LiveUpdates({
                   classNames?.liveUpdates,
                 )}
                 remarkPlugins={[remarkGfm]}
+                components={markdownComponents}
               >
                 {lastUpdate.description}
               </Markdown>
