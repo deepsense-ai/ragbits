@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version < '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
@@ -5333,6 +5333,12 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+agents = [
+    { name = "ragbits-agents" },
+]
+document-search = [
+    { name = "ragbits-document-search" },
+]
 relari = [
     { name = "continuous-eval" },
 ]
@@ -5345,9 +5351,11 @@ requires-dist = [
     { name = "hydra-core", specifier = ">=1.3.2,<2.0.0" },
     { name = "neptune", extras = ["optuna"], specifier = ">=1.12.0,<2.0.0" },
     { name = "optuna", specifier = ">=4.0.0,<5.0.0" },
+    { name = "ragbits-agents", marker = "extra == 'agents'", editable = "packages/ragbits-agents" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
+    { name = "ragbits-document-search", marker = "extra == 'document-search'", editable = "packages/ragbits-document-search" },
 ]
-provides-extras = ["relari"]
+provides-extras = ["agents", "document-search", "relari"]
 
 [[package]]
 name = "ragbits-guardrails"
