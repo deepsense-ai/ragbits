@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix: make `ragbits-agents` and `ragbits-document-search` optional dependencies to prevent `ModuleNotFoundError` breaking all CLI commands when either package is not installed. Both are now available as extras: `pip install ragbits-evaluate[agents]` and `pip install ragbits-evaluate[document-search]`.
+
 ## 1.5.0 (2026-02-19)
 
 ### Changed
