@@ -14,6 +14,7 @@ import { ChatMessage } from "./ChatMessage";
 import QuickMessageInput from "./inputs/QuickMessageInput";
 import { useConfigContext } from "../contexts/ConfigContext/useConfigContext";
 import { useRagbitsContext } from "@ragbits/api-client-react";
+import { markdownComponents } from "./markdownComponents";
 
 export default function Chat() {
   const {
@@ -116,6 +117,7 @@ export default function Chat() {
           <Markdown
             className="text-large text-default-900 text-center"
             remarkPlugins={[remarkGfm]}
+            components={markdownComponents}
           >
             {customization?.welcome_message}
           </Markdown>
