@@ -110,4 +110,9 @@ class RevenueChatInterface(ChatInterface):
                 yield chunk
 
 
-app = RagbitsAPI(RevenueChatInterface).app
+_ragbits_api = RagbitsAPI(RevenueChatInterface)
+app = _ragbits_api.app
+
+
+if __name__ == "__main__":
+    _ragbits_api.run()

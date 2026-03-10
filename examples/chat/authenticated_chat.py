@@ -373,3 +373,9 @@ def get_multi_auth_backend() -> MultiAuthenticationBackend:
             get_discord_auth_backend(),  # Discord OAuth2 authentication
         ]
     )
+
+
+if __name__ == "__main__":
+    from ragbits.chat.api import RagbitsAPI
+
+    RagbitsAPI(MyAuthenticatedChat, auth_backend=get_auth_backend()).run()

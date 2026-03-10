@@ -629,3 +629,9 @@ class FileExplorerChat(ChatInterface):
                 case Usage():
                     # Usage information
                     yield self.create_usage_response(response)
+
+
+if __name__ == "__main__":
+    from ragbits.chat.api import RagbitsAPI
+
+    RagbitsAPI(FileExplorerChat).run()
