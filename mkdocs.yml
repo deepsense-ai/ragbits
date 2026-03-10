@@ -14,6 +14,7 @@ nav:
   - Builder Journal:
     - "Overview": builder-journal/index.md
     - "1. LLM Proxy": builder-journal/section-1-llm-proxy.md
+    - "2. App Config": builder-journal/section-2-app-config.md
     - "A. Deploy to GCP and AWS": builder-journal/appendix-a-deploy-gcp-aws.md
   - How-to:
       - "Prompts":

@@ -193,7 +193,7 @@ The key insight: Ragbits handles the infrastructure (API server, streaming, UI, 
 
 ## What's Next
 
-You now have a working chat application with streaming responses and conversation history. In the next section, you'll add structured output to get type-safe, predictable responses from your LLM.
+You now have a working chat application with streaming responses and conversation history. In [Section 2: Application Configuration](section-2-app-config.md), you'll add branding, persistence, user settings, feedback, authentication, and file uploads to turn this into a fully configurable application.
 
 ## Reference
 

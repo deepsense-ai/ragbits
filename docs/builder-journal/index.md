@@ -19,6 +19,7 @@ This journal walks you through building a real GenAI application using Ragbits, 
 | Section | What You Add | What You Get |
 |---------|--------------|--------------|
 | [1. LLM Proxy](section-1-llm-proxy.md) | Streaming chat API | Working chat app with web UI |
+| [2. App Configuration](section-2-app-config.md) | Branding, persistence, settings, auth, uploads | Fully configurable chat app |
 
 ## Appendices
 

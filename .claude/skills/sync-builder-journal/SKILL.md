@@ -63,6 +63,31 @@ Commits in ragbits-example use format `Section X.Y: Description`:
 | 4          | a9dacad | 29:49  | `chat()` method with history   |
 | Complete   | a9dacad | (full) | Entire file                    |
 
+## Current References (Section 2)
+
+| Step             | Commit  | File      | Lines   | Shows                                |
+| ---------------- | ------- | --------- | ------- | ------------------------------------ |
+| 1 (config)       | 941e5c7 | config.py | (full)  | UICustomization setup                |
+| 1 (main)         | 941e5c7 | main.py   | 14:28   | Imports + ui_customization attr      |
+| 2                | fcebd10 | main.py   | 17:32   | Persistence import + class attrs     |
+| 3 (config top)   | d8efab4 | config.py | 1:10    | New imports + DEFAULT_MODEL          |
+| 3 (config form)  | d8efab4 | config.py | 30:41   | UserSettingsForm + user_settings     |
+| 3 (main class)   | d8efab4 | main.py   | 23:36   | Updated imports + class attrs + init |
+| 3 (main chat)    | d8efab4 | main.py   | 55:63   | Model selection from context         |
+| 4                | d276ee3 | main.py   | 60:67   | State tracking                       |
+| 5 (config)       | b170986 | config.py | 44:74   | Feedback forms                       |
+| 5 (main class)   | b170986 | main.py   | 33:42   | feedback_config + feedback_path      |
+| 5 (main method)  | b170986 | main.py   | 78:94   | save_feedback method                 |
+| 6 (config)       | d5f7e98 | config.py | 79:97   | get_auth_backend function            |
+| 6 (main chat)    | d5f7e98 | main.py   | 54:67   | Greeting on first message            |
+| 6 (main block)   | d5f7e98 | main.py   | 102:104 | Auth backend in RagbitsAPI           |
+| 7                | b87eb9c | main.py   | 78:87   | Follow-up messages                   |
+| 8 (init)         | cb2ff6c | main.py   | 50:52   | uploaded_files dict                  |
+| 8 (conversation) | cb2ff6c | main.py   | 79:88   | File context injection               |
+| 8 (handler)      | cb2ff6c | main.py   | 121:137 | upload_handler method                |
+| Complete (config) | cb2ff6c | config.py | (full) | Entire config file                   |
+| Complete (main)  | cb2ff6c | main.py   | (full)  | Entire main file                     |
+
 ## Current References (Appendix A)
 
 | Step             | Commit  | File                              | Lines  | Shows                              |
