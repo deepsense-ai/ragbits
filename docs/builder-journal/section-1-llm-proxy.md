@@ -52,7 +52,7 @@ export OPENAI_API_KEY="your-api-key"
 Create a new file called `main.py` with the following code:
 
 ```python
---8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/944f1dc/src/ragbits_example/main.py:10:28"
+--8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/a710e46/src/ragbits_example/main.py:10:28"
 ```
 
 This is the core contract in Ragbits. The `ChatInterface` class requires you to implement one method: `chat()`. This method:
@@ -69,7 +69,7 @@ The `create_text_response()` helper creates a properly formatted response. Since
 To run your chat interface, wrap it with `RagbitsAPI`. Add this to the bottom of your file:
 
 ```python
---8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/944f1dc/src/ragbits_example/main.py:31:33"
+--8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/a710e46/src/ragbits_example/main.py:31:33"
 ```
 
 Run the application:
@@ -87,7 +87,7 @@ This works, but it's not very useful yet. Let's add an actual LLM.
 Ragbits uses `LiteLLM` to provide a unified interface to 100+ LLM providers. Add the import and an `__init__` method to your class:
 
 ```python hl_lines="6 13-14"
---8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/9cd7d8a/src/ragbits_example/main.py:10:32"
+--8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/1e350da/src/ragbits_example/main.py:10:32"
 ```
 
 You can change `"gpt-4o-mini"` to any model supported by LiteLLM:
@@ -106,7 +106,7 @@ The LLM is ready, but we're not using it yet. Let's connect it to our chat metho
 Now let's make the LLM actually respond to messages. Update the `chat()` method:
 
 ```python hl_lines="7-10"
---8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/79dc6be/src/ragbits_example/main.py:25:36"
+--8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/7b8504d/src/ragbits_example/main.py:25:36"
 ```
 
 Here's what changed:
@@ -124,7 +124,7 @@ But there's a problem: the LLM doesn't remember previous messages. Each message 
 The `history` parameter contains all previous messages in the conversation. Update the `chat()` method to include history:
 
 ```python hl_lines="18"
---8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/19716ef/src/ragbits_example/main.py:29:49"
+--8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/a9dacad/src/ragbits_example/main.py:29:49"
 ```
 
 The key change is spreading the `history` list before the current message:
@@ -173,10 +173,10 @@ ragbits api run main:SimpleStreamingChat --debug
 
 Here's the final code that includes everything we built:
 
-[View full source on GitHub](https://github.com/deepsense-ai/ragbits-example/blob/19716ef/src/ragbits_example/main.py)
+[View full source on GitHub](https://github.com/deepsense-ai/ragbits-example/blob/a9dacad/src/ragbits_example/main.py)
 
 ```python title="main.py" linenums="1"
---8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/19716ef/src/ragbits_example/main.py"
+--8<-- "https://raw.githubusercontent.com/deepsense-ai/ragbits-example/a9dacad/src/ragbits_example/main.py"
 ```
 
 ## What You've Learned

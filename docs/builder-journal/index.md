@@ -20,6 +20,12 @@ This journal walks you through building a real GenAI application using Ragbits, 
 |---------|--------------|--------------|
 | [1. LLM Proxy](section-1-llm-proxy.md) | Streaming chat API | Working chat app with web UI |
 
+## Appendices
+
+| Appendix | What You Learn | What You Get |
+|----------|----------------|--------------|
+| [A. Deploy to GCP and AWS](appendix-a-deploy-gcp-aws.md) | Docker, OpenTofu, cloud deployment | App running on Cloud Run or App Runner |
+
 ## Getting Started
 
 Start with [Section 1: LLM Proxy](section-1-llm-proxy.md) to build your first working chat application.

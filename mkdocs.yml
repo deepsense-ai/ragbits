@@ -14,6 +14,7 @@ nav:
   - Builder Journal:
     - "Overview": builder-journal/index.md
     - "1. LLM Proxy": builder-journal/section-1-llm-proxy.md
+    - "A. Deploy to GCP and AWS": builder-journal/appendix-a-deploy-gcp-aws.md
   - How-to:
       - "Prompts":
         - "Define and use prompts": how-to/prompts/use_prompting.md

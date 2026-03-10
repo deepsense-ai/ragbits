@@ -1,7 +1,7 @@
 ---
 name: sync-builder-journal
 description: Update Builder Journal documentation references after changes to ragbits-example repository. Use when commits in ragbits-example changed and documentation SHA references need updating.
-allowed-tools: Read, Edit, Glob, Grep, Bash(curl *)
+allowed-tools: Read, Edit, Glob, Grep, Bash(curl *), Bash
 ---
 
 # Sync Builder Journal References
@@ -56,9 +56,20 @@ Commits in ragbits-example use format `Section X.Y: Description`:
 
 | Step       | Commit  | Lines  | Shows                          |
 | ---------- | ------- | ------ | ------------------------------ |
-| 1 (class)  | 944f1dc | 10:28  | Imports + ChatInterface class  |
-| 1 (launch) | 944f1dc | 31:33  | `if __name__` block            |
-| 2          | 9cd7d8a | 10:32  | Full class with `__init__`     |
-| 3          | 79dc6be | 25:36  | `chat()` method with streaming |
-| 4          | 19716ef | 29:49  | `chat()` method with history   |
-| Complete   | 19716ef | (full) | Entire file                    |
+| 1 (class)  | a710e46 | 10:28  | Imports + ChatInterface class  |
+| 1 (launch) | a710e46 | 31:33  | `if __name__` block            |
+| 2          | 1e350da | 10:32  | Full class with `__init__`     |
+| 3          | 7b8504d | 25:36  | `chat()` method with streaming |
+| 4          | a9dacad | 29:49  | `chat()` method with history   |
+| Complete   | a9dacad | (full) | Entire file                    |
+
+## Current References (Appendix A)
+
+| Step             | Commit  | File                              | Lines  | Shows                              |
+| ---------------- | ------- | --------------------------------- | ------ | ---------------------------------- |
+| 1 (Dockerfile)   | dd51c31 | Dockerfile                        | (full) | Container image definition         |
+| 1 (dockerignore) | dd51c31 | .dockerignore                     | (full) | Docker ignore rules                |
+| 2 (config)       | dd51c31 | infrastructure/config.sh          | (full) | Shared deployment configuration    |
+| Deep dive (GCP)  | dd51c31 | infrastructure/gcp/terraform/main.tf | (full) | GCP Terraform resources         |
+| Deep dive (AWS)  | dd51c31 | infrastructure/aws/terraform/main.tf | (full) | AWS Terraform resources         |
+| Complete         | dd51c31 | infrastructure/*                  | (full) | All deployment files               |
