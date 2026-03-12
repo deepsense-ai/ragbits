@@ -63,6 +63,12 @@ def set_trace_handlers(handlers: Handler | list[Handler]) -> None:
                     if not any(isinstance(item, CLITraceHandler) for item in _trace_handlers):
                         _trace_handlers.append(CLITraceHandler())
 
+                case "langfuse":
+                    from ragbits.core.audit.traces.langfuse import LangfuseTraceHandler
+
+                    if not any(isinstance(item, LangfuseTraceHandler) for item in _trace_handlers):
+                        _trace_handlers.append(LangfuseTraceHandler())
+
                 case _:
                     raise ValueError(f"Handler {handler} not found.")
         else:

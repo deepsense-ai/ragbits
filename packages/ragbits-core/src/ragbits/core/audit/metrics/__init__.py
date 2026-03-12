@@ -50,6 +50,12 @@ def set_metric_handlers(handlers: Handler | list[Handler]) -> None:
                     if not any(isinstance(item, LogfireMetricHandler) for item in _metric_handlers):
                         _metric_handlers.append(LogfireMetricHandler())
 
+                case "langfuse":
+                    from ragbits.core.audit.metrics.langfuse import LangfuseMetricHandler
+
+                    if not any(isinstance(item, LangfuseMetricHandler) for item in _metric_handlers):
+                        _metric_handlers.append(LangfuseMetricHandler())
+
                 case _:
                     raise ValueError(f"Not found handler: {handler}")
         else:
