@@ -24,6 +24,39 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
+_HANDLER_REGISTRY: dict[str, tuple[str, str]] = {
+    "otel": ("ragbits.core.audit.traces.otel", "OtelTraceHandler"),
+    "logfire": ("ragbits.core.audit.traces.logfire", "LogfireTraceHandler"),
+    "cli": ("ragbits.core.audit.traces.cli", "CLITraceHandler"),
+    "langfuse": ("ragbits.core.audit.traces.langfuse", "LangfuseTraceHandler"),
+}
+
+
+def _load_handler(name: str) -> TraceHandler:
+    """
+    Load a trace handler by name.
+
+    Args:
+        name: The name of the handler to load.
+
+    Returns:
+        An instance of the trace handler.
+
+    Raises:
+        ValueError: If the handler is not found.
+    """
+    import importlib
+
+    name_lower = name.lower()
+    if name_lower not in _HANDLER_REGISTRY:
+        raise ValueError(f"Handler {name} not found.")
+
+    module_path, class_name = _HANDLER_REGISTRY[name_lower]
+    module = importlib.import_module(module_path)
+    handler_class = getattr(module, class_name)
+    return handler_class()
+
+
 def set_trace_handlers(handlers: Handler | list[Handler]) -> None:
     """
     Set the global trace handlers.
@@ -44,33 +77,9 @@ def set_trace_handlers(handlers: Handler | list[Handler]) -> None:
         if isinstance(handler, TraceHandler):
             _trace_handlers.append(handler)
         elif isinstance(handler, str):
-            match handler.lower():
-                case "otel":
-                    from ragbits.core.audit.traces.otel import OtelTraceHandler
-
-                    if not any(isinstance(item, OtelTraceHandler) for item in _trace_handlers):
-                        _trace_handlers.append(OtelTraceHandler())
-
-                case "logfire":
-                    from ragbits.core.audit.traces.logfire import LogfireTraceHandler
-
-                    if not any(isinstance(item, LogfireTraceHandler) for item in _trace_handlers):
-                        _trace_handlers.append(LogfireTraceHandler())
-
-                case "cli":
-                    from ragbits.core.audit.traces.cli import CLITraceHandler
-
-                    if not any(isinstance(item, CLITraceHandler) for item in _trace_handlers):
-                        _trace_handlers.append(CLITraceHandler())
-
-                case "langfuse":
-                    from ragbits.core.audit.traces.langfuse import LangfuseTraceHandler
-
-                    if not any(isinstance(item, LangfuseTraceHandler) for item in _trace_handlers):
-                        _trace_handlers.append(LangfuseTraceHandler())
-
-                case _:
-                    raise ValueError(f"Handler {handler} not found.")
+            new_handler = _load_handler(handler)
+            if not any(isinstance(item, type(new_handler)) for item in _trace_handlers):
+                _trace_handlers.append(new_handler)
         else:
             raise TypeError(f"Invalid handler type: {type(handler)}")
 
