@@ -1,9 +1,13 @@
+from collections.abc import Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
-from langfuse.client import StatefulSpanClient, StatefulTraceClient
 
-from ragbits.core.audit.traces.langfuse import LangfuseSpan, LangfuseTraceHandler
+langfuse = pytest.importorskip("langfuse")
+StatefulSpanClient = langfuse.client.StatefulSpanClient
+StatefulTraceClient = langfuse.client.StatefulTraceClient
+
+from ragbits.core.audit.traces.langfuse import LangfuseSpan, LangfuseTraceHandler  # noqa: E402
 
 TEST_NAME_1 = "process_1"
 TEST_NAME_2 = "process_2"
@@ -12,7 +16,7 @@ TEST_OUTPUT = {"result": "success"}
 
 
 @pytest.fixture
-def mock_langfuse() -> MagicMock:
+def mock_langfuse() -> Generator[MagicMock, None, None]:
     with patch("ragbits.core.audit.traces.langfuse.Langfuse") as mock:
         mock_instance = MagicMock()
         mock.return_value = mock_instance
