@@ -46,7 +46,10 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
     onClose();
   };
 
-  const onFeedbackFormSubmit = async (data: Record<string, string> | null) => {
+  const onFeedbackFormSubmit = async (
+    data: Record<string, string> | null,
+    type?: FeedbackType,
+  ) => {
     if (!message.serverId) {
       throw new Error(
         'Feedback is only available for messages with "serverId" set',
@@ -57,7 +60,7 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
       await feedbackCallFactory.call({
         body: {
           message_id: message.serverId,
-          feedback: feedbackType,
+          feedback: type ?? feedbackType,
           payload: data ?? {},
         },
       });
@@ -78,16 +81,13 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
   const onOpenFeedbackForm = async (type: FeedbackType) => {
     setFeedbackType(type);
     if (feedback[type].form === null) {
-      await onFeedbackFormSubmit(null);
+      mergeExtensions(message.id, { feedbackType: type });
+      await onFeedbackFormSubmit(null, type);
       return;
     }
 
     onOpen();
   };
-
-  if (!schema) {
-    return null;
-  }
 
   const selectedFeedback = message.extensions?.feedbackType;
   return (
@@ -132,47 +132,49 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
           </Button>
         </DelayedTooltip>
       )}
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="text-default-900 flex flex-col gap-1">
-                {schema.title}
-              </ModalHeader>
-              <ModalBody>
-                <div className="flex flex-col gap-4">
-                  <FormTheme
-                    schema={schema}
-                    validator={validator}
-                    onSubmit={handleFormSubmit}
-                    transformErrors={transformErrors}
-                    liveValidate
-                  >
-                    <div className="flex justify-end gap-4 py-4">
-                      <Button
-                        color="danger"
-                        variant="light"
-                        onPress={onClose}
-                        aria-label="Close feedback form"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        color="primary"
-                        type="submit"
-                        aria-label="Submit feedback"
-                        data-testid="feedback-submit"
-                      >
-                        Submit
-                      </Button>
-                    </div>
-                  </FormTheme>
-                </div>
-              </ModalBody>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
+      {schema && (
+        <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+          <ModalContent>
+            {(onClose) => (
+              <>
+                <ModalHeader className="text-default-900 flex flex-col gap-1">
+                  {schema.title}
+                </ModalHeader>
+                <ModalBody>
+                  <div className="flex flex-col gap-4">
+                    <FormTheme
+                      schema={schema}
+                      validator={validator}
+                      onSubmit={handleFormSubmit}
+                      transformErrors={transformErrors}
+                      liveValidate
+                    >
+                      <div className="flex justify-end gap-4 py-4">
+                        <Button
+                          color="danger"
+                          variant="light"
+                          onPress={onClose}
+                          aria-label="Close feedback form"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          color="primary"
+                          type="submit"
+                          aria-label="Submit feedback"
+                          data-testid="feedback-submit"
+                        >
+                          Submit
+                        </Button>
+                      </div>
+                    </FormTheme>
+                  </div>
+                </ModalBody>
+              </>
+            )}
+          </ModalContent>
+        </Modal>
+      )}
     </>
   );
 }
