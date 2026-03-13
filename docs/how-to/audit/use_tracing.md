@@ -91,3 +91,55 @@ set_trace_handlers("logfire")
 
 You will find collected traces in the Live section of the Logfire project dashboard.
 A full example along with a detailed guide is available [`here`](https://github.com/deepsense-ai/ragbits/blob/main/examples/core/audit/logfire_.py).
+
+## Using Arize Phoenix tracer
+
+[Arize Phoenix](https://github.com/Arize-ai/phoenix) is an open-source observability platform for LLM applications. Ragbits integrates with Phoenix using OpenInference Semantic Conventions for rich AI-specific tracing.
+
+### Installation
+
+Install Ragbits with the Phoenix extra:
+
+```bash
+pip install "ragbits-core[phoenix]"
+```
+
+### Running the Phoenix Server
+
+Before collecting traces, start a local Phoenix server:
+
+```bash
+pip install arize-phoenix
+phoenix serve
+```
+
+The Phoenix UI will be available at <http://localhost:6006>.
+
+### Enabling Phoenix Tracing
+
+Set up the `PhoenixTraceHandler` using the [`set_trace_handlers`][ragbits.core.audit.traces.set_trace_handlers] method:
+
+```python
+from ragbits.core.audit import set_trace_handlers
+
+set_trace_handlers("phoenix")
+```
+
+By default, the handler exports traces to `http://localhost:6006/v1/traces`. The handler automatically enriches LLM generation spans with OpenInference attributes like model name, prompts, and responses.
+
+### Custom Endpoint
+
+To use a remote Phoenix instance, configure the handler directly:
+
+```python
+from ragbits.core.audit import set_trace_handlers
+from ragbits.core.audit.traces.phoenix import PhoenixTraceHandler
+
+handler = PhoenixTraceHandler(
+    endpoint="https://your-phoenix-instance.com/v1/traces",
+    service_name="my-ragbits-app"
+)
+set_trace_handlers(handler)
+```
+
+A full example is available [`here`](https://github.com/deepsense-ai/ragbits/blob/main/examples/core/audit/phoenix.py).

@@ -24,7 +24,7 @@ P = ParamSpec("P")
 R = TypeVar("R")
 
 
-def set_trace_handlers(handlers: Handler | list[Handler]) -> None:
+def set_trace_handlers(handlers: Handler | list[Handler]) -> None:  # noqa: PLR0912
     """
     Set the global trace handlers.
 
@@ -46,22 +46,28 @@ def set_trace_handlers(handlers: Handler | list[Handler]) -> None:
         elif isinstance(handler, str):
             match handler.lower():
                 case "otel":
-                    from ragbits.core.audit.traces.otel import OtelTraceHandler
+                    from ragbits.core.audit.traces.otel import OtelTraceHandler  # noqa: PLC0415
 
                     if not any(isinstance(item, OtelTraceHandler) for item in _trace_handlers):
                         _trace_handlers.append(OtelTraceHandler())
 
                 case "logfire":
-                    from ragbits.core.audit.traces.logfire import LogfireTraceHandler
+                    from ragbits.core.audit.traces.logfire import LogfireTraceHandler  # noqa: PLC0415
 
                     if not any(isinstance(item, LogfireTraceHandler) for item in _trace_handlers):
                         _trace_handlers.append(LogfireTraceHandler())
 
                 case "cli":
-                    from ragbits.core.audit.traces.cli import CLITraceHandler
+                    from ragbits.core.audit.traces.cli import CLITraceHandler  # noqa: PLC0415
 
                     if not any(isinstance(item, CLITraceHandler) for item in _trace_handlers):
                         _trace_handlers.append(CLITraceHandler())
+
+                case "phoenix":
+                    from ragbits.core.audit.traces.phoenix import PhoenixTraceHandler  # noqa: PLC0415
+
+                    if not any(isinstance(item, PhoenixTraceHandler) for item in _trace_handlers):
+                        _trace_handlers.append(PhoenixTraceHandler())
 
                 case _:
                     raise ValueError(f"Handler {handler} not found.")
