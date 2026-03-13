@@ -64,7 +64,7 @@ patch_dependencies() {
 }
 
 is_server_example() {
-  grep -q "RagbitsAPI" "$1"
+  grep -q "^[^#]*RagbitsAPI" "$1"
 }
 
 run_server_example() {
@@ -76,6 +76,7 @@ run_server_example() {
   echo "Starting server example: $file"
   uv run "$file" &
   pid=$!
+  trap 'kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null' EXIT
 
   echo "Waiting for server to start (PID: $pid, port: $port)..."
   local elapsed=0
@@ -83,6 +84,7 @@ run_server_example() {
     if ! kill -0 "$pid" 2>/dev/null; then
       echo "Server process exited unexpectedly"
       wait "$pid"
+      trap - EXIT
       return $?
     fi
 
@@ -90,6 +92,7 @@ run_server_example() {
       echo "Server started successfully after ${elapsed}s"
       kill "$pid" 2>/dev/null
       wait "$pid" 2>/dev/null || true
+      trap - EXIT
       return 0
     fi
 
@@ -100,6 +103,7 @@ run_server_example() {
   echo "Server failed to start within ${max_wait}s"
   kill "$pid" 2>/dev/null
   wait "$pid" 2>/dev/null || true
+  trap - EXIT
   return 1
 }
 

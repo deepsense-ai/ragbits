@@ -8,7 +8,7 @@ consume those events inside a ChatInterface served via RagbitsAPI.
 To run the API, use the following command:
 
     ```bash
-    uvicorn examples.chat.stream_events_from_tools_to_chat:app
+    ragbits api run examples.chat.stream_events_from_tools_to_chat:RevenueChatInterface
     ```
 """
 
@@ -110,9 +110,5 @@ class RevenueChatInterface(ChatInterface):
                 yield chunk
 
 
-_ragbits_api = RagbitsAPI(RevenueChatInterface)
-app = _ragbits_api.app
-
-
 if __name__ == "__main__":
-    _ragbits_api.run()
+    RagbitsAPI(RevenueChatInterface).run()
