@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef } from "react";
 import {
   Modal,
   ModalContent,
@@ -27,9 +27,7 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
   const {
     config: { feedback },
   } = useConfigContext();
-  const [feedbackType, setFeedbackType] = useState<FeedbackType>(
-    FeedbackType.Like,
-  );
+  const feedbackTypeRef = useRef<FeedbackType>(FeedbackType.Like);
   const feedbackCallFactory = useRagbitsCall("/api/feedback", {
     headers: {
       "Content-Type": "application/json",
@@ -41,7 +39,7 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
     return null;
   }
 
-  const schema = feedback[feedbackType].form;
+  const schema = feedback[feedbackTypeRef.current].form;
   const onOpenChange = () => {
     onClose();
   };
@@ -60,7 +58,7 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
       await feedbackCallFactory.call({
         body: {
           message_id: message.serverId,
-          feedback: type ?? feedbackType,
+          feedback: type ?? feedbackTypeRef.current,
           payload: data ?? {},
         },
       });
@@ -72,14 +70,14 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
 
   const handleFormSubmit = (data: IChangeEvent) => {
     mergeExtensions(message.id, {
-      feedbackType,
+      feedbackType: feedbackTypeRef.current,
     });
     onFeedbackFormSubmit(data.formData);
     onClose();
   };
 
   const onOpenFeedbackForm = async (type: FeedbackType) => {
-    setFeedbackType(type);
+    feedbackTypeRef.current = type;
     if (feedback[type].form === null) {
       mergeExtensions(message.id, { feedbackType: type });
       await onFeedbackFormSubmit(null, type);
