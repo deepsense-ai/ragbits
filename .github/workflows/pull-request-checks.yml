@@ -15,7 +15,7 @@ jobs:
 
       - name: Verify changelog updates
         run: |
-          ./.github/scripts/check_changelog_update.sh
+          ./.github/scripts/check_changelog_update.sh ${{ github.event.pull_request.base.ref }}
 
   check-pr-title:
     name: Check pull request title
