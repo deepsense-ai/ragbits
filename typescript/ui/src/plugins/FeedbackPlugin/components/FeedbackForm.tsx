@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef } from "react";
 import {
   Modal,
   ModalContent,
@@ -27,9 +27,7 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
   const {
     config: { feedback },
   } = useConfigContext();
-  const [feedbackType, setFeedbackType] = useState<FeedbackType>(
-    FeedbackType.Like,
-  );
+  const feedbackTypeRef = useRef<FeedbackType>(FeedbackType.Like);
   const feedbackCallFactory = useRagbitsCall("/api/feedback", {
     headers: {
       "Content-Type": "application/json",
@@ -41,12 +39,15 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
     return null;
   }
 
-  const schema = feedback[feedbackType].form;
+  const schema = feedback[feedbackTypeRef.current].form;
   const onOpenChange = () => {
     onClose();
   };
 
-  const onFeedbackFormSubmit = async (data: Record<string, string> | null) => {
+  const onFeedbackFormSubmit = async (
+    data: Record<string, string> | null,
+    type?: FeedbackType,
+  ) => {
     if (!message.serverId) {
       throw new Error(
         'Feedback is only available for messages with "serverId" set',
@@ -57,7 +58,7 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
       await feedbackCallFactory.call({
         body: {
           message_id: message.serverId,
-          feedback: feedbackType,
+          feedback: type ?? feedbackTypeRef.current,
           payload: data ?? {},
         },
       });
@@ -69,25 +70,22 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
 
   const handleFormSubmit = (data: IChangeEvent) => {
     mergeExtensions(message.id, {
-      feedbackType,
+      feedbackType: feedbackTypeRef.current,
     });
     onFeedbackFormSubmit(data.formData);
     onClose();
   };
 
   const onOpenFeedbackForm = async (type: FeedbackType) => {
-    setFeedbackType(type);
+    feedbackTypeRef.current = type;
     if (feedback[type].form === null) {
-      await onFeedbackFormSubmit(null);
+      mergeExtensions(message.id, { feedbackType: type });
+      await onFeedbackFormSubmit(null, type);
       return;
     }
 
     onOpen();
   };
-
-  if (!schema) {
-    return null;
-  }
 
   const selectedFeedback = message.extensions?.feedbackType;
   return (
@@ -132,47 +130,49 @@ export default function FeedbackForm({ message }: FeedbackFormProps) {
           </Button>
         </DelayedTooltip>
       )}
-      <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
-        <ModalContent>
-          {(onClose) => (
-            <>
-              <ModalHeader className="text-default-900 flex flex-col gap-1">
-                {schema.title}
-              </ModalHeader>
-              <ModalBody>
-                <div className="flex flex-col gap-4">
-                  <FormTheme
-                    schema={schema}
-                    validator={validator}
-                    onSubmit={handleFormSubmit}
-                    transformErrors={transformErrors}
-                    liveValidate
-                  >
-                    <div className="flex justify-end gap-4 py-4">
-                      <Button
-                        color="danger"
-                        variant="light"
-                        onPress={onClose}
-                        aria-label="Close feedback form"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        color="primary"
-                        type="submit"
-                        aria-label="Submit feedback"
-                        data-testid="feedback-submit"
-                      >
-                        Submit
-                      </Button>
-                    </div>
-                  </FormTheme>
-                </div>
-              </ModalBody>
-            </>
-          )}
-        </ModalContent>
-      </Modal>
+      {schema && (
+        <Modal isOpen={isOpen} onOpenChange={onOpenChange}>
+          <ModalContent>
+            {(onClose) => (
+              <>
+                <ModalHeader className="text-default-900 flex flex-col gap-1">
+                  {schema.title}
+                </ModalHeader>
+                <ModalBody>
+                  <div className="flex flex-col gap-4">
+                    <FormTheme
+                      schema={schema}
+                      validator={validator}
+                      onSubmit={handleFormSubmit}
+                      transformErrors={transformErrors}
+                      liveValidate
+                    >
+                      <div className="flex justify-end gap-4 py-4">
+                        <Button
+                          color="danger"
+                          variant="light"
+                          onPress={onClose}
+                          aria-label="Close feedback form"
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          color="primary"
+                          type="submit"
+                          aria-label="Submit feedback"
+                          data-testid="feedback-submit"
+                        >
+                          Submit
+                        </Button>
+                      </div>
+                    </FormTheme>
+                  </div>
+                </ModalBody>
+              </>
+            )}
+          </ModalContent>
+        </Modal>
+      )}
     </>
   );
 }

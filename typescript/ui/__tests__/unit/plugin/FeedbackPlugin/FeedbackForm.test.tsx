@@ -143,9 +143,28 @@ describe("FeedbackForm", () => {
     });
   });
 
-  it("does not render if schema is null", () => {
+  it("renders buttons even when form schema is null", () => {
     mockConfigContext();
-    const { container } = render(<WrappedForm />);
-    expect(container.firstChild).toBeNull();
+    render(<WrappedForm />);
+    expect(screen.getByTestId("feedback-like")).toBeInTheDocument();
+    expect(screen.getByTestId("feedback-dislike")).toBeInTheDocument();
+  });
+
+  it("submits feedback without modal when form schema is null", async () => {
+    mockConfigContext();
+    mockActions();
+    mockRagbitsCall();
+    render(<WrappedForm />);
+    await user.click(screen.getByTestId("feedback-dislike"));
+
+    await waitFor(() => {
+      expect(callMock).toHaveBeenCalledWith({
+        body: {
+          message_id: message.serverId,
+          feedback: FeedbackType.Dislike,
+          payload: {},
+        },
+      });
+    });
   });
 });
