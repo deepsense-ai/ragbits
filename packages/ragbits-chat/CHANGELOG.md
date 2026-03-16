@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Fix rendering feedback buttons when feedback form config is not fully provided (#953)
 - Open markdown links in chat UI in a new browser tab instead of navigating within the same page
 - Add `starter_questions` field to `UICustomization` for displaying clickable suggestion buttons on the welcome screen before any conversation
 - Fix live update emoji icons losing color during shimmer animation by switching from gradient-based to opacity-based pulse effect; rename `ShimmerText` to `PulsingText`
