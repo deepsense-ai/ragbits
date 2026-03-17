@@ -5,6 +5,11 @@ on:
     - cron: "0 2 * * *" # Daily at 2 AM UTC
   workflow_dispatch: # Manual trigger for testing
     inputs:
+      ref:
+        description: 'Git ref to build from (branch, tag, or SHA)'
+        required: false
+        type: string
+        default: main
       dry-run:
         description: 'Dry run (skip publishing to PyPI and npm)'
         required: false
@@ -19,10 +24,10 @@ jobs:
       commit-hash: ${{ steps.check.outputs.commit-hash }}
       nightly-version: ${{ steps.check.outputs.nightly-version }}
     steps:
-      - name: Checkout main branch
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ inputs.ref || 'main' }}
           fetch-depth: 0
 
       - name: Install uv
@@ -46,10 +51,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Checkout main branch
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ inputs.ref || 'main' }}
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
 
@@ -98,7 +103,7 @@ jobs:
             echo "No changes to commit"
           else
             git commit -m "chore: update package versions for nightly build ${{ env.NIGHTLY_VERSION }}"
-            git push origin main
+            git push origin ${{ inputs.ref || 'main' }}
           fi
 
           git tag "${{ env.NIGHTLY_VERSION }}"
@@ -125,10 +130,10 @@ jobs:
       contents: write
       id-token: write
     steps:
-      - name: Checkout main branch
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ inputs.ref || 'main' }}
           token: ${{ secrets.GH_TOKEN }}
           fetch-depth: 0
 
@@ -181,5 +186,5 @@ jobs:
     uses: ./.github/workflows/publish-npm.yml
     with:
       tag: dev
-      ref: main
+      ref: ${{ inputs.ref || 'main' }}
     secrets: inherit
