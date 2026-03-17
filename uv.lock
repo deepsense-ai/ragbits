@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version < '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
@@ -4960,7 +4960,7 @@ wheels = [
 
 [[package]]
 name = "ragbits"
-version = "1.5.0"
+version = "1.6.0"
 source = { editable = "packages/ragbits" }
 dependencies = [
     { name = "ragbits-agents" },
@@ -4976,6 +4976,9 @@ dependencies = [
 a2a = [
     { name = "ragbits-agents", extra = ["a2a"] },
 ]
+agents = [
+    { name = "ragbits-evaluate", extra = ["agents"] },
+]
 azure = [
     { name = "ragbits-core", extra = ["azure"] },
 ]
@@ -4984,6 +4987,9 @@ chroma = [
 ]
 cli = [
     { name = "ragbits-agents", extra = ["cli"] },
+]
+document-search = [
+    { name = "ragbits-evaluate", extra = ["document-search"] },
 ]
 fastembed = [
     { name = "ragbits-core", extra = ["fastembed"] },
@@ -5074,15 +5080,17 @@ requires-dist = [
     { name = "ragbits-document-search", extras = ["ray"], marker = "extra == 'ray'", editable = "packages/ragbits-document-search" },
     { name = "ragbits-document-search", extras = ["unstructured"], marker = "extra == 'unstructured'", editable = "packages/ragbits-document-search" },
     { name = "ragbits-evaluate", editable = "packages/ragbits-evaluate" },
+    { name = "ragbits-evaluate", extras = ["agents"], marker = "extra == 'agents'", editable = "packages/ragbits-evaluate" },
+    { name = "ragbits-evaluate", extras = ["document-search"], marker = "extra == 'document-search'", editable = "packages/ragbits-evaluate" },
     { name = "ragbits-evaluate", extras = ["relari"], marker = "extra == 'relari'", editable = "packages/ragbits-evaluate" },
     { name = "ragbits-guardrails", editable = "packages/ragbits-guardrails" },
     { name = "ragbits-guardrails", extras = ["openai"], marker = "extra == 'openai'", editable = "packages/ragbits-guardrails" },
 ]
-provides-extras = ["openai", "chroma", "local", "fastembed", "promptfoo", "otel", "logfire", "qdrant", "pgvector", "fastembed-gpu", "azure", "gcs", "hf", "s3", "google-drive", "weaviate", "relari", "a2a", "mcp", "cli", "unstructured", "ray", "sql"]
+provides-extras = ["openai", "chroma", "local", "fastembed", "promptfoo", "otel", "logfire", "qdrant", "pgvector", "fastembed-gpu", "azure", "gcs", "hf", "s3", "google-drive", "weaviate", "agents", "document-search", "relari", "a2a", "mcp", "cli", "unstructured", "ray", "sql"]
 
 [[package]]
 name = "ragbits-agents"
-version = "1.5.0"
+version = "1.6.0"
 source = { editable = "packages/ragbits-agents" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5118,7 +5126,7 @@ provides-extras = ["a2a", "mcp", "openai", "cli"]
 
 [[package]]
 name = "ragbits-chat"
-version = "1.5.0"
+version = "1.6.0"
 source = { editable = "packages/ragbits-chat" }
 dependencies = [
     { name = "bcrypt" },
@@ -5150,7 +5158,7 @@ provides-extras = ["sql"]
 
 [[package]]
 name = "ragbits-cli"
-version = "1.5.0"
+version = "1.6.0"
 source = { editable = "packages/ragbits-cli" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5165,7 +5173,7 @@ requires-dist = [
 
 [[package]]
 name = "ragbits-core"
-version = "1.5.0"
+version = "1.6.0"
 source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "aiohttp" },
@@ -5285,7 +5293,7 @@ provides-extras = ["chroma", "local", "fastembed", "promptfoo", "otel", "logfire
 
 [[package]]
 name = "ragbits-document-search"
-version = "1.5.0"
+version = "1.6.0"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
     { name = "docling" },
@@ -5321,7 +5329,7 @@ provides-extras = ["unstructured", "ray"]
 
 [[package]]
 name = "ragbits-evaluate"
-version = "1.5.0"
+version = "1.6.0"
 source = { editable = "packages/ragbits-evaluate" }
 dependencies = [
     { name = "datasets" },
@@ -5359,7 +5367,7 @@ provides-extras = ["agents", "document-search", "relari"]
 
 [[package]]
 name = "ragbits-guardrails"
-version = "1.5.0"
+version = "1.6.0"
 source = { editable = "packages/ragbits-guardrails" }
 dependencies = [
     { name = "ragbits-core" },
