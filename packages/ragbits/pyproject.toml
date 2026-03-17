@@ -1,6 +1,6 @@
 [project]
 name = "ragbits"
-version = "1.5.0"
+version = "1.6.0"
 description = "Building blocks for rapid development of GenAI applications"
 dynamic = ["readme"]
 requires-python = ">=3.10"
@@ -31,7 +31,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = ["ragbits-agents==1.5.0", "ragbits-document-search==1.5.0", "ragbits-cli==1.5.0", "ragbits-evaluate==1.5.0", "ragbits-guardrails==1.5.0", "ragbits-chat==1.5.0", "ragbits-core==1.5.0"]
+dependencies = ["ragbits-agents==1.6.0","ragbits-document-search==1.6.0", "ragbits-cli==1.6.0", "ragbits-evaluate==1.6.0", "ragbits-guardrails==1.6.0", "ragbits-chat==1.6.0", "ragbits-core==1.6.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/deepsense-ai/ragbits"
@@ -41,74 +41,80 @@ dependencies = ["ragbits-agents==1.5.0", "ragbits-document-search==1.5.0", "ragb
 
 [project.optional-dependencies]
 openai = [
-    "ragbits-guardrails[openai]==1.5.0",
-    "ragbits-agents[openai]==1.5.0",
-]
-chroma = [
-    "ragbits-core[chroma]==1.5.0",
-]
-local = [
-    "ragbits-core[local]==1.5.0",
-]
-fastembed = [
-    "ragbits-core[fastembed]==1.5.0",
-]
-promptfoo = [
-    "ragbits-core[promptfoo]==1.5.0",
-]
-otel = [
-    "ragbits-core[otel]==1.5.0",
-]
-logfire = [
-    "ragbits-core[logfire]==1.5.0",
-]
-qdrant = [
-    "ragbits-core[qdrant]==1.5.0",
-]
-pgvector = [
-    "ragbits-core[pgvector]==1.5.0",
-]
-fastembed-gpu = [
-    "ragbits-core[fastembed-gpu]==1.5.0",
-]
-azure = [
-    "ragbits-core[azure]==1.5.0",
-]
-gcs = [
-    "ragbits-core[gcs]==1.5.0",
-]
-hf = [
-    "ragbits-core[hf]==1.5.0",
-]
-s3 = [
-    "ragbits-core[s3]==1.5.0",
-]
-google_drive = [
-    "ragbits-core[google_drive]==1.5.0",
-]
-weaviate = [
-    "ragbits-core[weaviate]==1.5.0",
-]
-relari = [
-    "ragbits-evaluate[relari]==1.5.0",
+    "ragbits-guardrails[openai]==1.6.0",
+    "ragbits-agents[openai]==1.6.0",
 ]
 a2a = [
-    "ragbits-agents[a2a]==1.5.0",
+    "ragbits-agents[a2a]==1.6.0",
 ]
 mcp = [
-    "ragbits-agents[mcp]==1.5.0",
+    "ragbits-agents[mcp]==1.6.0",
 ]
 cli = [
-    "ragbits-agents[cli]==1.5.0",
+    "ragbits-agents[cli]==1.6.0",
 ]
-unstructured = [
-    "ragbits-document-search[unstructured]==1.5.0",
+chroma = [
+    "ragbits-core[chroma]==1.6.0",
 ]
-ray = [
-    "ragbits-document-search[ray]==1.5.0",
+local = [
+    "ragbits-core[local]==1.6.0",
+]
+fastembed = [
+    "ragbits-core[fastembed]==1.6.0",
+]
+promptfoo = [
+    "ragbits-core[promptfoo]==1.6.0",
+]
+otel = [
+    "ragbits-core[otel]==1.6.0",
+]
+logfire = [
+    "ragbits-core[logfire]==1.6.0",
+]
+qdrant = [
+    "ragbits-core[qdrant]==1.6.0",
+]
+pgvector = [
+    "ragbits-core[pgvector]==1.6.0",
+]
+fastembed-gpu = [
+    "ragbits-core[fastembed-gpu]==1.6.0",
+]
+azure = [
+    "ragbits-core[azure]==1.6.0",
+]
+gcs = [
+    "ragbits-core[gcs]==1.6.0",
+]
+hf = [
+    "ragbits-core[hf]==1.6.0",
+]
+s3 = [
+    "ragbits-core[s3]==1.6.0",
+]
+google_drive = [
+    "ragbits-core[google_drive]==1.6.0",
+]
+weaviate = [
+    "ragbits-core[weaviate]==1.6.0",
 ]
 sql = [
-    "ragbits-chat[sql]==1.5.0",
+    "ragbits-chat[sql]==1.6.0",
+]
+agents = [
+    "ragbits-evaluate[agents]==1.6.0",
+]
+document-search = [
+    "ragbits-evaluate[document-search]==1.6.0",
+]
+relari = [
+    "ragbits-evaluate[relari]==1.6.0",
+]
+unstructured = [
+    "ragbits-document-search[unstructured]==1.6.0",
+]
+ray = [
+    "ragbits-document-search[ray]==1.6.0",
 ]
 
 [build-system]

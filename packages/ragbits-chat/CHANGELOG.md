@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.6.0 (2026-03-17)
+
+### Changed
+
+- ragbits-core updated to version v1.6.0
+
 - Fix rendering feedback buttons when feedback form config is not fully provided (#953)
 - Open markdown links in chat UI in a new browser tab instead of navigating within the same page
 - Add `starter_questions` field to `UICustomization` for displaying clickable suggestion buttons on the welcome screen before any conversation

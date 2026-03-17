@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.6.0 (2026-03-17)
+
+### Changed
+
+- ragbits-core updated to version v1.6.0
+
 - Add long-term semantic memory tools for agents (#839)
 - Add agent planning capabilities (#823) (#907)
 
