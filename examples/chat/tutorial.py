@@ -31,7 +31,6 @@ To run the script, execute the following command:
 #     "ragbits-agents"
 # ]
 # ///
-#
 
 import base64
 from collections.abc import AsyncGenerator
@@ -43,6 +42,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ragbits.agents import Agent, ToolCallResult
 from ragbits.agents.tools.openai import get_image_generation_tool, get_web_search_tool
 from ragbits.chat.auth import ListAuthenticationBackend
+from ragbits.chat.auth.session_store import InMemorySessionStore
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
@@ -259,4 +259,10 @@ def get_auth_backend() -> ListAuthenticationBackend:
         },
     ]
 
-    return ListAuthenticationBackend(users)
+    return ListAuthenticationBackend(users, session_store=InMemorySessionStore())
+
+
+if __name__ == "__main__":
+    from ragbits.chat.api import RagbitsAPI
+
+    RagbitsAPI(MyChat, auth_backend=get_auth_backend()).run()

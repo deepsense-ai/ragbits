@@ -17,7 +17,6 @@ To run the script, execute the following command:
 #     "ragbits-chat",
 # ]
 # ///
-#
 
 import asyncio
 import uuid
@@ -224,3 +223,9 @@ class MyChat(ChatInterface):
             yield self.create_usage_response(streaming_result.usage)
 
         yield self.create_followup_messages(["Example Response 1", "Example Response 2", "Example Response 3"])
+
+
+if __name__ == "__main__":
+    from ragbits.chat.api import RagbitsAPI
+
+    RagbitsAPI(MyChat).run()

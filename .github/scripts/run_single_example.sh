@@ -63,6 +63,50 @@ patch_dependencies() {
   mv "$tmp_file" "$file"
 }
 
+is_server_example() {
+  grep -q "^[^#]*RagbitsAPI" "$1"
+}
+
+run_server_example() {
+  local file="$1"
+  local port=8000
+  local max_wait=60
+  local pid
+
+  echo "Starting server example: $file"
+  uv run "$file" &
+  pid=$!
+  trap 'kill "$pid" 2>/dev/null; wait "$pid" 2>/dev/null' EXIT
+
+  echo "Waiting for server to start (PID: $pid, port: $port)..."
+  local elapsed=0
+  while [[ $elapsed -lt $max_wait ]]; do
+    if ! kill -0 "$pid" 2>/dev/null; then
+      echo "Server process exited unexpectedly"
+      wait "$pid"
+      trap - EXIT
+      return $?
+    fi
+
+    if curl -sf "http://127.0.0.1:$port/api/config" > /dev/null 2>&1; then
+      echo "Server started successfully after ${elapsed}s"
+      kill "$pid" 2>/dev/null
+      wait "$pid" 2>/dev/null || true
+      trap - EXIT
+      return 0
+    fi
+
+    sleep 2
+    elapsed=$((elapsed + 2))
+  done
+
+  echo "Server failed to start within ${max_wait}s"
+  kill "$pid" 2>/dev/null
+  wait "$pid" 2>/dev/null || true
+  trap - EXIT
+  return 1
+}
+
 if ! has_script_section "$EXAMPLE_FILE"; then
   echo "Skipping $EXAMPLE_FILE (no script section found)"
   exit 0
@@ -71,15 +115,24 @@ fi
 echo "Running the script: $EXAMPLE_FILE"
 patch_dependencies "$EXAMPLE_FILE" "$PR_BRANCH"
 
-set +e
-timeout 120s uv run "$EXAMPLE_FILE"
-exit_code=$?
-set -e
+if is_server_example "$EXAMPLE_FILE"; then
+  set +e
+  run_server_example "$EXAMPLE_FILE"
+  exit_code=$?
+  set -e
+else
+  set +e
+  timeout 120s uv run "$EXAMPLE_FILE"
+  exit_code=$?
+  set -e
 
-if [[ $exit_code -eq 124 ]]; then
-  echo "Script timed out after 120 seconds"
-  exit 1
-elif [[ $exit_code -ne 0 ]]; then
+  if [[ $exit_code -eq 124 ]]; then
+    echo "Script timed out after 120 seconds"
+    exit 1
+  fi
+fi
+
+if [[ $exit_code -ne 0 ]]; then
   echo "Script failed"
   exit $exit_code
 else

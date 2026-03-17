@@ -145,3 +145,9 @@ class CodePlannerChat(ChatInterface):
                                         description=self.planning_state.plan.last_completed_task.result,
                                     )
                                     yield self.create_plan_item_response(self.planning_state.plan.last_completed_task)
+
+
+if __name__ == "__main__":
+    from ragbits.chat.api import RagbitsAPI
+
+    RagbitsAPI(CodePlannerChat).run()
