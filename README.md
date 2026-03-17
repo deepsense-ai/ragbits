@@ -59,7 +59,7 @@ pip install ragbits
 
 ### Nightly Builds
 
-For the latest development features, you can install nightly builds that are automatically published from the `develop` branch:
+For the latest development features, you can install nightly builds that are automatically published from the `main` branch:
 
 ```sh
 pip install ragbits --pre

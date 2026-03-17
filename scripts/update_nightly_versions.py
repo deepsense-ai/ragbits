@@ -11,10 +11,13 @@ Usage:
     uv run scripts/update_nightly_versions.py "1.2.3.dev20250109a1b2c3d"
 """
 
+import re
 import sys
 from pathlib import Path
 
 import tomlkit  # type: ignore
+
+VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+(\..+)?$")
 
 
 def update_package_version(package_dir: Path, new_version: str) -> None:
@@ -73,6 +76,10 @@ def main() -> None:
         sys.exit(1)
 
     new_version = sys.argv[1]
+
+    if not VERSION_PATTERN.match(new_version):
+        print(f"Error: Invalid version format '{new_version}'. Expected format: X.Y.Z or X.Y.Z.<suffix>")
+        sys.exit(1)
 
     # Find all package directories
     workspace_root = Path(__file__).parent.parent

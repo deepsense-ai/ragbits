@@ -4,6 +4,18 @@ on:
   release:
     types: [published]
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'npm dist-tag to publish under'
+        required: false
+        type: string
+        default: ''
+      ref:
+        description: 'Git ref to checkout'
+        required: false
+        type: string
+        default: ''
 
 jobs:
   publish-npm:
@@ -13,6 +25,8 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || '' }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -27,13 +41,13 @@ jobs:
         run: npm run build:packages
 
       - name: Publish @ragbits/api-client
-        run: npm publish --provenance --access public
+        run: npm publish --provenance --access public ${{ inputs.tag && format('--tag {0}', inputs.tag) || '' }}
         working-directory: typescript/@ragbits/api-client
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Publish @ragbits/api-client-react
-        run: npm publish --provenance --access public
+        run: npm publish --provenance --access public ${{ inputs.tag && format('--tag {0}', inputs.tag) || '' }}
         working-directory: typescript/@ragbits/api-client-react
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

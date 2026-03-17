@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Use the provided base branch or default to 'develop'
-BASE_BRANCH=${1:-develop}
+# Use the provided base branch or default to 'main'
+BASE_BRANCH=${1:-main}
 
 echo "Fetching $BASE_BRANCH branch..."
 git fetch origin $BASE_BRANCH --depth=1
@@ -45,7 +45,23 @@ for PACKAGE in $CHANGED_PACKAGES; do
   CHANGELOG="packages/$PACKAGE/CHANGELOG.md"
   echo "Checking changelog for package: $PACKAGE"
 
-  if ! diff -u <(git show origin/$BASE_BRANCH:$CHANGELOG | grep -Pzo '(?s)(## Unreleased.*?)(?=\n## |\Z)' | tr -d '\0') <(grep -Pzo '(?s)(## Unreleased.*?)(?=\n## |\Z)' $CHANGELOG | tr -d '\0') | grep -q '^\+'; then
+  # Check 1: New content added under '## Unreleased' (regular PRs)
+  UNRELEASED_CHANGED=false
+  if diff -u \
+    <(git show "origin/$BASE_BRANCH:$CHANGELOG" | grep -Pzo '(?s)(## Unreleased.*?)(?=\n## |\Z)' | tr -d '\0') \
+    <(grep -Pzo '(?s)(## Unreleased.*?)(?=\n## |\Z)' "$CHANGELOG" | tr -d '\0') | grep -q '^\+'; then
+    UNRELEASED_CHANGED=true
+  fi
+
+  # Check 2: A new versioned section was added (release PRs)
+  NEW_VERSION_ADDED=false
+  if diff -u \
+    <(git show "origin/$BASE_BRANCH:$CHANGELOG" | grep -oP '^## \d+\.\d+\.\d+') \
+    <(grep -oP '^## \d+\.\d+\.\d+' "$CHANGELOG") | grep -q '^\+## '; then
+    NEW_VERSION_ADDED=true
+  fi
+
+  if ! $UNRELEASED_CHANGED && ! $NEW_VERSION_ADDED; then
     echo "No updates detected in changelog for package $PACKAGE. Please add an entry under '## Unreleased'."
     exit 1
   fi
