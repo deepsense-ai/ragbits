@@ -54,3 +54,9 @@ class MyChat(ChatInterface):
         response = await self.llm.generate(prompt)
 
         yield ChatInterface.create_text_response(str(response))
+
+
+if __name__ == "__main__":
+    from ragbits.chat.api import RagbitsAPI
+
+    RagbitsAPI(MyChat).run()

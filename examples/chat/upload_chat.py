@@ -72,3 +72,9 @@ class UploadChat(ChatInterface):
         # If you want to notify the user in the chat, the user would usually send a message
         # mentioning they uploaded a file, or you could potentially trigger something else.
         # Currently the flow is: UI uploads -> Backend handles -> UI gets 200 OK.
+
+
+if __name__ == "__main__":
+    from ragbits.chat.api import RagbitsAPI
+
+    RagbitsAPI(UploadChat).run()

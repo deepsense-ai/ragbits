@@ -39,3 +39,9 @@ class MyChat(ChatInterface):
         streaming_result = self.llm.generate_streaming([*history, {"role": "user", "content": message}])
         async for chunk in streaming_result:
             yield self.create_text_response(chunk)
+
+
+if __name__ == "__main__":
+    from ragbits.chat.api import RagbitsAPI
+
+    RagbitsAPI(MyChat).run()
