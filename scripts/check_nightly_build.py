@@ -76,6 +76,12 @@ def get_base_version() -> str:
 
         if ".dev" in version:
             version = version.split(".dev")[0]
+        else:
+            # No .dev suffix means a release just landed on main — bump minor version for next nightly cycle
+            parts = version.split(".")
+            parts[1] = str(int(parts[1]) + 1)
+            parts[2] = "0"
+            version = ".".join(parts)
 
         return version
     except (KeyError, tomli.TOMLDecodeError) as e:

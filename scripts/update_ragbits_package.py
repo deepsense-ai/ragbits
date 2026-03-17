@@ -251,6 +251,39 @@ def _update_ragbits_extras(packages: list[str], new_version: str) -> None:
     ragbits_pyproject_path.write_text(tomlkit.dumps(ragbits_pyproject_data))
 
 
+def _update_ragbits_core(
+    packages: list[str],
+    update_type: UpdateType | None,
+    base_version: str | None,
+    user_prompt_required: bool,
+) -> None:
+    if user_prompt_required:
+        print("When upgrading the ragbits-core package it is also necessary to upgrade the other packages.")
+        is_continue = confirm(message="Do you want to continue?")
+    else:
+        is_continue = True
+
+    if not is_continue:
+        pprint("[red]The ragbits-core package was not successfully updated.[/red]")
+        return
+
+    version, new_version = _update_pkg_version("ragbits-core", update_type=update_type, base_version=base_version)
+    update_type = _check_update_type(version, new_version)
+    _update_ragbits_extras(packages, new_version)
+    _update_ts_packages_version(new_version)
+
+    for pkg in sorted([pkg for pkg in packages if pkg != "ragbits-core"], reverse=True):
+        pkg_pyproject = tomlkit.parse((PACKAGES_DIR / pkg / "pyproject.toml").read_text())
+        deps = pkg_pyproject["project"]["dependencies"]
+        for i, dep in enumerate(deps):
+            dep_name = dep.split("==")[0]
+            if dep_name in packages and dep != f"{dep_name}=={new_version}":
+                deps[i] = f"{dep_name}=={new_version}"
+        if pkg != "ragbits":
+            _add_updated_dependency_to_changelog(pkg, "ragbits-core", new_version)
+        _update_pkg_version(pkg, pkg_pyproject, update_type=update_type, base_version=base_version)
+
+
 def run(
     pkg_name: str | None = typer.Argument(None),
     update_type: str | None = typer.Argument(None),
@@ -289,37 +322,12 @@ def run(
     user_prompt_required = pkg_name is None or casted_update_type is None
 
     if pkg_name == "ragbits":
-        version, new_version = _update_pkg_version(pkg_name, update_type=casted_update_type, base_version=base_version)
+        _, new_version = _update_pkg_version(pkg_name, update_type=casted_update_type, base_version=base_version)
         _update_ragbits_extras(packages, new_version)
         _update_ts_packages_version(new_version)
 
     elif pkg_name == "ragbits-core":
-        if user_prompt_required:
-            print("When upgrading the ragbits-core package it is also necessary to upgrade the other packages.")
-            is_continue = confirm(message="Do you want to continue?")
-        else:
-            is_continue = True
-
-        if is_continue:
-            version, new_version = _update_pkg_version(
-                pkg_name, update_type=casted_update_type, base_version=base_version
-            )
-            casted_update_type = _check_update_type(version, new_version)
-            _update_ragbits_extras(packages, new_version)
-            _update_ts_packages_version(new_version)
-
-            for pkg in sorted([pkg for pkg in packages if pkg != "ragbits-core"], reverse=True):
-                pkg_pyproject = tomlkit.parse((PACKAGES_DIR / pkg / "pyproject.toml").read_text())
-                pkg_pyproject["project"]["dependencies"] = [
-                    dep for dep in pkg_pyproject["project"]["dependencies"] if "ragbits-core" not in dep
-                ]
-                pkg_pyproject["project"]["dependencies"].append(f"ragbits-core=={new_version}")
-                if pkg != "ragbits":
-                    _add_updated_dependency_to_changelog(pkg, pkg_name, new_version)
-                _update_pkg_version(pkg, pkg_pyproject, update_type=casted_update_type, base_version=base_version)
-
-        else:
-            pprint("[red]The ragbits-core package was not successfully updated.[/red]")
+        _update_ragbits_core(packages, casted_update_type, base_version, user_prompt_required)
 
     else:
         _update_pkg_version(

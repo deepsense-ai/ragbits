@@ -57,6 +57,6 @@ jobs:
       - name: Deploy documentation
         run: |
           git fetch origin gh-pages
-          uv run mike deploy --push --alias-type copy stable
+          uv run mike deploy --push --alias-type copy --update-aliases ${{ steps.tag_name.outputs.new_tag }} stable
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
