@@ -1,0 +1,66 @@
+name: Deploy documentation
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version to deploy (e.g. "1.6.0" or "nightly")'
+        required: true
+        type: string
+      alias:
+        description: 'Optional alias (e.g. "stable"). When set, --update-aliases is used.'
+        required: false
+        type: string
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to deploy (e.g. "1.6.0" or "nightly")'
+        required: true
+        type: string
+      alias:
+        description: 'Optional alias (e.g. "stable"). When set, --update-aliases is used.'
+        required: false
+        type: string
+      ref:
+        description: 'Git ref to checkout'
+        required: false
+        type: string
+        default: ''
+
+jobs:
+  deploy-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+          token: ${{ secrets.GH_TOKEN }}
+          fetch-depth: 0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v2
+        with:
+          version: ${{ vars.UV_VERSION || '0.6.9' }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Deploy documentation
+        shell: bash
+        run: |
+          git config user.name "ds-ragbits-robot"
+          git config user.email "ds-ragbits-robot@deepsense.ai"
+          git fetch origin gh-pages
+          if [ -n "$ALIAS" ]; then
+            uv run mike deploy --push --alias-type copy --update-aliases "$VERSION" "$ALIAS"
+          else
+            uv run mike deploy --push --alias-type copy "$VERSION"
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          VERSION: ${{ inputs.version }}
+          ALIAS: ${{ inputs.alias }}
