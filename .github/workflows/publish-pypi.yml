@@ -11,6 +11,8 @@ jobs:
   publish-release:
     if: startsWith(github.head_ref, 'release/') && github.event.pull_request.merged == true && github.event.pull_request.user.login == 'ds-ragbits-robot'
     runs-on: ubuntu-latest
+    outputs:
+      doc_version: ${{ steps.tag_name.outputs.doc_version }}
     steps:
       - uses: actions/checkout@v4
 
@@ -29,6 +31,7 @@ jobs:
         run: |
           TAG_NAME=$(echo "${{ github.event.pull_request.head.ref }}" | sed 's/.*-//')
           echo "new_tag=$TAG_NAME" >> "$GITHUB_OUTPUT"
+          echo "doc_version=$(echo "$TAG_NAME" | sed 's/^v//')" >> "$GITHUB_OUTPUT"
 
       - name: Create release notes
         run: |
@@ -54,9 +57,10 @@ jobs:
             TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
             TWINE_REPOSITORY_URL: ${{ vars.PYPI_URL || 'https://test.pypi.org/legacy/' }}
 
-      - name: Deploy documentation
-        run: |
-          git fetch origin gh-pages
-          uv run mike deploy --push --alias-type copy --update-aliases ${{ steps.tag_name.outputs.new_tag }} stable
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  deploy-docs:
+    needs: publish-release
+    uses: ./.github/workflows/deploy-docs.yml
+    with:
+      version: ${{ needs.publish-release.outputs.doc_version }}
+      alias: stable
+    secrets: inherit

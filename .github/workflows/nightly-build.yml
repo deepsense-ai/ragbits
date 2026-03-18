@@ -161,21 +161,19 @@ jobs:
           TWINE_REPOSITORY_URL: ${{ vars.PYPI_URL || 'https://test.pypi.org/legacy/' }}
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
 
-      - name: Deploy nightly documentation
-        shell: bash
-        run: |
-          git config user.name "ds-ragbits-robot"
-          git config user.email "ds-ragbits-robot@users.noreply.github.com"
-          git fetch origin gh-pages
-          uv run mike deploy --push --alias-type copy nightly
-        env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
-
       - name: Notify on failure
         if: failure()
         run: |
           echo "Nightly build failed for commit ${{ needs.check-for-changes.outputs.commit-hash }}"
           echo "Version attempted: ${{ needs.check-for-changes.outputs.nightly-version }}"
+
+  deploy-docs:
+    needs: [check-for-changes, test-packages]
+    if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
+    uses: ./.github/workflows/deploy-docs.yml
+    with:
+      version: nightly
+    secrets: inherit
 
   publish-npm:
     needs: [check-for-changes, test-packages]
