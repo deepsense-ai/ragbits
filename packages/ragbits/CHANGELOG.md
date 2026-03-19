@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+## 1.6.1 (2026-03-19)
+
+- ragbits-chat updated to version v1.6.1
+
+- ragbits-document-search updated to version v1.6.1
+
+- ragbits-agents updated to version v1.6.1
+
+- ragbits-evaluate updated to version v1.6.1
+
+- ragbits-core updated to version v1.6.1
+
+- ragbits-cli updated to version v1.6.1
+
+- ragbits-guardrails updated to version v1.6.1
+
 ## 1.6.0 (2026-03-17)
 
 ### Changed
