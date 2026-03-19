@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 1.6.1 (2026-03-19)
+
+- ragbits-document-search updated to version v1.6.1
+
+- ragbits-agents updated to version v1.6.1
+
+- ragbits-core updated to version v1.6.1
+
 ## 1.6.0 (2026-03-17)
 
 ### Changed
