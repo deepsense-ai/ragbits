@@ -1,0 +1,128 @@
+[
+  {
+    "name": "Scenario 1",
+    "tasks": [
+      {
+        "task": "are there rooms available in Krakow on 2025-06-01",
+        "expected_result": "{list of available rooms}",
+        "expected_tools": ["search_available_rooms"]
+      },
+      {
+        "task": "are there delux rooms",
+        "expected_result": "{list of rooms}",
+        "expected_tools": ["search_available_rooms"]
+      },
+      {
+        "task": "book room",
+        "expected_result": "{book room}",
+        "expected_tools": ["create_reservation"]
+      }
+    ]
+  },
+  {
+    "name": "Scenario 2",
+    "tasks": [
+      {
+        "task": "find hotels in Warsaw",
+        "expected_result": "{list of hotels in Warsaw}",
+        "expected_tools": ["list_hotels"]
+      },
+      {
+        "task": "check availability for 3 nights from April 1, 2025",
+        "expected_result": "{available rooms for specified dates}",
+        "expected_tools": ["search_available_rooms"]
+      },
+      {
+        "task": "book a budget-friendly room",
+        "expected_result": "{booking confirmation}",
+        "expected_tools": ["create_reservation"]
+      }
+    ]
+  },
+  {
+    "name": "Scenario 3",
+    "tasks": [
+      {
+        "task": "search for hotels in Gdańsk",
+        "expected_result": "{list of hotels in Gdańsk}",
+        "expected_tools": ["list_hotels"]
+      },
+      {
+        "task": "find suite rooms available for weekend starting May 10, 2025",
+        "expected_result": "{available suite rooms}",
+        "expected_tools": ["search_available_rooms"]
+      },
+      {
+        "task": "make a reservation",
+        "expected_result": "{reservation details}",
+        "expected_tools": ["create_reservation"]
+      }
+    ]
+  },
+  {
+    "name": "Scenario 4",
+    "tasks": [
+      {
+        "task": "I would like to travel to Krakow. What is the best raded hotel there",
+        "expected_result": "Hotel Copernicus",
+        "expected_tools": ["list_hotels", "get_hotel_details"]
+      },
+      {
+        "task": "What is the price of the most expensive room in the hotel",
+        "expected_result": "780",
+        "expected_tools": ["get_hotel_details"]
+      },
+      {
+        "task": "is this room available from 2025-01-19 to 2025-01-25",
+        "expected_result": "no, it is not available",
+        "expected_tools": ["search_available_rooms"]
+      },
+      {
+        "task": "what is the nearest availability for that room",
+        "expected_result": "from 2025-01-20 to 2025-01-25",
+        "expected_tools": ["search_available_rooms"]
+      },
+      {
+        "task": "book from 2025-01-20 to 2025-01-25",
+        "expected_result": "{reservation details}",
+        "expected_tools": ["create_reservation"]
+      }
+    ]
+  },
+  {
+    "name": "Scenario 5",
+    "tasks": [
+      {
+        "task": "book room in Krakow on 2030-06-01",
+        "expected_result": "",
+        "expected_tools": ["list_hotels"]
+      },
+      {
+        "task": "book room in Krakow on 2030-06-01",
+        "expected_result": "",
+        "expected_tools": ["list_hotels"]
+      }
+    ]
+  },
+  {
+    "name": "Scenario 6",
+    "tasks": [
+      {
+        "task": "search for hotels in Gdańsk",
+        "expected_result": "{list of hotels in Gdańsk}",
+        "expected_tools": ["list_hotels"]
+      },
+      {
+        "task": "find suite rooms available for weekend starting May 10, 2025",
+        "expected_result": "{available suite rooms}",
+        "expected_tools": ["search_available_rooms"]
+      },
+      {
+        "task": "make a reservation; your name is Andrzej Strzelba",
+        "expected_result": "{reservation details}",
+        "expected_tools": ["create_reservation"]
+      }
+    ]
+  }
+]
+
