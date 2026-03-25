@@ -37,7 +37,7 @@ from ragbits.evaluate.agent_simulation.results import (
 from ragbits.evaluate.agent_simulation.simulation import SimulatedUser, build_llm
 from ragbits.evaluate.agent_simulation.tracing import MemoryTraceHandler, TraceAnalyzer, collect_traces
 
-ProgressCallback = Callable[[str, Any], Awaitable[None]]
+ProgressCallback = Callable[..., Awaitable[None]]
 
 
 def _serialize_response_chunk(chunk: ChatResponse | ToolCallResult | Usage | object) -> tuple[str, dict[str, Any]]:
@@ -197,7 +197,7 @@ class SimulationState:
         task_data.completed = completed
         task_data.final_reason = reason
 
-    def on_new_task(self, task_id: int) -> None:
+    def on_new_task(self, task_id: int | None) -> None:
         """Handle transition to a new task."""
         self.turns_for_current_task = 0
         self.current_task_id = task_id

@@ -34,7 +34,7 @@ if TYPE_CHECKING:
     from ragbits.evaluate.agent_simulation.logger import ConversationLogger
     from ragbits.evaluate.agent_simulation.models import Personality, Scenario, SimulationConfig, Task, Turn
     from ragbits.evaluate.agent_simulation.scenarios import load_personalities, load_scenarios
-    from ragbits.evaluate.agent_simulation.simulation import GoalChecker, SimulatedUser
+    from ragbits.evaluate.agent_simulation.simulation import SimulatedUser
     from ragbits.evaluate.agent_simulation.tracing import (
         LLMCall,
         MemoryTraceHandler,
@@ -58,7 +58,6 @@ __all__ = [
     "DeepEvalKnowledgeRetentionMetricCollector",
     "DeepEvalRelevancyMetricCollector",
     "DomainContext",
-    "GoalChecker",
     # Tracing (lazy loaded)
     "LLMCall",
     "LatencyMetricCollector",
@@ -113,10 +112,10 @@ def __getattr__(name: str) -> object:  # noqa: PLR0911
         from ragbits.evaluate.agent_simulation import scenarios
 
         return getattr(scenarios, name)
-    if name in ("GoalChecker", "SimulatedUser"):
-        from ragbits.evaluate.agent_simulation import simulation
+    if name == "SimulatedUser":
+        from ragbits.evaluate.agent_simulation.simulation import SimulatedUser
 
-        return getattr(simulation, name)
+        return SimulatedUser
     if name in ("LLMCall", "MemoryTraceHandler", "TraceAnalyzer", "TraceSpan", "collect_traces"):
         from ragbits.evaluate.agent_simulation import tracing
 

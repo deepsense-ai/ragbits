@@ -1,5 +1,7 @@
 """Rich display components for agent simulation."""
 
+from types import TracebackType
+
 from rich.console import Console
 from rich.live import Live
 from rich.panel import Panel
@@ -85,9 +87,14 @@ class ScenarioLiveDisplay:
         self._live.__enter__()
         return self
 
-    def __exit__(self, *args: object) -> None:
+    def __exit__(
+        self,
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: TracebackType | None,
+    ) -> None:
         if self._live:
-            self._live.__exit__(*args)
+            self._live.__exit__(exc_type, exc_val, exc_tb)
 
     def _render(self) -> Panel:
         return _build_panel(

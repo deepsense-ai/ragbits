@@ -80,19 +80,19 @@ class Scenario(BaseModel):
     )
 
     turn_limit: int | None = Field(
-        None,
+        default=None,
         description=(
             "Limit how many turns can be ran before failing the scenario. "
             "If set here it will override default settings."
         ),
     )
     turn_limit_per_task: int | None = Field(
-        None,
+        default=None,
         description="Limit number of turns, this time per task. Specific tasks can override their limits.",
     )
 
     group: str | None = Field(
-        None,
+        default=None,
         description=(
             "Scenarios may be coupled together by being in the same group. "
             "Scenarios in groups are often executed one after another, "
@@ -117,13 +117,13 @@ class Scenario(BaseModel):
     def dto(cls) -> type[Scenario]:
         """Create a DTO class for serialization."""
         if not hasattr(cls, "_dto_cls"):
-            cls._dto_cls = create_model(
+            cls._dto_cls = create_model(  # type: ignore[attr-defined]
                 "ScenarioDTO",
                 __base__=cls,
                 name=(str, cls.__pydantic_fields__["name"]),
                 tasks=(list[Task], cls.__pydantic_fields__["tasks"]),
             )
-        return cls._dto_cls
+        return cls._dto_cls  # type: ignore[attr-defined]
 
 
 class Personality(BaseModel):

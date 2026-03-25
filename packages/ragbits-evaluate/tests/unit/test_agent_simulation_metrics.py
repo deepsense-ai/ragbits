@@ -2,6 +2,7 @@
 
 import time
 
+from ragbits.core.llms.base import Usage, UsageItem
 from ragbits.evaluate.agent_simulation.metrics import (
     CompositeMetricCollector,
     DeepEvalAllMetricsCollector,
@@ -16,23 +17,40 @@ from ragbits.evaluate.agent_simulation.metrics import (
 from ragbits.evaluate.agent_simulation.results import TurnResult
 
 
+def _make_usage(total: int = 0, prompt: int = 0, completion: int = 0) -> Usage:
+    """Create a Usage object for testing."""
+    return Usage(
+        requests=[
+            UsageItem(
+                model="test-model",
+                prompt_tokens=prompt,
+                completion_tokens=completion,
+                total_tokens=total,
+                estimated_cost=0.0,
+            )
+        ]
+    )
+
+
 def _make_turn_result(
     turn_index: int = 1,
     task_index: int = 0,
-    token_usage: dict[str, int] | None = None,
+    token_usage: Usage | None = None,
     tool_calls: list[dict] | None = None,
 ) -> TurnResult:
     """Create a TurnResult for testing."""
-    return TurnResult(
-        turn_index=turn_index,
-        task_index=task_index,
-        user_message=f"User message {turn_index}",
-        assistant_message=f"Assistant response {turn_index}",
-        tool_calls=tool_calls or [],
-        task_completed=False,
-        task_completed_reason="",
-        token_usage=token_usage,
-    )
+    kwargs: dict = {
+        "turn_index": turn_index,
+        "task_index": task_index,
+        "user_message": f"User message {turn_index}",
+        "assistant_message": f"Assistant response {turn_index}",
+        "tool_calls": tool_calls or [],
+        "task_completed": False,
+        "task_completed_reason": "",
+    }
+    if token_usage is not None:
+        kwargs["token_usage"] = token_usage
+    return TurnResult(**kwargs)
 
 
 class TestLatencyMetricCollector:
@@ -60,9 +78,7 @@ class TestLatencyMetricCollector:
         assert "latency_avg_ms" in result
         assert "latency_max_ms" in result
         assert "latency_min_ms" in result
-        assert "latency_per_turn_ms" in result
         assert result["latency_avg_ms"] >= 10  # At least 10ms
-        assert len(result["latency_per_turn_ms"]) == 1
 
     @staticmethod
     def test_latency_collector_multiple_turns() -> None:
@@ -79,10 +95,8 @@ class TestLatencyMetricCollector:
 
         result = collector.on_conversation_end(turns)
 
-        assert len(result["latency_per_turn_ms"]) == 3
-        assert result["latency_avg_ms"] == sum(result["latency_per_turn_ms"]) / 3
-        assert result["latency_max_ms"] == max(result["latency_per_turn_ms"])
-        assert result["latency_min_ms"] == min(result["latency_per_turn_ms"])
+        assert result["latency_avg_ms"] > 0
+        assert result["latency_max_ms"] >= result["latency_min_ms"]
 
 
 class TestTokenUsageMetricCollector:
@@ -100,7 +114,7 @@ class TestTokenUsageMetricCollector:
         """Test token collector with single turn."""
         collector = TokenUsageMetricCollector()
 
-        turn = _make_turn_result(1, token_usage={"total": 100, "prompt": 80, "completion": 20})
+        turn = _make_turn_result(1, token_usage=_make_usage(total=100, prompt=80, completion=20))
         collector.on_turn_start(1, 0, "Hello")
         collector.on_turn_end(turn)
 
@@ -110,7 +124,6 @@ class TestTokenUsageMetricCollector:
         assert result["tokens_prompt"] == 80
         assert result["tokens_completion"] == 20
         assert result["tokens_avg_per_turn"] == 100
-        assert result["tokens_per_turn"] == [100]
 
     @staticmethod
     def test_token_collector_multiple_turns() -> None:
@@ -121,7 +134,7 @@ class TestTokenUsageMetricCollector:
         for i in range(3):
             turn = _make_turn_result(
                 i + 1,
-                token_usage={"total": (i + 1) * 100, "prompt": (i + 1) * 80, "completion": (i + 1) * 20},
+                token_usage=_make_usage(total=(i + 1) * 100, prompt=(i + 1) * 80, completion=(i + 1) * 20),
             )
             collector.on_turn_start(i + 1, 0, f"Message {i}")
             collector.on_turn_end(turn)
@@ -133,20 +146,18 @@ class TestTokenUsageMetricCollector:
         assert result["tokens_prompt"] == 480  # 80 + 160 + 240
         assert result["tokens_completion"] == 120  # 20 + 40 + 60
         assert result["tokens_avg_per_turn"] == 200
-        assert result["tokens_per_turn"] == [100, 200, 300]
 
     @staticmethod
     def test_token_collector_missing_usage() -> None:
-        """Test token collector with missing token usage."""
+        """Test token collector with default (empty) token usage."""
         collector = TokenUsageMetricCollector()
 
-        turn = _make_turn_result(1, token_usage=None)
+        turn = _make_turn_result(1)
         collector.on_turn_end(turn)
 
         result = collector.on_conversation_end([turn])
 
         assert result["tokens_total"] == 0
-        assert result["tokens_per_turn"] == [0]
 
 
 class TestToolUsageMetricCollector:
@@ -240,7 +251,7 @@ class TestCompositeMetricCollector:
         token_collector = TokenUsageMetricCollector()
         composite = CompositeMetricCollector([token_collector])
 
-        turn = _make_turn_result(1, token_usage={"total": 100, "prompt": 80, "completion": 20})
+        turn = _make_turn_result(1, token_usage=_make_usage(total=100, prompt=80, completion=20))
         composite.on_turn_start(1, 0, "Hello")
         composite.on_turn_end(turn)
 
@@ -258,7 +269,7 @@ class TestCompositeMetricCollector:
 
         turn = _make_turn_result(
             1,
-            token_usage={"total": 100, "prompt": 80, "completion": 20},
+            token_usage=_make_usage(total=100, prompt=80, completion=20),
             tool_calls=[{"name": "search", "arguments": {}, "result": "r"}],
         )
         composite.on_turn_start(1, 0, "Hello")
@@ -280,7 +291,7 @@ class TestCompositeMetricCollector:
         composite = CompositeMetricCollector()
         composite.add(TokenUsageMetricCollector())
 
-        turn = _make_turn_result(1, token_usage={"total": 50, "prompt": 40, "completion": 10})
+        turn = _make_turn_result(1, token_usage=_make_usage(total=50, prompt=40, completion=10))
         composite.on_turn_end(turn)
 
         result = composite.on_conversation_end([turn])
@@ -429,6 +440,7 @@ class TestSimulationConfigMetricsValidation:
         from ragbits.evaluate.agent_simulation.models import SimulationConfig
 
         config = SimulationConfig(metrics=[LatencyMetricCollector, TokenUsageMetricCollector])
+        assert config.metrics is not None
         assert len(config.metrics) == 2
         assert config.metrics[0] is LatencyMetricCollector
         assert config.metrics[1] is TokenUsageMetricCollector

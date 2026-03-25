@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING, Any, ClassVar
 from ragbits.core.storage.sql_store.base import SQLStore
 
 if TYPE_CHECKING:
+    import aiosqlite  # noqa: F401
+
     from ragbits.core.storage.connections.sqlite import SQLiteConnection
 
 

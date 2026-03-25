@@ -20,7 +20,6 @@ from ragbits.agents.tools.planning import PlanningState, create_planning_tools
 from ragbits.core.llms import LiteLLM
 
 
-
 def build_planning_agent(
     base_prompt: str,
     tools: list[Callable[..., Any]] | None = None,

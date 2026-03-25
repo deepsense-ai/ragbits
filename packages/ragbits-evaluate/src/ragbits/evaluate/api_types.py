@@ -299,6 +299,9 @@ class TaskResultResponse(BaseModel):
 
     task_index: int
     description: str
+    completed: bool = False
+    turns_taken: int = 0
+    final_reason: str = ""
 
 
 class ResponseChunkResponse(BaseModel):

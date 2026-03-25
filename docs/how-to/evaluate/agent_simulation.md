@@ -242,7 +242,7 @@ The simulation follows this flow:
 
 ## Goal Checking
 
-The [`GoalChecker`][ragbits.evaluate.agent_simulation.simulation.GoalChecker] uses an LLM to determine if a task has been completed. It inspects the conversation history and checks if the task matches the expected result.
+The goal checker uses an LLM to determine if a task has been completed. It inspects the conversation history and checks if the task matches the expected result.
 
 The goal checker:
 - Analyzes the conversation history
@@ -251,7 +251,7 @@ The goal checker:
 
 ## Tool Usage Validation
 
-The [`ToolUsageChecker`][ragbits.evaluate.agent_simulation.simulation.ToolUsageChecker] verifies that your agent used the expected tools for each task.
+The tool usage checker verifies that your agent used the expected tools for each task.
 
 When `expected_tools` is specified in a task:
 - The system tracks all tool calls made during the conversation turn

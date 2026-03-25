@@ -53,7 +53,7 @@ class EvalAPI:
         results_dir: str = "./eval_results",
         cors_origins: list[str] | None = None,
         ui_build_dir: str | None = None,
-        response_adapters: list = None,
+        response_adapters: list[Any] | None = None,
         simulation_config: SimulationConfig | None = None,
         store: EvalReportStore | None = None,
     ) -> None:
@@ -262,7 +262,7 @@ class EvalAPI:
             run_id = ExecutionManager.generate_run_id()
 
             # Determine personas to use (None means single run without persona)
-            personas_to_run: list[str | None] = request.personas if request.personas else [None]
+            personas_to_run: list[str | None] = [*request.personas] if request.personas else [None]
 
             # Build list of scenario runs (scenarios × personas matrix)
             scenario_run_names = []

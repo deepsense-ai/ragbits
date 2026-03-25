@@ -18,10 +18,6 @@
 
 ::: ragbits.evaluate.agent_simulation.simulation.SimulatedUser
 
-::: ragbits.evaluate.agent_simulation.simulation.GoalChecker
-
-::: ragbits.evaluate.agent_simulation.simulation.ToolUsageChecker
-
 ::: ragbits.evaluate.agent_simulation.scenarios.load_scenarios
 
 ::: ragbits.evaluate.agent_simulation.scenarios.load_personalities

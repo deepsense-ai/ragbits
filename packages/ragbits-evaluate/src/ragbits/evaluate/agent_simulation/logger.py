@@ -1,5 +1,6 @@
 """Logging functionality for agent simulation scenarios."""
 
+import json
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -40,7 +41,7 @@ class ConversationLogger:
             f.write(f"Tasks: {len(scenario.tasks)}\n")
             for i, task in enumerate(scenario.tasks, 1):
                 f.write(f"  Task {i}: {task.task}\n")
-                f.write(f"    Checkers: {task.checkers.model_dump_json()}\n")
+                f.write(f"    Checkers: {json.dumps(task.checkers)}\n")
             f.write(f"Agent model: {agent_model_name or 'default'}\n")
             f.write(f"Simulated user model: {sim_user_model_name or 'default'}\n")
             f.write(f"Goal checker model: {checker_model_name or 'default'}\n")

@@ -14,7 +14,6 @@ __all__ = [
     "TraceHandler",
     "TraceSpan",
     "clear_trace_handlers",
-    "collect_traces",
     "set_trace_handlers",
     "trace",
     "traceable",

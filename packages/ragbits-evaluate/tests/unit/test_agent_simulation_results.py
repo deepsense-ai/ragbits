@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 import pytest
 
+from ragbits.core.llms.base import Usage, UsageItem
 from ragbits.evaluate.agent_simulation.results import (
     ConversationMetrics,
     SimulationResult,
@@ -13,12 +14,28 @@ from ragbits.evaluate.agent_simulation.results import (
 )
 
 
+def _make_usage(total: int = 0, prompt: int = 0, completion: int = 0) -> Usage:
+    """Create a Usage object for testing."""
+    return Usage(
+        requests=[
+            UsageItem(
+                model="test-model",
+                prompt_tokens=prompt,
+                completion_tokens=completion,
+                total_tokens=total,
+                estimated_cost=0.0,
+            )
+        ]
+    )
+
+
 class TestTurnResult:
     """Tests for TurnResult dataclass."""
 
     @staticmethod
     def test_turn_result_creation() -> None:
         """Test creating a TurnResult with all fields."""
+        usage = _make_usage(total=100, prompt=80, completion=20)
         turn = TurnResult(
             turn_index=1,
             task_index=0,
@@ -27,7 +44,7 @@ class TestTurnResult:
             tool_calls=[{"name": "search", "arguments": {"query": "test"}, "result": "found"}],
             task_completed=True,
             task_completed_reason="Task done",
-            token_usage={"total": 100, "prompt": 80, "completion": 20},
+            token_usage=usage,
             latency_ms=150.5,
         )
 
@@ -39,8 +56,7 @@ class TestTurnResult:
         assert turn.tool_calls[0]["name"] == "search"
         assert turn.task_completed is True
         assert turn.task_completed_reason == "Task done"
-        assert turn.token_usage is not None
-        assert turn.token_usage["total"] == 100
+        assert turn.token_usage.total_tokens == 100
         assert turn.latency_ms == 150.5
 
     @staticmethod
@@ -56,7 +72,7 @@ class TestTurnResult:
         assert turn.tool_calls == []
         assert turn.task_completed is False
         assert turn.task_completed_reason == ""
-        assert turn.token_usage is None
+        assert turn.token_usage.total_tokens == 0
         assert turn.latency_ms is None
 
 
@@ -194,7 +210,7 @@ class TestSimulationResult:
                 tool_calls=[{"name": "search_hotels", "arguments": {"city": "Warsaw"}, "result": "3 hotels"}],
                 task_completed=True,
                 task_completed_reason="Hotels found",
-                token_usage={"total": 100, "prompt": 80, "completion": 20},
+                token_usage=_make_usage(total=100, prompt=80, completion=20),
             ),
             TurnResult(
                 turn_index=2,
@@ -204,7 +220,7 @@ class TestSimulationResult:
                 tool_calls=[{"name": "book_hotel", "arguments": {"hotel_id": "1"}, "result": "confirmed"}],
                 task_completed=True,
                 task_completed_reason="Booking done",
-                token_usage={"total": 80, "prompt": 60, "completion": 20},
+                token_usage=_make_usage(total=80, prompt=60, completion=20),
             ),
         ]
 

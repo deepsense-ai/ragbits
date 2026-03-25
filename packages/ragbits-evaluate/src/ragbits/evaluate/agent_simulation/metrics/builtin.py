@@ -56,7 +56,11 @@ class LatencyMetricCollector(MetricCollector):
             user_message: The user message (unused).
             response: Response chunk from chat interface.
         """
-        if turn_index not in self._times_to_first_token and isinstance(response, TextResponse):
+        if (
+            turn_index not in self._times_to_first_token
+            and isinstance(response, TextResponse)
+            and self._turn_start is not None
+        ):
             self._times_to_first_token[turn_index] = (time.perf_counter() - self._turn_start) * 1000
 
     def on_turn_end(self, turn_result: TurnResult) -> None:

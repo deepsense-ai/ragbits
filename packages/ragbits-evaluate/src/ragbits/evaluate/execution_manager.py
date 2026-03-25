@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-ProgressCallback = Callable[[ProgressUpdate], Awaitable[None]]
+ProgressCallback = Callable[..., Awaitable[None]]
 
 
 class ExecutionManager:
@@ -269,7 +269,7 @@ class ExecutionManager:
         buffered_events = self.get_scenario_run_buffer(run_id, scenario_run_id)
         buffered_chunks = []
         for event in buffered_events:
-            if event.type == "response_chunk":
+            if isinstance(event, ResponseChunkUpdate):
                 buffered_chunks.append(
                     ResponseChunk(
                         turn_index=event.turn_index,

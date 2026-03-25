@@ -5,14 +5,14 @@ LLM calls, tool invocations, and token usage during simulation runs.
 """
 
 from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from contextvars import Token
 from dataclasses import dataclass
 from typing import Any
 
 from ragbits.agents.tool import ToolCallResult
-from ragbits.core.audit.traces import MemoryTraceHandler, set_trace_handlers
-from ragbits.core.audit.traces.memory import TraceSpan, _TraceSession, _current_session
+from ragbits.core.audit.traces import MemoryTraceHandler, _trace_handlers, set_trace_handlers
+from ragbits.core.audit.traces.memory import TraceSpan, _current_session, _TraceSession
 from ragbits.core.llms import Usage
 from ragbits.core.llms.base import UsageItem
 
@@ -67,6 +67,9 @@ def collect_traces(simulation_id: str | None = None) -> Iterator[MemoryTraceHand
     finally:
         # Restore previous session state
         _current_session.reset(token)
+        # Remove this handler from the global list to prevent accumulation
+        with suppress(ValueError):
+            _trace_handlers.remove(handler)
 
 
 class TraceAnalyzer:
@@ -128,7 +131,8 @@ class TraceAnalyzer:
             if span.children:
                 self._extract_tool_calls_recursive(span.children, results)
 
-    def _is_tool_call_span(self, span: TraceSpan) -> bool:
+    @staticmethod
+    def _is_tool_call_span(span: TraceSpan) -> bool:
         """Check if a span represents a tool call.
 
         Args:
@@ -141,7 +145,8 @@ class TraceAnalyzer:
         name = span.name.lower()
         return "tool" in name and ("call" in name or "execute" in name or "invoke" in name)
 
-    def _extract_tool_call(self, span: TraceSpan) -> ToolCallResult | None:
+    @staticmethod
+    def _extract_tool_call(span: TraceSpan) -> ToolCallResult | None:
         """Extract a ToolCallResult from a tool call span.
 
         Args:
@@ -198,7 +203,8 @@ class TraceAnalyzer:
             if span.children:
                 self._extract_usage_recursive(span.children, results)
 
-    def _extract_usage_from_span(self, span: TraceSpan) -> UsageItem | None:
+    @staticmethod
+    def _extract_usage_from_span(span: TraceSpan) -> UsageItem | None:
         """Extract a UsageItem from a span if it contains usage data.
 
         Args:

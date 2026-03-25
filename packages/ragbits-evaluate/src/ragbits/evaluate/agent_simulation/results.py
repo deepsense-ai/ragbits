@@ -230,7 +230,7 @@ class SimulationResult:
                 tool_calls=t.get("tool_calls", []),
                 task_completed=t.get("task_completed", False),
                 task_completed_reason=t.get("task_completed_reason", ""),
-                token_usage=t.get("token_usage"),
+                token_usage=Usage.model_validate(t["token_usage"]) if t.get("token_usage") else Usage(),
                 latency_ms=t.get("latency_ms"),
                 checkers=[CheckerResultItem.from_dict(c) for c in t.get("checkers", [])],
                 checker_mode=t.get("checker_mode", "all"),
@@ -252,7 +252,17 @@ class SimulationResult:
         ]
 
         metrics_data = data.get("metrics")
-        metrics = ConversationMetrics(metrics=metrics_data) if metrics_data else None
+        if metrics_data:
+            # Handle legacy format with nested deepeval_scores/custom dicts
+            if "deepeval_scores" in metrics_data or "custom" in metrics_data:
+                flat = {k: v for k, v in metrics_data.items() if not isinstance(v, dict)}
+                for nested in ("deepeval_scores", "custom"):
+                    if isinstance(metrics_data.get(nested), dict):
+                        flat.update(metrics_data[nested])
+                metrics_data = flat
+            metrics = ConversationMetrics(metrics=metrics_data)
+        else:
+            metrics = None
 
         response_chunks = [ResponseChunk.from_dict(c) for c in data.get("response_chunks", [])]
 
