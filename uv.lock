@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.10"
 resolution-markers = [
     "python_full_version < '3.11' and platform_machine == 'x86_64' and sys_platform == 'darwin'",
@@ -5273,7 +5273,7 @@ requires-dist = [
     { name = "googleapis-common-protos", marker = "extra == 'google-drive'", specifier = ">=1.70.0,<2.0.0" },
     { name = "griffe", specifier = ">=1.7.3,<2.0.0" },
     { name = "jinja2", specifier = ">=3.1.4,<4.0.0" },
-    { name = "litellm", specifier = ">=1.74.0,<2.0.0" },
+    { name = "litellm", specifier = ">=1.74.0,<1.82.7" },
     { name = "logfire", marker = "extra == 'logfire'", specifier = ">=3.19.0,<4.0.0" },
     { name = "logfire", extras = ["system-metrics"], marker = "extra == 'logfire'", specifier = ">=3.19.0,<4.0.0" },
     { name = "numpy", marker = "extra == 'local'", specifier = ">=1.26.0,<2.0.0" },
