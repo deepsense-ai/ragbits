@@ -19,6 +19,7 @@ MIT License, Mozilla Public License 2.0 (MPL 2.0)
 Mozilla Public License 2.0 (MPL 2.0)
 Public Domain
 Python Software Foundation License
+PSF-2.0
 Python Software Foundation License, MIT License
 Unlicense
 Proprietary License
