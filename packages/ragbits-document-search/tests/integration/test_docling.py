@@ -30,7 +30,7 @@ from ragbits.document_search.ingestion.parsers.docling import DoclingDocumentPar
             DocumentMeta.from_local_path(
                 Path(__file__).parent.parent / "assets" / "pdf" / "transformers_paper_page.pdf"
             ),
-            7,
+            6,
             id="PDFDocument",
         ),
     ],

@@ -13,3 +13,4 @@ python-bidi
 griffe
 types-requests
 sse-starlette
+nvidia-cusparselt-cu12
