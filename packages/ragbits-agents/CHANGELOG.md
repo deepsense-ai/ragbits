@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- Bump mcp dependency to >=1.23.0 for DNS rebinding fix (CVE-2025-66416)
+
 ## 1.6.1 (2026-03-19)
 
 - ragbits-core updated to version v1.6.1

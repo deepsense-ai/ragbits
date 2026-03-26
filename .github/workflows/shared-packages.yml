@@ -77,6 +77,10 @@ jobs:
           format: "table"
           output: "trivy-scanning-results.txt"
 
+      - name: Print Trivy results
+        if: always()
+        run: cat trivy-scanning-results.txt
+
       - name: Check licenses
         run: |
           uv run ./check_licenses.sh
@@ -220,8 +224,7 @@ jobs:
         run: |
           uv sync --only-group dev
           uv pip install --find-links dist \
-            "$(ls dist/ragbits-*.whl)[a2a,azure,chroma,cli,fastembed,fastembed-gpu,gcs,google-drive,hf,local,logfire,mcp,openai,otel,pgvector,promptfoo,qdrant,ray,relari,s3,sql,unstructured,weaviate]" \
-            docling==2.15.1 torch==2.2.2 pyarrow==17.0.0 ray==2.43.0
+            "$(ls dist/ragbits-*.whl)[a2a,azure,chroma,cli,fastembed,fastembed-gpu,gcs,google-drive,hf,local,logfire,mcp,openai,otel,pgvector,promptfoo,qdrant,ray,relari,s3,sql,unstructured,weaviate]"
 
       - name: Run Tests With Coverage
         run: |
