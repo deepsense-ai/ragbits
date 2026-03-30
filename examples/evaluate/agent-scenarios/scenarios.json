@@ -1,128 +1,224 @@
-[
-  {
-    "name": "Krakow Deluxe Room Search and Booking",
-    "tasks": [
-      {
-        "task": "are there rooms available in Krakow on 2025-06-01",
-        "expected_result": "{list of available rooms}",
-        "expected_tools": ["search_available_rooms"]
-      },
-      {
-        "task": "are there delux rooms",
-        "expected_result": "{list of rooms}",
-        "expected_tools": ["search_available_rooms"]
-      },
-      {
-        "task": "book room",
-        "expected_result": "{book room}",
-        "expected_tools": ["create_reservation"]
-      }
-    ]
-  },
-  {
-    "name": "Warsaw Budget Room Multi-Night Booking",
-    "tasks": [
-      {
-        "task": "find hotels in Warsaw",
-        "expected_result": "{list of hotels in Warsaw}",
-        "expected_tools": ["list_hotels"]
-      },
-      {
-        "task": "check availability for 3 nights from April 1, 2025",
-        "expected_result": "{available rooms for specified dates}",
-        "expected_tools": ["search_available_rooms"]
-      },
-      {
-        "task": "book a budget-friendly room",
-        "expected_result": "{booking confirmation}",
-        "expected_tools": ["create_reservation"]
-      }
-    ]
-  },
-  {
-    "name": "Gdańsk Suite Weekend Reservation",
-    "tasks": [
-      {
-        "task": "search for hotels in Gdańsk",
-        "expected_result": "{list of hotels in Gdańsk}",
-        "expected_tools": ["list_hotels"]
-      },
-      {
-        "task": "find suite rooms available for weekend starting May 10, 2025",
-        "expected_result": "{available suite rooms}",
-        "expected_tools": ["search_available_rooms"]
-      },
-      {
-        "task": "make a reservation",
-        "expected_result": "{reservation details}",
-        "expected_tools": ["create_reservation"]
-      }
-    ]
-  },
-  {
-    "name": "Krakow Best Hotel Premium Room Availability Check",
-    "tasks": [
-      {
-        "task": "I would like to travel to Krakow. What is the best raded hotel there",
-        "expected_result": "Hotel Copernicus",
-        "expected_tools": ["list_hotels", "get_hotel_details"]
-      },
-      {
-        "task": "What is the price of the most expensive room in the hotel",
-        "expected_result": "780",
-        "expected_tools": ["get_hotel_details"]
-      },
-      {
-        "task": "is this room available from 2025-01-19 to 2025-01-25",
-        "expected_result": "no, it is not available",
-        "expected_tools": ["search_available_rooms"]
-      },
-      {
-        "task": "what is the nearest availability for that room",
-        "expected_result": "from 2025-01-20 to 2025-01-25",
-        "expected_tools": ["search_available_rooms"]
-      },
-      {
-        "task": "book from 2025-01-20 to 2025-01-25",
-        "expected_result": "{reservation details}",
-        "expected_tools": ["create_reservation"]
-      }
-    ]
-  },
-  {
-    "name": "Future Date Booking Attempt",
-    "tasks": [
-      {
-        "task": "book room in Krakow on 2030-06-01",
-        "expected_result": "",
-        "expected_tools": ["list_hotels"]
-      },
-      {
-        "task": "book room in Krakow on 2030-06-01",
-        "expected_result": "",
-        "expected_tools": ["list_hotels"]
-      }
-    ]
-  },
-  {
-    "name": "Gdańsk Suite Booking with Guest Name",
-    "tasks": [
-      {
-        "task": "search for hotels in Gdańsk",
-        "expected_result": "{list of hotels in Gdańsk}",
-        "expected_tools": ["list_hotels"]
-      },
-      {
-        "task": "find suite rooms available for weekend starting May 10, 2025",
-        "expected_result": "{available suite rooms}",
-        "expected_tools": ["search_available_rooms"]
-      },
-      {
-        "task": "make a reservation; your name is Andrzej Strzelba",
-        "expected_result": "{reservation details}",
-        "expected_tools": ["create_reservation"]
-      }
-    ]
-  }
-]
-
+{
+  "group": "Hotel Booking",
+  "scenarios": [
+    {
+      "name": "Krakow Deluxe Room Search and Booking",
+      "tasks": [
+        {
+          "task": "find available rooms in Krakow on 2025-06-01",
+          "checkers": [
+            {"type": "llm", "expected_result": "list of available rooms in Krakow for that date"},
+            {"type": "tool_call", "tools": ["search_available_rooms"]}
+          ],
+          "checker_mode": "all"
+        },
+        {
+          "task": "filter for deluxe rooms among the results",
+          "checkers": [
+            {"type": "llm", "expected_result": "information about deluxe room availability"},
+            {"type": "tool_call", "tools": ["search_available_rooms"], "mode": "any"}
+          ],
+          "checker_mode": "any"
+        },
+        {
+          "task": "book a deluxe room",
+          "checkers": [
+            {"type": "llm", "expected_result": "booking confirmation with reservation details"},
+            {"type": "tool_call", "tools": ["create_reservation"]}
+          ],
+          "checker_mode": "all"
+        }
+      ]
+    },
+    {
+      "name": "Warsaw Budget Room Multi-Night Booking",
+      "tasks": [
+        {
+          "task": "find hotels in Warsaw",
+          "checkers": [
+            {"type": "llm", "expected_result": "list of hotels in Warsaw"},
+            {"type": "tool_call", "tools": ["list_hotels", "search_available_rooms"], "mode": "any"}
+          ],
+          "checker_mode": "all"
+        },
+        {
+          "task": "check availability for 3 nights from 2025-04-01",
+          "checkers": [
+            {"type": "llm", "expected_result": "available rooms for the specified dates in Warsaw"},
+            {"type": "tool_call", "tools": ["search_available_rooms"]}
+          ],
+          "checker_mode": "all"
+        },
+        {
+          "task": "book the cheapest available room",
+          "checkers": [
+            {"type": "llm", "expected_result": "booking confirmation for the cheapest room"},
+            {"type": "tool_call", "tools": ["create_reservation"]}
+          ],
+          "checker_mode": "all"
+        }
+      ]
+    },
+    {
+      "name": "Gdansk Suite Weekend Reservation",
+      "tasks": [
+        {
+          "task": "find hotels in Gdansk",
+          "checkers": [
+            {"type": "llm", "expected_result": "list of hotels in Gdansk"},
+            {"type": "tool_call", "tools": ["list_hotels", "search_available_rooms"], "mode": "any"}
+          ],
+          "checker_mode": "all"
+        },
+        {
+          "task": "find suite rooms available for weekend starting 2025-05-10",
+          "checkers": [
+            {"type": "llm", "expected_result": "available suite rooms for the weekend dates"},
+            {"type": "tool_call", "tools": ["search_available_rooms"]}
+          ],
+          "checker_mode": "all"
+        },
+        {
+          "task": "book a suite",
+          "checkers": [
+            {"type": "llm", "expected_result": "reservation confirmation with suite details"},
+            {"type": "tool_call", "tools": ["create_reservation"]}
+          ],
+          "checker_mode": "all"
+        }
+      ]
+    },
+    {
+      "name": "Krakow Best Hotel Premium Room Availability",
+      "tasks": [
+        {
+          "task": "find the best rated hotel in Krakow",
+          "checkers": [
+            {"type": "llm", "expected_result": "Hotel Copernicus (rating 4.9)"},
+            {"type": "tool_call", "tools": ["list_hotels", "get_hotel_details"], "mode": "any"}
+          ],
+          "checker_mode": "all"
+        },
+        {
+          "task": "find the price of the most expensive room in that hotel",
+          "checkers": [
+            {"type": "llm", "expected_result": "780 PLN per night"},
+            {"type": "tool_call", "tools": ["get_hotel_details"]}
+          ],
+          "checker_mode": "all"
+        },
+        {
+          "task": "check if that room is available from 2025-01-19 to 2025-01-25",
+          "checkers": [
+            {"type": "llm", "expected_result": "not available for those exact dates"},
+            {"type": "tool_call", "tools": ["search_available_rooms"]}
+          ],
+          "checker_mode": "all"
+        },
+        {
+          "task": "find the nearest availability for that room",
+          "checkers": [
+            {"type": "llm", "expected_result": "available from 2025-01-20 to 2025-01-25"},
+            {"type": "tool_call", "tools": ["search_available_rooms"]}
+          ],
+          "checker_mode": "all"
+        },
+        {
+          "task": "book it from 2025-01-20 to 2025-01-25",
+          "checkers": [
+            {"type": "llm", "expected_result": "reservation confirmed with booking details"},
+            {"type": "tool_call", "tools": ["create_reservation"]}
+          ],
+          "checker_mode": "all"
+        }
+      ]
+    },
+    {
+      "name": "Future Date Booking Attempt",
+      "tasks": [
+        {
+          "task": "find available rooms in Krakow on 2030-06-01",
+          "checkers": [
+            {"type": "llm", "expected_result": "no rooms available or explanation that the date is too far out"},
+            {"type": "tool_call", "tools": ["search_available_rooms", "list_hotels"], "mode": "any"}
+          ],
+          "checker_mode": "all"
+        },
+        {
+          "task": "try any city with availability around that date",
+          "checkers": [
+            {"type": "llm", "expected_result": "no rooms available or guidance on alternative dates"},
+            {"type": "tool_call", "tools": ["search_available_rooms"], "mode": "any"}
+          ],
+          "checker_mode": "any"
+        }
+      ]
+    },
+    {
+      "name": "Gdansk Suite Booking with Guest Name",
+      "tasks": [
+        {
+          "task": "find hotels in Gdansk",
+          "checkers": [
+            {"type": "llm", "expected_result": "list of hotels in Gdansk"},
+            {"type": "tool_call", "tools": ["list_hotels", "search_available_rooms"], "mode": "any"}
+          ],
+          "checker_mode": "all"
+        },
+        {
+          "task": "find suite rooms available for weekend starting 2025-05-10",
+          "checkers": [
+            {"type": "llm", "expected_result": "available suite rooms for the specified weekend"},
+            {"type": "tool_call", "tools": ["search_available_rooms"]}
+          ],
+          "checker_mode": "all"
+        },
+        {
+          "task": "book a suite under the name Andrzej Strzelba",
+          "checkers": [
+            {"type": "llm", "expected_result": "reservation confirmed under the name Andrzej Strzelba"},
+            {"type": "tool_call", "tools": [{"name": "create_reservation", "arguments": {"guest_name": "Andrzej Strzelba"}}]}
+          ],
+          "checker_mode": "all"
+        }
+      ]
+    },
+    {
+      "name": "Reservation Management Flow",
+      "tasks": [
+        {
+          "task": "find available standard rooms in Warsaw for 2025-03-01 to 2025-03-05",
+          "checkers": [
+            {"type": "llm", "expected_result": "available standard rooms in Warsaw for those dates"},
+            {"type": "tool_call", "tools": ["search_available_rooms"]}
+          ],
+          "checker_mode": "all"
+        },
+        {
+          "task": "book the first available standard room under the name Jan Kowalski",
+          "checkers": [
+            {"type": "llm", "expected_result": "booking confirmation with reservation ID"},
+            {"type": "tool_call", "tools": ["create_reservation"]}
+          ],
+          "checker_mode": "all"
+        },
+        {
+          "task": "look up the reservation to confirm details",
+          "checkers": [
+            {"type": "llm", "expected_result": "reservation details including guest name, dates, and hotel"},
+            {"type": "tool_call", "tools": ["get_reservation", "list_reservations"], "mode": "any"}
+          ],
+          "checker_mode": "all"
+        },
+        {
+          "task": "cancel the reservation",
+          "checkers": [
+            {"type": "llm", "expected_result": "confirmation that the reservation has been cancelled"},
+            {"type": "tool_call", "tools": ["cancel_reservation"]}
+          ],
+          "checker_mode": "all"
+        }
+      ]
+    }
+  ]
+}

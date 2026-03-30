@@ -79,15 +79,15 @@ class HotelChat(ChatInterface):
 
         Yields:
             ChatResponse objects containing different types of content:
-            - Text chunks for the actual response
+            - TextResponse objects for the actual response
             - ToolCallResult objects for tool calls
-            - Usage object for token usage
         """
         stream = self.agent.run_streaming(HotelPromptInput(input=message))
 
         async for response in stream:
             if isinstance(response, str):
-                yield response
+                yield self.create_text_response(response)
+                # yield response
             if isinstance(response, ToolCallResult):
                 yield response
 

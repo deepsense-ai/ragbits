@@ -244,6 +244,7 @@ async def _process_chat_stream(
         Tuple of (assistant_reply, tool_calls, turn_usage)
     """
     assistant_reply_parts: list[str] = []
+    stream_usage: Usage | None = None
 
     # Track span count before the stream to identify new spans from this turn
     span_count_before = len(ctx.trace_handler.root_spans) if ctx.trace_handler else 0
@@ -272,13 +273,15 @@ async def _process_chat_stream(
 
         ctx.collectors.on_streamed_response(turn_idx, task_index, user_message, chunk)
 
-        # Process chunk by type - only collect text and context updates from stream
+        # Process chunk by type - collect text, context updates, and usage from stream
         if isinstance(chunk, TextResponse):
             assistant_reply_parts.append(chunk.content.text)
         elif isinstance(chunk, ConversationIdResponse):
             state.chat_context.conversation_id = chunk.content.conversation_id
         elif isinstance(chunk, StateUpdateResponse):
             state.chat_context.state = chunk.content.state
+        elif isinstance(chunk, Usage):
+            stream_usage = chunk
 
     # Extract tool calls and usage from traces for this turn
     tool_calls: list[ToolCallResult] = []
@@ -293,6 +296,10 @@ async def _process_chat_stream(
             analyzer = TraceAnalyzer.from_traces(turn_traces)
             tool_calls = analyzer.get_tool_calls()
             turn_usage = analyzer.get_usage()
+
+    # Fall back to usage from the stream if traces didn't capture it
+    if not turn_usage.requests and stream_usage is not None:
+        turn_usage = stream_usage
 
     return "".join(assistant_reply_parts).strip(), tool_calls, turn_usage
 

@@ -34,6 +34,26 @@
 
 ::: ragbits.evaluate.agent_simulation.models.Turn
 
+::: ragbits.evaluate.agent_simulation.models.SimulationConfig
+
+## Checkers
+
+::: ragbits.evaluate.agent_simulation.checkers.BaseCheckerConfig
+
+::: ragbits.evaluate.agent_simulation.checkers.CheckerResult
+
+::: ragbits.evaluate.agent_simulation.checkers.CheckerContext
+
+::: ragbits.evaluate.agent_simulation.checkers.LLMCheckerConfig
+
+::: ragbits.evaluate.agent_simulation.checkers.ToolCallCheckerConfig
+
+::: ragbits.evaluate.agent_simulation.checkers.StateCheckerConfig
+
+::: ragbits.evaluate.agent_simulation.checkers.run_checkers
+
+::: ragbits.evaluate.agent_simulation.checkers.register_checker
+
 ## Metrics
 
 ::: ragbits.evaluate.agent_simulation.metrics.MetricCollector

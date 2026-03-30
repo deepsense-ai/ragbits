@@ -17,9 +17,21 @@ class ScenarioFile:
 
 
 def load_scenarios(scenarios_file: str = "scenarios.json") -> list[Scenario]:
-    """Load scenarios from a JSON file.
+    """Load scenarios from a JSON file. See load_scenario_file for format details.
 
-    Expected JSON format (new format with file-level group):
+    Args:
+        scenarios_file: Path to the JSON file containing scenarios
+
+    Returns:
+        List of Scenario objects
+    """
+    return load_scenario_file(scenarios_file).scenarios
+
+
+def load_scenario_file(scenarios_file: str = "scenarios.json") -> ScenarioFile:
+    """Load scenarios from a JSON file with file-level metadata.
+
+    Expected JSON format:
     {
       "group": "Group Name",
       "scenarios": [
@@ -42,44 +54,6 @@ def load_scenarios(scenarios_file: str = "scenarios.json") -> list[Scenario]:
       ]
     }
 
-    Legacy format (array of scenarios) is still supported:
-    [
-      {
-        "name": "Scenario 1",
-        "tasks": [...]
-      },
-      ...
-    ]
-
-    Args:
-        scenarios_file: Path to the JSON file containing scenarios
-
-    Returns:
-        List of Scenario objects
-
-    Raises:
-        FileNotFoundError: If the scenarios file doesn't exist
-        ValueError: If the file format is invalid
-    """
-    scenario_file = load_scenario_file(scenarios_file)
-    return scenario_file.scenarios
-
-
-def load_scenario_file(scenarios_file: str = "scenarios.json") -> ScenarioFile:
-    """Load scenarios from a JSON file with file-level metadata.
-
-    This function supports both the new format with file-level group:
-    {
-      "group": "Group Name",
-      "scenarios": [...]
-    }
-
-    And the legacy format (array of scenarios):
-    [
-      {"name": "Scenario 1", "tasks": [...]},
-      ...
-    ]
-
     Args:
         scenarios_file: Path to the JSON file containing scenarios
 
@@ -97,21 +71,13 @@ def load_scenario_file(scenarios_file: str = "scenarios.json") -> ScenarioFile:
     with scenarios_path.open("r", encoding="utf-8") as f:
         data = json.load(f)
 
-    # Determine format and extract scenarios data and file-level group
-    file_group: str | None = None
-    scenarios_data: list
+    if not isinstance(data, dict):
+        raise ValueError(f"Scenarios file must contain a JSON object, got {type(data).__name__}")
 
-    if isinstance(data, dict):
-        # New format: {"group": "...", "scenarios": [...]}
-        file_group = data.get("group")
-        scenarios_data = data.get("scenarios", [])
-        if not isinstance(scenarios_data, list):
-            raise ValueError(f"'scenarios' field must be a JSON array, got {type(scenarios_data).__name__}")
-    elif isinstance(data, list):
-        # Legacy format: [...]
-        scenarios_data = data
-    else:
-        raise ValueError(f"Scenarios file must contain a JSON object or array, got {type(data).__name__}")
+    file_group: str | None = data.get("group")
+    scenarios_data = data.get("scenarios", [])
+    if not isinstance(scenarios_data, list):
+        raise ValueError(f"'scenarios' field must be a JSON array, got {type(scenarios_data).__name__}")
 
     scenarios: list[Scenario] = []
     for scenario_data in scenarios_data:
