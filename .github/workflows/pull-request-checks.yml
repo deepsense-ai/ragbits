@@ -69,5 +69,5 @@ jobs:
 
   ui:
     needs: check-source-changes
-    if: ${{ needs.check-source-changes.outputs.ui-changed == 'true' }}
+    if: ${{ needs.check-source-changes.outputs.ui-changed == 'true' || needs.check-source-changes.outputs.client-changed == 'true' }}
     uses: ./.github/workflows/shared-ui.yml

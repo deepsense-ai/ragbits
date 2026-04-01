@@ -59,6 +59,13 @@ jobs:
         run: npm run build
         working-directory: typescript/ui
 
+      - name: Check UI build artifacts are up to date
+        run: |
+          if [ -n "$(git diff --name-only packages/ragbits-chat/src/ragbits/chat/ui-build/)" ]; then
+            echo "::error::UI build artifacts are outdated. Run 'npm run build:ui' and commit the changes."
+            exit 1
+          fi
+
       - name: Run unit tests
         run: npm run test:run
         working-directory: typescript/ui
