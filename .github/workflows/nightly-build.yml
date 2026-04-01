@@ -74,6 +74,28 @@ jobs:
           uv run scripts/update_nightly_versions.py "${{ needs.check-for-changes.outputs.nightly-version }}"
           uv run scripts/update_nightly_npm_versions.py "${{ needs.check-for-changes.outputs.nightly-version }}"
 
+      - name: Configure Git
+        run: |
+          git config user.name "ds-ragbits-robot"
+          git config user.email "ds-ragbits-robot@users.noreply.github.com"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "lts/*"
+
+      - name: Build and commit UI if needed
+        run: |
+          npm ci
+          npm run build
+          git add packages/ragbits-chat/src/ragbits/chat/ui-build
+          if ! git diff --cached --quiet; then
+            echo "UI build artifacts changed, committing..."
+            git commit -m "Automated UI build"
+          else
+            echo "UI build artifacts are up to date"
+          fi
+
       - name: Install dependencies
         run: |
           uv sync --all-extras
@@ -95,8 +117,6 @@ jobs:
       - name: Sync versions to repo and push tag
         if: ${{ github.event_name == 'schedule' || inputs.dry-run != true }}
         run: |
-          git config user.name "ds-ragbits-robot"
-          git config user.email "ds-ragbits-robot@users.noreply.github.com"
           git add packages/*/pyproject.toml typescript/@ragbits/*/package.json
 
           if git diff --cached --quiet; then
