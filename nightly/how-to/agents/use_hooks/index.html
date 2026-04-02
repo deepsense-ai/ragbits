@@ -1963,27 +1963,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../evaluate/agent_simulation/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Agent simulation
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../evaluate/custom_evaluation_pipeline/" class="md-nav__link">
         
   
@@ -3069,27 +3048,6 @@
 
               
             
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../api_reference/evaluate/agent_simulation/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Agent Simulation
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
           </ul>
         </nav>
       
@@ -3300,16 +3258,16 @@
 
 
 <h1 id="how-to-use-hooks-to-customize-agent-behavior">How-To: Use hooks to customize agent behavior<a class="headerlink" href="#how-to-use-hooks-to-customize-agent-behavior" title="Permanent link">#</a></h1>
-<p>Ragbits provides a hook system that lets you intercept and modify agent behavior at key points in the execution lifecycle. Hooks allow you to validate inputs, modify arguments, mask outputs, enforce guardrails, require user confirmation, and more — all without changing the agent or tool code itself.</p>
+<p>Ragbits provides a hook system that lets you intercept and modify agent behavior at key points in the execution lifecycle. Hooks allow you to validate inputs, modify arguments, mask outputs, enforce guardrails, require user confirmation, and more, all without changing the agent or tool code itself.</p>
 <p>The hook system supports five event types:</p>
 <ul>
-<li><strong><code>PRE_TOOL</code></strong> — triggered before a tool is invoked</li>
-<li><strong><code>POST_TOOL</code></strong> — triggered after a tool completes</li>
-<li><strong><code>PRE_RUN</code></strong> — triggered before the agent run starts</li>
-<li><strong><code>POST_RUN</code></strong> — triggered after the agent run completes</li>
-<li><strong><code>ON_EVENT</code></strong> — triggered for each streaming event during <code>run_streaming()</code></li>
+<li><strong><code>PRE_TOOL</code></strong> - triggered before a tool is invoked</li>
+<li><strong><code>POST_TOOL</code></strong> - triggered after a tool completes</li>
+<li><strong><code>PRE_RUN</code></strong> - triggered before the agent run starts</li>
+<li><strong><code>POST_RUN</code></strong> - triggered after the agent run completes</li>
+<li><strong><code>ON_EVENT</code></strong> - triggered for each streaming event during <code>run_streaming()</code></li>
 </ul>
-<p>Hooks are executed in priority order (lower numbers first) and support <strong>chaining</strong> — each hook receives the output of the previous one, enabling composable pipelines of transformations.</p>
+<p>Hooks are executed in priority order (lower numbers first) and support <strong>chaining</strong>. Each hook receives the output of the previous one, enabling composable pipelines of transformations.</p>
 <h2 id="how-to-create-and-register-a-hook">How to create and register a hook<a class="headerlink" href="#how-to-create-and-register-a-hook" title="Permanent link">#</a></h2>
 <p>A hook is an instance of <a class="autorefs autorefs-internal" href="../../../api_reference/agents/#ragbits.agents.hooks.Hook"><code>Hook</code></a> that binds an async callback to a lifecycle event. You pass hooks directly to the <a class="autorefs autorefs-internal" href="../../../api_reference/agents/#ragbits.agents.Agent"><code>Agent</code></a> constructor:</p>
 <div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">from</span> <span class="nn">ragbits.agents</span> <span class="kn">import</span> <span class="n">Agent</span>
@@ -3338,83 +3296,83 @@
 </span></code></pre></div>
 <p>The <code>Hook</code> constructor accepts:</p>
 <ul>
-<li><strong><code>event_type</code></strong> — one of <code>EventType.PRE_TOOL</code>, <code>POST_TOOL</code>, <code>PRE_RUN</code>, <code>POST_RUN</code> or <code>ON_EVENT</code></li>
-<li><strong><code>callback</code></strong> — an async function matching the corresponding callback protocol</li>
-<li><strong><code>tool_names</code></strong> — optional list of tool names this hook applies to. If <code>None</code>, the hook runs for every tool. This parameter is only relevant for <code>PRE_TOOL</code> and <code>POST_TOOL</code> hooks.</li>
-<li><strong><code>priority</code></strong> — execution order; lower numbers execute first (default: <code>100</code>)</li>
+<li><strong><code>event_type</code></strong> - one of <code>EventType.PRE_TOOL</code>, <code>POST_TOOL</code>, <code>PRE_RUN</code>, <code>POST_RUN</code> or <code>ON_EVENT</code></li>
+<li><strong><code>callback</code></strong> - an async function matching the corresponding callback protocol</li>
+<li><strong><code>tool_names</code></strong> - optional list of tool names this hook applies to. If <code>None</code>, the hook runs for every tool. This parameter is only relevant for <code>PRE_TOOL</code> and <code>POST_TOOL</code> hooks.</li>
+<li><strong><code>priority</code></strong> - execution order; lower numbers execute first (default: <code>100</code>)</li>
 </ul>
 <h2 id="how-to-validate-and-modify-tool-inputs-with-pre-tool-hooks">How to validate and modify tool inputs with pre-tool hooks<a class="headerlink" href="#how-to-validate-and-modify-tool-inputs-with-pre-tool-hooks" title="Permanent link">#</a></h2>
 <p>Pre-tool hooks receive a <code>ToolCall</code> and return a <code>ToolCall</code>. The returned <code>ToolCall</code> can have a <strong>decision</strong> field that controls whether the tool executes:</p>
 <ul>
-<li><code>"pass"</code> — allow the tool to run (optionally with modified arguments) — this is the default</li>
-<li><code>"deny"</code> — block the tool from running (requires a <code>reason</code>)</li>
-<li><code>"ask"</code> — request user confirmation before proceeding (requires a <code>reason</code>)</li>
+<li><code>"pass"</code> - allow the tool to run (optionally with modified arguments). This is the default.</li>
+<li><code>"deny"</code> - block the tool from running (requires a <code>reason</code>)</li>
+<li><code>"ask"</code> - request user confirmation before proceeding (requires a <code>reason</code>)</li>
 </ul>
 <h3 id="validate-inputs">Validate inputs<a class="headerlink" href="#validate-inputs" title="Permanent link">#</a></h3>
 <p>This hook validates that an email argument has a correct format before allowing the <code>send_notification</code> tool to execute:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">tool_call</span><span class="p">:</span> <span class="n">ToolCall</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ToolCall</span><span class="p">:</span>
-</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate email format before sending.&quot;&quot;&quot;</span>
-</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="k">if</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;send_notification&quot;</span><span class="p">:</span>
-</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>        <span class="k">return</span> <span class="n">tool_call</span>
-</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
-</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="n">email</span> <span class="o">=</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">arguments</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;email&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>    <span class="n">email_pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$&quot;</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">email_pattern</span><span class="p">,</span> <span class="n">email</span><span class="p">):</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>        <span class="n">hook_actions</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;hook&quot;</span><span class="p">:</span> <span class="s2">&quot;validate_email&quot;</span><span class="p">,</span> <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;denied&quot;</span><span class="p">,</span> <span class="s2">&quot;email&quot;</span><span class="p">:</span> <span class="n">email</span><span class="p">})</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>        <span class="k">return</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>            <span class="n">update</span><span class="o">=</span><span class="p">{</span>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>                <span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="s2">&quot;deny&quot;</span><span class="p">,</span>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>                <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Invalid email format: </span><span class="si">{</span><span class="n">email</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>            <span class="p">}</span>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>        <span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>    <span class="n">users</span> <span class="o">=</span> <span class="p">{</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>        <span class="s2">&quot;123&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;John Doe&quot;</span><span class="p">,</span> <span class="s2">&quot;email&quot;</span><span class="p">:</span> <span class="s2">&quot;john@example.com&quot;</span><span class="p">,</span> <span class="s2">&quot;ssn&quot;</span><span class="p">:</span> <span class="s2">&quot;123-45-6789&quot;</span><span class="p">,</span> <span class="s2">&quot;balance&quot;</span><span class="p">:</span> <span class="mi">5000</span><span class="p">},</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>        <span class="s2">&quot;456&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;Jane Smith&quot;</span><span class="p">,</span> <span class="s2">&quot;email&quot;</span><span class="p">:</span> <span class="s2">&quot;jane@example.com&quot;</span><span class="p">,</span> <span class="s2">&quot;ssn&quot;</span><span class="p">:</span> <span class="s2">&quot;987-65-4321&quot;</span><span class="p">,</span> <span class="s2">&quot;balance&quot;</span><span class="p">:</span> <span class="mi">3500</span><span class="p">},</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>    <span class="p">}</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="k">return</span> <span class="n">users</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">user_id</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;error&quot;</span><span class="p">:</span> <span class="s2">&quot;User not found&quot;</span><span class="p">})</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="k">def</span> <span class="nf">send_notification</span><span class="p">(</span><span class="n">email</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Send notification email to user.&quot;&quot;&quot;</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Email sent to </span><span class="si">{</span><span class="n">email</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">message</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">tool_call</span><span class="p">:</span> <span class="n">ToolCall</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ToolCall</span><span class="p">:</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate email format before sending.&quot;&quot;&quot;</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>    <span class="k">if</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;send_notification&quot;</span><span class="p">:</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>        <span class="k">return</span> <span class="n">tool_call</span>
 </span></code></pre></div>
 <p>If validation fails, the hook returns a <code>ToolCall</code> with <code>decision="deny"</code> which immediately stops tool execution and returns the reason to the LLM.</p>
 <h3 id="modify-arguments">Modify arguments<a class="headerlink" href="#modify-arguments" title="Permanent link">#</a></h3>
 <p>This hook rewrites email domains to an approved list, demonstrating how pre-tool hooks can modify tool arguments:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>    <span class="k">return</span> <span class="n">tool_call</span>
-</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
-</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>
-</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">sanitize_email_domain</span><span class="p">(</span><span class="n">tool_call</span><span class="p">:</span> <span class="n">ToolCall</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ToolCall</span><span class="p">:</span>
-</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Ensure emails only go to approved domains.&quot;&quot;&quot;</span>
-</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>    <span class="k">if</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;send_notification&quot;</span><span class="p">:</span>
-</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>        <span class="k">return</span> <span class="n">tool_call</span>
-</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>
-</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>    <span class="n">email</span> <span class="o">=</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">arguments</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;email&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="n">approved_domains</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;example.com&quot;</span><span class="p">,</span> <span class="s2">&quot;test.com&quot;</span><span class="p">]</span>
-</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
-</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>    <span class="n">domain</span> <span class="o">=</span> <span class="n">email</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;@&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;@&quot;</span> <span class="ow">in</span> <span class="n">email</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
-</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>    <span class="k">if</span> <span class="n">domain</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">approved_domains</span><span class="p">:</span>
-</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a>        <span class="n">modified_email</span> <span class="o">=</span> <span class="n">email</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;@&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;@example.com&quot;</span>
-</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a>        <span class="n">modified_args</span> <span class="o">=</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">arguments</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>        <span class="n">modified_args</span><span class="p">[</span><span class="s2">&quot;email&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">modified_email</span>
-</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>
-</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>        <span class="n">hook_actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>            <span class="p">{</span>
-</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>                <span class="s2">&quot;hook&quot;</span><span class="p">:</span> <span class="s2">&quot;sanitize_email_domain&quot;</span><span class="p">,</span>
-</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>                <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;modified&quot;</span><span class="p">,</span>
-</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>                <span class="s2">&quot;original&quot;</span><span class="p">:</span> <span class="n">email</span><span class="p">,</span>
-</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>                <span class="s2">&quot;modified&quot;</span><span class="p">:</span> <span class="n">modified_email</span><span class="p">,</span>
-</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>            <span class="p">}</span>
-</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>        <span class="p">)</span>
-</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>
-</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a>        <span class="k">return</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;arguments&quot;</span><span class="p">:</span> <span class="n">modified_args</span><span class="p">})</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">email_pattern</span><span class="p">,</span> <span class="n">email</span><span class="p">):</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>        <span class="n">hook_actions</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;hook&quot;</span><span class="p">:</span> <span class="s2">&quot;validate_email&quot;</span><span class="p">,</span> <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;denied&quot;</span><span class="p">,</span> <span class="s2">&quot;email&quot;</span><span class="p">:</span> <span class="n">email</span><span class="p">})</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>        <span class="k">return</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>            <span class="n">update</span><span class="o">=</span><span class="p">{</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a>                <span class="s2">&quot;decision&quot;</span><span class="p">:</span> <span class="s2">&quot;deny&quot;</span><span class="p">,</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>                <span class="s2">&quot;reason&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;Invalid email format: </span><span class="si">{</span><span class="n">email</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a>            <span class="p">}</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>        <span class="p">)</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a>    <span class="n">hook_actions</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;hook&quot;</span><span class="p">:</span> <span class="s2">&quot;validate_email&quot;</span><span class="p">,</span> <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;passed&quot;</span><span class="p">,</span> <span class="s2">&quot;email&quot;</span><span class="p">:</span> <span class="n">email</span><span class="p">})</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>    <span class="k">return</span> <span class="n">tool_call</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">sanitize_email_domain</span><span class="p">(</span><span class="n">tool_call</span><span class="p">:</span> <span class="n">ToolCall</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ToolCall</span><span class="p">:</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Ensure emails only go to approved domains.&quot;&quot;&quot;</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a>    <span class="k">if</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;send_notification&quot;</span><span class="p">:</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a>        <span class="k">return</span> <span class="n">tool_call</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a>    <span class="n">email</span> <span class="o">=</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">arguments</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;email&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>    <span class="n">approved_domains</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;example.com&quot;</span><span class="p">,</span> <span class="s2">&quot;test.com&quot;</span><span class="p">]</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a>    <span class="n">domain</span> <span class="o">=</span> <span class="n">email</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;@&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="s2">&quot;@&quot;</span> <span class="ow">in</span> <span class="n">email</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a>    <span class="k">if</span> <span class="n">domain</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">approved_domains</span><span class="p">:</span>
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a>        <span class="n">modified_email</span> <span class="o">=</span> <span class="n">email</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;@&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;@example.com&quot;</span>
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a>        <span class="n">modified_args</span> <span class="o">=</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">arguments</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a>        <span class="n">modified_args</span><span class="p">[</span><span class="s2">&quot;email&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">modified_email</span>
 </span></code></pre></div>
 <p>The modified arguments are passed to the next hook in the chain (or to the tool itself if this is the last hook).</p>
 <h3 id="chain-multiple-pre-tool-hooks">Chain multiple pre-tool hooks<a class="headerlink" href="#chain-multiple-pre-tool-hooks" title="Permanent link">#</a></h3>
 <p>When multiple pre-tool hooks are registered, they execute in priority order and each hook sees the <code>ToolCall</code> modified by the previous one. If any hook returns <code>"deny"</code>, execution stops immediately:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Run the hooks example demonstrating pre-tool and post-tool hooks.&quot;&quot;&quot;</span>
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="n">llm</span> <span class="o">=</span> <span class="n">LiteLLM</span><span class="p">(</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="n">hooks</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>        <span class="n">Hook</span><span class="p">(</span><span class="n">event_type</span><span class="o">=</span><span class="n">EventType</span><span class="o">.</span><span class="n">PRE_TOOL</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">validate_email</span><span class="p">,</span> <span class="n">tool_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;send_notification&quot;</span><span class="p">],</span> <span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>        <span class="n">Hook</span><span class="p">(</span>
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>            <span class="n">event_type</span><span class="o">=</span><span class="n">EventType</span><span class="o">.</span><span class="n">PRE_TOOL</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">sanitize_email_domain</span><span class="p">,</span> <span class="n">tool_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;send_notification&quot;</span><span class="p">],</span> <span class="n">priority</span><span class="o">=</span><span class="mi">20</span>
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>        <span class="p">),</span>
-</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>        <span class="n">Hook</span><span class="p">(</span><span class="n">event_type</span><span class="o">=</span><span class="n">EventType</span><span class="o">.</span><span class="n">POST_TOOL</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">mask_sensitive_data</span><span class="p">,</span> <span class="n">tool_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;search_user&quot;</span><span class="p">],</span> <span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
-</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>        <span class="n">Hook</span><span class="p">(</span><span class="n">event_type</span><span class="o">=</span><span class="n">EventType</span><span class="o">.</span><span class="n">POST_TOOL</span><span class="p">,</span> <span class="n">callback</span><span class="o">=</span><span class="n">log_notification</span><span class="p">,</span> <span class="n">tool_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;send_notification&quot;</span><span class="p">],</span> <span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
-</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>    <span class="p">]</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>    <span class="n">hook_actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>        <span class="p">{</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>            <span class="s2">&quot;hook&quot;</span><span class="p">:</span> <span class="s2">&quot;log_notification&quot;</span><span class="p">,</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>            <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;enhanced&quot;</span><span class="p">,</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>            <span class="s2">&quot;original&quot;</span><span class="p">:</span> <span class="n">original_output</span><span class="p">,</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>            <span class="s2">&quot;enhanced&quot;</span><span class="p">:</span> <span class="n">enhanced_output</span><span class="p">,</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>        <span class="p">}</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>    <span class="p">)</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="k">return</span> <span class="n">ToolReturn</span><span class="p">(</span><span class="n">enhanced_output</span><span class="p">)</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">main</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </span></code></pre></div>
 <p>In this example, <code>validate_email</code> (priority 10) runs first. If it passes, <code>sanitize_email_domain</code> (priority 20) runs next and may modify the email argument before the tool executes.</p>
 <p>You can find the complete code example in the Ragbits repository <a href="https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/hooks/validation_and_sanitization.py">here</a>.</p>
@@ -3422,73 +3380,73 @@
 <p>Post-tool hooks receive the original <code>ToolCall</code> and the <code>ToolReturn</code>, and return a (possibly modified) <code>ToolReturn</code>.</p>
 <h3 id="mask-sensitive-data">Mask sensitive data<a class="headerlink" href="#mask-sensitive-data" title="Permanent link">#</a></h3>
 <p>This hook replaces sensitive fields in search results before they reach the LLM:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>    <span class="k">return</span> <span class="n">tool_call</span>
-</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
-</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">mask_sensitive_data</span><span class="p">(</span><span class="n">tool_call</span><span class="p">:</span> <span class="n">ToolCall</span><span class="p">,</span> <span class="n">tool_return</span><span class="p">:</span> <span class="n">ToolReturn</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ToolReturn</span><span class="p">:</span>
-</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mask sensitive information in user search results.&quot;&quot;&quot;</span>
-</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>    <span class="k">if</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;search_user&quot;</span><span class="p">:</span>
-</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>        <span class="k">return</span> <span class="n">tool_return</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>            <span class="p">{</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>                <span class="s2">&quot;hook&quot;</span><span class="p">:</span> <span class="s2">&quot;sanitize_email_domain&quot;</span><span class="p">,</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>                <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;modified&quot;</span><span class="p">,</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>                <span class="s2">&quot;original&quot;</span><span class="p">:</span> <span class="n">email</span><span class="p">,</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>                <span class="s2">&quot;modified&quot;</span><span class="p">:</span> <span class="n">modified_email</span><span class="p">,</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>            <span class="p">}</span>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>        <span class="p">)</span>
 </span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>
-</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tool_return</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;ssn&quot;</span> <span class="ow">in</span> <span class="n">tool_return</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
-</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>        <span class="n">original_ssn</span> <span class="o">=</span> <span class="n">tool_return</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="s2">&quot;ssn&quot;</span><span class="p">]</span>
-</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>        <span class="n">masked_output</span> <span class="o">=</span> <span class="n">tool_return</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>        <span class="n">masked_output</span><span class="p">[</span><span class="s2">&quot;ssn&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;***-**-****&quot;</span>
+</span><span id="__span-4-9"><a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>        <span class="k">return</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;arguments&quot;</span><span class="p">:</span> <span class="n">modified_args</span><span class="p">})</span>
+</span><span id="__span-4-10"><a id="__codelineno-4-10" name="__codelineno-4-10" href="#__codelineno-4-10"></a>
+</span><span id="__span-4-11"><a id="__codelineno-4-11" name="__codelineno-4-11" href="#__codelineno-4-11"></a>    <span class="n">hook_actions</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;hook&quot;</span><span class="p">:</span> <span class="s2">&quot;sanitize_email_domain&quot;</span><span class="p">,</span> <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;passed&quot;</span><span class="p">,</span> <span class="s2">&quot;email&quot;</span><span class="p">:</span> <span class="n">email</span><span class="p">})</span>
+</span><span id="__span-4-12"><a id="__codelineno-4-12" name="__codelineno-4-12" href="#__codelineno-4-12"></a>    <span class="k">return</span> <span class="n">tool_call</span>
 </span><span id="__span-4-13"><a id="__codelineno-4-13" name="__codelineno-4-13" href="#__codelineno-4-13"></a>
-</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>        <span class="n">hook_actions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a>            <span class="p">{</span>
-</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a>                <span class="s2">&quot;hook&quot;</span><span class="p">:</span> <span class="s2">&quot;mask_sensitive_data&quot;</span><span class="p">,</span>
-</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>                <span class="s2">&quot;action&quot;</span><span class="p">:</span> <span class="s2">&quot;masked&quot;</span><span class="p">,</span>
-</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>                <span class="s2">&quot;field&quot;</span><span class="p">:</span> <span class="s2">&quot;ssn&quot;</span><span class="p">,</span>
-</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>                <span class="s2">&quot;original&quot;</span><span class="p">:</span> <span class="n">original_ssn</span><span class="p">,</span>
-</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>                <span class="s2">&quot;masked&quot;</span><span class="p">:</span> <span class="s2">&quot;***-**-****&quot;</span><span class="p">,</span>
+</span><span id="__span-4-14"><a id="__codelineno-4-14" name="__codelineno-4-14" href="#__codelineno-4-14"></a>
+</span><span id="__span-4-15"><a id="__codelineno-4-15" name="__codelineno-4-15" href="#__codelineno-4-15"></a><span class="k">async</span> <span class="k">def</span> <span class="nf">mask_sensitive_data</span><span class="p">(</span><span class="n">tool_call</span><span class="p">:</span> <span class="n">ToolCall</span><span class="p">,</span> <span class="n">tool_return</span><span class="p">:</span> <span class="n">ToolReturn</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ToolReturn</span><span class="p">:</span>
+</span><span id="__span-4-16"><a id="__codelineno-4-16" name="__codelineno-4-16" href="#__codelineno-4-16"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Mask sensitive information in user search results.&quot;&quot;&quot;</span>
+</span><span id="__span-4-17"><a id="__codelineno-4-17" name="__codelineno-4-17" href="#__codelineno-4-17"></a>    <span class="k">if</span> <span class="n">tool_call</span><span class="o">.</span><span class="n">name</span> <span class="o">!=</span> <span class="s2">&quot;search_user&quot;</span><span class="p">:</span>
+</span><span id="__span-4-18"><a id="__codelineno-4-18" name="__codelineno-4-18" href="#__codelineno-4-18"></a>        <span class="k">return</span> <span class="n">tool_return</span>
+</span><span id="__span-4-19"><a id="__codelineno-4-19" name="__codelineno-4-19" href="#__codelineno-4-19"></a>
+</span><span id="__span-4-20"><a id="__codelineno-4-20" name="__codelineno-4-20" href="#__codelineno-4-20"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tool_return</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;ssn&quot;</span> <span class="ow">in</span> <span class="n">tool_return</span><span class="o">.</span><span class="n">value</span><span class="p">:</span>
 </span></code></pre></div>
 <h3 id="log-tool-outputs">Log tool outputs<a class="headerlink" href="#log-tool-outputs" title="Permanent link">#</a></h3>
 <p>This hook logs the output of specific agent tools without modifying the result:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Log output from agent tools after they complete.&quot;&quot;&quot;</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="n">output</span> <span class="o">=</span> <span class="n">tool_return</span><span class="o">.</span><span class="n">value</span>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>        <span class="n">output</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;content&quot;</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1">#     &quot;ragbits-agents&quot;,</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="c1"># ]</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="c1"># ///</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="kn">import</span> <span class="nn">asyncio</span>
 </span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="se">\n</span><span class="s2">[</span><span class="si">{</span><span class="n">tool_call</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2">] output:</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;-&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">output</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="s1">&#39;=&#39;</span><span class="o">*</span><span class="mi">60</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="kn">from</span> <span class="nn">ragbits.agents</span> <span class="kn">import</span> <span class="n">Agent</span>
 </span></code></pre></div>
 <p>To apply it only to specific tools, use the <code>tool_names</code> parameter:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>    <span class="p">)</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>    <span class="n">llm</span> <span class="o">=</span> <span class="n">LiteLLM</span><span class="p">(</span><span class="s2">&quot;gpt-4o-mini&quot;</span><span class="p">)</span>
 </span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
-</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="c1"># Hook to log outputs from both agent tools</span>
-</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">hook</span> <span class="o">=</span> <span class="n">Hook</span><span class="p">(</span>
-</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>        <span class="n">event_type</span><span class="o">=</span><span class="n">EventType</span><span class="o">.</span><span class="n">POST_TOOL</span><span class="p">,</span>
-</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>        <span class="n">callback</span><span class="o">=</span><span class="n">log_agent_output</span><span class="p">,</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>    <span class="c1"># Child agent 1: Diet expert</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="n">diet_agent</span> <span class="o">=</span> <span class="n">Agent</span><span class="p">(</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;diet_expert&quot;</span><span class="p">,</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>        <span class="n">description</span><span class="o">=</span><span class="s2">&quot;A nutrition expert who provides diet plans and healthy eating advice&quot;</span><span class="p">,</span>
 </span></code></pre></div>
 <p>You can find the complete code example in the Ragbits repository <a href="https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/hooks/agent_output_logging.py">here</a>.</p>
 <h2 id="how-to-validate-agent-input-with-pre-run-hooks">How to validate agent input with pre-run hooks<a class="headerlink" href="#how-to-validate-agent-input-with-pre-run-hooks" title="Permanent link">#</a></h2>
 <p>Pre-run hooks execute before the agent starts processing. They receive the user input, options, and context as separate arguments, and return the (potentially modified) input directly.</p>
 <p>A common use case is integrating guardrails to block unsafe or policy-violating inputs:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">def</span> <span class="nf">create_guardrail_hook</span><span class="p">(</span>
-</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>    <span class="n">guardrail_manager</span><span class="p">:</span> <span class="n">GuardrailManager</span><span class="p">,</span>
-</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PreRunCallback</span><span class="p">:</span>
-</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a pre-run hook that validates input using guardrails.&quot;&quot;&quot;</span>
-</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>
-</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">guardrail_hook</span><span class="p">(</span>
-</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>        <span class="nb">input</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>        <span class="n">options</span><span class="p">:</span> <span class="n">AgentOptions</span><span class="p">,</span>
-</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>        <span class="n">context</span><span class="p">:</span> <span class="n">AgentRunContext</span><span class="p">,</span>
-</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate input against guardrails before agent processes it.&quot;&quot;&quot;</span>
-</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>        <span class="n">user_input</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="nb">input</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
-</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a>        <span class="n">results</span> <span class="o">=</span> <span class="k">await</span> <span class="n">guardrail_manager</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">user_input</span><span class="p">)</span>
-</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a>
-</span><span id="__span-7-15"><a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>        <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
-</span><span id="__span-7-16"><a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="o">.</span><span class="n">succeeded</span><span class="p">:</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>                    <span class="n">fail_reason</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Input contains blocked topic: </span><span class="si">{</span><span class="n">topic</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>                <span class="p">)</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>        <span class="k">return</span> <span class="n">GuardrailVerificationResult</span><span class="p">(</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>            <span class="n">guardrail_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>            <span class="n">succeeded</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>            <span class="n">fail_reason</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>        <span class="p">)</span>
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>
+</span><span id="__span-7-10"><a id="__codelineno-7-10" name="__codelineno-7-10" href="#__codelineno-7-10"></a>
+</span><span id="__span-7-11"><a id="__codelineno-7-11" name="__codelineno-7-11" href="#__codelineno-7-11"></a><span class="k">def</span> <span class="nf">create_guardrail_hook</span><span class="p">(</span>
+</span><span id="__span-7-12"><a id="__codelineno-7-12" name="__codelineno-7-12" href="#__codelineno-7-12"></a>    <span class="n">guardrail_manager</span><span class="p">:</span> <span class="n">GuardrailManager</span><span class="p">,</span>
+</span><span id="__span-7-13"><a id="__codelineno-7-13" name="__codelineno-7-13" href="#__codelineno-7-13"></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PreRunCallback</span><span class="p">:</span>
+</span><span id="__span-7-14"><a id="__codelineno-7-14" name="__codelineno-7-14" href="#__codelineno-7-14"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Create a pre-run hook that validates input using guardrails.&quot;&quot;&quot;</span>
+</span><span id="__span-7-15"><a id="__codelineno-7-15" name="__codelineno-7-15" href="#__codelineno-7-15"></a>
+</span><span id="__span-7-16"><a id="__codelineno-7-16" name="__codelineno-7-16" href="#__codelineno-7-16"></a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">guardrail_hook</span><span class="p">(</span>
 </span></code></pre></div>
-<p>To block the agent from processing the input, the hook returns a replacement message. This message becomes the agent's final output — no LLM call or tool execution happens.</p>
+<p>To block the agent from processing the input, the hook returns a replacement message. This message becomes the agent's final output. No LLM call or tool execution happens.</p>
 <p>Register it with the agent:</p>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Create an ON_EVENT hook that upper-cases specified words in streaming text chunks.&quot;&quot;&quot;</span>
-</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>
-</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>    <span class="k">async</span> <span class="k">def</span> <span class="nf">upper_words_hook</span><span class="p">(</span><span class="n">event</span><span class="p">:</span> <span class="n">StreamingEvent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamingEvent</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>            <span class="n">result</span> <span class="o">=</span> <span class="n">event</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>        <span class="k">for</span> <span class="n">result</span> <span class="ow">in</span> <span class="n">results</span><span class="p">:</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">result</span><span class="o">.</span><span class="n">succeeded</span><span class="p">:</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a>                <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;I cannot help with that request. Reason: </span><span class="si">{</span><span class="n">result</span><span class="o">.</span><span class="n">fail_reason</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a>        <span class="k">return</span> <span class="nb">input</span>
 </span></code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -3577,21 +3535,21 @@
 </span></code></pre></div>
 <p>When the agent attempts to call one of the specified tools, the hook returns a <code>ConfirmationRequest</code> containing:</p>
 <ul>
-<li><code>confirmation_id</code> — a deterministic ID based on the hook, tool name, and arguments</li>
-<li><code>tool_name</code> — the name of the tool being called</li>
-<li><code>tool_description</code> — a description of why confirmation is needed</li>
-<li><code>arguments</code> — the tool arguments</li>
+<li><code>confirmation_id</code> - a deterministic ID based on the hook, tool name, and arguments</li>
+<li><code>tool_name</code> - the name of the tool being called</li>
+<li><code>tool_description</code> - a description of why confirmation is needed</li>
+<li><code>arguments</code> - the tool arguments</li>
 </ul>
 <p>The agent yields the <code>ConfirmationRequest</code> and pauses. You can then resume the agent with the user's decision by including it in the <code>AgentRunContext.tool_confirmations</code> list.</p>
 <h2 id="how-hook-chaining-works">How hook chaining works<a class="headerlink" href="#how-hook-chaining-works" title="Permanent link">#</a></h2>
 <p>All hook types support <strong>chaining</strong>: hooks execute in priority order (lower numbers first), and each hook receives the output of the previous one. When hooks share the same priority (the default is <code>100</code>), they execute in the order they were defined.</p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>Hook A (priority=10) → modified data → Hook B (priority=20) → modified data → Hook C (priority=100)
 </span></code></pre></div>
-<p>For <strong>pre-tool hooks</strong>, the chained value is the <code>ToolCall</code> (including its <code>arguments</code>). For <strong>post-tool hooks</strong>, it is the <code>ToolReturn</code>. For <strong>pre-run hooks</strong>, it is the agent input. For <strong>post-run hooks</strong>, it is the <code>AgentResult</code>. For <strong>on-event hooks</strong>, the hooks are composed as a pipeline of async generators — each hook wraps the previous one, so events flow through the entire chain without intermediate collection.</p>
+<p>For <strong>pre-tool hooks</strong>, the chained value is the <code>ToolCall</code> (including its <code>arguments</code>). For <strong>post-tool hooks</strong>, it is the <code>ToolReturn</code>. For <strong>pre-run hooks</strong>, it is the agent input. For <strong>post-run hooks</strong>, it is the <code>AgentResult</code>. For <strong>on-event hooks</strong>, the hooks are composed as a pipeline of async generators. Each hook wraps the previous one, so events flow through the entire chain without intermediate collection.</p>
 <p>This makes it possible to compose independent hooks that each handle one concern (validation, sanitization, logging, etc.) into a clean pipeline.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-<p>For pre-tool hooks, if any hook in the chain returns <code>"deny"</code>, execution stops immediately and subsequent hooks do not run. Design your hooks with this in mind — place critical validation hooks at lower priority numbers so they run first.</p>
+<p>For pre-tool hooks, if any hook in the chain returns <code>"deny"</code>, execution stops immediately and subsequent hooks do not run. Design your hooks with this in mind. Place critical validation hooks at lower priority numbers so they run first.</p>
 </div>
 
 

@@ -1754,27 +1754,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../how-to/evaluate/agent_simulation/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Agent simulation
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../../../how-to/evaluate/custom_evaluation_pipeline/" class="md-nav__link">
         
   
@@ -3392,27 +3371,6 @@
 
               
             
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../../../evaluate/agent_simulation/" class="md-nav__link">
-        
-  
-  <span class="md-ellipsis">
-    Agent Simulation
-  </span>
-  
-
-      </a>
-    </li>
-  
-
-              
-            
           </ul>
         </nav>
       
@@ -4463,7 +4421,7 @@ the Ragstack instance configuration.</p>
 
 
 <a href="#ragbits.document_search.ingestion.strategies.sequential.SequentialIngestStrategy" class="headerlink" title="Permanent link">#</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">SequentialIngestStrategy</span><span class="p">(</span><span class="n">num_retries</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">backoff_multiplier</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">backoff_max</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">60</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nf">SequentialIngestStrategy</span><span class="p">(</span><span class="n">num_retries</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">backoff_multiplier</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">backoff_max</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="mi">60</span><span class="p">)</span>
 </span></code></pre></div>
 
     <div class="doc doc-contents first">
@@ -4497,7 +4455,7 @@ the Ragstack instance configuration.</p>
                   </span>
                   <span class="doc-param-default">
                     <b>DEFAULT:</b>
-                      <code>3</code>
+                      <code>0</code>
                   </span>
               </p>
             </td>
@@ -4557,7 +4515,7 @@ the Ragstack instance configuration.</p>
 <span class="normal"><a href="#__codelineno-0-20">20</a></span>
 <span class="normal"><a href="#__codelineno-0-21">21</a></span>
 <span class="normal"><a href="#__codelineno-0-22">22</a></span>
-<span class="normal"><a href="#__codelineno-0-23">23</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_retries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">backoff_multiplier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">backoff_max</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">60</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal"><a href="#__codelineno-0-23">23</a></span></pre></div></td><td class="code"><div><pre><span></span><code><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9"></a><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_retries</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">backoff_multiplier</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">backoff_max</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">60</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 </span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11"></a><span class="sd">    Initialize the SequentialIngestStrategy instance.</span>
 </span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12"></a>
