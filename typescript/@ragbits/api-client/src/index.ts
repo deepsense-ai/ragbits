@@ -1,3 +1,5 @@
+console.log('[ragbits] api-client loaded', new Date().toISOString())
+
 import { ChatResponse, ChunkedChatResponse, Image } from './autogen.types'
 import type {
     ClientConfig,

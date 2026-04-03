@@ -8,6 +8,8 @@ on:
       - main
     paths:
       - typescript/ui/**
+      - typescript/@ragbits/api-client/src/**
+      - typescript/@ragbits/api-client-react/src/**
 
 jobs:
   build:
@@ -41,5 +43,9 @@ jobs:
       - name: Commit UI
         run: |
           git add packages/ragbits-chat/src/ragbits/chat/ui-build
-          git commit -m "Automated UI build"
-          git push origin HEAD
+          if git diff --cached --quiet; then
+            echo "UI build artifacts are up to date"
+          else
+            git commit -m "Automated UI build"
+            git push origin HEAD
+          fi
