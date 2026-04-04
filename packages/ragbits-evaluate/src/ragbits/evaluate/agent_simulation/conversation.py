@@ -254,6 +254,16 @@ async def _process_chat_stream(
         context=state.chat_context,
     )
 
+    # Emit user message as a response chunk so the UI can show it live
+    if ctx.progress_callback:
+        await ctx.emit_progress(
+            "response_chunk",
+            turn_index=turn_idx,
+            task_index=task_index,
+            chunk_type="user_message",
+            chunk_data={"text": user_message},
+        )
+
     async for chunk in stream:
         # Emit response chunk event for real-time streaming
         if ctx.progress_callback:

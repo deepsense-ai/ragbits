@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { Button, Listbox, ListboxItem, Spinner } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRagbitsContext } from "@ragbits/api-client-react";
@@ -10,6 +10,7 @@ import type { SimulationRun } from "../../../types";
 export function RunsTab() {
   const { client } = useRagbitsContext();
   const storeApi = useEvalStoreApi();
+  const location = useLocation();
   const navigate = useNavigate();
 
   const config = useEvalStore((s) => s.config);
@@ -64,11 +65,12 @@ export function RunsTab() {
     );
   }, [simulationRuns, selectedScenarios]);
 
-  // Load simulation runs on mount
+  // Load simulation runs each time the tab is shown, merging with in-progress runs
   useEffect(() => {
     async function loadRuns() {
       const { setSimulationRunsLoading, setSimulationRuns } =
         storeApi.getState().actions;
+      const existingRuns = storeApi.getState().simulationRuns ?? [];
       setSimulationRunsLoading(true);
       try {
         const response = await client.makeRequest(
@@ -76,7 +78,7 @@ export function RunsTab() {
         );
         // Handle response with runs property and transform snake_case to camelCase
         const rawRuns = (response as { runs?: unknown[] })?.runs ?? [];
-        const runsData: SimulationRun[] = rawRuns.map((run: any) => ({
+        const apiRuns: SimulationRun[] = rawRuns.map((run: any) => ({
           id: run.id,
           timestamp: run.timestamp,
           version: run.version || "current",
@@ -121,15 +123,19 @@ export function RunsTab() {
           totalCostUsd: run.total_cost_usd || 0,
           overallSuccessRate: run.overall_success_rate || 0,
         }));
-        setSimulationRuns(runsData);
+        // Merge: keep in-progress runs from store, update/add completed runs from API
+        const apiRunIds = new Set(apiRuns.map((r) => r.id));
+        const inProgressRuns = existingRuns.filter(
+          (r) => !apiRunIds.has(r.id) && (r.status === "running" || r.status === "queued"),
+        );
+        setSimulationRuns([...inProgressRuns, ...apiRuns]);
       } catch (error) {
         console.error("Failed to load simulation runs:", error);
-        setSimulationRuns([]);
       }
     }
 
     loadRuns();
-  }, [client, storeApi]);
+  }, [client, storeApi, location.pathname]);
 
   const handleViewDetails = useCallback(
     (runId: string) => {

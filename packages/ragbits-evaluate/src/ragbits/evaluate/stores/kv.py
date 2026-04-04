@@ -73,13 +73,11 @@ class KVEvalReportStore(EvalReportStore):
         safe_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in scenario_name)
         result_id = f"result_{timestamp}_{safe_name}"
 
-        # Add buffered chunks
+        # Add buffered chunks (including text chunks for conversation reconstruction)
         all_chunks = list(result.response_chunks)
         if buffered_chunks:
             chunk_index = len(all_chunks)
             for chunk in buffered_chunks:
-                if chunk.chunk_type == "text":
-                    continue
                 all_chunks.append(
                     ResponseChunk(
                         turn_index=chunk.turn_index,

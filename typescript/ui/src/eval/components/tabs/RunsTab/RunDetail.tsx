@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router";
 import { Button, Chip, Card, CardBody, Tabs, Tab, Spinner } from "@heroui/react";
 import { Icon } from "@iconify/react";
@@ -20,33 +20,44 @@ const STATUS_CONFIG: Record<
 
 // Run summary stats component for header
 function RunSummaryStats({ scenarioRuns, onRerun }: { scenarioRuns: ScenarioRun[]; onRerun: () => void }) {
-  const aggregated = useMemo(() => {
-    let totalTurns = 0;
-    let totalTasks = 0;
-    let tasksCompleted = 0;
-    let estimatedUsd = 0;
-    const latencies: number[] = [];
-    const ttfts: number[] = [];
+  // No useMemo — recompute every render to always reflect latest SSE data
+  let totalTurns = 0;
+  let totalTasks = 0;
+  let tasksCompleted = 0;
+  let estimatedUsd = 0;
+  const latencies: number[] = [];
+  const ttfts: number[] = [];
 
-    for (const sr of scenarioRuns) {
-      if (!sr.metrics) continue;
-      const m = sr.metrics;
-
-      totalTurns += m.total_turns ?? 0;
-      totalTasks += m.total_tasks ?? 0;
-      tasksCompleted += m.tasks_completed ?? 0;
-      estimatedUsd += m.estimated_usd ?? 0;
-
-      if (m.latency_avg_ms) latencies.push(m.latency_avg_ms as number);
-      if (m.time_to_first_token_avg_ms) ttfts.push(m.time_to_first_token_avg_ms as number);
+  for (const sr of scenarioRuns) {
+    // Count turns from responseChunks if turns array is empty (live run)
+    if (sr.turns.length > 0) {
+      totalTurns += sr.turns.length;
+    } else if (sr.responseChunks && sr.responseChunks.length > 0) {
+      const turnIndices = new Set(sr.responseChunks.map((c) => c.turn_index));
+      totalTurns += turnIndices.size;
     }
 
-    const successRate = totalTasks > 0 ? tasksCompleted / totalTasks : 0;
-    const avgLatency = latencies.length > 0 ? latencies.reduce((a, b) => a + b, 0) / latencies.length : 0;
-    const avgTtft = ttfts.length > 0 ? ttfts.reduce((a, b) => a + b, 0) / ttfts.length : 0;
+    // Derive live task completion from checker_decision chunks
+    const completedFromChunks = sr.responseChunks
+      ? sr.responseChunks.filter((c) => c.chunk_type === "checker_decision" && c.chunk_data.task_completed).length
+      : 0;
 
-    return { totalTurns, totalTasks, tasksCompleted, successRate, estimatedUsd, avgLatency, avgTtft };
-  }, [scenarioRuns]);
+    if (!sr.metrics) continue;
+    const m = sr.metrics;
+
+    totalTasks += m.total_tasks ?? 0;
+    tasksCompleted += Math.max(m.tasks_completed ?? 0, completedFromChunks);
+    estimatedUsd += m.estimated_usd ?? 0;
+
+    if (m.latency_avg_ms) latencies.push(m.latency_avg_ms as number);
+    if (m.time_to_first_token_avg_ms) ttfts.push(m.time_to_first_token_avg_ms as number);
+  }
+
+  const successRate = totalTasks > 0 ? tasksCompleted / totalTasks : 0;
+  const avgLatency = latencies.length > 0 ? latencies.reduce((a, b) => a + b, 0) / latencies.length : 0;
+  const avgTtft = ttfts.length > 0 ? ttfts.reduce((a, b) => a + b, 0) / ttfts.length : 0;
+
+  const aggregated = { totalTurns, totalTasks, tasksCompleted, successRate, estimatedUsd, avgLatency, avgTtft };
 
   const successColor = aggregated.successRate >= 0.9 ? "success" : aggregated.successRate >= 0.7 ? "warning" : "danger";
 
@@ -166,15 +177,13 @@ export function RunDetail() {
   const { runId } = useParams<{ runId: string }>();
   const navigate = useNavigate();
   const { client } = useRagbitsContext();
-  const simulationRuns = useEvalStore((s) => s.simulationRuns);
+  // Subscribe directly — avoid useMemo to ensure every store change triggers re-render
+  const storeRun = useEvalStore((s) => s.simulationRuns.find((r) => r.id === runId) ?? null);
 
   const [apiRun, setApiRun] = useState<SimulationRun | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedScenarioIndex, setSelectedScenarioIndex] = useState(0);
   const [fetchedBuffers, setFetchedBuffers] = useState<Set<string>>(new Set());
-
-  // Find run in store (for live runs)
-  const storeRun = simulationRuns.find((r) => r.id === runId) ?? null;
 
   // Fetch full run data from API (only once on mount)
   useEffect(() => {
@@ -198,8 +207,12 @@ export function RunDetail() {
     loadRun();
   }, [runId, client]); // Don't include simulationRuns - causes infinite loop
 
-  // Use API data if available, otherwise fall back to store (for live runs)
-  const run = apiRun ?? storeRun;
+  // Prefer store when it has real data (from SSE or initial creation with metrics)
+  // Fall back to API for historical runs loaded by RunsTab with minimal data
+  const storeHasData = storeRun?.scenarioRuns.some((sr) =>
+    sr.turns.length > 0 || (sr.responseChunks?.length ?? 0) > 0 || sr.metrics !== null
+  ) ?? false;
+  const run = storeHasData ? storeRun : (apiRun ?? storeRun);
 
   const selectedScenarioRun = run?.scenarioRuns[selectedScenarioIndex] ?? null;
 
@@ -324,7 +337,17 @@ export function RunDetail() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{sr.scenarioName}</p>
                       <div className="flex items-center gap-2 text-xs text-foreground-400">
-                        <span>{sr.turns.length} turns, {sr.tasks.length} tasks</span>
+                        <span>{sr.turns.length > 0 ? sr.turns.length : sr.responseChunks ? new Set(sr.responseChunks.map((c) => c.turn_index)).size : 0} turns</span>
+                        {sr.metrics && (() => {
+                          // Derive live task completion from checker_decision chunks or metrics
+                          const completedFromChunks = sr.responseChunks
+                            ? sr.responseChunks.filter((c) => c.chunk_type === "checker_decision" && c.chunk_data.task_completed).length
+                            : 0;
+                          const completed = Math.max(sr.metrics.tasks_completed ?? 0, completedFromChunks);
+                          const total = sr.metrics.total_tasks ?? 0;
+                          const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+                          return <span>{completed}/{total} tasks · {rate}%</span>;
+                        })()}
                         {sr.persona && (
                           <Chip size="sm" variant="flat" className="text-xs">
                             {sr.persona}
@@ -340,12 +363,6 @@ export function RunDetail() {
                       {STATUS_CONFIG[sr.status].label}
                     </Chip>
                   </div>
-                  {sr.metrics && (
-                    <div className="flex items-center gap-3 mt-2 text-xs text-foreground-500">
-                      <span>{Math.round(sr.metrics.success_rate * 100)}%</span>
-                      <span>{sr.metrics.total_tokens} tokens</span>
-                    </div>
-                  )}
                 </CardBody>
               </Card>
             ))}
@@ -381,20 +398,11 @@ function ScenarioRunPanel({ scenarioRun }: { scenarioRun: ScenarioRun }) {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold">{scenarioRun.scenarioName}</h3>
-            <div className="flex items-center gap-2 text-sm text-foreground-500">
-              <span>
-                {scenarioRun.tasks.filter((t) => t.completed).length}/
-                {scenarioRun.tasks.length} tasks completed
-              </span>
-              {scenarioRun.persona && (
-                <>
-                  <span>•</span>
-                  <Chip size="sm" variant="flat">
-                    {scenarioRun.persona}
-                  </Chip>
-                </>
-              )}
-            </div>
+            {scenarioRun.persona && (
+              <Chip size="sm" variant="flat" className="mt-1">
+                {scenarioRun.persona}
+              </Chip>
+            )}
           </div>
         </div>
         {scenarioRun.error && (
@@ -450,15 +458,15 @@ function ScenarioRunPanel({ scenarioRun }: { scenarioRun: ScenarioRun }) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-6">
+      <AutoScrollPane active={scenarioRun.status === "running" || scenarioRun.status === "queued"}>
         {viewMode === "conversation" ? (
-          <ConversationView turns={scenarioRun.turns} tasks={scenarioRun.tasks} />
+          <ConversationView scenarioRun={scenarioRun} />
         ) : viewMode === "responses" ? (
           <ResponsesView scenarioRun={scenarioRun} />
         ) : (
-          <MetricsView metrics={scenarioRun.metrics} />
+          <MetricsView scenarioRun={scenarioRun} />
         )}
-      </div>
+      </AutoScrollPane>
     </div>
   );
 }
@@ -488,17 +496,110 @@ function CheckerResultsList({ checkers }: { checkers: CheckerResultItem[] }) {
   );
 }
 
+function AutoScrollPane({ active, children }: { active: boolean; children: React.ReactNode }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const userScrolledUp = useRef(false);
+
+  useEffect(() => {
+    if (!active || userScrolledUp.current) return;
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  });
+
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    // User scrolled up if not near the bottom (within 100px)
+    userScrolledUp.current = el.scrollHeight - el.scrollTop - el.clientHeight > 100;
+  }, []);
+
+  // Reset when active changes (new run starts)
+  useEffect(() => {
+    if (active) userScrolledUp.current = false;
+  }, [active]);
+
+  return (
+    <div ref={scrollRef} onScroll={handleScroll} className="flex-1 min-h-0 overflow-y-auto p-6">
+      {children}
+    </div>
+  );
+}
+
 function ConversationView({
-  turns,
-  tasks,
+  scenarioRun,
 }: {
-  turns: ScenarioRun["turns"];
-  tasks: ScenarioRun["tasks"];
+  scenarioRun: ScenarioRun;
 }) {
+  // Build turns from committed turns + live response chunks
+  const turns = useMemo(() => {
+    // Start with committed turns (from SSE "turn" events or API)
+    if (scenarioRun.turns.length > 0) {
+      return scenarioRun.turns;
+    }
+
+    // Fall back: reconstruct turns from response chunks (for live updates)
+    const chunks = scenarioRun.responseChunks ?? [];
+    if (chunks.length === 0) return [];
+
+    const turnMap = new Map<number, {
+      taskIndex: number; userMessage: string; textParts: string[]; toolNames: string[];
+      checkerDone: boolean; checkerReason: string;
+      checkers: CheckerResultItem[]; checkerMode: string;
+    }>();
+
+    for (const chunk of chunks) {
+      if (!turnMap.has(chunk.turn_index)) {
+        turnMap.set(chunk.turn_index, {
+          taskIndex: chunk.task_index, userMessage: "", textParts: [], toolNames: [],
+          checkerDone: false, checkerReason: "", checkers: [], checkerMode: "all",
+        });
+      }
+      const t = turnMap.get(chunk.turn_index)!;
+      t.taskIndex = chunk.task_index;
+
+      if (chunk.chunk_type === "user_message" && chunk.chunk_data.text) {
+        t.userMessage = chunk.chunk_data.text as string;
+      } else if (chunk.chunk_type === "text" && chunk.chunk_data.text) {
+        t.textParts.push(chunk.chunk_data.text as string);
+      } else if (chunk.chunk_type === "tool_call" && chunk.chunk_data.name) {
+        t.toolNames.push(chunk.chunk_data.name as string);
+      } else if (chunk.chunk_type === "checker_decision") {
+        t.checkerDone = (chunk.chunk_data.task_completed as boolean) ?? false;
+        t.checkerReason = (chunk.chunk_data.reason as string) ?? "";
+        t.checkers = ((chunk.chunk_data.checkers as any[]) ?? []).map((c) => ({
+          type: c.type ?? "unknown",
+          completed: c.completed ?? false,
+          reason: c.reason ?? "",
+        }));
+        t.checkerMode = (chunk.chunk_data.checker_mode as string) ?? "all";
+      }
+    }
+
+    return Array.from(turnMap.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([turnIndex, data]) => ({
+        turn_index: turnIndex,
+        task_index: data.taskIndex,
+        user_message: data.userMessage,
+        assistant_message: data.textParts.join(""),
+        tool_calls: data.toolNames.map((name) => ({ name, arguments: {}, result: null })),
+        task_completed: data.checkerDone,
+        task_completed_reason: data.checkerReason,
+        token_usage: null,
+        latency_ms: null,
+        checkers: data.checkers,
+        checker_mode: data.checkerMode,
+      }));
+  }, [scenarioRun.turns, scenarioRun.responseChunks]);
+
+  const tasks = scenarioRun.tasks;
+
   if (turns.length === 0) {
     return (
       <div className="flex h-full items-center justify-center text-foreground-500">
-        No conversation data
+        {scenarioRun.status === "running" || scenarioRun.status === "queued"
+          ? "Waiting for first response..."
+          : "No conversation data"}
       </div>
     );
   }
@@ -1052,8 +1153,11 @@ function OtherMetricsCard({ metrics }: { metrics: Record<string, unknown> }) {
   );
 }
 
-function MetricsView({ metrics }: { metrics: ConversationMetrics | null }) {
-  if (!metrics) {
+function MetricsView({ scenarioRun }: { scenarioRun: ScenarioRun }) {
+  const chunks = scenarioRun.responseChunks ?? [];
+  const metrics = scenarioRun.metrics;
+
+  if (!metrics && chunks.length === 0) {
     return (
       <div className="flex h-64 flex-col items-center justify-center text-center">
         <Icon icon="heroicons:chart-bar" className="text-5xl text-foreground-300 mb-4" />
@@ -1065,7 +1169,48 @@ function MetricsView({ metrics }: { metrics: ConversationMetrics | null }) {
     );
   }
 
-  const m = metrics as Record<string, unknown>;
+  // Build enriched metrics from stored metrics + live chunk data
+  const m: Record<string, unknown> = metrics ? { ...metrics } : {};
+
+  // Derive live values from response chunks
+  if (chunks.length > 0) {
+    const turnIndices = new Set(chunks.map((c) => c.turn_index));
+    const completedFromChunks = chunks.filter(
+      (c) => c.chunk_type === "checker_decision" && c.chunk_data.task_completed
+    ).length;
+
+    if (turnIndices.size > (m.total_turns as number ?? 0)) {
+      m.total_turns = turnIndices.size;
+    }
+    if (completedFromChunks > (m.tasks_completed as number ?? 0)) {
+      m.tasks_completed = completedFromChunks;
+      const total = m.total_tasks as number ?? 0;
+      m.success_rate = total > 0 ? completedFromChunks / total : 0;
+    }
+
+    // Accumulate tokens from usage chunks if not already set from collectors
+    if (!(m.tokens_total as number)) {
+      let totalTokens = 0;
+      let promptTokens = 0;
+      let completionTokens = 0;
+      let cost = 0;
+      for (const c of chunks) {
+        if (c.chunk_type === "usage") {
+          const u = c.chunk_data as Record<string, number>;
+          totalTokens += u.total_tokens ?? 0;
+          promptTokens += u.prompt_tokens ?? 0;
+          completionTokens += u.completion_tokens ?? 0;
+          cost += u.estimated_cost ?? 0;
+        }
+      }
+      if (totalTokens > 0) {
+        m.tokens_total = totalTokens;
+        m.tokens_prompt = promptTokens;
+        m.tokens_completion = completionTokens;
+        m.estimated_usd = cost;
+      }
+    }
+  }
 
   // Group metrics
   const coreMetrics: Record<string, unknown> = {};
@@ -1076,13 +1221,15 @@ function MetricsView({ metrics }: { metrics: ConversationMetrics | null }) {
   const otherMetrics: Record<string, unknown> = {};
 
   const coreKeys = ["total_turns", "total_tasks", "tasks_completed", "success_rate", "estimated_usd"];
+  const tokenKeys = ["tokens_total", "tokens_prompt", "tokens_completion", "tokens_avg_per_turn",
+    "tokens_per_turn", "total_tokens", "prompt_tokens", "completion_tokens"];
 
   for (const [key, value] of Object.entries(m)) {
     if (coreKeys.includes(key)) {
       coreMetrics[key] = value;
     } else if (key.startsWith("latency") || key.startsWith("time_to_first")) {
       latencyMetrics[key] = value;
-    } else if (key.startsWith("tokens") || key === "prompt_tokens" || key === "completion_tokens" || key === "total_tokens") {
+    } else if (tokenKeys.includes(key) || key.startsWith("tokens")) {
       tokenMetrics[key] = value;
     } else if (key.startsWith("tools")) {
       toolMetrics[key] = value;

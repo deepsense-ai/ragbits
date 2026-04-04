@@ -70,12 +70,10 @@ class FileEvalReportStore(EvalReportStore):
         Returns:
             Result ID (filename without extension).
         """
-        # Add buffered chunks to the result (skip text chunks)
+        # Add buffered chunks to the result (including text for conversation reconstruction)
         if buffered_chunks:
             chunk_index = len(result.response_chunks)
             for chunk in buffered_chunks:
-                if chunk.chunk_type == "text":
-                    continue
                 result.response_chunks.append(
                     ResponseChunk(
                         turn_index=chunk.turn_index,
