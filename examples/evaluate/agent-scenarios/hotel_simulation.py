@@ -20,9 +20,6 @@ from fixtures.hotel.hotel_chat import HotelChat
 from ragbits.evaluate.agent_simulation import (
     DataSnapshot,
     DomainContext,
-    LatencyMetricCollector,
-    TokenUsageMetricCollector,
-    ToolUsageMetricCollector,
     load_personalities,
     load_scenarios,
     run_simulation,
@@ -145,7 +142,7 @@ def main() -> None:
         user_message_prefix=message_prefix,
         domain_context=domain_context,
         data_snapshot=data_snapshot,
-        metrics=[LatencyMetricCollector, TokenUsageMetricCollector, ToolUsageMetricCollector],
+        # Builtins (Latency, TokenUsage, ToolUsage) are included by default
     )
 
     hotel_chat = HotelChat(args.agent_model_name or config.llm_model, config.openai_api_key)

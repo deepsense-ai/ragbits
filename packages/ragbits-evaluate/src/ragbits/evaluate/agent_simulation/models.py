@@ -8,7 +8,18 @@ from typing import TYPE_CHECKING, Any, Literal
 from pydantic import BaseModel, Field, create_model
 
 from ragbits.evaluate.agent_simulation.context import DataSnapshot, DomainContext
+from ragbits.evaluate.agent_simulation.metrics.builtin import (
+    LatencyMetricCollector,
+    TokenUsageMetricCollector,
+    ToolUsageMetricCollector,
+)
 from ragbits.evaluate.agent_simulation.metrics.collectors import MetricCollector
+
+BUILTIN_METRIC_COLLECTORS: list[type[MetricCollector]] = [
+    LatencyMetricCollector,
+    TokenUsageMetricCollector,
+    ToolUsageMetricCollector,
+]
 
 if TYPE_CHECKING:
     from rich.console import Console
@@ -195,12 +206,13 @@ class SimulationConfig(BaseModel):
         default=None,
         description="Optional data snapshot to ground simulated user requests to available data.",
     )
-    metrics: list[type[MetricCollector] | Callable[[], MetricCollector]] | None = Field(
-        default=None,
+    metrics: list[type[MetricCollector] | Callable[[], MetricCollector]] = Field(
+        default_factory=lambda: list(BUILTIN_METRIC_COLLECTORS),
         description=(
-            "Optional list of metric collector factories. Each item can be either a class "
-            "(e.g., LatencyMetricCollector) or a callable that returns a collector instance "
-            "(e.g., lambda: CustomCollector(arg=value)). Fresh instances are created for each run."
+            "List of metric collector factories. Builtins (Latency, TokenUsage, ToolUsage) are "
+            "included by default. Each item can be either a class (e.g., LatencyMetricCollector) "
+            "or a callable that returns a collector instance (e.g., lambda: CustomCollector(arg=value)). "
+            "Fresh instances are created for each run, deduplicated by type."
         ),
     )
 
@@ -208,10 +220,18 @@ class SimulationConfig(BaseModel):
         """Create fresh metric collector instances for a simulation run.
 
         Each call creates new instances to ensure concurrent runs don't share state.
+        Deduplicates by type so builtins aren't doubled if also specified by the user.
 
         Returns:
             List of freshly instantiated metric collectors.
         """
         if not self.metrics:
             return []
-        return [factory() for factory in self.metrics]
+        seen_types: set[type] = set()
+        collectors: list[MetricCollector] = []
+        for factory in self.metrics:
+            instance = factory()
+            if type(instance) not in seen_types:
+                seen_types.add(type(instance))
+                collectors.append(instance)
+        return collectors

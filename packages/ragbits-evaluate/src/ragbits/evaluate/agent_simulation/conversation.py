@@ -19,11 +19,6 @@ from ragbits.chat.interface.types import (
 from ragbits.core.llms import Usage
 from ragbits.evaluate.agent_simulation.checkers import CheckerContext, CheckerResult, run_checkers
 from ragbits.evaluate.agent_simulation.logger import ConversationLogger
-from ragbits.evaluate.agent_simulation.metrics.builtin import (
-    LatencyMetricCollector,
-    TokenUsageMetricCollector,
-    ToolUsageMetricCollector,
-)
 from ragbits.evaluate.agent_simulation.metrics.collectors import CompositeMetricCollector
 from ragbits.evaluate.agent_simulation.models import Personality, Scenario, SimulationConfig, Task, Turn
 from ragbits.evaluate.agent_simulation.results import (
@@ -479,14 +474,8 @@ def _create_simulation_context(
     """Create the simulation context with all dependencies."""
     out = output_stream if output_stream is not None else sys.stdout
 
-    # Create metric collectors
-    builtin_collectors = [
-        LatencyMetricCollector(),
-        TokenUsageMetricCollector(),
-        ToolUsageMetricCollector(),
-    ]
-    user_collectors = config.create_metric_collectors()
-    collectors = CompositeMetricCollector(builtin_collectors + user_collectors)
+    # Create metric collectors (builtins are included by default in config.metrics)
+    collectors = CompositeMetricCollector(config.create_metric_collectors())
 
     # Simulated user
     sim_user = SimulatedUser(
