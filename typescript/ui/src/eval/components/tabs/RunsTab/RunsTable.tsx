@@ -134,24 +134,41 @@ export function RunsTable({ runs, groupScenarios, onViewDetails, onRerun }: Runs
                     {statusConfig.label}
                   </Chip>
                   <div className="flex items-center gap-4 text-sm text-foreground-500">
-                    <span title="Success rate">
-                      {Math.round(run.overallSuccessRate * 100)}%
-                    </span>
-                    <span
-                      title="Scenarios"
-                      className="flex items-center gap-1"
-                    >
-                      <Icon icon="heroicons:check-circle" className="text-xs text-success" />
-                      {run.completedScenarios}/{run.totalScenarios}
-                    </span>
-                    <span title="Tokens" className="flex items-center gap-1">
-                      <Icon icon="heroicons:cpu-chip" className="text-xs" />
-                      {formatTokens(run.totalTokens)}
-                    </span>
-                    <span title="Cost" className="flex items-center gap-1">
-                      <Icon icon="heroicons:currency-dollar" className="text-xs" />
-                      {formatCost(run.totalCostUsd)}
-                    </span>
+                    {(() => {
+                      // Compute success rate from scenario run metrics (same as RunDetail header)
+                      let totalTasks = 0;
+                      let tasksCompleted = 0;
+                      let totalCost = 0;
+                      for (const sr of run.scenarioRuns) {
+                        if (!sr.metrics) continue;
+                        totalTasks += (sr.metrics as Record<string, unknown>).total_tasks as number ?? 0;
+                        tasksCompleted += (sr.metrics as Record<string, unknown>).tasks_completed as number ?? 0;
+                        const m = sr.metrics as Record<string, unknown>;
+                        totalCost += ((m.estimated_usd as number) ?? (m.total_cost_usd as number) ?? 0);
+                      }
+                      const rate = totalTasks > 0 ? Math.round((tasksCompleted / totalTasks) * 100) : 0;
+                      return (
+                        <>
+                          <span title="Task success rate">{rate}%</span>
+                          <span title="Completed scenarios" className="flex items-center gap-1">
+                            <Icon icon="heroicons:check-circle" className="text-xs text-success" />
+                            {run.completedScenarios}/{run.totalScenarios}
+                          </span>
+                          {run.totalTokens > 0 && (
+                            <span title="Total tokens" className="flex items-center gap-1">
+                              <Icon icon="heroicons:cpu-chip" className="text-xs" />
+                              {formatTokens(run.totalTokens)}
+                            </span>
+                          )}
+                          {(totalCost > 0 || run.totalCostUsd > 0) && (
+                            <span title="Estimated cost" className="flex items-center gap-1">
+                              <Icon icon="heroicons:currency-dollar" className="text-xs" />
+                              {formatCost(totalCost > 0 ? totalCost : run.totalCostUsd)}
+                            </span>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </TableCell>

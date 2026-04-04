@@ -9,6 +9,8 @@ from ragbits.evaluate.agent_simulation.metrics.collectors import MetricCollector
 if TYPE_CHECKING:
     from ragbits.evaluate.agent_simulation.results import TurnResult
 
+METRIC_SOURCE = "DeepEval"
+
 
 class DeepEvalCompletenessMetricCollector(MetricCollector):
     """Tracks conversation completeness using DeepEval's ConversationCompletenessMetric.

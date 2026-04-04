@@ -57,6 +57,7 @@ export interface EvalConfig {
   available_scenarios: ScenarioSummary[];
   scenario_files: ScenarioFileSummary[];
   scenarios_dir: string;
+  available_extra_metrics?: { id: string; label: string; source: string; name: string }[];
 }
 
 export interface SimulationConfig {

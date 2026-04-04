@@ -173,8 +173,8 @@ class FileEvalReportStore(EvalReportStore):
                         total_tasks=metrics.get("total_tasks", 0),
                         success_rate=metrics.get("success_rate", 0.0),
                         total_turns=metrics.get("total_turns", 0),
-                        total_tokens=metrics.get("total_tokens", 0),
-                        total_cost_usd=metrics.get("total_cost_usd", 0.0),
+                        total_tokens=metrics.get("tokens_total", metrics.get("total_tokens", 0)),
+                        total_cost_usd=metrics.get("estimated_usd", metrics.get("total_cost_usd", 0.0)),
                     )
                 )
             except (json.JSONDecodeError, KeyError, ValueError) as e:
@@ -230,8 +230,8 @@ class FileEvalReportStore(EvalReportStore):
                 elif status in (SimulationStatus.FAILED, SimulationStatus.TIMEOUT):
                     failed += 1
 
-                tokens = metrics.get("total_tokens", 0)
-                cost = metrics.get("total_cost_usd", 0.0)
+                tokens = metrics.get("tokens_total", metrics.get("total_tokens", 0))
+                cost = metrics.get("estimated_usd", metrics.get("total_cost_usd", 0.0))
                 total_tokens += tokens
                 total_cost += cost
 
@@ -343,8 +343,8 @@ class FileEvalReportStore(EvalReportStore):
             elif status in (SimulationStatus.FAILED, SimulationStatus.TIMEOUT):
                 failed += 1
 
-            tokens = metrics.get("total_tokens", 0)
-            cost = metrics.get("total_cost_usd", 0.0)
+            tokens = metrics.get("tokens_total", metrics.get("total_tokens", 0))
+            cost = metrics.get("estimated_usd", metrics.get("total_cost_usd", 0.0))
             total_tokens += tokens
             total_cost += cost
 

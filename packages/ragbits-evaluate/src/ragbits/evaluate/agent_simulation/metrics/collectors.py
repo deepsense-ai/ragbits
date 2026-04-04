@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any
 
@@ -18,20 +19,61 @@ class MetricCollector(ABC):
     be passed to run_simulation(). Collectors receive callbacks at various
     points during the simulation lifecycle.
 
-    Example:
-        >>> class CustomCollector:
-        ...     def on_turn_start(self, turn_index: int, task_index: int, user_message: str) -> None:
-        ...         print(f"Turn {turn_index} starting")
-        ...
-        ...     def on_turn_end(self, turn_result: TurnResult) -> None:
-        ...         print(f"Turn completed: {turn_result.task_completed}")
-        ...
-        ...     def on_conversation_end(self, all_turns: list[TurnResult]) -> dict[str, Any]:
-        ...         return {"total_turns_tracked": len(all_turns)}
-        ...
-        ...     def reset(self) -> None:
-        ...         pass
+    Naming convention for class names: ``<Source><Name>MetricCollector``.
+    The ``get_display_info()`` classmethod auto-derives display names by stripping
+    the ``MetricCollector`` suffix and splitting CamelCase. If the module defines
+    a ``METRIC_SOURCE`` constant, it's automatically picked up as the source label
+    (shown as a badge in the UI) and stripped from the display name.
+
+    To add metrics from a new library, create a module and define ``METRIC_SOURCE``::
+
+        # metrics/ragas.py
+        METRIC_SOURCE = "Ragas"
+
+
+        class RagasAnswerRelevancyMetricCollector(MetricCollector):
+            # source is auto-set to "Ragas", display name becomes "Answer Relevancy"
+            ...
+
+    Examples:
+        - ``DeepEvalCompletenessMetricCollector`` (METRIC_SOURCE="DeepEval") → source="DeepEval", name="Completeness"
+        - ``CustomLatencyMetricCollector`` (no METRIC_SOURCE) → source="", name="Custom Latency"
+        - ``AccuracyMetricCollector`` (no METRIC_SOURCE) → source="", name="Accuracy"
     """
+
+    source: str = ""
+
+    def __init_subclass__(cls, **kwargs: object) -> None:
+        super().__init_subclass__(**kwargs)
+        # Auto-set source from module-level METRIC_SOURCE if not explicitly set on this class
+        if "source" not in cls.__dict__:
+            import sys
+
+            module = sys.modules.get(cls.__module__)
+            if module and hasattr(module, "METRIC_SOURCE"):
+                cls.source = module.METRIC_SOURCE
+
+    @classmethod
+    def get_display_info(cls) -> dict[str, str]:
+        """Return display metadata for the UI, derived from the class name.
+
+        The name is auto-derived by stripping ``MetricCollector`` suffix and splitting
+        CamelCase. If ``source`` is set, it's stripped from the start of the display name.
+
+        Returns:
+            Dict with 'id', 'label', 'source', and 'name' keys.
+        """
+        cls_name = cls.__name__
+        # Strip suffix and source prefix, then split CamelCase
+        display = cls_name.replace("MetricCollector", "").replace("Metric", "")
+        source = cls.source
+        if source and display.startswith(source):
+            display = display[len(source) :]
+        words = re.findall(r"[A-Z][a-z]+|[A-Z]+(?=[A-Z][a-z])|[A-Z]+$", display)
+        name = " ".join(words) if words else display
+
+        label = f"{source} {name}".strip() if source else name
+        return {"id": cls_name, "label": label, "source": source, "name": name}
 
     def on_turn_start(self, turn_index: int, task_index: int, user_message: str) -> None:  # noqa: PLR6301
         """Called before agent processes a turn.

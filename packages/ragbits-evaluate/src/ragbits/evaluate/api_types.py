@@ -71,6 +71,7 @@ class RunEvaluationRequest(BaseModel):
     scenario_names: list[str] = Field(..., min_length=1)
     personas: list[str] | None = Field(default=None, description="Personas for matrix runs")
     config: RunEvaluationConfig = Field(default_factory=RunEvaluationConfig)
+    extra_metrics: list[str] | None = Field(default=None, description="Extra metric collector names to enable")
 
 
 class RunStartResponse(BaseModel):

@@ -477,13 +477,14 @@ class TestSimulationConfigMetricsValidation:
         assert isinstance(collectors[0], LatencyMetricCollector)
 
     @staticmethod
-    def test_metrics_none_is_valid() -> None:
-        """Test that None metrics is valid."""
-        from ragbits.evaluate.agent_simulation.models import SimulationConfig
+    def test_metrics_default_includes_builtins() -> None:
+        """Test that default metrics include builtin collectors."""
+        from ragbits.evaluate.agent_simulation.models import BUILTIN_METRIC_COLLECTORS, SimulationConfig
 
-        config = SimulationConfig(metrics=None)
-        assert config.metrics is None
-        assert config.create_metric_collectors() == []
+        config = SimulationConfig()
+        assert len(config.metrics) == len(BUILTIN_METRIC_COLLECTORS)
+        collectors = config.create_metric_collectors()
+        assert len(collectors) == len(BUILTIN_METRIC_COLLECTORS)
 
     @staticmethod
     def test_metrics_empty_list_is_valid() -> None:

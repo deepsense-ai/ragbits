@@ -228,8 +228,8 @@ class KVEvalReportStore(EvalReportStore):
         run["failed_scenarios"] = sum(1 for r in run["results"] if r["status"] in ("failed", "timeout"))
 
         metrics = result_data.get("metrics") or {}
-        run["total_tokens"] += metrics.get("total_tokens", 0)
-        run["total_cost_usd"] += metrics.get("total_cost_usd", 0.0)
+        run["total_tokens"] += metrics.get("tokens_total", metrics.get("total_tokens", 0))
+        run["total_cost_usd"] += metrics.get("estimated_usd", metrics.get("total_cost_usd", 0.0))
 
         # Update run status
         if run["completed_scenarios"] == run["total_scenarios"]:
@@ -365,8 +365,8 @@ class KVEvalReportStore(EvalReportStore):
                     total_tasks=metrics.get("total_tasks", 0),
                     success_rate=metrics.get("success_rate", 0.0),
                     total_turns=metrics.get("total_turns", 0),
-                    total_tokens=metrics.get("total_tokens", 0),
-                    total_cost_usd=metrics.get("total_cost_usd", 0.0),
+                    total_tokens=metrics.get("tokens_total", metrics.get("total_tokens", 0)),
+                    total_cost_usd=metrics.get("estimated_usd", metrics.get("total_cost_usd", 0.0)),
                 )
             )
 
@@ -405,13 +405,13 @@ class KVEvalReportStore(EvalReportStore):
                     total_tasks=metrics.get("total_tasks", 0),
                     tasks_completed=metrics.get("tasks_completed", 0),
                     success_rate=metrics.get("success_rate", 0.0),
-                    total_tokens=metrics.get("total_tokens", 0),
-                    total_cost_usd=metrics.get("total_cost_usd", 0.0),
+                    total_tokens=metrics.get("tokens_total", metrics.get("total_tokens", 0)),
+                    total_cost_usd=metrics.get("estimated_usd", metrics.get("total_cost_usd", 0.0)),
                     error=None,
                 )
             )
 
-        success_rates = [sr.success_rate for sr in scenario_runs if sr.success_rate > 0]
+        success_rates = [sr.success_rate for sr in scenario_runs]
         overall_success_rate = sum(success_rates) / len(success_rates) if success_rates else 0.0
 
         return SimulationRunSummary(
