@@ -14,6 +14,8 @@
 
 - Feat: add support for response adapters from `ragbits.chat.adapters` in agent simulation, enabling production chat interfaces to be used directly without wrapper classes
 
+- Feat: add SOCRATES multi-hop reasoning benchmark for agent evaluation with dataloader, metrics, and evaluation pipeline
+
 ## 1.6.2 (2026-03-26)
 
 - ragbits-document-search updated to version v1.6.2
