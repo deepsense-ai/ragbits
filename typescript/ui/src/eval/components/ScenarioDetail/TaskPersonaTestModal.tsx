@@ -14,7 +14,6 @@ import {
 import { Icon } from "@iconify/react";
 import { useRagbitsContext } from "@ragbits/api-client-react";
 import { useEvalStore } from "../../stores/EvalStoreContext";
-import { isPersonaScenario } from "../../stores/evalStore";
 import type { TaskDetail } from "../../types";
 
 interface TaskPersonaTestModalProps {
@@ -39,7 +38,7 @@ export function TaskPersonaTestModal({
   scenarioName,
 }: TaskPersonaTestModalProps) {
   const { client } = useRagbitsContext();
-  const config = useEvalStore((s) => s.config);
+  const storePersonas = useEvalStore((s) => s.personas);
   const simulationConfig = useEvalStore((s) => s.simulationConfig);
 
   const [selectedPersona, setSelectedPersona] = useState<string | null>(
@@ -49,13 +48,9 @@ export function TaskPersonaTestModal({
   const [response, setResponse] = useState<PersonaResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Get available personas
   const personas = useMemo(() => {
-    if (!config) return [];
-    return config.available_scenarios
-      .filter((s) => isPersonaScenario(s.num_tasks))
-      .map((s) => s.name);
-  }, [config]);
+    return storePersonas.map((p) => p.name);
+  }, [storePersonas]);
 
   const handleTest = useCallback(async () => {
     if (!task) return;

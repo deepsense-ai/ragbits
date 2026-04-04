@@ -2,6 +2,7 @@ import { immer } from "zustand/middleware/immer";
 import { createStore } from "zustand";
 import type {
   EvalConfig,
+  Persona,
   Scenario,
   ScenarioExecution,
   ScenarioRun,
@@ -16,17 +17,14 @@ import type {
   ResponseChunk,
 } from "../types";
 
-// Helper to check if a scenario is a persona (not runnable directly)
-// Personas have 0 tasks, scenarios have 1 or more tasks
-export const isPersonaScenario = (numTasks: number): boolean => {
-  return numTasks === 0;
-};
-
 export interface EvalStore {
   // Configuration
   config: EvalConfig | null;
   isConfigLoading: boolean;
   configError: string | null;
+
+  // Personas (loaded from API)
+  personas: Persona[];
 
   // Scenarios
   scenarios: Record<string, Scenario>;
@@ -58,6 +56,7 @@ export interface EvalStore {
     setConfig: (config: EvalConfig) => void;
     setConfigLoading: (loading: boolean) => void;
     setConfigError: (error: string | null) => void;
+    setPersonas: (personas: Persona[]) => void;
 
     // Scenarios
     setScenario: (name: string, scenario: Scenario) => void;
@@ -135,6 +134,7 @@ export const createEvalStore = () =>
       config: null,
       isConfigLoading: false,
       configError: null,
+      personas: [],
       scenarios: {},
       selectedScenarioName: null,
       selectedForRun: [],
@@ -169,6 +169,12 @@ export const createEvalStore = () =>
           set((state) => {
             state.configError = error;
             state.isConfigLoading = false;
+          });
+        },
+
+        setPersonas: (personas) => {
+          set((state) => {
+            state.personas = personas;
           });
         },
 
@@ -207,10 +213,7 @@ export const createEvalStore = () =>
         selectAllScenariosForRun: () => {
           set((state) => {
             if (!state.config) return;
-            // Select all non-persona scenarios
-            state.selectedForRun = state.config.available_scenarios
-              .filter((s) => !isPersonaScenario(s.num_tasks))
-              .map((s) => s.name);
+            state.selectedForRun = state.config.available_scenarios.map((s) => s.name);
           });
         },
 

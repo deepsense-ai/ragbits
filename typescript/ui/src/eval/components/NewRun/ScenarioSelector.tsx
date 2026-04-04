@@ -2,7 +2,6 @@ import { useMemo, useCallback } from "react";
 import { Checkbox, Spinner, Chip } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useEvalStore, useEvalStoreApi } from "../../stores/EvalStoreContext";
-import { isPersonaScenario } from "../../stores/evalStore";
 import type { ScenarioSummary } from "../../types";
 
 interface ScenarioGroup {
@@ -20,9 +19,7 @@ export function ScenarioSelector() {
   const { runnableScenarios, groupedScenarios } = useMemo(() => {
     if (!config) return { runnableScenarios: [], groupedScenarios: [] };
 
-    const runnable = config.available_scenarios.filter(
-      (s) => !isPersonaScenario(s.num_tasks)
-    );
+    const runnable = config.available_scenarios;
 
     // Group scenarios by their group field
     const groupMap = new Map<string | null, ScenarioSummary[]>();

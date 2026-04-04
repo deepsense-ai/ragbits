@@ -3,8 +3,8 @@ import { Tabs, Tab } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
 const TABS = [
-  { key: "runs", label: "Runs", icon: "heroicons:play-circle", path: "/runs" },
   { key: "new", label: "New Run", icon: "heroicons:plus-circle", path: "/new" },
+  { key: "runs", label: "Runs", icon: "heroicons:play-circle", path: "/runs" },
   {
     key: "scenarios",
     label: "Scenarios",

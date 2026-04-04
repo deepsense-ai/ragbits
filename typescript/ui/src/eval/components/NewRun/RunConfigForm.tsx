@@ -1,21 +1,16 @@
 import { useMemo, useCallback } from "react";
 import { Input, Card, CardBody, Checkbox } from "@heroui/react";
 import { useEvalStore, useEvalStoreApi } from "../../stores/EvalStoreContext";
-import { isPersonaScenario } from "../../stores/evalStore";
 
 export function RunConfigForm() {
   const storeApi = useEvalStoreApi();
-  const config = useEvalStore((s) => s.config);
+  const storePersonas = useEvalStore((s) => s.personas);
   const simulationConfig = useEvalStore((s) => s.simulationConfig);
   const selectedPersonas = useEvalStore((s) => s.selectedPersonas);
 
-  // Get available persona scenarios
   const personas = useMemo(() => {
-    if (!config) return [];
-    return config.available_scenarios
-      .filter((s) => isPersonaScenario(s.num_tasks))
-      .map((s) => s.name);
-  }, [config]);
+    return storePersonas.map((p) => p.name);
+  }, [storePersonas]);
 
   const handleConfigChange = useCallback(
     (key: string, value: string | number | null) => {

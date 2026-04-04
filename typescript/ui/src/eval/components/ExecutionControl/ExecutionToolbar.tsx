@@ -3,7 +3,7 @@ import { Button, Progress, Chip } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRagbitsContext } from "@ragbits/api-client-react";
 import { useEvalStore, useEvalStoreApi } from "../../stores/EvalStoreContext";
-import { selectProgress, isPersonaScenario } from "../../stores/evalStore";
+import { selectProgress } from "../../stores/evalStore";
 import { SimulationSettingsPopover } from "./SimulationSettingsPopover";
 import type { ProgressUpdate } from "../../types";
 
@@ -16,12 +16,9 @@ export function ExecutionToolbar() {
   const selectedForRun = useEvalStore((s) => s.selectedForRun);
   const progress = useMemo(() => selectProgress({ executions } as any), [executions]);
 
-  // Get runnable scenarios (non-personas)
   const runnableScenarios = useMemo(() => {
     if (!config) return [];
-    return config.available_scenarios
-      .filter((s) => !isPersonaScenario(s.num_tasks))
-      .map((s) => s.name);
+    return config.available_scenarios.map((s) => s.name);
   }, [config]);
 
   const runScenarios = useCallback(async (scenarioNames: string[]) => {

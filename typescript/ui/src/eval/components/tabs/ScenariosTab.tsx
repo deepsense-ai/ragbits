@@ -3,7 +3,6 @@ import { Card, CardBody, Chip, Spinner } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRagbitsContext } from "@ragbits/api-client-react";
 import { useEvalStore, useEvalStoreApi } from "../../stores/EvalStoreContext";
-import { isPersonaScenario } from "../../stores/evalStore";
 import type { Scenario, ScenarioSummary } from "../../types";
 
 interface ScenarioGroup {
@@ -24,9 +23,7 @@ export function ScenariosTab() {
   const { groupedScenarios, allScenarioNames } = useMemo(() => {
     if (!config) return { groupedScenarios: [], allScenarioNames: [] };
 
-    const runnable = config.available_scenarios.filter(
-      (s) => !isPersonaScenario(s.num_tasks)
-    );
+    const runnable = config.available_scenarios;
 
     // Group by group field
     const groupMap = new Map<string | null, ScenarioSummary[]>();
@@ -223,18 +220,58 @@ function ScenarioDetail({
                   </span>
                 </div>
                 <div className="flex-1">
-                  <p className="text-foreground mb-2">{task.task}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {task.checkers.map((checker, ci) => (
-                      <Chip key={ci} size="sm" variant="flat">
-                        {checker.type}
-                      </Chip>
-                    ))}
-                    {task.checker_mode && task.checker_mode !== "all" && (
-                      <Chip size="sm" variant="bordered" color="warning">
-                        mode: {task.checker_mode}
-                      </Chip>
+                  <p className="text-foreground mb-3">{task.task}</p>
+
+                  {/* Checker details - compact two-row layout */}
+                  <div className="rounded-lg bg-content2 px-3 py-2.5 space-y-2">
+                    {/* Expected result row */}
+                    {task.checkers.some((c) => c.type === "llm" && c.expected_result) && (
+                      <div className="flex items-baseline gap-2">
+                        <Icon icon="heroicons:chat-bubble-left-ellipsis" className="text-secondary text-sm flex-shrink-0 mt-0.5" />
+                        <p className="text-sm">
+                          <span className="text-foreground-400 font-medium">Expected </span>
+                          <span className="text-foreground-600 italic">
+                            {String(task.checkers.find((c) => c.type === "llm")?.expected_result)}
+                          </span>
+                        </p>
+                      </div>
                     )}
+
+                    {/* Tools row */}
+                    {task.checkers.some((c) => c.type === "tool_call" && c.tools) && (() => {
+                      const toolChecker = task.checkers.find((c) => c.type === "tool_call");
+                      const tools = (toolChecker?.tools as (string | { name: string })[]) ?? [];
+                      return (
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Icon icon="heroicons:wrench-screwdriver" className="text-warning text-sm flex-shrink-0" />
+                          <span className="text-sm text-foreground-400 font-medium">Tools</span>
+                          {tools.map((tool, j) => (
+                            <Chip key={j} size="sm" variant="flat" color="warning">
+                              {typeof tool === "string" ? tool : tool.name}
+                            </Chip>
+                          ))}
+                          {toolChecker?.mode && toolChecker.mode !== "all" && (
+                            <Chip size="sm" variant="flat">
+                              match: {String(toolChecker.mode)}
+                            </Chip>
+                          )}
+                        </div>
+                      );
+                    })()}
+
+                    {/* State checks row */}
+                    {task.checkers.some((c) => c.type === "state" && c.checks) && (
+                      <div className="flex items-baseline gap-2">
+                        <Icon icon="heroicons:variable" className="text-primary text-sm flex-shrink-0 mt-0.5" />
+                        <p className="text-sm">
+                          <span className="text-foreground-400 font-medium">State </span>
+                          <span className="text-foreground-600 italic">
+                            {JSON.stringify(task.checkers.find((c) => c.type === "state")?.checks)}
+                          </span>
+                        </p>
+                      </div>
+                    )}
+
                   </div>
                 </div>
               </div>
