@@ -80,8 +80,10 @@ export function NewRunTab() {
         : [null];
 
       // Create initial SimulationRun entry with scenario × persona matrix
+      const loadedScenarios = storeApi.getState().scenarios;
       const scenarioRuns = [];
       for (const scenarioName of currentSelectedForRun) {
+        const taskCount = loadedScenarios[scenarioName]?.tasks.length ?? 0;
         for (const persona of personasForMatrix) {
           scenarioRuns.push({
             id: `${runId}_${scenarioName}${persona ? `:${persona}` : ""}`,
@@ -92,7 +94,16 @@ export function NewRunTab() {
             endTime: null,
             turns: [],
             tasks: [],
-            metrics: null,
+            metrics: {
+              total_turns: 0,
+              total_tasks: taskCount,
+              tasks_completed: 0,
+              success_rate: 0,
+              total_tokens: 0,
+              prompt_tokens: 0,
+              completion_tokens: 0,
+              estimated_usd: 0,
+            },
             error: null,
           });
         }
@@ -154,6 +165,18 @@ export function NewRunTab() {
                 scenarioRun.id = update.scenario_run_id;
               }
 
+              // Helper to update metrics incrementally
+              const metrics = scenarioRun.metrics ?? {
+                total_turns: 0,
+                total_tasks: 0,
+                tasks_completed: 0,
+                success_rate: 0,
+                total_tokens: 0,
+                prompt_tokens: 0,
+                completion_tokens: 0,
+                estimated_usd: 0,
+              };
+
               if (update.type === "status") {
                 scenarioRun.status = update.status;
               } else if (update.type === "turn") {
@@ -174,6 +197,16 @@ export function NewRunTab() {
                     checker_mode: update.checker_mode,
                   },
                 ];
+                // Update turn count live
+                metrics.total_turns = scenarioRun.turns.length;
+                scenarioRun.metrics = { ...metrics };
+              } else if (update.type === "task_complete") {
+                // Update tasks completed live
+                metrics.tasks_completed = (metrics.tasks_completed ?? 0) + 1;
+                metrics.success_rate = metrics.total_tasks > 0
+                  ? metrics.tasks_completed / metrics.total_tasks
+                  : 0;
+                scenarioRun.metrics = { ...metrics };
               } else if (update.type === "response_chunk") {
                 if (!scenarioRun.responseChunks) {
                   scenarioRun.responseChunks = [];
@@ -189,9 +222,26 @@ export function NewRunTab() {
                     timestamp: Date.now(),
                   },
                 ];
+                // Track tokens live from usage chunks
+                if (update.chunk_type === "usage") {
+                  const usage = update.chunk_data as Record<string, number>;
+                  metrics.total_tokens = (metrics.total_tokens ?? 0) + (usage.total_tokens ?? 0);
+                  metrics.prompt_tokens = (metrics.prompt_tokens ?? 0) + (usage.prompt_tokens ?? 0);
+                  metrics.completion_tokens = (metrics.completion_tokens ?? 0) + (usage.completion_tokens ?? 0);
+                  metrics.estimated_usd = (metrics.estimated_usd ?? 0) + (usage.estimated_cost ?? 0);
+                  scenarioRun.metrics = { ...metrics };
+                }
               } else if (update.type === "complete") {
                 scenarioRun.status = update.status;
                 scenarioRun.endTime = new Date().toISOString();
+                // Preserve live-tracked tokens, update task counts from server
+                scenarioRun.metrics = {
+                  ...metrics,
+                  total_turns: update.total_turns,
+                  total_tasks: update.total_tasks,
+                  tasks_completed: update.tasks_completed,
+                  success_rate: update.success_rate,
+                };
               } else if (update.type === "error") {
                 scenarioRun.status = "failed";
                 scenarioRun.error = update.error;
@@ -217,6 +267,55 @@ export function NewRunTab() {
             const currentProgress = selectProgress(storeApi.getState());
             if (currentProgress.running === 0) {
               eventSource.close();
+              // Fetch full run data from API to get complete metrics
+              (async () => { try {
+                const fullRun = await client.makeRequest(
+                  `/api/eval/runs/${runId}` as "/api/config",
+                );
+                const data = fullRun as any;
+                if (data?.scenario_runs) {
+                  const fullScenarioRuns = data.scenario_runs.map((sr: any) => ({
+                    id: sr.id,
+                    scenarioName: sr.scenario_name,
+                    persona: sr.persona || null,
+                    status: sr.status,
+                    startTime: sr.start_time,
+                    endTime: sr.end_time,
+                    turns: (sr.turns || []).map((t: any) => ({
+                      turn_index: t.turn_index,
+                      task_index: t.task_index,
+                      user_message: t.user_message,
+                      assistant_message: t.assistant_message,
+                      tool_calls: t.tool_calls || [],
+                      task_completed: t.task_completed,
+                      task_completed_reason: t.task_completed_reason,
+                      token_usage: t.token_usage,
+                      latency_ms: t.latency_ms,
+                      checkers: t.checkers,
+                      checker_mode: t.checker_mode,
+                    })),
+                    tasks: (sr.tasks || []).map((t: any) => ({
+                      task_index: t.task_index,
+                      description: t.description,
+                      completed: t.completed,
+                      turns_taken: t.turns_taken,
+                      final_reason: t.final_reason,
+                    })),
+                    responseChunks: sr.response_chunks || [],
+                    metrics: sr.metrics,
+                    error: sr.error,
+                  }));
+                  storeApi.getState().actions.updateSimulationRun(runId, {
+                    scenarioRuns: fullScenarioRuns,
+                    status: data.status,
+                    totalTokens: data.total_tokens || 0,
+                    totalCostUsd: data.total_cost_usd || 0,
+                    overallSuccessRate: data.overall_success_rate || 0,
+                  });
+                }
+              } catch {
+                // Non-critical - metrics will show on next page load
+              } })();
             }
           }
         } catch (err) {

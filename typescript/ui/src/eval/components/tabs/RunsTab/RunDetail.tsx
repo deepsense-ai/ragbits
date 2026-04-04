@@ -342,8 +342,11 @@ export function RunDetail() {
                   </div>
                   {sr.metrics && (
                     <div className="flex items-center gap-3 mt-2 text-xs text-foreground-500">
+                      <span>{sr.metrics.tasks_completed}/{sr.metrics.total_tasks} tasks</span>
                       <span>{Math.round(sr.metrics.success_rate * 100)}%</span>
-                      <span>{sr.metrics.total_tokens} tokens</span>
+                      {(sr.metrics.total_tokens as number) > 0 && (
+                        <span>{sr.metrics.total_tokens} tokens</span>
+                      )}
                     </div>
                   )}
                 </CardBody>
