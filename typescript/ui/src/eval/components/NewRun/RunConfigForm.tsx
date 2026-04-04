@@ -1,12 +1,14 @@
 import { useMemo, useCallback } from "react";
-import { Input, Card, CardBody, Checkbox } from "@heroui/react";
+import { Input, Card, CardBody, Checkbox, Chip } from "@heroui/react";
 import { useEvalStore, useEvalStoreApi } from "../../stores/EvalStoreContext";
 
 export function RunConfigForm() {
   const storeApi = useEvalStoreApi();
+  const config = useEvalStore((s) => s.config);
   const storePersonas = useEvalStore((s) => s.personas);
   const simulationConfig = useEvalStore((s) => s.simulationConfig);
   const selectedPersonas = useEvalStore((s) => s.selectedPersonas);
+  const selectedExtraMetrics = useEvalStore((s) => s.selectedExtraMetrics);
 
   const personas = useMemo(() => {
     return storePersonas.map((p) => p.name);
@@ -175,6 +177,52 @@ export function RunConfigForm() {
                 {selectedPersonas.length} persona{selectedPersonas.length !== 1 ? "s" : ""} selected
               </p>
             )}
+          </CardBody>
+        </Card>
+      )}
+
+      {/* Extra Metrics Section */}
+      {(config?.available_extra_metrics ?? []).length > 0 && (
+        <Card>
+          <CardBody className="gap-4">
+            <div>
+              <h4 className="text-sm font-semibold text-foreground">Metrics</h4>
+              <p className="text-xs text-foreground-500 mt-0.5">
+                Latency, token usage, and tool usage are always tracked. Select additional metrics below.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(config?.available_extra_metrics ?? []).map((metric) => {
+                const isSelected = selectedExtraMetrics.includes(metric.id);
+                return (
+                  <button
+                    key={metric.id}
+                    onClick={() => storeApi.getState().actions.toggleExtraMetric(metric.id)}
+                    className={`
+                      flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors
+                      ${
+                        isSelected
+                          ? "bg-primary-100 dark:bg-primary-900/30 border-primary-300 dark:border-primary-700"
+                          : "bg-content2 border-transparent hover:bg-content3"
+                      }
+                    `}
+                  >
+                    <Checkbox
+                      size="sm"
+                      isSelected={isSelected}
+                      onValueChange={() => storeApi.getState().actions.toggleExtraMetric(metric.id)}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <span className="text-sm font-medium">{metric.name}</span>
+                    {metric.source && (
+                      <Chip size="sm" variant="flat" color="secondary" className="text-xs">
+                        {metric.source}
+                      </Chip>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
           </CardBody>
         </Card>
       )}

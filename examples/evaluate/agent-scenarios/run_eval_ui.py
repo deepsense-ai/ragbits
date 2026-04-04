@@ -10,6 +10,12 @@ sys.path.insert(0, str(Path(__file__).parent))
 from config import config
 from fixtures.hotel.hotel_chat import HotelChat
 
+from ragbits.evaluate.agent_simulation.metrics.deepeval import (
+    DeepEvalCompletenessMetricCollector,
+    DeepEvalKnowledgeRetentionMetricCollector,
+    DeepEvalRelevancyMetricCollector,
+)
+from ragbits.evaluate.agent_simulation.models import SimulationConfig
 from ragbits.evaluate.api import EvalAPI
 
 
@@ -48,11 +54,25 @@ def main() -> None:
     print("\nOpen the frontend at: http://localhost:5173/eval.html")
     print("(Run 'npm run dev:eval' in typescript/ui/ first)\n")
 
+    # Simulation config with DeepEval metrics available as extras
+    simulation_config = SimulationConfig(
+        default_model=config.llm_model,
+        api_key=config.openai_api_key,
+        metrics=[
+            # Builtins are included by default (Latency, TokenUsage, ToolUsage)
+            # DeepEval metrics available as optional extras in the UI
+            DeepEvalCompletenessMetricCollector,
+            DeepEvalRelevancyMetricCollector,
+            DeepEvalKnowledgeRetentionMetricCollector,
+        ],
+    )
+
     api = EvalAPI(
         chat_factory=create_hotel_chat,
         scenarios_dir=args.scenarios_dir,
         results_dir=args.results_dir,
         cors_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+        simulation_config=simulation_config,
     )
 
     api.run(host=args.host, port=args.port)
@@ -60,3 +80,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+

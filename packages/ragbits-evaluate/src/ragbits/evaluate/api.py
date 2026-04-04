@@ -179,6 +179,32 @@ class EvalAPI:
             """Get evaluation configuration with available scenarios."""
             scenarios = self._get_scenarios()
             scenario_files = self._get_scenario_files()
+            # Collect extra (non-builtin) metric names from simulation config
+            from ragbits.evaluate.agent_simulation.models import BUILTIN_METRIC_COLLECTORS
+
+            import re
+
+            builtin_types = {cls for cls in BUILTIN_METRIC_COLLECTORS}
+            extra_metrics: list[dict[str, str]] = []
+            for factory in self.simulation_config.metrics:
+                instance = factory()
+                if type(instance) not in builtin_types:
+                    cls_name = type(instance).__name__
+                    # Generate display name from class name
+                    # "DeepEvalCompletenessMetricCollector" -> source="DeepEval", name="Completeness"
+                    display = cls_name.replace("MetricCollector", "").replace("Metric", "")
+                    # Split on transitions: lowercase->uppercase OR end of known prefixes
+                    words = re.findall(r"[A-Z][a-z]+|[A-Z]+(?=[A-Z][a-z])|[A-Z]+$", display)
+                    # Detect known source prefixes (multi-word like "DeepEval")
+                    source = ""
+                    name_words = words
+                    if len(words) >= 2 and words[0] == "Deep" and words[1] == "Eval":
+                        source = "DeepEval"
+                        name_words = words[2:]
+                    name = " ".join(name_words) if name_words else " ".join(words)
+                    label = f"{source} {name}".strip() if source else name
+                    extra_metrics.append({"id": cls_name, "label": label, "source": source, "name": name})
+
             response = EvalConfigResponse(
                 available_scenarios=[
                     ScenarioSummary(name=s.name, num_tasks=len(s.tasks), group=s.group) for s in scenarios.values()
@@ -195,7 +221,9 @@ class EvalAPI:
                 ],
                 scenarios_dir=str(self.scenarios_dir),
             )
-            return JSONResponse(content=response.model_dump())
+            data = response.model_dump()
+            data["available_extra_metrics"] = extra_metrics
+            return JSONResponse(content=data)
 
     def _setup_scenario_routes(self) -> None:
         """Setup scenario management endpoints."""
@@ -276,12 +304,13 @@ class EvalAPI:
 
             # Start execution tasks for each scenario × persona combination
             base_config = request.config.model_dump()
+            extra_metrics = request.extra_metrics
             for scenario_name in request.scenario_names:
                 scenario = scenarios[scenario_name]
                 for persona in personas_to_run:
                     config_with_persona = {**base_config, "persona": persona}
                     asyncio.create_task(
-                        self._run_scenario(run_id, scenario, config_with_persona, persona),
+                        self._run_scenario(run_id, scenario, config_with_persona, persona, extra_metrics),
                     )
 
             response = RunStartResponse(run_id=run_id, scenarios=request.scenario_names)
@@ -412,9 +441,11 @@ class EvalAPI:
         scenario: Scenario,
         request_config: dict[str, Any],
         persona: str | None = None,
+        extra_metrics: list[str] | None = None,
     ) -> None:
         """Run a single scenario and emit progress updates."""
         from ragbits.evaluate.agent_simulation.conversation import run_simulation
+        from ragbits.evaluate.agent_simulation.models import BUILTIN_METRIC_COLLECTORS
 
         # Create unique run name for scenario+persona combination
         run_name = f"{scenario.name}:{persona}" if persona else scenario.name
@@ -446,6 +477,18 @@ class EvalAPI:
             # Request values override defaults (excluding 'persona' which is handled separately)
             config = self.simulation_config.model_copy(
                 update={k: v for k, v in request_config.items() if v is not None and k != "persona"}
+            )
+
+            # Apply extra metrics selection: builtins + selected extras from simulation_config
+            builtin_types = set(BUILTIN_METRIC_COLLECTORS)
+            selected_extras = []
+            if extra_metrics:
+                for factory in self.simulation_config.metrics:
+                    instance = factory()
+                    if type(instance) not in builtin_types and type(instance).__name__ in extra_metrics:
+                        selected_extras.append(factory)
+            config = config.model_copy(
+                update={"metrics": list(BUILTIN_METRIC_COLLECTORS) + selected_extras}
             )
 
             # Run the simulation with progress callback and personality
@@ -603,4 +646,4 @@ class EvalAPI:
             host: Host to bind to.
             port: Port to bind to.
         """
-        uvicorn.run(self.app, host=host, port=port)
+        uvicorn.run(self.app, host=host, port=port, loop="asyncio")

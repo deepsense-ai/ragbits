@@ -32,6 +32,9 @@ export interface EvalStore {
   selectedForRun: string[]; // Scenarios selected for running
   selectedPersonas: string[]; // Personas selected for matrix runs
 
+  // Metrics selection (extra metrics beyond builtins)
+  selectedExtraMetrics: string[];
+
   // Execution state
   executions: Record<string, ScenarioExecution>;
   currentRunId: string | null;
@@ -78,6 +81,10 @@ export interface EvalStore {
     togglePersonaForRun: (name: string) => void;
     selectPersonasForRun: (names: string[]) => void;
     clearPersonasForRun: () => void;
+
+    // Extra metrics selection
+    toggleExtraMetric: (name: string) => void;
+    setExtraMetrics: (names: string[]) => void;
 
     // Execution
     startExecution: (runId: string, scenarioNames: string[]) => void;
@@ -139,6 +146,7 @@ export const createEvalStore = () =>
       selectedScenarioName: null,
       selectedForRun: [],
       selectedPersonas: [],
+      selectedExtraMetrics: [],
       executions: {},
       currentRunId: null,
       isExecuting: false,
@@ -266,6 +274,23 @@ export const createEvalStore = () =>
         clearPersonasForRun: () => {
           set((state) => {
             state.selectedPersonas = [];
+          });
+        },
+
+        toggleExtraMetric: (name) => {
+          set((state) => {
+            const idx = state.selectedExtraMetrics.indexOf(name);
+            if (idx >= 0) {
+              state.selectedExtraMetrics.splice(idx, 1);
+            } else {
+              state.selectedExtraMetrics.push(name);
+            }
+          });
+        },
+
+        setExtraMetrics: (names) => {
+          set((state) => {
+            state.selectedExtraMetrics = names;
           });
         },
 

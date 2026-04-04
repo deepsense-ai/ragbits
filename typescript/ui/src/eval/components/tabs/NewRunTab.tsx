@@ -54,6 +54,7 @@ export function NewRunTab() {
 
     try {
       // Start the evaluation run - single request with scenarios and personas
+      const currentExtraMetrics = storeApi.getState().selectedExtraMetrics;
       const response = await fetch(`${client.getBaseUrl()}/api/eval/run`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -61,6 +62,7 @@ export function NewRunTab() {
           scenario_names: currentSelectedForRun,
           personas: currentSelectedPersonas.length > 0 ? currentSelectedPersonas : null,
           config: currentSimulationConfig,
+          extra_metrics: currentExtraMetrics.length > 0 ? currentExtraMetrics : null,
         }),
       });
 
