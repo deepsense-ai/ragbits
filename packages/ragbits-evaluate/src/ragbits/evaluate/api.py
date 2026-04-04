@@ -254,7 +254,7 @@ class EvalAPI:
 
             # Validate personas exist if provided
             if request.personas:
-                missing_personas = [p for p in request.personas if p not in scenarios]
+                missing_personas = [p for p in request.personas if p not in self._get_personas()]
                 if missing_personas:
                     raise HTTPException(status_code=404, detail=f"Personas not found: {missing_personas}")
 
@@ -491,7 +491,10 @@ class EvalAPI:
         self._scenarios_cache = {}
         self._scenario_files_cache = []
 
+        skip_files = {"personas.json", "personalities.json"}
         for json_file in self.scenarios_dir.glob("*.json"):
+            if json_file.name in skip_files:
+                continue
             try:
                 scenario_file = load_scenario_file(str(json_file))
                 self._scenario_files_cache.append(scenario_file)

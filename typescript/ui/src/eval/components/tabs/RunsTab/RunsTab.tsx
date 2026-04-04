@@ -4,7 +4,6 @@ import { Button, Listbox, ListboxItem, Spinner } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRagbitsContext } from "@ragbits/api-client-react";
 import { useEvalStore, useEvalStoreApi } from "../../../stores/EvalStoreContext";
-import { isPersonaScenario } from "../../../stores/evalStore";
 import { RunsTable } from "./RunsTable";
 import type { SimulationRun } from "../../../types";
 
@@ -35,9 +34,7 @@ export function RunsTab() {
       };
     }
 
-    const runnableScenarios = config.available_scenarios.filter(
-      (s) => !isPersonaScenario(s.num_tasks)
-    );
+    const runnableScenarios = config.available_scenarios;
 
     // Build group -> scenarios mapping
     const groupToScenarios = new Map<string, string[]>();
@@ -190,7 +187,7 @@ export function RunsTab() {
       {/* Left Sidebar - Scenario Filter */}
       <aside className="w-56 flex-shrink-0 border-r border-divider p-4">
         <h2 className="mb-3 text-sm font-semibold text-foreground-500 uppercase tracking-wide">
-          Scenarios
+          Scenario filter
         </h2>
         <Listbox
           aria-label="Filter by scenario"

@@ -1,7 +1,6 @@
 import { useEffect, useRef, useCallback, useMemo } from "react";
 import { useRagbitsContext } from "@ragbits/api-client-react";
 import { useEvalStore, useEvalStoreApi } from "../../stores/EvalStoreContext";
-import { isPersonaScenario } from "../../stores/evalStore";
 import { ScenarioCard } from "./ScenarioCard";
 import { Spinner, Checkbox, Chip } from "@heroui/react";
 import type { Scenario, ScenarioSummary } from "../../types";
@@ -90,16 +89,14 @@ export function ScenarioList() {
     loadScenarios();
   }, [client, config, storeApi]);
 
-  // Split scenarios into runnable and personas, grouped
+  const storePersonas = useEvalStore((s) => s.personas);
+
+  // Group scenarios
   const { runnableGroups, personaScenarios, runnableScenarios } = useMemo(() => {
     if (!config) return { runnableGroups: [], personaScenarios: [], runnableScenarios: [] };
 
-    const runnable = config.available_scenarios.filter(
-      (s) => !isPersonaScenario(s.num_tasks)
-    );
-    const personas = config.available_scenarios
-      .filter((s) => isPersonaScenario(s.num_tasks))
-      .map((s) => s.name);
+    const runnable = config.available_scenarios;
+    const personas = storePersonas.map((p) => p.name);
 
     // Group runnable scenarios by their group field
     const groupMap = new Map<string | null, ScenarioSummary[]>();

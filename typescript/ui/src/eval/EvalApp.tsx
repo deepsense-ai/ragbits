@@ -4,7 +4,7 @@ import { useRagbitsContext } from "@ragbits/api-client-react";
 import { useEvalStore, useEvalStoreApi } from "./stores/EvalStoreContext";
 import { Spinner } from "@heroui/react";
 import { EVAL_ROUTES } from "./routes";
-import type { EvalConfig } from "./types";
+import type { EvalConfig, PersonasListResponse } from "./types";
 
 // Check for mock mode via URL param: ?mock=true
 const USE_MOCK_DATA = new URLSearchParams(window.location.search).has("mock");
@@ -29,11 +29,22 @@ export function EvalApp() {
     }
 
     async function loadConfig() {
-      const { setConfigLoading, setConfig, setConfigError } = storeApi.getState().actions;
+      const { setConfigLoading, setConfig, setConfigError, setPersonas } = storeApi.getState().actions;
       setConfigLoading(true);
       try {
         const response = await client.makeRequest("/api/eval/config" as "/api/config");
         setConfig(response as unknown as EvalConfig);
+
+        // Load personas from dedicated endpoint
+        try {
+          const personasResponse = await fetch(`${client.getBaseUrl()}/api/eval/personas`);
+          if (personasResponse.ok) {
+            const data: PersonasListResponse = await personasResponse.json();
+            setPersonas(data.personas);
+          }
+        } catch {
+          // Personas are optional
+        }
       } catch (error) {
         setConfigError(
           error instanceof Error ? error.message : "Failed to load config",
