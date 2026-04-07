@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useParams, useNavigate } from "react-router";
+import { useParams, useNavigate, useSearchParams } from "react-router";
 import { Button, Chip, Card, CardBody, Tabs, Tab, Spinner } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRagbitsContext } from "@ragbits/api-client-react";
-import { useEvalStore } from "../../../stores/EvalStoreContext";
+import { useEvalStore, useEvalStoreApi } from "../../../stores/EvalStoreContext";
 import type { CheckerResultItem, ConversationMetrics, ResponseChunk, ScenarioRun, SimulationRun, SimulationStatus } from "../../../types";
 
 const STATUS_CONFIG: Record<
@@ -176,7 +176,10 @@ function transformRunResponse(data: any): SimulationRun {
 export function RunDetail() {
   const { runId } = useParams<{ runId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") as "conversation" | "responses" | "metrics" | null;
   const { client } = useRagbitsContext();
+  const storeApi = useEvalStoreApi();
   // Subscribe directly — avoid useMemo to ensure every store change triggers re-render
   const storeRun = useEvalStore((s) => s.simulationRuns.find((r) => r.id === runId) ?? null);
 
@@ -207,12 +210,13 @@ export function RunDetail() {
     loadRun();
   }, [runId, client]); // Don't include simulationRuns - causes infinite loop
 
-  // Prefer store when it has real data (from SSE or initial creation with metrics)
-  // Fall back to API for historical runs loaded by RunsTab with minimal data
-  const storeHasData = storeRun?.scenarioRuns.some((sr) =>
-    sr.turns.length > 0 || (sr.responseChunks?.length ?? 0) > 0 || sr.metrics !== null
+  // Prefer store for active runs (running/queued or has live SSE data)
+  // Fall back to API for completed historical runs loaded by RunsTab
+  const isActiveRun = storeRun?.status === "running" || storeRun?.status === "queued";
+  const storeHasLiveData = storeRun?.scenarioRuns.some((sr) =>
+    sr.turns.length > 0 || (sr.responseChunks?.length ?? 0) > 0
   ) ?? false;
-  const run = storeHasData ? storeRun : (apiRun ?? storeRun);
+  const run = (isActiveRun || storeHasLiveData) ? storeRun : (apiRun ?? storeRun);
 
   const selectedScenarioRun = run?.scenarioRuns[selectedScenarioIndex] ?? null;
 
@@ -248,14 +252,16 @@ export function RunDetail() {
     navigate("/runs");
   }, [navigate]);
 
-  const handleRerun = useCallback(() => {
-    if (run) {
-      const scenarioNames = run.scenarioRuns
-        .map((sr) => sr.scenarioName)
-        .join(",");
-      navigate(`/new?scenarios=${encodeURIComponent(scenarioNames)}`);
+  const handleRerun = useCallback(async () => {
+    if (!run) return;
+    try {
+      const { rerunSimulation } = await import("../../../utils/rerunSimulation");
+      const newRunId = await rerunSimulation(run, client, storeApi as any);
+      navigate(`/runs/${newRunId}`);
+    } catch (err) {
+      console.error("Rerun failed:", err);
     }
-  }, [navigate, run]);
+  }, [run, client, storeApi, navigate]);
 
   if (isLoading) {
     return (
@@ -372,7 +378,7 @@ export function RunDetail() {
         {/* Right: Scenario detail panel */}
         <main className="flex-1 min-h-0 overflow-hidden">
           {selectedScenarioRun ? (
-            <ScenarioRunPanel scenarioRun={selectedScenarioRun} />
+            <ScenarioRunPanel scenarioRun={selectedScenarioRun} initialTab={initialTab} />
           ) : (
             <div className="flex h-full items-center justify-center text-foreground-500">
               Select a scenario to view details
@@ -384,9 +390,9 @@ export function RunDetail() {
   );
 }
 
-function ScenarioRunPanel({ scenarioRun }: { scenarioRun: ScenarioRun }) {
+function ScenarioRunPanel({ scenarioRun, initialTab }: { scenarioRun: ScenarioRun; initialTab?: "conversation" | "responses" | "metrics" | null }) {
   const [viewMode, setViewMode] = useState<"conversation" | "responses" | "metrics">(
-    "conversation",
+    initialTab ?? "conversation",
   );
 
   const responseChunksCount = scenarioRun.responseChunks?.length || 0;

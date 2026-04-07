@@ -15,7 +15,7 @@ export const EVAL_ROUTES: RouteObject[] = [
     children: [
       {
         index: true,
-        element: <Navigate to="/runs" replace />,
+        element: <Navigate to="/new" replace />,
       },
       {
         path: "runs",

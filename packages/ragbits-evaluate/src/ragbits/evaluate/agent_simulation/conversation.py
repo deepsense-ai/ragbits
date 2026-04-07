@@ -208,7 +208,7 @@ class SimulationContext:
     checker_context: CheckerContext
     logger: ConversationLogger
     collectors: CompositeMetricCollector
-    out: IO[str]
+    out: IO[str] | None
     trace_handler: MemoryTraceHandler | None = None
     progress_callback: ProgressCallback | None = None
 
@@ -218,8 +218,9 @@ class SimulationContext:
             await self.progress_callback(event_type, **kwargs)
 
     def print(self, message: str) -> None:
-        """Print a message to the output stream."""
-        print(message, file=self.out)
+        """Print a message to the output stream. No-op if output is suppressed."""
+        if self.out is not None:
+            print(message, file=self.out)
 
 
 async def _process_chat_stream(
@@ -482,7 +483,12 @@ def _create_simulation_context(
     trace_handler: MemoryTraceHandler | None = None,
 ) -> SimulationContext:
     """Create the simulation context with all dependencies."""
-    out = output_stream if output_stream is not None else sys.stdout
+    if output_stream is not None:
+        out: IO[str] | None = output_stream
+    elif progress_callback is not None:
+        out = None  # UI mode — skip console output entirely
+    else:
+        out = sys.stdout
 
     # Create metric collectors (builtins are included by default in config.metrics)
     collectors = CompositeMetricCollector(config.create_metric_collectors())
@@ -612,6 +618,8 @@ def _log_turn_output(
     turn_usage: Usage,
 ) -> None:
     """Log turn output to the output stream."""
+    if ctx.out is None:
+        return
     ctx.print(f"Assistant: {assistant_reply}")
     if tool_calls:
         ctx.print(f"Tools used: {[tc.name for tc in tool_calls]}")

@@ -32,7 +32,7 @@ export function EvalTabs() {
     if (path.startsWith("/scenarios")) return "scenarios";
     if (path.startsWith("/personas")) return "personas";
     if (path.startsWith("/playground")) return "playground";
-    return "runs";
+    return "new";
   };
 
   const handleTabChange = (key: React.Key) => {

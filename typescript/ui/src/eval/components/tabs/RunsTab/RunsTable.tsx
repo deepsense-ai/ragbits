@@ -195,7 +195,7 @@ export function RunsTable({ runs, groupScenarios, onViewDetails, onRerun }: Runs
                       <DropdownItem
                         key="metrics"
                         startContent={<Icon icon="heroicons:chart-bar" />}
-                        onPress={() => onViewDetails(run.id)}
+                        onPress={() => onViewDetails(`${run.id}?tab=metrics`)}
                       >
                         View metrics
                       </DropdownItem>

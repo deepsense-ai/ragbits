@@ -244,6 +244,31 @@ export function NewRunTab() {
                   tasks_completed: update.tasks_completed,
                   success_rate: update.success_rate,
                 };
+
+                // Fetch full run data for this completed scenario to get collector metrics
+                (async () => { try {
+                  const fullRun = await client.makeRequest(`/api/eval/runs/${runId}` as "/api/config");
+                  const d = fullRun as any;
+                  const fullSr = d?.scenario_runs?.find((sr: any) => sr.id === update.scenario_run_id);
+                  if (fullSr?.metrics) {
+                    // Merge full collector metrics into the scenario run
+                    const currentRun2 = storeApi.getState().simulationRuns.find((r) => r.id === runId);
+                    if (currentRun2) {
+                      const idx = currentRun2.scenarioRuns.findIndex((sr) => sr.id === update.scenario_run_id);
+                      if (idx !== -1) {
+                        const updated = [...currentRun2.scenarioRuns];
+                        updated[idx] = {
+                          ...updated[idx],
+                          metrics: fullSr.metrics,
+                          turns: (fullSr.turns || []).map((t: any) => ({ turn_index: t.turn_index, task_index: t.task_index, user_message: t.user_message, assistant_message: t.assistant_message, tool_calls: t.tool_calls || [], task_completed: t.task_completed, task_completed_reason: t.task_completed_reason, token_usage: t.token_usage, latency_ms: t.latency_ms, checkers: t.checkers, checker_mode: t.checker_mode })),
+                          tasks: (fullSr.tasks || []).map((t: any) => ({ task_index: t.task_index, description: t.description, completed: t.completed, turns_taken: t.turns_taken, final_reason: t.final_reason })),
+                          responseChunks: updated[idx].responseChunks, // Keep live chunks
+                        };
+                        storeApi.getState().actions.updateSimulationRun(runId, { scenarioRuns: updated });
+                      }
+                    }
+                  }
+                } catch { /* non-critical */ } })();
               } else if (update.type === "error") {
                 scenarioRun.status = "failed";
                 scenarioRun.error = update.error;

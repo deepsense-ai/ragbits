@@ -138,24 +138,25 @@ export function RunsTab() {
   }, [client, storeApi, location.pathname]);
 
   const handleViewDetails = useCallback(
-    (runId: string) => {
-      navigate(`/runs/${runId}`);
+    (runIdWithParams: string) => {
+      navigate(`/runs/${runIdWithParams}`);
     },
     [navigate],
   );
 
   const handleRerun = useCallback(
-    (runId: string) => {
-      // Find the run and get its scenario names
+    async (runId: string) => {
       const run = simulationRuns.find((r) => r.id === runId);
-      if (run) {
-        const scenarioNames = run.scenarioRuns
-          .map((sr) => sr.scenarioName)
-          .join(",");
-        navigate(`/new?scenarios=${encodeURIComponent(scenarioNames)}`);
+      if (!run) return;
+      try {
+        const { rerunSimulation } = await import("../../../utils/rerunSimulation");
+        const newRunId = await rerunSimulation(run, client, storeApi as any);
+        navigate(`/runs/${newRunId}`);
+      } catch (err) {
+        console.error("Rerun failed:", err);
       }
     },
-    [navigate, simulationRuns],
+    [client, storeApi, navigate, simulationRuns],
   );
 
   const handleNewRun = useCallback(() => {

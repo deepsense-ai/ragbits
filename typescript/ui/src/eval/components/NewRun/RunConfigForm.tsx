@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useEffect, useRef } from "react";
 import { Input, Card, CardBody, Checkbox, Chip } from "@heroui/react";
 import { useEvalStore, useEvalStoreApi } from "../../stores/EvalStoreContext";
 
@@ -13,6 +13,16 @@ export function RunConfigForm() {
   const personas = useMemo(() => {
     return storePersonas.map((p) => p.name);
   }, [storePersonas]);
+
+  // Pre-select first persona by default on first load
+  const defaultPersonaApplied = useRef(false);
+  useEffect(() => {
+    if (defaultPersonaApplied.current || personas.length === 0) return;
+    if (selectedPersonas.length === 0) {
+      storeApi.getState().actions.selectPersonasForRun([personas[0]]);
+    }
+    defaultPersonaApplied.current = true;
+  }, [personas, selectedPersonas.length, storeApi]);
 
   const handleConfigChange = useCallback(
     (key: string, value: string | number | null) => {
