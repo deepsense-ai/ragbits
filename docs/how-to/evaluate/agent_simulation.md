@@ -572,7 +572,7 @@ if __name__ == "__main__":
 You can also run simulations from the command line using the example CLI:
 
 ```bash
-uv run python examples/evaluate/agent-scenarios/hotel_simulation.py \
+uv run python examples/evaluate/agent-scenarios/hotel_simulation_cli.py \
   --scenario-id 1 \
   --max-turns-scenario 15 \
   --max-turns-task 4 \

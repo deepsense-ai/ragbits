@@ -7,7 +7,7 @@ from pathlib import Path
 # Add parent to path so we can import config and fixtures
 sys.path.insert(0, str(Path(__file__).parent))
 
-from config import config
+from config import config, data_snapshot, domain_context
 from fixtures.hotel.hotel_chat import HotelChat
 
 from ragbits.evaluate.agent_simulation.metrics.deepeval import (
@@ -58,6 +58,8 @@ def main() -> None:
     simulation_config = SimulationConfig(
         default_model=config.llm_model,
         api_key=config.openai_api_key,
+        domain_context=domain_context,
+        data_snapshot=data_snapshot,
         metrics=[
             # Builtins are included by default (Latency, TokenUsage, ToolUsage)
             # DeepEval metrics available as optional extras in the UI
@@ -80,4 +82,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
