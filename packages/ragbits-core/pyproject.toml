@@ -56,11 +56,11 @@ local = [
     "sentence-transformers>=4.0.2,<5.0.0",
     "torch>=2.6.0,<2.7.0",
     "transformers>=4.48.0,<5.0.0",
-    "numpy>=1.26.0,<2.0.0",
+    "numpy>=2.1.0",
     "accelerate>=1.7.0",
 ]
 fastembed = [
-    "fastembed>=0.4.2,<1.0.0"
+    "fastembed>=0.5.0,<1.0.0"
 ]
 promptfoo = [
     "PyYAML>=6.0.2,<7.0.0",
@@ -80,7 +80,7 @@ pgvector = [
     "asyncpg>=0.30.0,<1.0.0",
 ]
 fastembed-gpu = [
-    "fastembed-gpu>=0.4.2,<1.0.0",
+    "fastembed-gpu>=0.5.0,<1.0.0",
 ]
 azure=[
     "azure-storage-blob>=12.24.1,<13.0.0",

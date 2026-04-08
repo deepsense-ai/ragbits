@@ -18,6 +18,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "aiosqlite>=0.21.0",
+    "greenlet>=3.1.1",
     "pre-commit~=3.8.0",
     "pytest~=8.3.3",
     "pytest-cov~=5.0.0",
@@ -39,6 +40,9 @@ dev = [
     "pytest-postgresql>=7.0.1",
     "ruff>=0.6.8",
 ]
+
+[tool.uv]
+constraint-dependencies = ["uvloop>=0.21.0"]
 
 [tool.uv.sources]
 ragbits = { workspace = true }

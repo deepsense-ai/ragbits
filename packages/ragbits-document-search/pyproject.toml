@@ -43,8 +43,8 @@ unstructured = [
     "unstructured-client>=0.26.0,<1.0.0",
 ]
 ray = [
-    "ray[data]~=2.43.0",
-    "pyarrow>=17.0.0,<18.0.0",
+    "ray[data]>=2.45.0,<3.0.0",
+    "pyarrow>=18.0.0,<19.0.0",
 ]
 
 [tool.uv.sources]
