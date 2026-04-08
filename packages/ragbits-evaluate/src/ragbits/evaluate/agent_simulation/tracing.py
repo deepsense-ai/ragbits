@@ -161,7 +161,7 @@ class TraceAnalyzer:
         # Try to extract tool call info from span data
         tool_name = inputs.get("name", inputs.get("tool_name", span.name))
         tool_id = inputs.get("id", inputs.get("tool_id", ""))
-        arguments = inputs.get("arguments", inputs.get("args", {}))
+        arguments = inputs.get("tool_arguments", inputs.get("args", {}))
         result = outputs.get("result", outputs.get("returned", None))
 
         if isinstance(tool_name, str):
