@@ -6078,7 +6078,7 @@ requires-dist = [
     { name = "pyarrow", marker = "extra == 'ray'", specifier = ">=18.0.0,<19.0.0" },
     { name = "python-pptx", specifier = ">=1.0.0,<2.0.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
-    { name = "ray", extras = ["data"], marker = "extra == 'ray'", specifier = ">=2.45.0,<3.0.0" },
+    { name = "ray", extras = ["data"], marker = "extra == 'ray'", specifier = ">=2.53.0,<3.0.0" },
     { name = "rerankers", specifier = ">=0.6.1,<1.0.0" },
     { name = "unstructured", marker = "extra == 'unstructured'", specifier = ">=0.18.18,<1.0.0" },
     { name = "unstructured-client", marker = "extra == 'unstructured'", specifier = ">=0.26.0,<1.0.0" },
