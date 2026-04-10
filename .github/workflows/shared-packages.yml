@@ -226,6 +226,19 @@ jobs:
           uv pip install --find-links dist \
             "$(ls dist/ragbits-*.whl)[a2a,azure,chroma,cli,fastembed,fastembed-gpu,gcs,google-drive,hf,local,logfire,mcp,openai,otel,pgvector,promptfoo,qdrant,ray,relari,s3,sql,unstructured,weaviate]"
 
+      - name: Export installed packages
+        if: matrix.install-method == 'package'
+        run: uv pip freeze > pip-freeze-${{ matrix.install-method }}-py${{ matrix.python-version }}.txt
+
+      - name: Publish installed packages
+        if: matrix.install-method == 'package'
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: pip-freeze-${{ matrix.install-method }}-py${{ matrix.python-version }}
+          path: pip-freeze-${{ matrix.install-method }}-py${{ matrix.python-version }}.txt
+          retention-days: 10
+
       - name: Run Tests With Coverage
         run: |
           UV_FLAGS="${{ matrix.install-method == 'package' && '--no-sync' || '' }}"
