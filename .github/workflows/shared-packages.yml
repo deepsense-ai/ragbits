@@ -249,6 +249,7 @@ jobs:
           GOOGLE_DRIVE_CLIENTID_JSON: ${{ secrets.GOOGLE_DRIVE_CLIENTID_JSON }}
           GOOGLE_SOURCE_UNIT_TEST_FOLDER: ${{ secrets.GOOGLE_SOURCE_UNIT_TEST_FOLDER }}
           GOOGLE_DRIVE_TARGET_EMAIL: ${{ secrets.GOOGLE_DRIVE_TARGET_EMAIL }}
+          RAY_ENABLE_UV_RUN_RUNTIME_ENV: "0"
 
       - name: Test Report
         uses: mikepenz/action-junit-report@v4
