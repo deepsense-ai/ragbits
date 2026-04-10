@@ -40,7 +40,6 @@ members = [
     "ragbits-guardrails",
     "ragbits-workspace",
 ]
-constraints = [{ name = "uvloop", specifier = ">=0.21.0" }]
 
 [[package]]
 name = "a2a-sdk"
