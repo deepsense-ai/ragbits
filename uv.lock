@@ -40,6 +40,7 @@ members = [
     "ragbits-guardrails",
     "ragbits-workspace",
 ]
+constraints = [{ name = "anyio", specifier = "<4.13.0" }]
 
 [[package]]
 name = "a2a-sdk"
