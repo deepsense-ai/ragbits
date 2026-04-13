@@ -41,9 +41,6 @@ dev = [
     "ruff>=0.6.8",
 ]
 
-[tool.uv]
-constraint-dependencies = ["anyio<4.13.0"]
-
 [tool.uv.sources]
 ragbits = { workspace = true }
 ragbits-cli = { workspace = true }
