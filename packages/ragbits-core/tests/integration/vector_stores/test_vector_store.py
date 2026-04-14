@@ -1,7 +1,4 @@
 import copy
-import os
-import shutil
-from collections.abc import AsyncGenerator
 from functools import partial
 from pathlib import Path
 from typing import cast
@@ -12,6 +9,7 @@ import pytest
 import weaviate
 from chromadb import EphemeralClient
 from qdrant_client import AsyncQdrantClient
+from testcontainers.weaviate import WeaviateContainer
 
 from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.sources.local import LocalFileSource
@@ -42,45 +40,33 @@ image_embeddings = [
 IMAGES_PATH = Path(__file__).parent.parent.parent / "assets" / "img"
 
 
-@pytest.fixture(name="pgvector_test_db")
-async def pgvector_test_db_fixture(request: pytest.FixtureRequest) -> AsyncGenerator[asyncpg.Pool, None]:
-    if os.getenv("GITHUB_ACTIONS") == "true" or shutil.which("postgres") is None:
-        # CI service container or local Docker-based run (`docker compose up`)
-        pg_info = request.getfixturevalue("postgresql_noproc")
-    else:
-        # local dev with postgres binary available
-        pg_info = request.getfixturevalue("postgresql").info
-
-    dsn = f"postgresql://{pg_info.user}:{pg_info.password}@{pg_info.host}:{pg_info.port}/{pg_info.dbname}"
-
-    async with asyncpg.create_pool(dsn) as pool:
-        # Drop all tables in the database to ensure a clean state
-        async with pool.acquire() as connection, connection.transaction():
-            await connection.execute("DROP SCHEMA public CASCADE;")
-            await connection.execute("CREATE SCHEMA public;")
-
-        yield pool
-
-
 @pytest.fixture(
     name="vector_store_cls",
     params=[
-        lambda _: partial(InMemoryVectorStore),
-        lambda _: partial(ChromaVectorStore, client=EphemeralClient(), index_name="test_index_name"),
-        lambda _: partial(QdrantVectorStore, client=AsyncQdrantClient(":memory:"), index_name="test_index_name"),
-        lambda _: partial(WeaviateVectorStore, client=weaviate.use_async_with_local(), index_name="test_index_name"),
-        lambda pg_pool: partial(PgVectorStore, client=pg_pool, table_name="test_index_name", vector_size=3),
+        lambda _, __: partial(InMemoryVectorStore),
+        lambda _, __: partial(ChromaVectorStore, client=EphemeralClient(), index_name="test_index_name"),
+        lambda _, __: partial(QdrantVectorStore, client=AsyncQdrantClient(":memory:"), index_name="test_index_name"),
+        lambda _, weaviate_c: partial(
+            WeaviateVectorStore,
+            client=weaviate.use_async_with_local(
+                host=weaviate_c.get_container_host_ip(),
+                port=int(weaviate_c.get_exposed_port(8080)),
+                grpc_port=int(weaviate_c.get_exposed_port(50051)),
+            ),
+            index_name="test_index_name",
+        ),
+        lambda pg_pool, _: partial(PgVectorStore, client=pg_pool, table_name="test_index_name", vector_size=3),
     ],
     ids=["InMemoryVectorStore", "ChromaVectorStore", "QdrantVectorStore", "WeaviateVectorStore", "PgVectorStore"],
 )
 async def vector_store_cls_fixture(
-    request: pytest.FixtureRequest, pgvector_test_db: asyncpg.pool
+    request: pytest.FixtureRequest, pgvector_test_db: asyncpg.pool, weaviate_container: WeaviateContainer
 ) -> type[VectorStoreWithDenseEmbedder]:
     """
     Returns vector stores classes with different backends, with backend-specific parameters already set,
     but parameters common to VectorStoreWithDenseEmbedder left to be set.
     """
-    return request.param(pgvector_test_db)
+    return request.param(pgvector_test_db, weaviate_container)
 
 
 @pytest.fixture(name="vector_store", params=[EmbeddingType.TEXT, EmbeddingType.IMAGE], ids=["Text", "Image"])

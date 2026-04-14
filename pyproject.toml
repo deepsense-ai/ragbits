@@ -36,7 +36,8 @@ dev = [
     "types-PyYAML>=6.0.2",
     "mypy>=1.13.0",
     "moto~=4.2.7",
-    "pytest-postgresql>=7.0.1",
+    "testcontainers[postgres,weaviate]>=4.0.0",
+    "greenlet>=3.0.0",
     "ruff>=0.6.8",
 ]
 
@@ -69,9 +70,6 @@ addopts = "--import-mode=importlib -ra --showlocals --strict-markers --ignore=do
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 pythonpath = "./"
-postgresql_user = "postgres"
-postgresql_password = "postgres"
-postgresql_dbname = "tests"
 
 [tool.coverage.run]
 omit = [
