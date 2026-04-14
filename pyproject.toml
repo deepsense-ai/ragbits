@@ -69,6 +69,9 @@ addopts = "--import-mode=importlib -ra --showlocals --strict-markers --ignore=do
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 pythonpath = "./"
+postgresql_user = "postgres"
+postgresql_password = "postgres"
+postgresql_dbname = "tests"
 
 [tool.coverage.run]
 omit = [
