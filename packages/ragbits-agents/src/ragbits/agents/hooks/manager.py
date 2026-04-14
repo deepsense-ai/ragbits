@@ -9,7 +9,7 @@ import hashlib
 import json
 from collections import defaultdict
 from collections.abc import AsyncGenerator
-from typing import TYPE_CHECKING, Generic, Literal, overload
+from typing import TYPE_CHECKING, Any, Generic, Literal, overload
 
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.agents.hooks.base import Hook
@@ -111,6 +111,37 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
 
         return [hook for hook in hooks if hook.matches_tool(tool_name)]
 
+    @staticmethod
+    def _find_confirmation(
+        tool_confirmations: list[dict[str, Any]],
+        confirmation_id: str,
+        tool_name: str,
+    ) -> dict[str, Any] | None:
+        """
+        Find a matching confirmation entry.
+
+        Tries exact confirmation_id match first, then falls back to tool_name match.
+        The tool_name fallback handles cross-turn scenarios where the LLM regenerates
+        arguments with cosmetic differences, changing the hash.
+
+        Args:
+            tool_confirmations: List of confirmation entries from context
+            confirmation_id: The computed confirmation ID for this tool call
+            tool_name: The name of the tool being called
+
+        Returns:
+            The matching confirmation entry, or None if not found
+        """
+        for conf in tool_confirmations:
+            if conf.get("confirmation_id") == confirmation_id:
+                return conf
+
+        for conf in tool_confirmations:
+            if conf.get("tool_name") == tool_name:
+                return conf
+
+        return None
+
     async def execute_pre_tool(
         self,
         tool_call: ToolCall,
@@ -148,26 +179,22 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
                 return result, None
 
             elif result.decision == "ask":
-                # Check if already confirmed/declined in context
-                for conf in context.tool_confirmations:
-                    if conf.get("confirmation_id") == confirmation_id:
-                        if conf.get("confirmed"):
-                            # Approved → convert to "pass" and continue to next hook
-                            result = result.model_copy(update={"decision": "pass"})
-                            break
-                        else:
-                            # Declined → convert to "deny" and stop immediately
-                            return (
-                                result.model_copy(
-                                    update={
-                                        "decision": "deny",
-                                        "reason": "❌ Action declined by user",
-                                    }
-                                ),
-                                None,
-                            )
+                matched = self._find_confirmation(context.tool_confirmations, confirmation_id, tool_call.name)
+
+                if matched is not None:
+                    if matched.get("confirmed"):
+                        result = result.model_copy(update={"decision": "pass"})
+                    else:
+                        return (
+                            result.model_copy(
+                                update={
+                                    "decision": "deny",
+                                    "reason": "❌ Action declined by user",
+                                }
+                            ),
+                            None,
+                        )
                 else:
-                    # Not in context → return "ask" with ConfirmationRequest
                     confirmation_request = ConfirmationRequest(
                         confirmation_id=confirmation_id,
                         tool_name=tool_call.name,

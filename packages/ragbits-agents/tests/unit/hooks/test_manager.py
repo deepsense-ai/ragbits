@@ -141,6 +141,73 @@ class TestPreToolExecution:
         assert result.decision == "deny"
 
     @pytest.mark.asyncio
+    async def test_ask_with_tool_name_fallback_approved(self, tool_call: ToolCall, ask_hook: PreToolCallback):
+        """When confirmation_id doesn't match (cross-turn hash drift), fall back to tool_name match."""
+        manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.PRE_TOOL, callback=ask_hook)])
+
+        # Simulate cross-turn: frontend sends back tool_name but with a stale confirmation_id
+        ctx = AgentRunContext(
+            tool_confirmations=[
+                {"confirmation_id": "stale_id_from_previous_turn", "tool_name": "test_tool", "confirmed": True}
+            ]
+        )
+        result, confirmation = await manager.execute_pre_tool(tool_call, ctx)
+
+        assert result.decision == "pass"
+        assert confirmation is None
+
+    @pytest.mark.asyncio
+    async def test_ask_with_tool_name_fallback_declined(self, tool_call: ToolCall, ask_hook: PreToolCallback):
+        """When confirmation_id doesn't match but tool_name does and user declined."""
+        manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.PRE_TOOL, callback=ask_hook)])
+
+        ctx = AgentRunContext(
+            tool_confirmations=[
+                {"confirmation_id": "stale_id_from_previous_turn", "tool_name": "test_tool", "confirmed": False}
+            ]
+        )
+        result, confirmation = await manager.execute_pre_tool(tool_call, ctx)
+
+        assert result.decision == "deny"
+        assert confirmation is None
+
+    @pytest.mark.asyncio
+    async def test_exact_confirmation_id_takes_priority_over_tool_name(
+        self, tool_call: ToolCall, ask_hook: PreToolCallback
+    ):
+        """Exact confirmation_id match should be used even if a tool_name entry also exists."""
+        manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.PRE_TOOL, callback=ask_hook)])
+        exact_id = make_confirmation_id("ask_hook", "test_tool", {"arg1": "value1"})
+
+        ctx = AgentRunContext(
+            tool_confirmations=[
+                # tool_name match says declined
+                {"confirmation_id": "wrong_id", "tool_name": "test_tool", "confirmed": False},
+                # exact confirmation_id match says approved — should win
+                {"confirmation_id": exact_id, "confirmed": True},
+            ]
+        )
+        result, _ = await manager.execute_pre_tool(tool_call, ctx)
+
+        assert result.decision == "pass"
+
+    @pytest.mark.asyncio
+    async def test_tool_name_fallback_does_not_match_different_tool(
+        self, tool_call: ToolCall, ask_hook: PreToolCallback
+    ):
+        """tool_name fallback should not match confirmations for a different tool."""
+        manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.PRE_TOOL, callback=ask_hook)])
+
+        ctx = AgentRunContext(
+            tool_confirmations=[{"confirmation_id": "some_id", "tool_name": "other_tool", "confirmed": True}]
+        )
+        result, confirmation = await manager.execute_pre_tool(tool_call, ctx)
+
+        assert result.decision == "ask"
+        assert confirmation is not None
+        assert confirmation.tool_name == "test_tool"
+
+    @pytest.mark.asyncio
     async def test_chaining(
         self, tool_call: ToolCall, context: AgentRunContext, pre_tool_add_field: Callable[..., PreToolCallback]
     ):
