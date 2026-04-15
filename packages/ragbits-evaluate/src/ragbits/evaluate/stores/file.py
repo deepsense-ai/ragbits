@@ -85,9 +85,19 @@ class FileEvalReportStore(EvalReportStore):
                 )
                 chunk_index += 1
 
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        # Use microsecond resolution + persona + scenario_run_id suffix to ensure
+        # uniqueness when multiple scenario runs (e.g. same scenario × different personas
+        # in a matrix run) complete in the same second.
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
         safe_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in scenario_name)
-        result_id = f"result_{timestamp}_{safe_name}"
+        safe_persona = ""
+        if result.persona:
+            safe_persona = "_" + "".join(c if c.isalnum() or c in "-_" else "_" for c in result.persona)
+        # Short unique suffix derived from scenario_run_id (which already contains a UUID slice)
+        unique_suffix = ""
+        if scenario_run_id and "_" in scenario_run_id:
+            unique_suffix = "_" + scenario_run_id.rsplit("_", 1)[-1]
+        result_id = f"result_{timestamp}_{safe_name}{safe_persona}{unique_suffix}"
 
         result_path = self.results_dir / f"{result_id}.json"
         result_data = result.to_dict()

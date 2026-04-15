@@ -123,12 +123,13 @@ export function RunsTab() {
           totalCostUsd: run.total_cost_usd || 0,
           overallSuccessRate: run.overall_success_rate || 0,
         }));
-        // Merge: keep in-progress runs from store, update/add completed runs from API
-        const apiRunIds = new Set(apiRuns.map((r) => r.id));
-        const inProgressRuns = existingRuns.filter(
-          (r) => !apiRunIds.has(r.id) && (r.status === "running" || r.status === "queued"),
-        );
-        setSimulationRuns([...inProgressRuns, ...apiRuns]);
+        // Merge: prefer store version for runs in both (store has live SSE data
+        // + allDone-merged API data, and accurate scenario counts from the start).
+        // Only use API data for runs NOT in the store (historical runs from prior sessions).
+        const storeRunIds = new Set(existingRuns.map((r) => r.id));
+        const apiOnlyRuns = apiRuns.filter((r) => !storeRunIds.has(r.id));
+        // Preserve existing store runs order but ensure API-only (older) runs come after
+        setSimulationRuns([...existingRuns, ...apiOnlyRuns]);
       } catch (error) {
         console.error("Failed to load simulation runs:", error);
       }
@@ -167,16 +168,27 @@ export function RunsTab() {
     (keys: "all" | Set<string>) => {
       if (keys === "all") {
         setSelectedScenarios(new Set(["all"]));
-      } else {
-        const newKeys = new Set(keys);
-        if (newKeys.has("all") && newKeys.size > 1) {
+        return;
+      }
+      const newKeys = new Set(keys);
+      setSelectedScenarios((prev) => {
+        const allWasSelected = prev.has("all");
+        const allNowSelected = newKeys.has("all");
+
+        // User just clicked "All Scenarios" — deselect everything else
+        if (allNowSelected && !allWasSelected) {
+          return new Set(["all"]);
+        }
+        // User selected an individual scenario while "all" was active — drop "all"
+        if (allNowSelected && allWasSelected && newKeys.size > 1) {
           newKeys.delete("all");
         }
+        // Nothing selected — fall back to "all"
         if (newKeys.size === 0) {
           newKeys.add("all");
         }
-        setSelectedScenarios(newKeys);
-      }
+        return newKeys;
+      });
     },
     [],
   );

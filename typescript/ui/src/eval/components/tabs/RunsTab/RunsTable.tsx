@@ -93,12 +93,25 @@ export function RunsTable({ runs, groupScenarios, onViewDetails, onRerun }: Runs
       <TableBody>
         {runs.map((run) => {
           const statusConfig = STATUS_CONFIG[run.status];
-          const scenarioNames = run.scenarioRuns.map((sr) => sr.scenarioName);
+          // Deduplicate scenario names (a single scenario may appear multiple times
+          // when the run uses a matrix of scenarios × personas)
+          const uniqueScenarioNames = Array.from(
+            new Set(run.scenarioRuns.map((sr) => sr.scenarioName)),
+          );
+          const uniquePersonas = Array.from(
+            new Set(
+              run.scenarioRuns
+                .map((sr) => sr.persona)
+                .filter((p): p is string => Boolean(p)),
+            ),
+          );
           const displayScenarios =
-            scenarioNames.length <= 2
-              ? scenarioNames.join(", ")
-              : `${scenarioNames.slice(0, 2).join(", ")} +${scenarioNames.length - 2}`;
+            uniqueScenarioNames.length <= 2
+              ? uniqueScenarioNames.join(", ")
+              : `${uniqueScenarioNames.slice(0, 2).join(", ")} +${uniqueScenarioNames.length - 2}`;
           const fullGroups = getFullGroups(run, groupScenarios);
+          const visiblePersonas = uniquePersonas.slice(0, 3);
+          const hiddenPersonaCount = uniquePersonas.length - visiblePersonas.length;
 
           return (
             <TableRow key={run.id}>
@@ -112,10 +125,40 @@ export function RunsTable({ runs, groupScenarios, onViewDetails, onRerun }: Runs
                       </Chip>
                     ))}
                   </div>
-                  <p className="text-xs text-foreground-400">
-                    {run.totalScenarios} scenario
-                    {run.totalScenarios !== 1 ? "s" : ""}
-                  </p>
+                  <div className="mt-0.5 flex items-center gap-2 flex-wrap">
+                    <p className="text-xs text-foreground-400">
+                      {uniqueScenarioNames.length} scenario
+                      {uniqueScenarioNames.length !== 1 ? "s" : ""}
+                      {uniquePersonas.length > 0 && (
+                        <>
+                          {" × "}
+                          {uniquePersonas.length} persona
+                          {uniquePersonas.length !== 1 ? "s" : ""}
+                        </>
+                      )}
+                    </p>
+                    {visiblePersonas.map((persona) => (
+                      <Chip
+                        key={persona}
+                        size="sm"
+                        variant="flat"
+                        color="primary"
+                        className="text-xs"
+                      >
+                        {persona}
+                      </Chip>
+                    ))}
+                    {hiddenPersonaCount > 0 && (
+                      <Chip
+                        size="sm"
+                        variant="flat"
+                        color="primary"
+                        className="text-xs"
+                      >
+                        +{hiddenPersonaCount}
+                      </Chip>
+                    )}
+                  </div>
                 </div>
               </TableCell>
               <TableCell>
@@ -135,35 +178,44 @@ export function RunsTable({ runs, groupScenarios, onViewDetails, onRerun }: Runs
                   </Chip>
                   <div className="flex items-center gap-4 text-sm text-foreground-500">
                     {(() => {
-                      // Compute success rate from scenario run metrics (same as RunDetail header)
+                      // Compute counts from scenarioRuns (source of truth) rather than
+                      // relying on aggregate fields which can be stale from the backend
+                      // list endpoint (which counts only saved result files).
                       let totalTasks = 0;
                       let tasksCompleted = 0;
                       let totalCost = 0;
+                      let totalTokens = 0;
+                      let completedScenarios = 0;
                       for (const sr of run.scenarioRuns) {
+                        if (sr.status === "completed") completedScenarios += 1;
                         if (!sr.metrics) continue;
-                        totalTasks += (sr.metrics as Record<string, unknown>).total_tasks as number ?? 0;
-                        tasksCompleted += (sr.metrics as Record<string, unknown>).tasks_completed as number ?? 0;
                         const m = sr.metrics as Record<string, unknown>;
+                        totalTasks += (m.total_tasks as number) ?? 0;
+                        tasksCompleted += (m.tasks_completed as number) ?? 0;
                         totalCost += ((m.estimated_usd as number) ?? (m.total_cost_usd as number) ?? 0);
+                        totalTokens += ((m.total_tokens as number) ?? (m.tokens_total as number) ?? 0);
                       }
+                      const totalScenarios = run.scenarioRuns.length || run.totalScenarios;
                       const rate = totalTasks > 0 ? Math.round((tasksCompleted / totalTasks) * 100) : 0;
+                      const displayTokens = totalTokens > 0 ? totalTokens : run.totalTokens;
+                      const displayCost = totalCost > 0 ? totalCost : run.totalCostUsd;
                       return (
                         <>
                           <span title="Task success rate">{rate}%</span>
                           <span title="Completed scenarios" className="flex items-center gap-1">
                             <Icon icon="heroicons:check-circle" className="text-xs text-success" />
-                            {run.completedScenarios}/{run.totalScenarios}
+                            {completedScenarios}/{totalScenarios}
                           </span>
-                          {run.totalTokens > 0 && (
+                          {displayTokens > 0 && (
                             <span title="Total tokens" className="flex items-center gap-1">
                               <Icon icon="heroicons:cpu-chip" className="text-xs" />
-                              {formatTokens(run.totalTokens)}
+                              {formatTokens(displayTokens)}
                             </span>
                           )}
-                          {(totalCost > 0 || run.totalCostUsd > 0) && (
+                          {displayCost > 0 && (
                             <span title="Estimated cost" className="flex items-center gap-1">
                               <Icon icon="heroicons:currency-dollar" className="text-xs" />
-                              {formatCost(totalCost > 0 ? totalCost : run.totalCostUsd)}
+                              {formatCost(displayCost)}
                             </span>
                           )}
                         </>

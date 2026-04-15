@@ -250,7 +250,7 @@ function ScenarioDetail({
                               {typeof tool === "string" ? tool : tool.name}
                             </Chip>
                           ))}
-                          {toolChecker?.mode && toolChecker.mode !== "all" && (
+                          {!!toolChecker?.mode && String(toolChecker.mode) !== "all" && (
                             <Chip size="sm" variant="flat">
                               match: {String(toolChecker.mode)}
                             </Chip>

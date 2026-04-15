@@ -4,7 +4,7 @@ import { Button, Chip, Card, CardBody, Tabs, Tab, Spinner } from "@heroui/react"
 import { Icon } from "@iconify/react";
 import { useRagbitsContext } from "@ragbits/api-client-react";
 import { useEvalStore, useEvalStoreApi } from "../../../stores/EvalStoreContext";
-import type { CheckerResultItem, ConversationMetrics, ResponseChunk, ScenarioRun, SimulationRun, SimulationStatus } from "../../../types";
+import type { CheckerResultItem, ResponseChunk, ScenarioRun, SimulationRun, SimulationStatus } from "../../../types";
 
 const STATUS_CONFIG: Record<
   SimulationStatus,
@@ -329,7 +329,7 @@ export function RunDetail() {
           <div className="space-y-2">
             {run.scenarioRuns.map((sr, index) => (
               <Card
-                key={sr.id || sr.scenarioName}
+                key={`${sr.scenarioName}::${sr.persona || ""}`}
                 isPressable
                 onPress={() => handleSelectScenario(index)}
                 className={`w-full ${
@@ -664,9 +664,14 @@ function ConversationView({
                   <div className="mt-2 pt-2 border-t border-divider">
                     <p className="text-xs text-foreground-500 mb-1">Tool calls:</p>
                     <div className="flex flex-wrap gap-1">
-                      {turn.tool_calls.map((tc, tcIndex) => (
-                        <Chip key={tcIndex} size="sm" variant="flat">
-                          {tc.name}
+                      {Object.entries(
+                        turn.tool_calls.reduce<Record<string, number>>((acc, tc) => {
+                          acc[tc.name] = (acc[tc.name] || 0) + 1;
+                          return acc;
+                        }, {})
+                      ).map(([name, count]) => (
+                        <Chip key={name} size="sm" variant="flat">
+                          {name}{count > 1 ? ` ×${count}` : ""}
                         </Chip>
                       ))}
                     </div>

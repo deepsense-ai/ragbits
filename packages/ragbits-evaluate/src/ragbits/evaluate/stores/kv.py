@@ -68,10 +68,17 @@ class KVEvalReportStore(EvalReportStore):
         buffered_chunks: list[ResponseChunk] | None = None,
     ) -> str:
         """Save a simulation result."""
-        # Generate result_id
-        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        # Generate result_id with microsecond resolution + persona + scenario_run_id suffix
+        # to ensure uniqueness for concurrent scenario × persona matrix runs.
+        timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S_%f")
         safe_name = "".join(c if c.isalnum() or c in "-_" else "_" for c in scenario_name)
-        result_id = f"result_{timestamp}_{safe_name}"
+        safe_persona = ""
+        if result.persona:
+            safe_persona = "_" + "".join(c if c.isalnum() or c in "-_" else "_" for c in result.persona)
+        unique_suffix = ""
+        if scenario_run_id and "_" in scenario_run_id:
+            unique_suffix = "_" + scenario_run_id.rsplit("_", 1)[-1]
+        result_id = f"result_{timestamp}_{safe_name}{safe_persona}{unique_suffix}"
 
         # Add buffered chunks (including text chunks for conversation reconstruction)
         all_chunks = list(result.response_chunks)

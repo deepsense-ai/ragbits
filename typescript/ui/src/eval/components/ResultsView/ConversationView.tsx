@@ -131,9 +131,14 @@ export function ConversationView({ scenarioName }: ConversationViewProps) {
                           Tools Used:
                         </p>
                         <div className="flex flex-wrap gap-1">
-                          {turn.tool_calls.map((tool, i) => (
-                            <Chip key={i} size="sm" variant="flat">
-                              {tool.name}
+                          {Object.entries(
+                            turn.tool_calls.reduce<Record<string, number>>((acc, tool) => {
+                              acc[tool.name] = (acc[tool.name] || 0) + 1;
+                              return acc;
+                            }, {})
+                          ).map(([name, count]) => (
+                            <Chip key={name} size="sm" variant="flat">
+                              {name}{count > 1 ? ` ×${count}` : ""}
                             </Chip>
                           ))}
                         </div>

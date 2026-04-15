@@ -1,6 +1,5 @@
 import type { RagbitsClient } from "@ragbits/api-client";
-import type { SimulationRun, ProgressUpdate, ScenarioSummary } from "../types";
-import { selectProgress } from "../stores/evalStore";
+import type { SimulationRun, ProgressUpdate, ScenarioSummary, ScenarioRun } from "../types";
 
 type StoreApi = {
   getState: () => {
@@ -12,6 +11,8 @@ type StoreApi = {
       startExecution: (runId: string, scenarioNames: string[]) => void;
       handleProgressUpdate: (update: ProgressUpdate) => void;
       updateSimulationRun: (runId: string, updates: Partial<SimulationRun>) => void;
+      updateScenarioRunInSimulation: (runId: string, scenarioRunId: string, updates: Partial<ScenarioRun>) => void;
+      stopExecution: () => void;
     };
   };
 };
@@ -129,27 +130,17 @@ export async function rerunSimulation(
             sr.endTime = new Date().toISOString();
             sr.metrics = { ...metrics, total_turns: update.total_turns, total_tasks: update.total_tasks, tasks_completed: update.tasks_completed, success_rate: update.success_rate };
 
-            // Fetch full metrics for this completed scenario
+            // Fetch full metrics for this completed scenario (merge, don't replace array)
             (async () => { try {
               const fullRun = await client.makeRequest(`/api/eval/runs/${newRunId}` as "/api/config");
               const d = fullRun as any;
               const fullSr = d?.scenario_runs?.find((s: any) => s.id === update.scenario_run_id);
               if (fullSr?.metrics) {
-                const cur = storeApi.getState().simulationRuns.find((r) => r.id === newRunId);
-                if (cur) {
-                  const idx2 = cur.scenarioRuns.findIndex((s) => s.id === update.scenario_run_id);
-                  if (idx2 !== -1) {
-                    const upd = [...cur.scenarioRuns];
-                    upd[idx2] = {
-                      ...upd[idx2],
-                      metrics: fullSr.metrics,
-                      turns: (fullSr.turns || []).map((t: any) => ({ turn_index: t.turn_index, task_index: t.task_index, user_message: t.user_message, assistant_message: t.assistant_message, tool_calls: t.tool_calls || [], task_completed: t.task_completed, task_completed_reason: t.task_completed_reason, token_usage: t.token_usage, latency_ms: t.latency_ms, checkers: t.checkers, checker_mode: t.checker_mode })),
-                      tasks: (fullSr.tasks || []).map((t: any) => ({ task_index: t.task_index, description: t.description, completed: t.completed, turns_taken: t.turns_taken, final_reason: t.final_reason })),
-                      responseChunks: upd[idx2].responseChunks,
-                    };
-                    storeApi.getState().actions.updateSimulationRun(newRunId, { scenarioRuns: upd });
-                  }
-                }
+                storeApi.getState().actions.updateScenarioRunInSimulation(newRunId, update.scenario_run_id, {
+                  metrics: fullSr.metrics,
+                  turns: (fullSr.turns || []).map((t: any) => ({ turn_index: t.turn_index, task_index: t.task_index, user_message: t.user_message, assistant_message: t.assistant_message, tool_calls: t.tool_calls || [], task_completed: t.task_completed, task_completed_reason: t.task_completed_reason, token_usage: t.token_usage, latency_ms: t.latency_ms, checkers: t.checkers, checker_mode: t.checker_mode })),
+                  tasks: (fullSr.tasks || []).map((t: any) => ({ task_index: t.task_index, description: t.description, completed: t.completed, turns_taken: t.turns_taken, final_reason: t.final_reason })),
+                });
               }
             } catch { /* non-critical */ } })();
           } else if (update.type === "error") {
@@ -164,28 +155,31 @@ export async function rerunSimulation(
             scenarioRuns: updatedRuns, status: allDone ? (failed > 0 ? "failed" : "completed") : "running",
             completedScenarios: completed, failedScenarios: failed,
           });
-        }
-      }
 
-      if (update.type === "complete" || update.type === "error") {
-        if (selectProgress(storeApi.getState() as any).running === 0) {
-          eventSource.close();
-          // Auto-fetch full data
-          (async () => { try {
-            const fullRun = await client.makeRequest(`/api/eval/runs/${newRunId}` as "/api/config");
-            const d = fullRun as any;
-            if (d?.scenario_runs) {
-              const fullSRs = d.scenario_runs.map((s: any) => ({
-                id: s.id, scenarioName: s.scenario_name, persona: s.persona || null, status: s.status,
-                startTime: s.start_time, endTime: s.end_time,
-                turns: (s.turns || []).map((t: any) => ({ turn_index: t.turn_index, task_index: t.task_index, user_message: t.user_message, assistant_message: t.assistant_message, tool_calls: t.tool_calls || [], task_completed: t.task_completed, task_completed_reason: t.task_completed_reason, token_usage: t.token_usage, latency_ms: t.latency_ms, checkers: t.checkers, checker_mode: t.checker_mode })),
-                tasks: (s.tasks || []).map((t: any) => ({ task_index: t.task_index, description: t.description, completed: t.completed, turns_taken: t.turns_taken, final_reason: t.final_reason })),
-                responseChunks: storeApi.getState().simulationRuns.find((r) => r.id === newRunId)?.scenarioRuns.find((r) => r.id === s.id || r.scenarioName === s.scenario_name)?.responseChunks || [],
-                metrics: s.metrics, error: s.error,
-              }));
-              storeApi.getState().actions.updateSimulationRun(newRunId, { scenarioRuns: fullSRs, status: d.status, totalTokens: d.total_tokens || 0, totalCostUsd: d.total_cost_usd || 0, overallSuccessRate: d.overall_success_rate || 0 });
-            }
-          } catch { /* non-critical */ } })();
+          // Close SSE and fetch full data only when ALL scenario runs are done
+          if (allDone) {
+            eventSource.close();
+            storeApi.getState().actions.stopExecution();
+            // Merge per-scenario instead of replacing the entire array
+            (async () => { try {
+              const fullRun = await client.makeRequest(`/api/eval/runs/${newRunId}` as "/api/config");
+              const d = fullRun as any;
+              if (d?.scenario_runs) {
+                storeApi.getState().actions.updateSimulationRun(newRunId, {
+                  status: d.status, totalTokens: d.total_tokens || 0,
+                  totalCostUsd: d.total_cost_usd || 0, overallSuccessRate: d.overall_success_rate || 0,
+                });
+                for (const s of d.scenario_runs) {
+                  storeApi.getState().actions.updateScenarioRunInSimulation(newRunId, s.id, {
+                    status: s.status, startTime: s.start_time, endTime: s.end_time,
+                    metrics: s.metrics, error: s.error,
+                    turns: (s.turns || []).map((t: any) => ({ turn_index: t.turn_index, task_index: t.task_index, user_message: t.user_message, assistant_message: t.assistant_message, tool_calls: t.tool_calls || [], task_completed: t.task_completed, task_completed_reason: t.task_completed_reason, token_usage: t.token_usage, latency_ms: t.latency_ms, checkers: t.checkers, checker_mode: t.checker_mode })),
+                    tasks: (s.tasks || []).map((t: any) => ({ task_index: t.task_index, description: t.description, completed: t.completed, turns_taken: t.turns_taken, final_reason: t.final_reason })),
+                  });
+                }
+              }
+            } catch { /* non-critical */ } })();
+          }
         }
       }
     } catch (err) { console.error("SSE parse error:", err); }

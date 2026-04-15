@@ -16,7 +16,7 @@
           "task": "filter for deluxe rooms among the results",
           "checkers": [
             {"type": "llm", "expected_result": "information about deluxe room availability"},
-            {"type": "tool_call", "tools": ["search_available_rooms"], "mode": "any"}
+            {"type": "tool_call", "tools": ["search_available_rooms"], "mode": "all"}
           ],
           "checker_mode": "any"
         },
@@ -148,7 +148,7 @@
           "task": "try any city with availability around that date",
           "checkers": [
             {"type": "llm", "expected_result": "no rooms available or guidance on alternative dates"},
-            {"type": "tool_call", "tools": ["search_available_rooms"], "mode": "any"}
+            {"type": "tool_call", "tools": ["search_available_rooms"], "mode": "all"}
           ],
           "checker_mode": "any"
         }
