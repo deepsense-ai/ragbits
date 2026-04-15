@@ -146,7 +146,7 @@ jobs:
         if: steps.check-skip.outputs.skip == 'false'
         run: |
           # Create a temporary environment with common ragbits packages to cache them
-          uv venv --python 3.13 .temp-env
+          uv venv --python 3.10 .temp-env
           source .temp-env/bin/activate
           # Install the most commonly used packages across examples
           uv pip install \
