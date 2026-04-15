@@ -34,7 +34,7 @@ def document_search_metrics() -> MetricSet:
 
 
 def test_run_evaluation() -> None:
-    runner = CliRunner()
+    runner = CliRunner(mix_stderr=False)
     result = runner.invoke(
         eval_app,
         [
