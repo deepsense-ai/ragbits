@@ -228,15 +228,15 @@ jobs:
 
       - name: Export installed packages
         if: matrix.install-method == 'package'
-        run: uv pip freeze > pip-freeze-${{ matrix.install-method }}-py${{ matrix.python-version }}.txt
+        run: uv pip freeze > installed-packages-${{ matrix.install-method }}-py${{ matrix.python-version }}.txt
 
       - name: Publish installed packages
         if: matrix.install-method == 'package'
         uses: actions/upload-artifact@v4
         continue-on-error: true
         with:
-          name: pip-freeze-${{ matrix.install-method }}-py${{ matrix.python-version }}
-          path: pip-freeze-${{ matrix.install-method }}-py${{ matrix.python-version }}.txt
+          name: installed-packages-${{ matrix.install-method }}-py${{ matrix.python-version }}
+          path: installed-packages-${{ matrix.install-method }}-py${{ matrix.python-version }}.txt
           retention-days: 10
 
       - name: Run Tests With Coverage
