@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router";
-import { Button, Chip, Card, CardBody, Tabs, Tab, Spinner } from "@heroui/react";
+import { Button, Chip, Card, CardBody, Tabs, Tab, Spinner, Tooltip } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRagbitsContext } from "@ragbits/api-client-react";
 import { useEvalStore, useEvalStoreApi } from "../../../stores/EvalStoreContext";
@@ -494,7 +494,7 @@ function CheckerResultsList({ checkers }: { checkers: CheckerResultItem[] }) {
                 {checker.type}
               </Chip>
             </div>
-            <p className="text-xs text-foreground-500 mt-1">{checker.reason}</p>
+            {checker.reason && <ExpandableReason reason={checker.reason} />}
           </div>
         </div>
       ))}
@@ -722,14 +722,21 @@ const CHUNK_TYPE_CONFIG: Record<
   { color: "primary" | "success" | "warning" | "secondary" | "danger" | "default"; icon: string; label: string }
 > = {
   text: { color: "primary", icon: "heroicons:document-text", label: "Text" },
+  user_message: { color: "primary", icon: "heroicons:user", label: "User Message" },
   reference: { color: "success", icon: "heroicons:bookmark", label: "Reference" },
   tool_call: { color: "warning", icon: "heroicons:wrench", label: "Tool Call" },
   usage: { color: "secondary", icon: "heroicons:chart-bar", label: "Usage" },
   live_update: { color: "primary", icon: "heroicons:arrow-path", label: "Live Update" },
   checker_decision: { color: "secondary", icon: "heroicons:scale", label: "Checker" },
   error: { color: "danger", icon: "heroicons:exclamation-triangle", label: "Error" },
+  message_id: { color: "default", icon: "heroicons:identification", label: "Message ID" },
+  conversation_id: { color: "default", icon: "heroicons:chat-bubble-left-ellipsis", label: "Conversation ID" },
+  conversation_summary: { color: "secondary", icon: "heroicons:clipboard-document-list", label: "Summary" },
   unknown: { color: "default", icon: "heroicons:question-mark-circle", label: "Unknown" },
 };
+
+// Metadata chunks that aren't useful to display individually in the stream view
+const METADATA_CHUNK_TYPES = new Set(["message_id", "conversation_id", "conversation_summary"]);
 
 function getChunkConfig(chunkType: string) {
   return CHUNK_TYPE_CONFIG[chunkType] || CHUNK_TYPE_CONFIG.unknown;
@@ -760,7 +767,34 @@ function AggregatedTextCard({ chunk }: { chunk: AggregatedTextChunk }) {
             <Chip size="sm" color={config.color} variant="flat">
               {chunk.count} text chunk{chunk.count > 1 ? "s" : ""}
             </Chip>
-            <span className="text-xs text-foreground-500">Turn {chunk.turn_index + 1}</span>
+            <span className="text-xs text-foreground-500">Turn {chunk.turn_index}</span>
+          </div>
+        </div>
+      </CardBody>
+    </Card>
+  );
+}
+
+function UserMessageCard({ chunk }: { chunk: ResponseChunk }) {
+  const config = getChunkConfig("user_message");
+  const text = typeof chunk.chunk_data.text === "string" ? chunk.chunk_data.text : "";
+  return (
+    <Card className="shadow-sm">
+      <CardBody className="p-3">
+        <div className="flex items-start gap-3">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-${config.color}/10`}>
+            <Icon icon={config.icon} className={`text-${config.color} text-lg`} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
+              <Chip size="sm" color={config.color} variant="flat">
+                {config.label}
+              </Chip>
+              <span className="text-xs text-foreground-500">
+                Turn {chunk.turn_index} • Task {chunk.task_index + 1}
+              </span>
+            </div>
+            <p className="text-sm whitespace-pre-wrap">{text}</p>
           </div>
         </div>
       </CardBody>
@@ -769,49 +803,49 @@ function AggregatedTextCard({ chunk }: { chunk: AggregatedTextChunk }) {
 }
 
 function ResponsesView({ scenarioRun }: { scenarioRun: ScenarioRun }) {
-  const responseChunks = scenarioRun.responseChunks || [];
+  const allChunks = scenarioRun.responseChunks || [];
+  const [showMetadata, setShowMetadata] = useState(false);
 
-  // Aggregate consecutive text chunks
-  const aggregatedChunks = useMemo(() => {
+  // Separate metadata (noise) from signal chunks, and aggregate streaming text tokens
+  const { visibleChunks, metadataCount } = useMemo(() => {
+    // Filter out metadata unless the user explicitly wants to see it
+    const filtered = showMetadata
+      ? allChunks
+      : allChunks.filter((c) => !METADATA_CHUNK_TYPES.has(c.chunk_type));
+    const metaCount = allChunks.filter((c) => METADATA_CHUNK_TYPES.has(c.chunk_type)).length;
+
     const result: (ResponseChunk | AggregatedTextChunk)[] = [];
     let textCount = 0;
     let firstTextChunk: ResponseChunk | null = null;
 
-    for (const chunk of responseChunks) {
+    const flushText = () => {
+      if (textCount > 0 && firstTextChunk) {
+        result.push({
+          _aggregated: true,
+          count: textCount,
+          turn_index: firstTextChunk.turn_index,
+          chunk_index: firstTextChunk.chunk_index,
+        });
+        textCount = 0;
+        firstTextChunk = null;
+      }
+    };
+
+    for (const chunk of filtered) {
       if (chunk.chunk_type === "text") {
-        if (textCount === 0) {
-          firstTextChunk = chunk;
-        }
+        if (textCount === 0) firstTextChunk = chunk;
         textCount++;
       } else {
-        if (textCount > 0 && firstTextChunk) {
-          result.push({
-            _aggregated: true,
-            count: textCount,
-            turn_index: firstTextChunk.turn_index,
-            chunk_index: firstTextChunk.chunk_index,
-          });
-          textCount = 0;
-          firstTextChunk = null;
-        }
+        flushText();
         result.push(chunk);
       }
     }
+    flushText();
 
-    // Don't forget trailing text chunks
-    if (textCount > 0 && firstTextChunk) {
-      result.push({
-        _aggregated: true,
-        count: textCount,
-        turn_index: firstTextChunk.turn_index,
-        chunk_index: firstTextChunk.chunk_index,
-      });
-    }
+    return { visibleChunks: result, metadataCount: metaCount };
+  }, [allChunks, showMetadata]);
 
-    return result;
-  }, [responseChunks]);
-
-  if (responseChunks.length === 0) {
+  if (allChunks.length === 0) {
     return (
       <div className="flex h-64 flex-col items-center justify-center text-center">
         <Icon icon="heroicons:squares-2x2" className="text-5xl text-foreground-300 mb-4" />
@@ -827,27 +861,50 @@ function ResponsesView({ scenarioRun }: { scenarioRun: ScenarioRun }) {
     <div className="space-y-3">
       <div className="flex items-center justify-between mb-4">
         <h4 className="font-semibold">Response Stream</h4>
-        <Chip size="sm" variant="flat">
-          {responseChunks.length} chunks
-        </Chip>
+        <div className="flex items-center gap-2">
+          {metadataCount > 0 && (
+            <Button
+              size="sm"
+              variant="light"
+              onPress={() => setShowMetadata((v) => !v)}
+              className="text-xs"
+            >
+              {showMetadata ? "Hide" : "Show"} {metadataCount} metadata
+            </Button>
+          )}
+          <Chip size="sm" variant="flat">
+            {allChunks.length} chunks
+          </Chip>
+        </div>
       </div>
-      {aggregatedChunks.map((chunk, index) =>
-        isAggregatedChunk(chunk) ? (
-          <AggregatedTextCard key={`agg-${chunk.turn_index}-${chunk.chunk_index}`} chunk={chunk} />
-        ) : (
+      {visibleChunks.map((chunk, index) => {
+        if (isAggregatedChunk(chunk)) {
+          return (
+            <AggregatedTextCard
+              key={`agg-${chunk.turn_index}-${chunk.chunk_index}`}
+              chunk={chunk}
+            />
+          );
+        }
+        // Special renderer for user messages to show the text nicely
+        if (chunk.chunk_type === "user_message") {
+          return <UserMessageCard key={index} chunk={chunk} />;
+        }
+        const config = getChunkConfig(chunk.chunk_type);
+        return (
           <Card key={index} className="shadow-sm">
             <CardBody className="p-3">
               <div className="flex items-start gap-3">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-${getChunkConfig(chunk.chunk_type).color}/10`}>
-                  <Icon icon={getChunkConfig(chunk.chunk_type).icon} className={`text-${getChunkConfig(chunk.chunk_type).color} text-lg`} />
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-${config.color}/10`}>
+                  <Icon icon={config.icon} className={`text-${config.color} text-lg`} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    <Chip size="sm" color={getChunkConfig(chunk.chunk_type).color} variant="flat">
-                      {getChunkConfig(chunk.chunk_type).label}
+                    <Chip size="sm" color={config.color} variant="flat">
+                      {config.label}
                     </Chip>
                     <span className="text-xs text-foreground-500">
-                      Turn {chunk.turn_index + 1} • Task {chunk.task_index + 1}
+                      Turn {chunk.turn_index} • Task {chunk.task_index + 1}
                     </span>
                   </div>
                   <pre className="text-xs p-2 bg-default-100 rounded overflow-auto max-h-32">
@@ -857,8 +914,8 @@ function ResponsesView({ scenarioRun }: { scenarioRun: ScenarioRun }) {
               </div>
             </CardBody>
           </Card>
-        )
-      )}
+        );
+      })}
     </div>
   );
 }
@@ -906,6 +963,45 @@ function formatMetricLabel(key: string): string {
     .join(" ");
 }
 
+// Human-readable explanations for each metric shown in the UI.
+// Shown on hover via tooltip so users don't have to guess what a metric means.
+const METRIC_DESCRIPTIONS: Record<string, string> = {
+  total_turns: "Total number of user/assistant exchanges in the conversation.",
+  total_tasks: "Number of tasks defined in this scenario.",
+  tasks_completed: "Number of tasks that the checker(s) marked as completed.",
+  success_rate: "Fraction of tasks completed successfully (tasks_completed / total_tasks).",
+  estimated_usd: "Estimated cost in USD based on the model's per-token pricing.",
+  latency_avg_ms: "Average time (ms) to produce a full response across all turns.",
+  latency_min_ms: "Shortest full-response time (ms) observed across turns.",
+  latency_max_ms: "Longest full-response time (ms) observed across turns.",
+  time_to_first_token_avg_ms:
+    "Average time (ms) from request to the first streamed token — 'perceived responsiveness'.",
+  time_to_first_token_min_ms: "Shortest time-to-first-token across turns.",
+  time_to_first_token_max_ms: "Longest time-to-first-token across turns.",
+  tokens_total: "Total tokens across prompt and completion.",
+  total_tokens: "Total tokens across prompt and completion.",
+  tokens_prompt: "Input tokens sent to the model (system prompt + history + user message).",
+  prompt_tokens: "Input tokens sent to the model (system prompt + history + user message).",
+  tokens_completion: "Tokens generated by the model as its response.",
+  completion_tokens: "Tokens generated by the model as its response.",
+  tokens_avg_per_turn: "Average total tokens used per turn.",
+  tools_total_calls: "Total number of tool invocations across the conversation.",
+  tools_unique: "Distinct tools that the agent called at least once.",
+  tools_counts: "Per-tool count of invocations.",
+};
+
+function MetricLabel({ metricKey, children }: { metricKey: string; children: React.ReactNode }) {
+  const description = METRIC_DESCRIPTIONS[metricKey];
+  if (!description) return <>{children}</>;
+  return (
+    <Tooltip content={description} placement="top">
+      <span className="underline decoration-dotted decoration-foreground-400 cursor-help">
+        {children}
+      </span>
+    </Tooltip>
+  );
+}
+
 // Core Metrics Card - unified display
 function CoreMetricsCard({ metrics }: { metrics: Record<string, unknown> }) {
   const successRate = (metrics.success_rate as number) ?? 0;
@@ -922,24 +1018,32 @@ function CoreMetricsCard({ metrics }: { metrics: Record<string, unknown> }) {
         <div className="grid grid-cols-4 gap-6">
           <div className="text-center">
             <p className="text-3xl font-bold">{(metrics.total_turns as number) ?? 0}</p>
-            <p className="text-xs text-foreground-500 mt-1">Total Turns</p>
+            <p className="text-xs text-foreground-500 mt-1">
+              <MetricLabel metricKey="total_turns">Total Turns</MetricLabel>
+            </p>
           </div>
           <div className="text-center">
             <p className="text-3xl font-bold">
               {(metrics.tasks_completed as number) ?? 0}/{(metrics.total_tasks as number) ?? 0}
             </p>
-            <p className="text-xs text-foreground-500 mt-1">Tasks Completed</p>
+            <p className="text-xs text-foreground-500 mt-1">
+              <MetricLabel metricKey="tasks_completed">Tasks Completed</MetricLabel>
+            </p>
           </div>
           <div className="text-center">
             <div className="flex items-center justify-center gap-2">
               <div className={`w-3 h-3 rounded-full bg-${successColor}`} />
               <p className="text-3xl font-bold">{successPercent.toFixed(0)}%</p>
             </div>
-            <p className="text-xs text-foreground-500 mt-1">Success Rate</p>
+            <p className="text-xs text-foreground-500 mt-1">
+              <MetricLabel metricKey="success_rate">Success Rate</MetricLabel>
+            </p>
           </div>
           <div className="text-center">
             <p className="text-3xl font-bold">${((metrics.estimated_usd as number) ?? 0).toFixed(4)}</p>
-            <p className="text-xs text-foreground-500 mt-1">Estimated Cost</p>
+            <p className="text-xs text-foreground-500 mt-1">
+              <MetricLabel metricKey="estimated_usd">Estimated Cost</MetricLabel>
+            </p>
           </div>
         </div>
       </CardBody>
@@ -965,7 +1069,9 @@ function LatencyMetricsCard({ metrics }: { metrics: Record<string, unknown> }) {
         </div>
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <p className="text-xs text-foreground-500 mb-2">Response Time</p>
+            <p className="text-xs text-foreground-500 mb-2">
+              <MetricLabel metricKey="latency_avg_ms">Response Time</MetricLabel>
+            </p>
             <div className="flex items-baseline gap-2">
               <p className="text-2xl font-bold">{avgLatency.toFixed(0)}</p>
               <p className="text-sm text-foreground-500">ms avg</p>
@@ -976,7 +1082,9 @@ function LatencyMetricsCard({ metrics }: { metrics: Record<string, unknown> }) {
             </div>
           </div>
           <div>
-            <p className="text-xs text-foreground-500 mb-2">Time to First Token</p>
+            <p className="text-xs text-foreground-500 mb-2">
+              <MetricLabel metricKey="time_to_first_token_avg_ms">Time to First Token</MetricLabel>
+            </p>
             <div className="flex items-baseline gap-2">
               <p className="text-2xl font-bold">{ttftAvg.toFixed(0)}</p>
               <p className="text-sm text-foreground-500">ms avg</p>
@@ -1011,7 +1119,9 @@ function TokenUsageCard({ metrics }: { metrics: Record<string, unknown> }) {
         <div className="flex items-center gap-6">
           <div className="flex-1">
             <p className="text-3xl font-bold">{total.toLocaleString()}</p>
-            <p className="text-xs text-foreground-500 mt-1">Total Tokens</p>
+            <p className="text-xs text-foreground-500 mt-1">
+              <MetricLabel metricKey="tokens_total">Total Tokens</MetricLabel>
+            </p>
           </div>
           <div className="flex-1">
             <div className="h-3 rounded-full bg-default-200 overflow-hidden">
@@ -1021,14 +1131,20 @@ function TokenUsageCard({ metrics }: { metrics: Record<string, unknown> }) {
               />
             </div>
             <div className="flex justify-between mt-2 text-xs">
-              <span className="text-primary">{prompt.toLocaleString()} prompt</span>
-              <span className="text-foreground-500">{completion.toLocaleString()} completion</span>
+              <MetricLabel metricKey="tokens_prompt">
+                <span className="text-primary">{prompt.toLocaleString()} prompt</span>
+              </MetricLabel>
+              <MetricLabel metricKey="tokens_completion">
+                <span className="text-foreground-500">{completion.toLocaleString()} completion</span>
+              </MetricLabel>
             </div>
           </div>
           {avgPerTurn > 0 && (
             <div className="text-center">
               <p className="text-xl font-bold">{avgPerTurn.toLocaleString()}</p>
-              <p className="text-xs text-foreground-500">avg/turn</p>
+              <p className="text-xs text-foreground-500">
+                <MetricLabel metricKey="tokens_avg_per_turn">avg/turn</MetricLabel>
+              </p>
             </div>
           )}
         </div>
@@ -1059,7 +1175,9 @@ function ToolUsageCard({ metrics }: { metrics: Record<string, unknown> }) {
         <div className="flex items-start gap-6">
           <div className="text-center">
             <p className="text-3xl font-bold">{totalCalls}</p>
-            <p className="text-xs text-foreground-500 mt-1">Total Calls</p>
+            <p className="text-xs text-foreground-500 mt-1">
+              <MetricLabel metricKey="tools_total_calls">Total Calls</MetricLabel>
+            </p>
           </div>
           <div className="flex-1">
             <p className="text-xs text-foreground-500 mb-2">Tools Used</p>
@@ -1085,9 +1203,58 @@ function ToolUsageCard({ metrics }: { metrics: Record<string, unknown> }) {
   );
 }
 
+// Builds a map from metric-key (e.g. "deepeval_completeness") to description,
+// using source + name from the backend's get_display_info. The metric key format
+// is "{source_lower}_{name_lower_snake}" — e.g. source="DeepEval", name="Completeness"
+// → key="deepeval_completeness".
+function useExtraMetricDescriptions(): Record<string, string> {
+  const config = useEvalStore((s) => s.config);
+  return useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const m of config?.available_extra_metrics ?? []) {
+      if (!m.description) continue;
+      const sourcePart = (m.source ?? "").toLowerCase();
+      const namePart = (m.name ?? "").toLowerCase().replace(/\s+/g, "_");
+      const key = sourcePart ? `${sourcePart}_${namePart}` : namePart;
+      map[key] = m.description;
+    }
+    return map;
+  }, [config]);
+}
+
+// Expandable reason text — shows a 2-line preview with a "Show more" toggle
+// when the reason is long. This lets users read the full explanation from the
+// checker/metric without it overflowing the card.
+function ExpandableReason({ reason }: { reason: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const LONG_THRESHOLD = 140;
+  const isLong = reason.length > LONG_THRESHOLD;
+  return (
+    <div className="mt-2">
+      <p
+        className={`text-xs text-foreground-500 whitespace-pre-wrap ${
+          !expanded && isLong ? "line-clamp-2" : ""
+        }`}
+      >
+        {reason}
+      </p>
+      {isLong && (
+        <button
+          type="button"
+          className="mt-1 text-xs text-primary hover:text-primary-600 underline decoration-dotted"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      )}
+    </div>
+  );
+}
+
 // DeepEval Scores Card - unified display
 function DeepEvalCard({ metrics }: { metrics: Record<string, unknown> }) {
-  const scores: { key: string; label: string; value: number; reason?: string }[] = [];
+  const descriptions = useExtraMetricDescriptions();
+  const scores: { key: string; label: string; value: number; reason?: string; description?: string }[] = [];
 
   for (const [key, value] of Object.entries(metrics)) {
     if (key.startsWith("deepeval_") && !key.includes("reason") && typeof value === "number") {
@@ -1098,6 +1265,7 @@ function DeepEvalCard({ metrics }: { metrics: Record<string, unknown> }) {
         label,
         value,
         reason: metrics[reasonKey] as string | undefined,
+        description: descriptions[key],
       });
     }
   }
@@ -1112,13 +1280,23 @@ function DeepEvalCard({ metrics }: { metrics: Record<string, unknown> }) {
           <h4 className="font-semibold">DeepEval Scores</h4>
         </div>
         <div className="space-y-4">
-          {scores.map(({ key, label, value, reason }) => {
+          {scores.map(({ key, label, value, reason, description }) => {
             const percent = value <= 1 ? value * 100 : value;
             const color = percent >= 90 ? "success" : percent >= 70 ? "warning" : "danger";
             return (
               <div key={key}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium">{label}</span>
+                  <div className="flex items-center gap-1.5">
+                    {description ? (
+                      <Tooltip content={description} placement="top">
+                        <span className="text-sm font-medium underline decoration-dotted decoration-foreground-400 cursor-help">
+                          {label}
+                        </span>
+                      </Tooltip>
+                    ) : (
+                      <span className="text-sm font-medium">{label}</span>
+                    )}
+                  </div>
                   <span className={`text-sm font-bold text-${color}`}>{percent.toFixed(0)}%</span>
                 </div>
                 <div className="h-2 rounded-full bg-default-200 overflow-hidden">
@@ -1127,9 +1305,7 @@ function DeepEvalCard({ metrics }: { metrics: Record<string, unknown> }) {
                     style={{ width: `${percent}%` }}
                   />
                 </div>
-                {reason && (
-                  <p className="text-xs text-foreground-500 mt-2 line-clamp-2">{reason}</p>
-                )}
+                {reason && <ExpandableReason reason={reason} />}
               </div>
             );
           })}
@@ -1154,7 +1330,9 @@ function OtherMetricsCard({ metrics }: { metrics: Record<string, unknown> }) {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {entries.map(([key, value]) => (
             <div key={key}>
-              <p className="text-xs text-foreground-400">{formatMetricLabel(key)}</p>
+              <p className="text-xs text-foreground-400">
+                <MetricLabel metricKey={key}>{formatMetricLabel(key)}</MetricLabel>
+              </p>
               <p className="text-lg font-semibold">{formatMetricValue(key, value)}</p>
             </div>
           ))}

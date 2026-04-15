@@ -1,1 +1,0 @@
-import{r}from"./immer-DjgfCwwy.js";import{H as e}from"./main-CdL4_m27.js";const s=()=>{const t=r.useContext(e);if(!t)throw new Error("useInitializeUserStore must be used within a HistoryStoreContextProvider");return t.initializeUserStore};export{s as u};

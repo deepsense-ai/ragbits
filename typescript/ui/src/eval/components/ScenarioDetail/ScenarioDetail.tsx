@@ -1,7 +1,8 @@
-import { useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import {
   Button,
+  ButtonGroup,
   Card,
   CardBody,
   Textarea,
@@ -214,10 +215,48 @@ export function ScenarioDetail() {
                               </Chip>
                             )) ?? <span className="text-foreground-400 italic">None</span>}
                           </div>
-                          {editedTask?.checker_mode && (
-                            <p className="text-xs text-foreground-400 mt-1">
-                              Mode: {editedTask.checker_mode}
-                            </p>
+                          {(editedTask?.checkers?.length ?? 0) > 1 && (
+                            <div className="mt-2 flex items-center gap-2">
+                              <span className="text-xs text-foreground-500">
+                                Combine checkers with
+                              </span>
+                              <ButtonGroup size="sm" variant="flat">
+                                <Tooltip content="All checkers must pass for the task to be considered completed">
+                                  <Button
+                                    color={
+                                      (editedTask?.checker_mode ?? "all") === "all"
+                                        ? "primary"
+                                        : "default"
+                                    }
+                                    onPress={() =>
+                                      setEditedTask((prev) =>
+                                        prev ? { ...prev, checker_mode: "all" } : null,
+                                      )
+                                    }
+                                    className="font-mono"
+                                  >
+                                    AND
+                                  </Button>
+                                </Tooltip>
+                                <Tooltip content="At least one checker must pass for the task to be considered completed">
+                                  <Button
+                                    color={
+                                      editedTask?.checker_mode === "any"
+                                        ? "primary"
+                                        : "default"
+                                    }
+                                    onPress={() =>
+                                      setEditedTask((prev) =>
+                                        prev ? { ...prev, checker_mode: "any" } : null,
+                                      )
+                                    }
+                                    className="font-mono"
+                                  >
+                                    OR
+                                  </Button>
+                                </Tooltip>
+                              </ButtonGroup>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -262,55 +301,81 @@ export function ScenarioDetail() {
                         <div className="text-sm">
                           <p className="text-foreground-500 mb-2">Checkers</p>
                           {task.checkers && task.checkers.length > 0 ? (
-                            <div className="rounded-lg bg-content2 px-3 py-2.5 space-y-2">
-                              {/* Expected result */}
-                              {task.checkers.some((c) => c.type === "llm" && c.expected_result) && (
-                                <div className="flex items-baseline gap-2">
-                                  <Icon icon="heroicons:chat-bubble-left-ellipsis" className="text-secondary text-sm flex-shrink-0 mt-0.5" />
-                                  <p className="text-sm">
-                                    <span className="text-foreground-400 font-medium">Expected </span>
-                                    <span className="text-foreground-600 italic">
-                                      {String(task.checkers.find((c) => c.type === "llm")?.expected_result)}
-                                    </span>
-                                  </p>
-                                </div>
-                              )}
-
-                              {/* Tools */}
-                              {task.checkers.some((c) => c.type === "tool_call" && c.tools) && (() => {
-                                const toolChecker = task.checkers.find((c) => c.type === "tool_call");
-                                const tools = (toolChecker?.tools as (string | { name: string })[]) ?? [];
-                                return (
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <Icon icon="heroicons:wrench-screwdriver" className="text-warning text-sm flex-shrink-0" />
-                                    <span className="text-sm text-foreground-400 font-medium">Tools</span>
-                                    {tools.map((tool, j) => (
-                                      <Chip key={j} size="sm" variant="flat" color="warning">
-                                        {typeof tool === "string" ? tool : tool.name}
-                                      </Chip>
-                                    ))}
-                                    {!!toolChecker?.mode && String(toolChecker.mode) !== "all" && (
-                                      <Chip size="sm" variant="flat">
-                                        match: {String(toolChecker.mode)}
-                                      </Chip>
+                            <div className="rounded-lg bg-content2 px-3 py-2.5">
+                              {(() => {
+                                const rows: React.ReactNode[] = [];
+                                if (task.checkers.some((c) => c.type === "llm" && c.expected_result)) {
+                                  rows.push(
+                                    <div key="llm" className="flex items-baseline gap-2">
+                                      <Icon icon="heroicons:chat-bubble-left-ellipsis" className="text-secondary text-sm flex-shrink-0 mt-0.5" />
+                                      <p className="text-sm">
+                                        <span className="text-foreground-400 font-medium">Expected </span>
+                                        <span className="text-foreground-600 italic">
+                                          {String(task.checkers.find((c) => c.type === "llm")?.expected_result)}
+                                        </span>
+                                      </p>
+                                    </div>,
+                                  );
+                                }
+                                if (task.checkers.some((c) => c.type === "tool_call" && c.tools)) {
+                                  const toolChecker = task.checkers.find((c) => c.type === "tool_call");
+                                  const tools = (toolChecker?.tools as (string | { name: string })[]) ?? [];
+                                  rows.push(
+                                    <div key="tool" className="flex items-center gap-2 flex-wrap">
+                                      <Icon icon="heroicons:wrench-screwdriver" className="text-warning text-sm flex-shrink-0" />
+                                      <span className="text-sm text-foreground-400 font-medium">Tools</span>
+                                      {tools.map((tool, j) => (
+                                        <Chip key={j} size="sm" variant="flat" color="warning">
+                                          {typeof tool === "string" ? tool : tool.name}
+                                        </Chip>
+                                      ))}
+                                      {!!toolChecker?.mode && String(toolChecker.mode) !== "all" && (
+                                        <Chip size="sm" variant="flat">
+                                          match: {String(toolChecker.mode)}
+                                        </Chip>
+                                      )}
+                                    </div>,
+                                  );
+                                }
+                                if (task.checkers.some((c) => c.type === "state" && c.checks)) {
+                                  rows.push(
+                                    <div key="state" className="flex items-baseline gap-2">
+                                      <Icon icon="heroicons:variable" className="text-primary text-sm flex-shrink-0 mt-0.5" />
+                                      <p className="text-sm">
+                                        <span className="text-foreground-400 font-medium">State </span>
+                                        <span className="text-foreground-600 italic">
+                                          {JSON.stringify(task.checkers.find((c) => c.type === "state")?.checks)}
+                                        </span>
+                                      </p>
+                                    </div>,
+                                  );
+                                }
+                                const mode = task.checker_mode ?? "all";
+                                const operator = mode === "all" ? "AND" : "OR";
+                                const opColor = mode === "all" ? "primary" : "warning";
+                                return rows.map((row, i) => (
+                                  <React.Fragment key={i}>
+                                    {i > 0 && (
+                                      <Tooltip
+                                        content={
+                                          mode === "all"
+                                            ? "All checkers must pass for the task to be considered completed"
+                                            : "At least one checker must pass for the task to be considered completed"
+                                        }
+                                      >
+                                        <div className="flex items-center gap-2 my-1.5 cursor-help">
+                                          <div className="flex-1 h-px bg-default-200" />
+                                          <span className={`text-[10px] font-mono font-semibold tracking-wider text-${opColor}`}>
+                                            {operator}
+                                          </span>
+                                          <div className="flex-1 h-px bg-default-200" />
+                                        </div>
+                                      </Tooltip>
                                     )}
-                                  </div>
-                                );
+                                    {row}
+                                  </React.Fragment>
+                                ));
                               })()}
-
-                              {/* State checks */}
-                              {task.checkers.some((c) => c.type === "state" && c.checks) && (
-                                <div className="flex items-baseline gap-2">
-                                  <Icon icon="heroicons:variable" className="text-primary text-sm flex-shrink-0 mt-0.5" />
-                                  <p className="text-sm">
-                                    <span className="text-foreground-400 font-medium">State </span>
-                                    <span className="text-foreground-600 italic">
-                                      {JSON.stringify(task.checkers.find((c) => c.type === "state")?.checks)}
-                                    </span>
-                                  </p>
-                                </div>
-                              )}
-
                             </div>
                           ) : (
                             <p className="text-foreground-400 italic">No checkers configured</p>

@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useRef } from "react";
-import { Card, CardBody, Chip, Spinner } from "@heroui/react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { Card, CardBody, Chip, Spinner, Tooltip } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { useRagbitsContext } from "@ragbits/api-client-react";
 import { useEvalStore, useEvalStoreApi } from "../../stores/EvalStoreContext";
@@ -222,56 +222,82 @@ function ScenarioDetail({
                 <div className="flex-1">
                   <p className="text-foreground mb-3">{task.task}</p>
 
-                  {/* Checker details - compact two-row layout */}
-                  <div className="rounded-lg bg-content2 px-3 py-2.5 space-y-2">
-                    {/* Expected result row */}
-                    {task.checkers.some((c) => c.type === "llm" && c.expected_result) && (
-                      <div className="flex items-baseline gap-2">
-                        <Icon icon="heroicons:chat-bubble-left-ellipsis" className="text-secondary text-sm flex-shrink-0 mt-0.5" />
-                        <p className="text-sm">
-                          <span className="text-foreground-400 font-medium">Expected </span>
-                          <span className="text-foreground-600 italic">
-                            {String(task.checkers.find((c) => c.type === "llm")?.expected_result)}
-                          </span>
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Tools row */}
-                    {task.checkers.some((c) => c.type === "tool_call" && c.tools) && (() => {
-                      const toolChecker = task.checkers.find((c) => c.type === "tool_call");
-                      const tools = (toolChecker?.tools as (string | { name: string })[]) ?? [];
-                      return (
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <Icon icon="heroicons:wrench-screwdriver" className="text-warning text-sm flex-shrink-0" />
-                          <span className="text-sm text-foreground-400 font-medium">Tools</span>
-                          {tools.map((tool, j) => (
-                            <Chip key={j} size="sm" variant="flat" color="warning">
-                              {typeof tool === "string" ? tool : tool.name}
-                            </Chip>
-                          ))}
-                          {!!toolChecker?.mode && String(toolChecker.mode) !== "all" && (
-                            <Chip size="sm" variant="flat">
-                              match: {String(toolChecker.mode)}
-                            </Chip>
+                  {/* Checker details - rows separated by AND/OR operators based on checker_mode */}
+                  <div className="rounded-lg bg-content2 px-3 py-2.5">
+                    {(() => {
+                      const rows: React.ReactNode[] = [];
+                      if (task.checkers.some((c) => c.type === "llm" && c.expected_result)) {
+                        rows.push(
+                          <div key="llm" className="flex items-baseline gap-2">
+                            <Icon icon="heroicons:chat-bubble-left-ellipsis" className="text-secondary text-sm flex-shrink-0 mt-0.5" />
+                            <p className="text-sm">
+                              <span className="text-foreground-400 font-medium">Expected </span>
+                              <span className="text-foreground-600 italic">
+                                {String(task.checkers.find((c) => c.type === "llm")?.expected_result)}
+                              </span>
+                            </p>
+                          </div>,
+                        );
+                      }
+                      if (task.checkers.some((c) => c.type === "tool_call" && c.tools)) {
+                        const toolChecker = task.checkers.find((c) => c.type === "tool_call");
+                        const tools = (toolChecker?.tools as (string | { name: string })[]) ?? [];
+                        rows.push(
+                          <div key="tool" className="flex items-center gap-2 flex-wrap">
+                            <Icon icon="heroicons:wrench-screwdriver" className="text-warning text-sm flex-shrink-0" />
+                            <span className="text-sm text-foreground-400 font-medium">Tools</span>
+                            {tools.map((tool, j) => (
+                              <Chip key={j} size="sm" variant="flat" color="warning">
+                                {typeof tool === "string" ? tool : tool.name}
+                              </Chip>
+                            ))}
+                            {!!toolChecker?.mode && String(toolChecker.mode) !== "all" && (
+                              <Chip size="sm" variant="flat">
+                                match: {String(toolChecker.mode)}
+                              </Chip>
+                            )}
+                          </div>,
+                        );
+                      }
+                      if (task.checkers.some((c) => c.type === "state" && c.checks)) {
+                        rows.push(
+                          <div key="state" className="flex items-baseline gap-2">
+                            <Icon icon="heroicons:variable" className="text-primary text-sm flex-shrink-0 mt-0.5" />
+                            <p className="text-sm">
+                              <span className="text-foreground-400 font-medium">State </span>
+                              <span className="text-foreground-600 italic">
+                                {JSON.stringify(task.checkers.find((c) => c.type === "state")?.checks)}
+                              </span>
+                            </p>
+                          </div>,
+                        );
+                      }
+                      const mode = task.checker_mode ?? "all";
+                      const operator = mode === "all" ? "AND" : "OR";
+                      const opColor = mode === "all" ? "primary" : "warning";
+                      return rows.map((row, i) => (
+                        <React.Fragment key={i}>
+                          {i > 0 && (
+                            <Tooltip
+                              content={
+                                mode === "all"
+                                  ? "All checkers must pass for the task to be considered completed"
+                                  : "At least one checker must pass for the task to be considered completed"
+                              }
+                            >
+                              <div className="flex items-center gap-2 my-1.5 cursor-help">
+                                <div className="flex-1 h-px bg-default-200" />
+                                <span className={`text-[10px] font-mono font-semibold tracking-wider text-${opColor}`}>
+                                  {operator}
+                                </span>
+                                <div className="flex-1 h-px bg-default-200" />
+                              </div>
+                            </Tooltip>
                           )}
-                        </div>
-                      );
+                          {row}
+                        </React.Fragment>
+                      ));
                     })()}
-
-                    {/* State checks row */}
-                    {task.checkers.some((c) => c.type === "state" && c.checks) && (
-                      <div className="flex items-baseline gap-2">
-                        <Icon icon="heroicons:variable" className="text-primary text-sm flex-shrink-0 mt-0.5" />
-                        <p className="text-sm">
-                          <span className="text-foreground-400 font-medium">State </span>
-                          <span className="text-foreground-600 italic">
-                            {JSON.stringify(task.checkers.find((c) => c.type === "state")?.checks)}
-                          </span>
-                        </p>
-                      </div>
-                    )}
-
                   </div>
                 </div>
               </div>

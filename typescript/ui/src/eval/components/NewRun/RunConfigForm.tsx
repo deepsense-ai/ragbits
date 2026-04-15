@@ -1,5 +1,6 @@
 import { useMemo, useCallback, useEffect, useRef } from "react";
-import { Input, Card, CardBody, Checkbox, Chip } from "@heroui/react";
+import { Input, Card, CardBody, Checkbox, Chip, Tooltip } from "@heroui/react";
+import { Icon } from "@iconify/react";
 import { useEvalStore, useEvalStoreApi } from "../../stores/EvalStoreContext";
 
 export function RunConfigForm() {
@@ -228,6 +229,16 @@ export function RunConfigForm() {
                       <Chip size="sm" variant="flat" color="secondary" className="text-xs">
                         {metric.source}
                       </Chip>
+                    )}
+                    {metric.description && (
+                      <Tooltip content={metric.description} placement="top">
+                        <span
+                          className="text-foreground-400 hover:text-foreground-600 flex-shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <Icon icon="heroicons:information-circle" className="text-sm" />
+                        </span>
+                      </Tooltip>
                     )}
                   </button>
                 );
