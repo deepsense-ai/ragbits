@@ -43,7 +43,7 @@ def add_custom_source_to_path():
     ],
 )
 def test_ingest(pattern: str, num_expected: int) -> None:
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     with tempfile.TemporaryDirectory() as temp_dir:
         # Create multiple test files
         test_files = [

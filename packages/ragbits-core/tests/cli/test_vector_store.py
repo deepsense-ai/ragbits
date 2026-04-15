@@ -82,13 +82,13 @@ def test_vector_store_cli_no_store():
     Args:
         cli_runner: A CLI runner fixture.
     """
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(vector_stores_app, ["list"])
     assert "You need to provide the vector store instance to be used" in result.stderr
 
 
 def test_vector_store_list():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(
         vector_stores_app,
         ["--factory-path", "cli.test_vector_store:vector_store_factory", "list"],
@@ -100,7 +100,7 @@ def test_vector_store_list():
 
 
 def test_vector_store_list_limit_offset():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(
         vector_stores_app,
         ["--factory-path", "cli.test_vector_store:vector_store_factory", "list", "--limit", "1", "--offset", "1"],
@@ -112,7 +112,7 @@ def test_vector_store_list_limit_offset():
 
 
 def test_vector_store_list_columns():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(
         vector_stores_app,
         ["--factory-path", "cli.test_vector_store:vector_store_factory", "list", "--columns", "id,text,metadata"],
@@ -143,7 +143,7 @@ def test_vector_store_list_columns():
 
 
 def test_vector_store_list_columns_non_existent():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(
         vector_stores_app,
         ["--factory-path", "cli.test_vector_store:vector_store_factory", "list", "--columns", "id,text,non_existent"],
@@ -153,7 +153,7 @@ def test_vector_store_list_columns_non_existent():
 
 
 def test_vector_store_remove():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(
         vector_stores_app,
         [
@@ -180,7 +180,7 @@ def test_vector_store_remove():
 
 
 def test_vector_store_query():
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(
         vector_stores_app,
         [
@@ -201,7 +201,7 @@ def test_vector_store_query():
 
 def test_vector_store_list_json():
     autoregister()
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(
         root_app,
         [
@@ -225,7 +225,7 @@ def test_vector_store_list_json():
 
 def test_vector_store_query_json():
     autoregister()
-    runner = CliRunner(mix_stderr=False)
+    runner = CliRunner()
     result = runner.invoke(
         root_app,
         [
