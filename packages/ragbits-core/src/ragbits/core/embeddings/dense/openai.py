@@ -139,3 +139,7 @@ class OpenAIEmbedder(DenseEmbedder[OpenAIEmbedderOptions]):
                 outputs.total_tokens = response.usage.total_tokens
 
         return outputs.embeddings
+
+    async def aclose(self) -> None:
+        """Close the underlying HTTP client and release connections."""
+        await self.client.aclose()

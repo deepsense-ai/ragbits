@@ -47,7 +47,7 @@ from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
 from ragbits.chat.interface.ui_customization import HeaderCustomization, PageMetaCustomization, UICustomization
-from ragbits.core.llms import LiteLLM, ToolCall
+from ragbits.core.llms import OpenAILLM, ToolCall
 from ragbits.core.prompt import Prompt
 from ragbits.core.prompt.base import ChatFormat
 
@@ -145,7 +145,7 @@ class MyChat(ChatInterface):
 
     def __init__(self) -> None:
         self.model_name = "gpt-4o-2024-08-06"
-        self.llm = LiteLLM(model_name=self.model_name, use_structured_output=True)
+        self.llm = OpenAILLM(model_name=self.model_name, use_structured_output=True)
         self.agent = Agent(
             llm=self.llm,
             prompt=GeneralAssistantPrompt,

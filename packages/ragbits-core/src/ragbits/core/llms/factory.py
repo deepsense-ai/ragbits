@@ -19,6 +19,43 @@ def get_preferred_llm(llm_type: LLMType = LLMType.TEXT) -> LLM:
     return LLM.subclass_from_factory(factory)
 
 
+def simple_openai_factory() -> LLM:
+    """
+    A basic LLM factory that creates an OpenAILLM instance with the default model,
+    default options, and assumes that the API key is set in the environment.
+
+    Returns:
+        LLM: An instance of the OpenAILLM class.
+    """
+    from ragbits.core.llms.openai import OpenAILLM
+
+    return OpenAILLM()
+
+
+def simple_openai_vision_factory() -> LLM:
+    """
+    A basic LLM factory that creates an OpenAILLM instance with a vision-capable model.
+
+    Returns:
+        LLM: An instance of the OpenAILLM class.
+    """
+    from ragbits.core.llms.openai import OpenAILLM
+
+    return OpenAILLM(model_name="gpt-4o-mini")
+
+
+def simple_openai_structured_output_factory() -> LLM:
+    """
+    A basic LLM factory that creates an OpenAILLM instance with structured output support.
+
+    Returns:
+        LLM: An instance of the OpenAILLM class.
+    """
+    from ragbits.core.llms.openai import OpenAILLM
+
+    return OpenAILLM(model_name="gpt-4o-mini", use_structured_output=True)
+
+
 def simple_litellm_factory() -> LLM:
     """
     A basic LLM factory that creates an LiteLLM instance with the default model,

@@ -112,7 +112,7 @@ By default, the input query is provided directly to the embedding model. However
     from ragbits.document_search.retrieval.rephrasers import LLMQueryRephraser
     from ragbits.document_search import DocumentSearch
 
-    query_rephraser = LLMQueryRephraser(LiteLLM(model_name="gpt-3.5-turbo"))
+    query_rephraser = LLMQueryRephraser(OpenAILLM(model_name="gpt-3.5-turbo"))
     document_search = DocumentSearch(query_rephraser=query_rephraser, ...)
 
     elements = await document_search.search("What is the capital of Poland?")
@@ -126,7 +126,7 @@ By default, the input query is provided directly to the embedding model. However
     from ragbits.document_search.retrieval.rephrasers import LLMQueryRephraser, LLMQueryRephraserOptions
     from ragbits.document_search import DocumentSearch
 
-    query_rephraser = LLMQueryRephraser(LiteLLM(model_name="gpt-3.5-turbo"), default_options=LLMQueryRephraserOptions(n=3))
+    query_rephraser = LLMQueryRephraser(OpenAILLM(model_name="gpt-3.5-turbo"), default_options=LLMQueryRephraserOptions(n=3))
     document_search = DocumentSearch(query_rephraser=query_rephraser, ...)
 
     elements = await document_search.search("What is the capital of Poland?")

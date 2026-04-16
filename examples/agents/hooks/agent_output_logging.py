@@ -24,7 +24,7 @@ import asyncio
 from ragbits.agents import Agent
 from ragbits.agents.hooks import EventType, Hook
 from ragbits.agents.tool import ToolReturn
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.llms.base import ToolCall
 
 
@@ -41,7 +41,7 @@ async def log_agent_output(tool_call: ToolCall, tool_return: ToolReturn) -> Tool
 
 async def main() -> None:
     """Run the example."""
-    llm = LiteLLM("gpt-4o-mini")
+    llm = OpenAILLM("gpt-4o-mini")
 
     # Child agent 1: Diet expert
     diet_agent = Agent(

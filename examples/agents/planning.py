@@ -25,7 +25,7 @@ from pydantic import BaseModel
 
 from ragbits.agents import Agent, AgentOptions, ToolCall, ToolCallResult
 from ragbits.agents.tools.planning import PlanningState, create_planning_tools
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Prompt
 
 
@@ -62,7 +62,7 @@ async def main() -> None:
     """
     planning_state = PlanningState()
     agent = Agent(
-        llm=LiteLLM("gpt-4.1-mini"),
+        llm=OpenAILLM("gpt-4.1-mini"),
         prompt=CodePlannerPrompt,
         tools=create_planning_tools(planning_state),
         default_options=AgentOptions(max_turns=50),

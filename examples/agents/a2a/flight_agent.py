@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from ragbits.agents import Agent
 from ragbits.agents.a2a.server import create_agent_server
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Prompt
 
 
@@ -52,7 +52,7 @@ class FlightPrompt(Prompt[FlightPromptInput]):
     """
 
 
-llm = LiteLLM(
+llm = OpenAILLM(
     model_name="gpt-4.1",
     use_structured_output=True,
 )

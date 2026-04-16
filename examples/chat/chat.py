@@ -37,7 +37,7 @@ from ragbits.chat.interface.types import (
     ResponseContent,
 )
 from ragbits.chat.interface.ui_customization import HeaderCustomization, PageMetaCustomization, UICustomization
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import ChatFormat
 
 
@@ -145,7 +145,7 @@ class MyChat(ChatInterface):
     show_usage = True
 
     def __init__(self) -> None:
-        self.llm = LiteLLM(model_name="gpt-4o-mini")
+        self.llm = OpenAILLM(model_name="gpt-4o-mini")
         self.summary_generator = HybridSummaryGenerator(self.llm)
 
     async def chat(

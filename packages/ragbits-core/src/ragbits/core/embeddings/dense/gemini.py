@@ -1,4 +1,6 @@
-from typing import cast
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, cast
 
 from ragbits.core.audit.traces import trace
 from ragbits.core.embeddings.base import VectorSize
@@ -14,10 +16,18 @@ from ragbits.core.types import NOT_GIVEN, NotGiven
 try:
     from google import genai
     from google.api_core import exceptions as google_exceptions
+    from google.genai import types as genai_types
 
     HAS_GEMINI = True
 except ImportError:
     HAS_GEMINI = False
+    genai = None  # type: ignore[assignment]
+    google_exceptions = None  # type: ignore[assignment]
+    genai_types = None  # type: ignore[assignment]
+
+if TYPE_CHECKING:
+    from google.genai import types as genai_types
+    from PIL.Image import Image as PILImage
 
 
 class GeminiEmbedderOptions(Options):
@@ -102,11 +112,17 @@ class GeminiEmbedder(DenseEmbedder[GeminiEmbedderOptions]):
         merged_options = (self.default_options | options) if options else self.default_options
         options_dict = merged_options.dict()
 
-        config = {}
+        config: genai_types.EmbedContentConfig | None = None
         if "output_dimensionality" in options_dict:
-            config["output_dimensionality"] = options_dict["output_dimensionality"]
+            config = genai_types.EmbedContentConfig(output_dimensionality=options_dict["output_dimensionality"])
         if "task_type" in options_dict:
-            config["task_type"] = options_dict["task_type"]
+            config = (
+                genai_types.EmbedContentConfig(task_type=options_dict["task_type"])
+                if config is None
+                else genai_types.EmbedContentConfig(
+                    output_dimensionality=config.output_dimensionality, task_type=options_dict["task_type"]
+                )
+            )
 
         with trace(
             data=data,
@@ -114,13 +130,17 @@ class GeminiEmbedder(DenseEmbedder[GeminiEmbedderOptions]):
             options=options_dict,
         ) as outputs:
             try:
+                contents: list[str | PILImage | genai_types.File | genai_types.Part] = cast(
+                    "list[str | PILImage | genai_types.File | genai_types.Part]", data
+                )
                 response = await self.client.aio.models.embed_content(
                     model=self.model_name,
-                    contents=data,
-                    config=config if config else None,
+                    contents=contents,
+                    config=config,
                 )
             except google_exceptions.GoogleAPICallError as exc:
-                raise EmbeddingStatusError(str(exc), exc.code) from exc
+                status_code = exc.code if exc.code is not None else 500
+                raise EmbeddingStatusError(str(exc), status_code) from exc
             except google_exceptions.GoogleAPIError as exc:
                 raise EmbeddingConnectionError(str(exc)) from exc
 

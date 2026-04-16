@@ -30,7 +30,7 @@ To pass multiple attachments, just define multiple fields of type `Attachment` o
 import asyncio
 from pydantic import BaseModel
 from ragbits.core.prompt import Attachment, Prompt
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 class EmployeeOnboardingInput(BaseModel):
     """
@@ -50,7 +50,7 @@ class EmployeeOnboardingPrompt(Prompt):
 
 
 async def main():
-    llm = LiteLLM("gpt-4o")
+    llm = OpenAILLM("gpt-4o")
 
     headshot = Attachment(data=b"<your_photo_here>")
     contract = Attachment(data=b"<your_contract_here>")
@@ -76,7 +76,7 @@ Sometimes, you may want to modify the prompt based on whether an attachment is p
 import asyncio
 from pydantic import BaseModel
 from ragbits.core.prompt import Attachment, Prompt
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 class QuestionWithOptionalPhotoInput(BaseModel):
     """
@@ -107,7 +107,7 @@ class QuestionWithPhotoPrompt(Prompt[QuestionWithOptionalPhotoInput]):
 
 
 async def main():
-    llm = LiteLLM("gpt-4o")
+    llm = OpenAILLM("gpt-4o")
     input_with_photo = QuestionWithOptionalPhotoInput(
         question="What animal do you see in this photo?", reference_photo=Attachment(data=b"<your_photo_here>")
     )

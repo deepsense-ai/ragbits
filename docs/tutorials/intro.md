@@ -36,10 +36,10 @@ In order to run this prompt, initilize [`LLM`][ragbits.core.llms.base.LLM] clien
 ```python
 import asyncio
 
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 async def main() -> None:
-    llm = LiteLLM(model_name="gpt-4.1-nano")
+    llm = OpenAILLM(model_name="gpt-4.1-nano")
     prompt = QuestionAnswerPrompt(QuestionAnswerPromptInput(
         question="What are high memory and low memory on linux?",
     ))
@@ -80,7 +80,7 @@ Note that we have added a schema for the response, you can use it for structured
 
 ```python hl_lines="2"
 async def main() -> None:
-    llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
+    llm = OpenAILLM(model_name="gpt-4.1-nano", use_structured_output=True)
     prompt = CoTQuestionAnswerPrompt(QuestionAnswerPromptInput(
         question="What are high memory and low memory on linux?",
     ))
@@ -109,7 +109,7 @@ Ragbits provides evalution for second layer components, such as [`DocumentSearch
 ```python
 from ragbits.agents.types import QuestionAnswerAgent
 
-llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
+llm = OpenAILLM(model_name="gpt-4.1-nano", use_structured_output=True)
 responder = QuestionAnswerAgent(llm=llm, prompt=CoTQuestionAnswerPrompt)
 ```
 
@@ -154,7 +154,7 @@ That metric measures essentially an answer correctness, so let's load a [`Questi
 ```python
 from ragbits.evaluate.metrics.question_answer import QuestionAnswerAnswerCorrectness
 
-judge = LiteLLM(model_name="gpt-4.1")
+judge = OpenAILLM(model_name="gpt-4.1")
 metric = QuestionAnswerAnswerCorrectness(judge)
 ```
 

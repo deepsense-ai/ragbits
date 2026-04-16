@@ -39,7 +39,7 @@ MCP servers can be added to Agents. Ragbits will call `list_tools()` on the MCP 
 ```python
 from ragbits.agents import Agent
 from ragbits.agents.mcp import MCPServerStdio
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 async with MCPServerStdio(
     params={
@@ -47,7 +47,7 @@ async with MCPServerStdio(
         "args": ["-y", "@modelcontextprotocol/server-filesystem", "."],
     }
 ) as server:
-    agent = Agent(llm=LiteLLM(model_name="gpt-4.1-nano"), mcp_servers=[server])
+    agent = Agent(llm=OpenAILLM(model_name="gpt-4.1-nano"), mcp_servers=[server])
     await agent.run("List all files in the current directory.")
 ```
 

@@ -26,7 +26,6 @@ import logging
 
 from ragbits.evaluate.evaluator import Evaluator
 
-logging.getLogger("LiteLLM").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
 
 config = {

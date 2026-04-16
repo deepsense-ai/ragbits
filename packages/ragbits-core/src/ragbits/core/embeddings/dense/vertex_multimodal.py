@@ -23,6 +23,9 @@ try:
     HAS_GOOGLE_GENAI = True
 except ImportError:
     HAS_GOOGLE_GENAI = False
+    genai = None  # type: ignore[assignment]
+    google_exceptions = None  # type: ignore[assignment]
+    genai_types = None  # type: ignore[assignment]
 
 try:
     import google.auth
@@ -43,6 +46,7 @@ from ragbits.core.embeddings.exceptions import (
 )
 
 logger = logging.getLogger(__name__)
+HTTP_STATUS_OK = 200
 
 
 class VertexAIMultimodalEmbedderOptions(Options):
@@ -360,7 +364,7 @@ class VertexAIMultimodalEmbedder(DenseEmbedder[VertexAIMultimodalEmbedderOptions
                         json={"instances": [instance]},
                         timeout=client_timeout,
                     ) as resp:
-                        if resp.status != 200:
+                        if resp.status != HTTP_STATUS_OK:
                             body = await resp.text()
                             raise EmbeddingStatusError(body, resp.status)
                         result = await resp.json()

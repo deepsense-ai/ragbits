@@ -14,6 +14,14 @@ from ragbits.core.embeddings.exceptions import (
     EmbeddingStatusError,
 )
 
+
+@pytest.fixture(autouse=True)
+def mock_genai_types():
+    mock_types = MagicMock()
+    with patch("ragbits.core.embeddings.dense.vertex_multimodal.genai_types", mock_types):
+        yield mock_types
+
+
 # --- Tests using _embed mock (work for both model families) ---
 
 
@@ -65,10 +73,8 @@ def test_is_legacy_model():
     assert legacy._is_legacy_model is True
 
 
-@patch("ragbits.core.embeddings.dense.vertex_multimodal.genai")
-def test_is_modern_model(mock_genai: MagicMock):
-    mock_genai.Client.return_value = MagicMock()
-    modern = VertexAIMultimodalEmbedder(model_name="gemini-embedding-exp-03-07")
+def test_is_modern_model():
+    modern = _make_modern_embedder(model_name="gemini-embedding-exp-03-07")
     assert modern._is_legacy_model is False
 
 
@@ -82,36 +88,40 @@ def test_concurrency_must_be_positive():
         VertexAIMultimodalEmbedder(model_name="multimodalembedding@001", concurrency=0)
 
 
+# --- Modern model helpers ---
+
+
+def _make_modern_embedder(model_name: str = "gemini-embedding-exp-03-07") -> VertexAIMultimodalEmbedder:
+    """Create a modern VertexAIMultimodalEmbedder with a stub client (no real google-genai SDK needed)."""
+    mock_client = MagicMock()
+    with (
+        patch("ragbits.core.embeddings.dense.vertex_multimodal.HAS_GOOGLE_GENAI", True),
+        patch("ragbits.core.embeddings.dense.vertex_multimodal.genai", create=True) as mock_genai,
+    ):
+        mock_genai.Client.return_value = mock_client
+        embedder = VertexAIMultimodalEmbedder(model_name=model_name)
+    return embedder
+
+
 # --- Modern model tests (gemini-embedding-*) ---
 
 
-@patch("ragbits.core.embeddings.dense.vertex_multimodal.genai")
-async def test_modern_embed_text(mock_genai: MagicMock):
-    mock_client = MagicMock()
-    mock_aio = MagicMock()
-    mock_models = MagicMock()
-
-    mock_response = MagicMock()
+async def test_modern_embed_text():
+    embedder = _make_modern_embedder()
     mock_embedding = MagicMock()
     mock_embedding.values = [0.1, 0.2, 0.3]
+    mock_response = MagicMock()
     mock_response.embeddings = [mock_embedding]
-    mock_models.embed_content = AsyncMock(return_value=mock_response)
-    mock_aio.models = mock_models
-    mock_client.aio = mock_aio
-    mock_genai.Client.return_value = mock_client
+    embedder._client.aio.models.embed_content = AsyncMock(return_value=mock_response)
 
-    embedder = VertexAIMultimodalEmbedder(model_name="gemini-embedding-exp-03-07")
     result = await embedder.embed_text(["test"])
 
     assert result == [[0.1, 0.2, 0.3]]
-    mock_models.embed_content.assert_called_once()
+    embedder._client.aio.models.embed_content.assert_called_once()
 
 
-@patch("ragbits.core.embeddings.dense.vertex_multimodal.genai")
-async def test_modern_embed_multiple_texts(mock_genai: MagicMock):
-    mock_client = MagicMock()
-    mock_aio = MagicMock()
-    mock_models = MagicMock()
+async def test_modern_embed_multiple_texts():
+    embedder = _make_modern_embedder()
 
     def make_response(values: list[float]) -> MagicMock:
         mock_response = MagicMock()
@@ -120,12 +130,10 @@ async def test_modern_embed_multiple_texts(mock_genai: MagicMock):
         mock_response.embeddings = [mock_embedding]
         return mock_response
 
-    mock_models.embed_content = AsyncMock(side_effect=[make_response([0.1, 0.2]), make_response([0.3, 0.4])])
-    mock_aio.models = mock_models
-    mock_client.aio = mock_aio
-    mock_genai.Client.return_value = mock_client
+    embedder._client.aio.models.embed_content = AsyncMock(
+        side_effect=[make_response([0.1, 0.2]), make_response([0.3, 0.4])]
+    )
 
-    embedder = VertexAIMultimodalEmbedder(model_name="gemini-embedding-exp-03-07")
     result = await embedder.embed_text(["hello", "world"])
 
     assert len(result) == 2
@@ -133,96 +141,66 @@ async def test_modern_embed_multiple_texts(mock_genai: MagicMock):
     assert result[1] == [0.3, 0.4]
 
 
-@patch("ragbits.core.embeddings.dense.vertex_multimodal.genai")
-async def test_modern_omits_none_dimensions_in_config(mock_genai: MagicMock):
-    mock_client = MagicMock()
-    mock_aio = MagicMock()
-    mock_models = MagicMock()
-    mock_response = MagicMock()
+async def test_modern_omits_none_dimensions_in_config():
+    embedder = _make_modern_embedder()
     mock_embedding = MagicMock()
     mock_embedding.values = [0.1, 0.2, 0.3]
+    mock_response = MagicMock()
     mock_response.embeddings = [mock_embedding]
-    mock_models.embed_content = AsyncMock(return_value=mock_response)
-    mock_aio.models = mock_models
-    mock_client.aio = mock_aio
-    mock_genai.Client.return_value = mock_client
+    embedder._client.aio.models.embed_content = AsyncMock(return_value=mock_response)
 
-    embedder = VertexAIMultimodalEmbedder(model_name="gemini-embedding-exp-03-07")
     options = VertexAIMultimodalEmbedderOptions(dimensions=None)
     await embedder.embed_text(["test"], options=options)
 
-    assert mock_models.embed_content.call_args.kwargs["config"] is None
+    assert embedder._client.aio.models.embed_content.call_args.kwargs["config"] is None
 
 
-@patch("ragbits.core.embeddings.dense.vertex_multimodal.genai")
-async def test_modern_timeout_error_mapped_to_embedding_connection_error(mock_genai: MagicMock):
-    mock_client = MagicMock()
-    mock_aio = MagicMock()
-    mock_models = MagicMock()
+async def test_modern_timeout_error_mapped_to_embedding_connection_error():
+    embedder = _make_modern_embedder()
 
     async def slow_embed(*args, **kwargs) -> MagicMock:  # noqa: ARG001
         await asyncio.sleep(1.2)
         return MagicMock(embeddings=[MagicMock(values=[0.1, 0.2, 0.3])])
 
-    mock_models.embed_content = AsyncMock(side_effect=slow_embed)
-    mock_aio.models = mock_models
-    mock_client.aio = mock_aio
-    mock_genai.Client.return_value = mock_client
+    embedder._client.aio.models.embed_content = AsyncMock(side_effect=slow_embed)
 
-    embedder = VertexAIMultimodalEmbedder(model_name="gemini-embedding-exp-03-07")
     options = VertexAIMultimodalEmbedderOptions(timeout=1)
-
     with pytest.raises(EmbeddingConnectionError, match="Request timed out"):
         await embedder.embed_text(["test"], options=options)
 
 
-@patch("ragbits.core.embeddings.dense.vertex_multimodal.genai")
-async def test_modern_empty_response(mock_genai: MagicMock):
-    mock_client = MagicMock()
-    mock_aio = MagicMock()
-    mock_models = MagicMock()
+async def test_modern_empty_response():
+    embedder = _make_modern_embedder()
     mock_response = MagicMock()
     mock_response.embeddings = []
-    mock_models.embed_content = AsyncMock(return_value=mock_response)
-    mock_aio.models = mock_models
-    mock_client.aio = mock_aio
-    mock_genai.Client.return_value = mock_client
-
-    embedder = VertexAIMultimodalEmbedder(model_name="gemini-embedding-exp-03-07")
+    embedder._client.aio.models.embed_content = AsyncMock(return_value=mock_response)
 
     with pytest.raises(EmbeddingResponseError):
         await embedder.embed_text(["test"])
 
 
-@patch("ragbits.core.embeddings.dense.vertex_multimodal.genai")
-@patch("ragbits.core.embeddings.dense.vertex_multimodal.google_exceptions")
-async def test_modern_api_call_error(mock_google_exc: MagicMock, mock_genai: MagicMock):
-    mock_client = MagicMock()
-    mock_aio = MagicMock()
-    mock_models = MagicMock()
+async def test_modern_api_call_error():
+    embedder = _make_modern_embedder()
 
-    exc = Exception("Not found")
-    exc.code = 404
-    mock_google_exc.GoogleAPICallError = type(exc)
-    mock_google_exc.GoogleAPIError = Exception
-    mock_models.embed_content = AsyncMock(side_effect=exc)
-    mock_aio.models = mock_models
-    mock_client.aio = mock_aio
-    mock_genai.Client.return_value = mock_client
+    class MockGoogleAPICallError(Exception):
+        def __init__(self, message: str, code: int) -> None:
+            super().__init__(message)
+            self.code = code
 
-    embedder = VertexAIMultimodalEmbedder(model_name="gemini-embedding-exp-03-07")
+    exc = MockGoogleAPICallError("Not found", 404)
+    embedder._client.aio.models.embed_content = AsyncMock(side_effect=exc)
 
-    with pytest.raises(EmbeddingStatusError) as exc_info:
-        await embedder.embed_text(["test"])
+    with patch("ragbits.core.embeddings.dense.vertex_multimodal.google_exceptions") as mock_google_exc:
+        mock_google_exc.GoogleAPICallError = MockGoogleAPICallError
+        mock_google_exc.GoogleAPIError = Exception
+        with pytest.raises(EmbeddingStatusError) as exc_info:
+            await embedder.embed_text(["test"])
+
     assert exc_info.value.status_code == 404
 
 
-@patch("ragbits.core.embeddings.dense.vertex_multimodal.genai")
-@patch("ragbits.core.embeddings.dense.vertex_multimodal.google_exceptions")
-async def test_modern_connection_error(mock_google_exc: MagicMock, mock_genai: MagicMock):
-    mock_client = MagicMock()
-    mock_aio = MagicMock()
-    mock_models = MagicMock()
+async def test_modern_connection_error():
+    embedder = _make_modern_embedder()
 
     class MockGoogleAPIError(Exception):
         pass
@@ -231,30 +209,18 @@ async def test_modern_connection_error(mock_google_exc: MagicMock, mock_genai: M
         pass
 
     exc = MockGoogleAPIError("Connection failed")
-    mock_google_exc.GoogleAPICallError = MockGoogleAPICallError
-    mock_google_exc.GoogleAPIError = MockGoogleAPIError
-    mock_models.embed_content = AsyncMock(side_effect=exc)
-    mock_aio.models = mock_models
-    mock_client.aio = mock_aio
-    mock_genai.Client.return_value = mock_client
+    embedder._client.aio.models.embed_content = AsyncMock(side_effect=exc)
 
-    embedder = VertexAIMultimodalEmbedder(model_name="gemini-embedding-exp-03-07")
-
-    with pytest.raises(EmbeddingConnectionError):
-        await embedder.embed_text(["test"])
+    with patch("ragbits.core.embeddings.dense.vertex_multimodal.google_exceptions") as mock_google_exc:
+        mock_google_exc.GoogleAPICallError = MockGoogleAPICallError
+        mock_google_exc.GoogleAPIError = MockGoogleAPIError
+        with pytest.raises(EmbeddingConnectionError):
+            await embedder.embed_text(["test"])
 
 
-@patch("ragbits.core.embeddings.dense.vertex_multimodal.genai")
-async def test_modern_invalid_image_payload_mapped_to_embedding_response_error(mock_genai: MagicMock):
-    mock_client = MagicMock()
-    mock_aio = MagicMock()
-    mock_models = MagicMock()
-    mock_models.embed_content = AsyncMock()
-    mock_aio.models = mock_models
-    mock_client.aio = mock_aio
-    mock_genai.Client.return_value = mock_client
+async def test_modern_invalid_image_payload_mapped_to_embedding_response_error():
+    embedder = _make_modern_embedder()
 
-    embedder = VertexAIMultimodalEmbedder(model_name="gemini-embedding-exp-03-07")
     with pytest.raises(EmbeddingResponseError, match="Invalid base64-encoded image payload"):
         await embedder._embed([{"image": {"bytesBase64Encoded": "%%%"}}])
 

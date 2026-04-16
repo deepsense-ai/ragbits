@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from ragbits.agents import Agent
 from ragbits.agents.a2a.server import create_agent_server
 from ragbits.agents.mcp import MCPServerStdio
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Prompt
 
 
@@ -40,7 +40,7 @@ async def main() -> None:
         },
         client_session_timeout_seconds=60,
     ) as server:
-        llm = LiteLLM(
+        llm = OpenAILLM(
             model_name="gpt-4.1",
             use_structured_output=True,
         )

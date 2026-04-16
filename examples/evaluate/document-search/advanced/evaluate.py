@@ -44,7 +44,6 @@ from omegaconf import DictConfig, OmegaConf
 from ragbits.evaluate.evaluator import Evaluator
 from ragbits.evaluate.utils import log_evaluation_to_file, log_evaluation_to_neptune
 
-logging.getLogger("LiteLLM").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
 
 

@@ -54,7 +54,7 @@ Now let's create the agent and test it:
 
 ```py title="flight_agent.py"
 from ragbits.agents import Agent
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 --8<-- "examples/agents/a2a/flight_agent.py:55:59"
 
@@ -109,7 +109,7 @@ pip install mcp-server-fetch
 ```py title="city_explorer_agent.py"
 from ragbits.agents import Agent
 from ragbits.agents.mcp import MCPServerStdio
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Prompt
 --8<-- "examples/agents/a2a/city_explorer_agent.py:34:47"
         result = await city_explorer_agent.run(CityExplorerPromptInput(input="Tell me something interesting about Paris."))
@@ -232,7 +232,7 @@ Now let's put it all together:
 
 ```python title="orchestrator.py"
 from ragbits.agents import Agent, ToolCallResult
-from ragbits.core.llms import LiteLLM, ToolCall
+from ragbits.core.llms import OpenAILLM, ToolCall
 import asyncio
 
 --8<-- "examples/agents/a2a/agent_orchestrator_with_tools.py:95:121"

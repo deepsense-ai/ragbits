@@ -25,8 +25,8 @@ from typing import Any
 from ragbits.agents import Agent
 from ragbits.agents.hooks import EventType, Hook
 from ragbits.agents.tool import ToolReturn
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.llms.base import ToolCall
-from ragbits.core.llms.litellm import LiteLLM
 
 # Track hook actions for demonstration
 hook_actions: list[dict[str, Any]] = []
@@ -143,7 +143,7 @@ async def log_notification(tool_call: ToolCall, tool_return: ToolReturn) -> Tool
 
 async def main() -> None:
     """Run the hooks example demonstrating pre-tool and post-tool hooks."""
-    llm = LiteLLM("gpt-4o-mini")
+    llm = OpenAILLM("gpt-4o-mini")
 
     hooks = [
         Hook(event_type=EventType.PRE_TOOL, callback=validate_email, tool_names=["send_notification"], priority=10),

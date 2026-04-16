@@ -36,7 +36,7 @@ from ragbits.agents import Agent
 from ragbits.chat.api import RagbitsAPI
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse, TextResponse
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt.base import ChatFormat
 
 --8<-- "examples/chat/stream_events_from_tools_to_chat.py:82:111"

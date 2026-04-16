@@ -24,7 +24,7 @@ from pydantic import BaseModel
 
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Prompt
 
 
@@ -45,7 +45,7 @@ class MyChat(ChatInterface):
     """Chat interface implementation with custom theme support."""
 
     def __init__(self):
-        self.llm = LiteLLM("gpt-3.5-turbo")
+        self.llm = OpenAILLM("gpt-3.5-turbo")
 
     async def chat(self, message: str, history: list[dict], context: ChatContext) -> AsyncGenerator[ChatResponse, None]:
         """Handle chat messages and return streaming responses."""

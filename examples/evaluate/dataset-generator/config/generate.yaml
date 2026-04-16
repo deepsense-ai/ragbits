@@ -3,7 +3,7 @@ name: synthetic-RAG-data
 tasks:
   - type: ragbits.evaluate.dataset_generator.tasks.corpus_generation:CorpusGenerationStep
     llm:
-      provider_type: ragbits.core.llms.litellm:LiteLLM
+      provider_type: ragbits.core.llms.openai:OpenAILLM
       kwargs:
         model_name: gpt-4o
     kwargs:

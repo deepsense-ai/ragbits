@@ -12,12 +12,12 @@ import json
 from pydantic import BaseModel
 
 from ragbits.agents import Agent
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Prompt
 
 --8<-- "examples/agents/tool_use.py:31:70"
 
-llm = LiteLLM(model_name="gpt-4o-2024-08-06" use_structured_output=True)
+llm = OpenAILLM(model_name="gpt-4o-2024-08-06" use_structured_output=True)
 agent = Agent(llm=llm, prompt=WeatherPrompt, tools=[get_weather])
 ```
 

@@ -19,7 +19,7 @@ A hook is an instance of [`Hook`][ragbits.agents.hooks.Hook] that binds an async
 ```python
 from ragbits.agents import Agent
 from ragbits.agents.hooks import EventType, Hook
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.llms.base import ToolCall
 
 
@@ -29,7 +29,7 @@ async def my_hook(tool_call: ToolCall) -> ToolCall:
 
 
 agent = Agent(
-    llm=LiteLLM("gpt-4o-mini"),
+    llm=OpenAILLM("gpt-4o-mini"),
     tools=[...],
     hooks=[
         Hook(
@@ -232,11 +232,11 @@ Ragbits includes a built-in `create_confirmation_hook` factory that creates a pr
 ```python
 from ragbits.agents import Agent
 from ragbits.agents.hooks import create_confirmation_hook
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 
 agent = Agent(
-    llm=LiteLLM("gpt-4o-mini"),
+    llm=OpenAILLM("gpt-4o-mini"),
     tools=[delete_file, send_email],
     hooks=[
         create_confirmation_hook(tool_names=["delete_file", "send_email"]),

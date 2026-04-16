@@ -53,7 +53,7 @@ from pydantic import BaseModel
 from tqdm.asyncio import tqdm
 
 from ragbits.core.audit import set_metric_handlers, set_trace_handlers, traceable
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import AnthropicLLM, GeminiLLM, OpenAILLM
 from ragbits.core.prompt import Prompt
 
 resource = Resource({SERVICE_NAME: "ragbits-example"})
@@ -139,9 +139,9 @@ async def process_request() -> None:
     """
     question = "What's the meaning of life?"
     philosophers = [
-        LiteLLM(model_name="gpt-4.1-2025-04-14", use_structured_output=True),
-        LiteLLM(model_name="claude-haiku-4-5-20251001", use_structured_output=True),
-        LiteLLM(model_name="gemini-2.0-flash", use_structured_output=True),
+        OpenAILLM(model_name="gpt-4.1-2025-04-14", use_structured_output=True),
+        AnthropicLLM(model_name="claude-haiku-4-5-20251001", use_structured_output=True),
+        GeminiLLM(model_name="gemini-2.0-flash", use_structured_output=True),
     ]
     prompts = [
         PhilosopherPrompt(PhilosopherPromptInput(question=question, philosopher_type=philosopher_type))
@@ -151,7 +151,7 @@ async def process_request() -> None:
         *[llm.generate(prompt) for llm, prompt in zip(philosophers, prompts, strict=False)]
     )
 
-    assistant = LiteLLM(model_name="o3", use_structured_output=True)
+    assistant = OpenAILLM(model_name="o3", use_structured_output=True)
     prompt = AssistantPrompt(
         AssistantPromptInput(question=question, knowledge=[response.answer for response in responses])
     )

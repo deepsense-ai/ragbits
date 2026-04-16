@@ -25,7 +25,7 @@ from pydantic import BaseModel
 
 from ragbits.agents import Agent
 from ragbits.agents._main import AgentOptions
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 
 def get_weather(location: str) -> str:
@@ -74,7 +74,7 @@ async def main() -> None:
     """
     Run the example.
     """
-    llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
+    llm = OpenAILLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
     agent = WeatherAgent(
         llm=llm,
         tools=[get_weather],

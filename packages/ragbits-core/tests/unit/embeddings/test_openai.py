@@ -27,7 +27,7 @@ def create_mock_response(embeddings_data: list[list[float]]) -> MagicMock:
 
 
 @patch("ragbits.core.embeddings.dense.openai.AsyncOpenAI")
-async def test_openai_embedder_embed_text(mock_openai_cls):
+async def test_openai_embedder_embed_text(mock_openai_cls: MagicMock):
     mock_client = MagicMock()
     mock_client.embeddings = MagicMock()
     mock_client.embeddings.create = AsyncMock(return_value=create_mock_response([[0.1, 0.2, 0.3]]))
@@ -41,7 +41,7 @@ async def test_openai_embedder_embed_text(mock_openai_cls):
 
 
 @patch("ragbits.core.embeddings.dense.openai.AsyncOpenAI")
-async def test_openai_embedder_embed_text_multiple(mock_openai_cls):
+async def test_openai_embedder_embed_text_multiple(mock_openai_cls: MagicMock):
     mock_client = MagicMock()
     mock_client.embeddings = MagicMock()
     mock_client.embeddings.create = AsyncMock(return_value=create_mock_response([[0.1, 0.2], [0.3, 0.4]]))
@@ -56,7 +56,8 @@ async def test_openai_embedder_embed_text_multiple(mock_openai_cls):
 
 
 @patch("ragbits.core.embeddings.dense.openai.AsyncOpenAI")
-async def test_openai_embedder_get_vector_size_with_dimensions(mock_openai_cls):
+async def test_openai_embedder_get_vector_size_with_dimensions(mock_openai_cls: MagicMock):
+    mock_openai_cls.return_value = MagicMock()
     options = OpenAIEmbedderOptions(dimensions=1536)
     embedder = OpenAIEmbedder(model_name="text-embedding-3-small", default_options=options)
 
@@ -68,7 +69,7 @@ async def test_openai_embedder_get_vector_size_with_dimensions(mock_openai_cls):
 
 
 @patch("ragbits.core.embeddings.dense.openai.AsyncOpenAI")
-async def test_openai_embedder_get_vector_size_with_none_dimensions(mock_openai_cls):
+async def test_openai_embedder_get_vector_size_with_none_dimensions(mock_openai_cls: MagicMock):
     mock_client = MagicMock()
     mock_client.embeddings = MagicMock()
     mock_client.embeddings.create = AsyncMock(return_value=create_mock_response([[0.1, 0.2, 0.3, 0.4, 0.5]]))
@@ -84,7 +85,7 @@ async def test_openai_embedder_get_vector_size_with_none_dimensions(mock_openai_
 
 
 @patch("ragbits.core.embeddings.dense.openai.AsyncOpenAI")
-async def test_openai_embedder_get_vector_size_with_not_given_dimensions(mock_openai_cls):
+async def test_openai_embedder_get_vector_size_with_not_given_dimensions(mock_openai_cls: MagicMock):
     mock_client = MagicMock()
     mock_client.embeddings = MagicMock()
     mock_client.embeddings.create = AsyncMock(return_value=create_mock_response([[0.1, 0.2, 0.3]]))
@@ -100,7 +101,7 @@ async def test_openai_embedder_get_vector_size_with_not_given_dimensions(mock_op
 
 
 @patch("ragbits.core.embeddings.dense.openai.AsyncOpenAI")
-async def test_openai_embedder_get_vector_size_fallback_to_sample(mock_openai_cls):
+async def test_openai_embedder_get_vector_size_fallback_to_sample(mock_openai_cls: MagicMock):
     mock_client = MagicMock()
     mock_client.embeddings = MagicMock()
     mock_client.embeddings.create = AsyncMock(return_value=create_mock_response([[0.1, 0.2, 0.3, 0.4]]))
@@ -116,7 +117,7 @@ async def test_openai_embedder_get_vector_size_fallback_to_sample(mock_openai_cl
 
 
 @patch("ragbits.core.embeddings.dense.openai.AsyncOpenAI")
-async def test_openai_embedder_empty_response(mock_openai_cls):
+async def test_openai_embedder_empty_response(mock_openai_cls: MagicMock):
     mock_client = MagicMock()
     mock_response = MagicMock()
     mock_response.data = []
@@ -131,7 +132,7 @@ async def test_openai_embedder_empty_response(mock_openai_cls):
 
 
 @patch("ragbits.core.embeddings.dense.openai.AsyncOpenAI")
-async def test_openai_embedder_connection_error(mock_openai_cls):
+async def test_openai_embedder_connection_error(mock_openai_cls: MagicMock):
     import openai
 
     mock_client = MagicMock()
@@ -146,7 +147,7 @@ async def test_openai_embedder_connection_error(mock_openai_cls):
 
 
 @patch("ragbits.core.embeddings.dense.openai.AsyncOpenAI")
-async def test_openai_embedder_status_error(mock_openai_cls):
+async def test_openai_embedder_status_error(mock_openai_cls: MagicMock):
     import openai
 
     mock_client = MagicMock()
@@ -170,7 +171,7 @@ async def test_openai_embedder_status_error(mock_openai_cls):
 
 
 @patch("ragbits.core.embeddings.dense.openai.AsyncOpenAI")
-async def test_openai_embedder_response_validation_error(mock_openai_cls):
+async def test_openai_embedder_response_validation_error(mock_openai_cls: MagicMock):
     import openai
 
     mock_client = MagicMock()
@@ -193,7 +194,7 @@ async def test_openai_embedder_response_validation_error(mock_openai_cls):
 
 
 @patch("ragbits.core.embeddings.dense.openai.AsyncOpenAI")
-async def test_openai_embedder_options_merge(mock_openai_cls):
+async def test_openai_embedder_options_merge(mock_openai_cls: MagicMock):
     mock_client = MagicMock()
     mock_client.embeddings = MagicMock()
     mock_client.embeddings.create = AsyncMock(return_value=create_mock_response([[0.1, 0.2]]))

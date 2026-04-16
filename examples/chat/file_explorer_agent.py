@@ -50,7 +50,7 @@ from ragbits.chat.interface.types import (
     LiveUpdateType,
 )
 from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
-from ragbits.core.llms import LiteLLM, ToolCall
+from ragbits.core.llms import OpenAILLM, ToolCall
 from ragbits.core.llms.base import Usage
 from ragbits.core.prompt import ChatFormat
 
@@ -531,7 +531,7 @@ class FileExplorerChat(ChatInterface):
     show_usage = True
 
     def __init__(self) -> None:
-        self.llm = LiteLLM(model_name="gpt-4o-mini")
+        self.llm = OpenAILLM(model_name="gpt-4o-mini")
 
         # Define tools for the agent
         self.tools = [

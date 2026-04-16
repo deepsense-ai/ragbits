@@ -22,8 +22,10 @@ import asyncio
 
 from pydantic import BaseModel
 
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Attachment, Prompt
+
+PDF_URL = "https://lhohe.github.io/github1/E5/E5.pdf"
 
 
 class DocumentPromptInput(BaseModel):
@@ -61,11 +63,9 @@ async def main() -> None:
     """
     Run the example.
     """
-    llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
-    document = Attachment(
-        url="https://etc.usf.edu/lit2go/pdf/passage/1/alices-adventures-in-wonderland-001-chapter-i-down-the-rabbit-hole.pdf"
-    )
-    prompt_input = DocumentPromptInput(document=document, question="What happened to Alice?")
+    llm = OpenAILLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
+    document = Attachment(url=PDF_URL, mime_type="application/pdf")
+    prompt_input = DocumentPromptInput(document=document, question="What is this document about?")
     prompt = DocumentPrompt(prompt_input)
     response = await llm.generate(prompt)
     print(response.answer)

@@ -23,7 +23,7 @@ import asyncio
 
 from pydantic import BaseModel
 
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Attachment, Prompt
 
 
@@ -62,7 +62,7 @@ async def main() -> None:
     """
     Run the example.
     """
-    llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
+    llm = OpenAILLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
     image = Attachment(url="https://upload.wikimedia.org/wikipedia/en/8/85/Cute_Dom_cat.JPG")
     prompt_input = ImagePromptInput(image=image, theme="dramatic")
     prompt = ImagePrompt(prompt_input)

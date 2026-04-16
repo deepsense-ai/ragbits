@@ -15,13 +15,14 @@ To run the script, execute the following command:
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-chat",
+#     "ragbits-core[openai]",
 # ]
 # ///
 
 import asyncio
 
 from ragbits.chat.history.compressors.llm import StandaloneMessageCompressor
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import ChatFormat
 
 # Example conversation history
@@ -40,8 +41,7 @@ async def main() -> None:
     """
     Main function to demonstrate the StandaloneMessageCompressor compressor.
     """
-    # Initialize the LiteLLM client
-    llm = LiteLLM("gpt-4o")
+    llm = OpenAILLM("gpt-4o")
 
     # Initialize the StandaloneMessageCompressor compressor
     compressor = StandaloneMessageCompressor(llm, history_len=10)

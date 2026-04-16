@@ -26,7 +26,7 @@ import json
 from pydantic import BaseModel
 
 from ragbits.agents import Agent, AgentOptions, AgentRunContext, DownstreamAgentResult
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Prompt
 
 
@@ -71,7 +71,7 @@ class TimePrompt(Prompt[TimePromptInput]):
     """
 
 
-llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
+llm = OpenAILLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
 time_agent = Agent(
     name="time_agent",
     description="Returns current time for a given location",
@@ -101,7 +101,7 @@ class QAPrompt(Prompt[QAPromptInput]):
     """
 
 
-llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
+llm = OpenAILLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
 qa_agent = Agent(
     name="qa_agent",
     llm=llm,

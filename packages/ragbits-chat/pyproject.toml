@@ -42,6 +42,7 @@ dependencies = ["fastapi[standard]>=0.115.0,<1.0.0", "uvicorn>=0.31.0,<1.0.0", "
 [project.optional-dependencies]
 sql = [
     "sqlalchemy[asyncio]>=2.0.39,<3.0.0",
+    "greenlet>=1",
 ]
 
 [build-system]

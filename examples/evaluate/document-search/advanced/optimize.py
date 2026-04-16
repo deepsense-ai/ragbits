@@ -33,7 +33,6 @@ from omegaconf import DictConfig, OmegaConf
 from ragbits.evaluate.optimizer import Optimizer
 from ragbits.evaluate.utils import log_optimization_to_file
 
-logging.getLogger("LiteLLM").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
 
 

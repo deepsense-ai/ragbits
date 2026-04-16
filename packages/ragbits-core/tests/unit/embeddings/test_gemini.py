@@ -12,6 +12,16 @@ from ragbits.core.embeddings.exceptions import (
 from ragbits.core.types import NOT_GIVEN
 
 
+@pytest.fixture(autouse=True)
+def mock_genai_types():
+    from types import SimpleNamespace
+
+    mock_types = MagicMock()
+    mock_types.EmbedContentConfig.side_effect = lambda **kwargs: SimpleNamespace(**kwargs)
+    with patch("ragbits.core.embeddings.dense.gemini.genai_types", mock_types):
+        yield mock_types
+
+
 def create_mock_response(embeddings_data: list[list[float]]) -> MagicMock:
     """Create a mock response object that mimics the Gemini response structure."""
     mock_response = MagicMock()
@@ -24,34 +34,35 @@ def create_mock_response(embeddings_data: list[list[float]]) -> MagicMock:
     return mock_response
 
 
-@patch("ragbits.core.embeddings.dense.gemini.genai")
-async def test_gemini_embedder_embed_text(mock_genai):
+def _make_embedder(
+    model_name: str = "text-embedding-004",
+    default_options: GeminiEmbedderOptions | None = None,
+) -> GeminiEmbedder:
+    """Create a GeminiEmbedder with a stub client (no real google-genai SDK needed)."""
     mock_client = MagicMock()
-    mock_aio = MagicMock()
-    mock_models = MagicMock()
-    mock_models.embed_content = AsyncMock(return_value=create_mock_response([[0.1, 0.2, 0.3]]))
-    mock_aio.models = mock_models
-    mock_client.aio = mock_aio
-    mock_genai.Client.return_value = mock_client
+    with (
+        patch("ragbits.core.embeddings.dense.gemini.HAS_GEMINI", True),
+        patch("ragbits.core.embeddings.dense.gemini.genai", create=True) as mock_genai,
+    ):
+        mock_genai.Client.return_value = mock_client
+        embedder = GeminiEmbedder(model_name=model_name, default_options=default_options)
+    return embedder
 
-    embedder = GeminiEmbedder(model_name="text-embedding-004")
+
+async def test_gemini_embedder_embed_text():
+    embedder = _make_embedder()
+    embedder.client.aio.models.embed_content = AsyncMock(return_value=create_mock_response([[0.1, 0.2, 0.3]]))
+
     result = await embedder.embed_text(["test"])
 
     assert result == [[0.1, 0.2, 0.3]]
-    mock_models.embed_content.assert_called_once()
+    embedder.client.aio.models.embed_content.assert_called_once()
 
 
-@patch("ragbits.core.embeddings.dense.gemini.genai")
-async def test_gemini_embedder_embed_text_multiple(mock_genai):
-    mock_client = MagicMock()
-    mock_aio = MagicMock()
-    mock_models = MagicMock()
-    mock_models.embed_content = AsyncMock(return_value=create_mock_response([[0.1, 0.2], [0.3, 0.4]]))
-    mock_aio.models = mock_models
-    mock_client.aio = mock_aio
-    mock_genai.Client.return_value = mock_client
+async def test_gemini_embedder_embed_text_multiple():
+    embedder = _make_embedder()
+    embedder.client.aio.models.embed_content = AsyncMock(return_value=create_mock_response([[0.1, 0.2], [0.3, 0.4]]))
 
-    embedder = GeminiEmbedder(model_name="text-embedding-004")
     result = await embedder.embed_text(["hello", "world"])
 
     assert len(result) == 2
@@ -59,10 +70,9 @@ async def test_gemini_embedder_embed_text_multiple(mock_genai):
     assert result[1] == [0.3, 0.4]
 
 
-@patch("ragbits.core.embeddings.dense.gemini.genai")
-async def test_gemini_embedder_get_vector_size_with_dimensionality(mock_genai):
+async def test_gemini_embedder_get_vector_size_with_dimensionality():
     options = GeminiEmbedderOptions(output_dimensionality=768)
-    embedder = GeminiEmbedder(model_name="text-embedding-004", default_options=options)
+    embedder = _make_embedder(default_options=options)
 
     vector_size = await embedder.get_vector_size()
 
@@ -71,18 +81,10 @@ async def test_gemini_embedder_get_vector_size_with_dimensionality(mock_genai):
     assert vector_size.size == 768
 
 
-@patch("ragbits.core.embeddings.dense.gemini.genai")
-async def test_gemini_embedder_get_vector_size_with_none_dimensionality(mock_genai):
-    mock_client = MagicMock()
-    mock_aio = MagicMock()
-    mock_models = MagicMock()
-    mock_models.embed_content = AsyncMock(return_value=create_mock_response([[0.1, 0.2, 0.3, 0.4, 0.5]]))
-    mock_aio.models = mock_models
-    mock_client.aio = mock_aio
-    mock_genai.Client.return_value = mock_client
-
+async def test_gemini_embedder_get_vector_size_with_none_dimensionality():
     options = GeminiEmbedderOptions(output_dimensionality=None)
-    embedder = GeminiEmbedder(model_name="text-embedding-004", default_options=options)
+    embedder = _make_embedder(default_options=options)
+    embedder.client.aio.models.embed_content = AsyncMock(return_value=create_mock_response([[0.1, 0.2, 0.3, 0.4, 0.5]]))
 
     vector_size = await embedder.get_vector_size()
 
@@ -90,18 +92,10 @@ async def test_gemini_embedder_get_vector_size_with_none_dimensionality(mock_gen
     assert vector_size.is_sparse is False
 
 
-@patch("ragbits.core.embeddings.dense.gemini.genai")
-async def test_gemini_embedder_get_vector_size_with_not_given_dimensionality(mock_genai):
-    mock_client = MagicMock()
-    mock_aio = MagicMock()
-    mock_models = MagicMock()
-    mock_models.embed_content = AsyncMock(return_value=create_mock_response([[0.1, 0.2, 0.3]]))
-    mock_aio.models = mock_models
-    mock_client.aio = mock_aio
-    mock_genai.Client.return_value = mock_client
-
+async def test_gemini_embedder_get_vector_size_with_not_given_dimensionality():
     options = GeminiEmbedderOptions(output_dimensionality=NOT_GIVEN)
-    embedder = GeminiEmbedder(model_name="text-embedding-004", default_options=options)
+    embedder = _make_embedder(default_options=options)
+    embedder.client.aio.models.embed_content = AsyncMock(return_value=create_mock_response([[0.1, 0.2, 0.3]]))
 
     vector_size = await embedder.get_vector_size()
 
@@ -109,75 +103,50 @@ async def test_gemini_embedder_get_vector_size_with_not_given_dimensionality(moc
     assert vector_size.is_sparse is False
 
 
-@patch("ragbits.core.embeddings.dense.gemini.genai")
-async def test_gemini_embedder_get_vector_size_fallback_to_sample(mock_genai):
-    mock_client = MagicMock()
-    mock_aio = MagicMock()
-    mock_models = MagicMock()
-    mock_models.embed_content = AsyncMock(return_value=create_mock_response([[0.1, 0.2, 0.3, 0.4]]))
-    mock_aio.models = mock_models
-    mock_client.aio = mock_aio
-    mock_genai.Client.return_value = mock_client
-
-    embedder = GeminiEmbedder(model_name="text-embedding-004")
+async def test_gemini_embedder_get_vector_size_fallback_to_sample():
+    embedder = _make_embedder()
+    embedder.client.aio.models.embed_content = AsyncMock(return_value=create_mock_response([[0.1, 0.2, 0.3, 0.4]]))
 
     vector_size = await embedder.get_vector_size()
 
-    mock_models.embed_content.assert_called_once()
+    embedder.client.aio.models.embed_content.assert_called_once()
     assert vector_size.size == 4
     assert vector_size.is_sparse is False
 
 
-@patch("ragbits.core.embeddings.dense.gemini.genai")
-async def test_gemini_embedder_empty_response(mock_genai):
-    mock_client = MagicMock()
-    mock_aio = MagicMock()
-    mock_models = MagicMock()
+async def test_gemini_embedder_empty_response():
+    embedder = _make_embedder()
     mock_response = MagicMock()
     mock_response.embeddings = []
-    mock_models.embed_content = AsyncMock(return_value=mock_response)
-    mock_aio.models = mock_models
-    mock_client.aio = mock_aio
-    mock_genai.Client.return_value = mock_client
-
-    embedder = GeminiEmbedder(model_name="text-embedding-004")
+    embedder.client.aio.models.embed_content = AsyncMock(return_value=mock_response)
 
     with pytest.raises(EmbeddingEmptyResponseError):
         await embedder.embed_text(["test"])
 
 
-@patch("ragbits.core.embeddings.dense.gemini.genai")
-@patch("ragbits.core.embeddings.dense.gemini.google_exceptions")
-async def test_gemini_embedder_api_call_error(mock_google_exc, mock_genai):
-    mock_client = MagicMock()
-    mock_aio = MagicMock()
-    mock_models = MagicMock()
+async def test_gemini_embedder_api_call_error():
+    embedder = _make_embedder()
 
-    # Create a real-ish exception
-    exc = Exception("Not found")
-    exc.code = 404
-    mock_google_exc.GoogleAPICallError = type(exc)
-    mock_google_exc.GoogleAPIError = Exception
-    mock_models.embed_content = AsyncMock(side_effect=exc)
-    mock_aio.models = mock_models
-    mock_client.aio = mock_aio
-    mock_genai.Client.return_value = mock_client
+    class MockGoogleAPICallError(Exception):
+        def __init__(self, message: str, code: int) -> None:
+            super().__init__(message)
+            self.code = code
 
-    embedder = GeminiEmbedder(model_name="text-embedding-004")
+    exc = MockGoogleAPICallError("Not found", 404)
+    embedder.client.aio.models.embed_content = AsyncMock(side_effect=exc)
 
-    with pytest.raises(EmbeddingStatusError) as exc_info:
-        await embedder.embed_text(["test"])
+    with patch("ragbits.core.embeddings.dense.gemini.google_exceptions") as mock_google_exc:
+        mock_google_exc.GoogleAPICallError = MockGoogleAPICallError
+        mock_google_exc.GoogleAPIError = Exception
+        with pytest.raises(EmbeddingStatusError) as exc_info:
+            await embedder.embed_text(["test"])
+
     assert exc_info.value.status_code == 404
 
 
-@patch("ragbits.core.embeddings.dense.gemini.genai")
-@patch("ragbits.core.embeddings.dense.gemini.google_exceptions")
-async def test_gemini_embedder_generic_api_error(mock_google_exc, mock_genai):
-    mock_client = MagicMock()
-    mock_aio = MagicMock()
-    mock_models = MagicMock()
+async def test_gemini_embedder_generic_api_error():
+    embedder = _make_embedder()
 
-    # GoogleAPIError that is NOT a GoogleAPICallError
     class MockGoogleAPIError(Exception):
         pass
 
@@ -185,33 +154,21 @@ async def test_gemini_embedder_generic_api_error(mock_google_exc, mock_genai):
         pass
 
     exc = MockGoogleAPIError("Connection failed")
-    mock_google_exc.GoogleAPICallError = MockGoogleAPICallError
-    mock_google_exc.GoogleAPIError = MockGoogleAPIError
-    mock_models.embed_content = AsyncMock(side_effect=exc)
-    mock_aio.models = mock_models
-    mock_client.aio = mock_aio
-    mock_genai.Client.return_value = mock_client
+    embedder.client.aio.models.embed_content = AsyncMock(side_effect=exc)
 
-    embedder = GeminiEmbedder(model_name="text-embedding-004")
-
-    with pytest.raises(EmbeddingConnectionError):
-        await embedder.embed_text(["test"])
+    with patch("ragbits.core.embeddings.dense.gemini.google_exceptions") as mock_google_exc:
+        mock_google_exc.GoogleAPICallError = MockGoogleAPICallError
+        mock_google_exc.GoogleAPIError = MockGoogleAPIError
+        with pytest.raises(EmbeddingConnectionError):
+            await embedder.embed_text(["test"])
 
 
-@patch("ragbits.core.embeddings.dense.gemini.genai")
-async def test_gemini_embedder_with_task_type(mock_genai):
-    mock_client = MagicMock()
-    mock_aio = MagicMock()
-    mock_models = MagicMock()
-    mock_models.embed_content = AsyncMock(return_value=create_mock_response([[0.1, 0.2]]))
-    mock_aio.models = mock_models
-    mock_client.aio = mock_aio
-    mock_genai.Client.return_value = mock_client
-
+async def test_gemini_embedder_with_task_type():
     options = GeminiEmbedderOptions(task_type="RETRIEVAL_DOCUMENT")
-    embedder = GeminiEmbedder(model_name="text-embedding-004", default_options=options)
+    embedder = _make_embedder(default_options=options)
+    embedder.client.aio.models.embed_content = AsyncMock(return_value=create_mock_response([[0.1, 0.2]]))
 
     await embedder.embed_text(["test"])
 
-    call_kwargs = mock_models.embed_content.call_args.kwargs
-    assert call_kwargs["config"]["task_type"] == "RETRIEVAL_DOCUMENT"
+    call_kwargs = embedder.client.aio.models.embed_content.call_args.kwargs
+    assert call_kwargs["config"].task_type == "RETRIEVAL_DOCUMENT"

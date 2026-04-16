@@ -25,7 +25,7 @@ from ragbits.agents import Agent
 from ragbits.agents._main import AgentOptions, AgentRunContext
 from ragbits.agents.hooks import EventType, Hook, OnEventCallback, PreRunCallback
 from ragbits.agents.hooks.types import StreamingEvent
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.guardrails.base import Guardrail, GuardrailManager, GuardrailVerificationResult
 
 
@@ -99,7 +99,7 @@ async def main() -> None:
     upper_hook = create_upper_words_hook(["founded", "party"])
 
     agent = Agent(
-        llm=LiteLLM("gpt-4o-mini"),
+        llm=OpenAILLM("gpt-4o-mini"),
         prompt="You are a helpful assistant.",
         hooks=[
             Hook(event_type=EventType.PRE_RUN, callback=guardrail_hook),

@@ -5,7 +5,7 @@ import requests
 from pydantic import BaseModel
 
 from ragbits.agents import Agent, AgentOptions, AgentResult, ToolCallResult
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.options import Options
 from ragbits.core.prompt import ChatFormat, Prompt
 
@@ -41,7 +41,7 @@ class AgentOrchestrator(Agent):
 
     def __init__(
         self,
-        llm: LiteLLM,
+        llm: OpenAILLM,
         routing_prompt: type[Prompt[RoutingPromptInput, list[dict]]],
         results_summarization_prompt: type[Prompt[ResultsSumarizationPromptInput, list]],
         timeout: float = 20.0,

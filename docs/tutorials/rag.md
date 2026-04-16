@@ -142,9 +142,9 @@ class QuestionAnswerAgentWithRAG(QuestionAnswerAgent):
 Now let's put it all together and test our RAG pipeline.
 
 ```python
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
-llm = LiteLLM(model_name="gpt-4.1-nano", use_structured_output=True)
+llm = OpenAILLM(model_name="gpt-4.1-nano", use_structured_output=True)
 rag = QuestionAnswerAgentWithRAG(llm=llm, prompt=CoTQuestionAnswerPrompt)
 ```
 
@@ -187,7 +187,7 @@ async def main() -> None:
     )
 
     # Define the metric
-    judge = LiteLLM(model_name="gpt-4.1")
+    judge = OpenAILLM(model_name="gpt-4.1")
     metric = QuestionAnswerAnswerCorrectness(judge)
 
     # Run the evaluation
