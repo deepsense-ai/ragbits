@@ -2,10 +2,11 @@ from collections.abc import AsyncGenerator
 
 import asyncpg
 import pytest
+import weaviate
 from testcontainers.postgres import PostgresContainer
 from testcontainers.weaviate import WeaviateContainer
 
-POSTGRES_IMAGE = "pgvector/pgvector:pg17"
+POSTGRES_IMAGE = "pgvector/pgvector:0.8.0-pg17"
 WEAVIATE_IMAGE = "cr.weaviate.io/semitechnologies/weaviate:1.30.6"
 
 
@@ -38,3 +39,15 @@ async def pgvector_test_db_fixture(postgres_container: PostgresContainer) -> Asy
             await conn.execute("CREATE SCHEMA public;")
 
         yield pool
+
+
+@pytest.fixture(name="weaviate_test_db")
+async def weaviate_test_db_fixture(weaviate_container: WeaviateContainer) -> AsyncGenerator[WeaviateContainer, None]:
+    async with weaviate.use_async_with_local(
+        host=weaviate_container.get_container_host_ip(),
+        port=int(weaviate_container.get_exposed_port(8080)),
+        grpc_port=int(weaviate_container.get_exposed_port(50051)),
+    ) as client:
+        await client.collections.delete_all()
+
+    yield weaviate_container

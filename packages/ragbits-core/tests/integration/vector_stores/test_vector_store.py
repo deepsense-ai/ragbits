@@ -60,13 +60,13 @@ IMAGES_PATH = Path(__file__).parent.parent.parent / "assets" / "img"
     ids=["InMemoryVectorStore", "ChromaVectorStore", "QdrantVectorStore", "WeaviateVectorStore", "PgVectorStore"],
 )
 async def vector_store_cls_fixture(
-    request: pytest.FixtureRequest, pgvector_test_db: asyncpg.pool, weaviate_container: WeaviateContainer
+    request: pytest.FixtureRequest, pgvector_test_db: asyncpg.pool, weaviate_test_db: WeaviateContainer
 ) -> type[VectorStoreWithDenseEmbedder]:
     """
     Returns vector stores classes with different backends, with backend-specific parameters already set,
     but parameters common to VectorStoreWithDenseEmbedder left to be set.
     """
-    return request.param(pgvector_test_db, weaviate_container)
+    return request.param(pgvector_test_db, weaviate_test_db)
 
 
 @pytest.fixture(name="vector_store", params=[EmbeddingType.TEXT, EmbeddingType.IMAGE], ids=["Text", "Image"])
