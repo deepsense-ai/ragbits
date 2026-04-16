@@ -25,7 +25,7 @@ from pydantic import BaseModel
 
 from ragbits.agents import Agent
 from ragbits.agents.tools.memory import LongTermMemory, create_memory_tools
-from ragbits.core.embeddings import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
@@ -60,7 +60,7 @@ class ConversationPrompt(Prompt[ConversationInput, str]):
 async def main() -> None:
     """Demonstrate the memory tool functionality with comparison between agents with and without memory."""
     # Initialize components
-    embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+    embedder = OpenAIEmbedder(model_name="text-embedding-3-small")
     shared_vector_store = InMemoryVectorStore(embedder=embedder)
     llm = LiteLLM(model_name="gpt-4o-mini")
 

@@ -2,7 +2,7 @@
 Ragbits Document Search Example: Basic
 
 This example demonstrates how to use the `DocumentSearch` class to search for documents with a minimal setup.
-We will use the `LiteLLMEmbedder` class to embed the documents and the query and the `InMemoryVectorStore` class
+We will use the `OpenAIEmbedder` class to embed the documents and the query and the `InMemoryVectorStore` class
 to store the embeddings.
 
 To run the script, execute the following command:
@@ -23,7 +23,7 @@ To run the script, execute the following command:
 import asyncio
 
 from ragbits.core.audit import set_trace_handlers
-from ragbits.core.embeddings.dense import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
@@ -58,7 +58,7 @@ async def main() -> None:
     """
     Run the example.
     """
-    embedder = LiteLLMEmbedder(
+    embedder = OpenAIEmbedder(
         model_name="text-embedding-3-small",
     )
     vector_store = InMemoryVectorStore(embedder=embedder)

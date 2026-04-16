@@ -136,11 +136,11 @@ To build and query a simple vector store index:
 
 ```python
 import asyncio
-from ragbits.core.embeddings import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 from ragbits.core.vector_stores import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 
-embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+embedder = OpenAIEmbedder(model_name="text-embedding-3-small")
 vector_store = InMemoryVectorStore(embedder=embedder)
 document_search = DocumentSearch(vector_store=vector_store)
 
@@ -161,7 +161,7 @@ To build a simple RAG pipeline:
 import asyncio
 from collections.abc import Iterable
 from pydantic import BaseModel
-from ragbits.core.embeddings import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt import Prompt
 from ragbits.core.vector_stores import InMemoryVectorStore
@@ -183,7 +183,7 @@ class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, str]):
     """
 
 llm = LiteLLM(model_name="gpt-4.1-nano")
-embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+embedder = OpenAIEmbedder(model_name="text-embedding-3-small")
 vector_store = InMemoryVectorStore(embedder=embedder)
 document_search = DocumentSearch(vector_store=vector_store)
 
@@ -208,12 +208,12 @@ To build an agentic RAG pipeline:
 ```python
 import asyncio
 from ragbits.agents import Agent
-from ragbits.core.embeddings import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 from ragbits.core.llms import LiteLLM
 from ragbits.core.vector_stores import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 
-embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+embedder = OpenAIEmbedder(model_name="text-embedding-3-small")
 vector_store = InMemoryVectorStore(embedder=embedder)
 document_search = DocumentSearch(vector_store=vector_store)
 
@@ -239,13 +239,13 @@ from ragbits.agents import Agent, ToolCallResult
 from ragbits.chat.api import RagbitsAPI
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
-from ragbits.core.embeddings import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 from ragbits.core.llms import LiteLLM, ToolCall
 from ragbits.core.prompt import ChatFormat
 from ragbits.core.vector_stores import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 
-embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+embedder = OpenAIEmbedder(model_name="text-embedding-3-small")
 vector_store = InMemoryVectorStore(embedder=embedder)
 document_search = DocumentSearch(vector_store=vector_store)
 

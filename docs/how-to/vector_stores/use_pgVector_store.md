@@ -65,11 +65,11 @@ The connection pool created with asyncpg.create_pool will be used to initialize 
 ```python
 import asyncpg
 from ragbits.core.vector_stores.pgvector import PgVectorStore
-from ragbits.core.embeddings.dense import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 async def main() -> None:
   DB = "postgresql://ragbits_user:ragbits_password@localhost:5432/ragbits_db"
   async with asyncpg.create_pool(dsn=DB) as pool:
-    embedder = LiteLLMEmbedder(model="text-embedding-3-small")
+    embedder = OpenAIEmbedder(model="text-embedding-3-small")
     vector_store = PgVectorStore(embedder=embedder, client=pool, table_name="test_table")
 ```
 
@@ -85,12 +85,12 @@ import asyncpg
 import asyncio
 from ragbits.core.vector_stores.base import VectorStoreEntry
 from ragbits.core.vector_stores.pgvector import PgVectorStore
-from ragbits.core.embeddings.dense import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 
 async def main() -> None:
   DB = "postgresql://ragbits_user:ragbits_password@localhost:5432/ragbits_db"
   async with asyncpg.create_pool(dsn=DB) as pool:
-    embedder = LiteLLMEmbedder(model="text-embedding-3-small")
+    embedder = OpenAIEmbedder(model="text-embedding-3-small")
     vector_store = PgVectorStore(embedder=embedder, client=pool, table_name="test_table")
     data = [VectorStoreEntry(id="test_id_1", text="test text 1",
             metadata={"key1": "value1", "content": "test 1"}),

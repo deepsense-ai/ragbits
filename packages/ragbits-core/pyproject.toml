@@ -82,6 +82,16 @@ pgvector = [
 fastembed-gpu = [
     "fastembed-gpu>=0.4.2,<1.0.0",
 ]
+openai = [
+    "openai>=1.75.0,<2.0.0",
+]
+gemini = [
+    "google-genai>=1.14.0,<2.0.0",
+]
+vertex = [
+    "google-genai>=1.14.0,<2.0.0",
+    "google-auth>=2.40.3,<3.0.0",
+]
 azure=[
     "azure-storage-blob>=12.24.1,<13.0.0",
     "azure-identity>=1.19.0,<2.0.0",

@@ -1,80 +1,350 @@
-from unittest.mock import patch
+import asyncio
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from ragbits.core.embeddings.base import VectorSize
-from ragbits.core.embeddings.dense.vertex_multimodal import VertexAIMultimodelEmbedder
+from ragbits.core.embeddings.dense.vertex_multimodal import (
+    VertexAIMultimodalEmbedder,
+    VertexAIMultimodalEmbedderOptions,
+)
+from ragbits.core.embeddings.exceptions import (
+    EmbeddingConnectionError,
+    EmbeddingResponseError,
+    EmbeddingStatusError,
+)
+
+# --- Tests using _embed mock (work for both model families) ---
 
 
-async def test_vertex_multimodal_get_vector_size():
-    """Test VertexAI multimodal embedder get_vector_size method."""
-    embedder = VertexAIMultimodelEmbedder(model_name="multimodalembedding@001")
+async def test_get_vector_size():
+    embedder = VertexAIMultimodalEmbedder(model_name="multimodalembedding@001")
 
-    # Mock the embedding call - _embed returns a list of dicts with "embedding" key
     with patch.object(embedder, "_embed") as mock_embed:
         mock_embed.return_value = [{"embedding": [0.1, 0.2, 0.3, 0.4, 0.5]}]
-
         vector_size = await embedder.get_vector_size()
 
-        assert isinstance(vector_size, VectorSize)
-        assert vector_size.is_sparse is False
-        assert vector_size.size == 5
+    assert isinstance(vector_size, VectorSize)
+    assert vector_size.is_sparse is False
+    assert vector_size.size == 5
 
 
-async def test_vertex_multimodal_get_vector_size_consistency():
-    """Test that get_vector_size is consistent with actual embeddings."""
-    embedder = VertexAIMultimodelEmbedder(model_name="multimodalembedding@001")
+async def test_get_vector_size_consistency():
+    embedder = VertexAIMultimodalEmbedder(model_name="multimodalembedding@001")
 
-    # Mock the embedding call to return consistent dimensions
     with patch.object(embedder, "_embed") as mock_embed:
-        mock_embedding_vector = [0.1] * 1408  # Typical dimension for multimodal embeddings
+        mock_embedding_vector = [0.1] * 1408
         mock_embed.return_value = [{"embedding": mock_embedding_vector}]
 
-        # Get vector size
         vector_size = await embedder.get_vector_size()
-
-        # Get actual embeddings
         embeddings = await embedder.embed_text(["test text"])
 
-        # Check consistency
-        assert len(embeddings[0]) == vector_size.size == 1408
+    assert len(embeddings[0]) == vector_size.size == 1408
 
 
-async def test_vertex_multimodal_get_vector_size_different_dimensions():
-    """Test VertexAI multimodal embedder with different embedding dimensions."""
-    embedder = VertexAIMultimodelEmbedder(model_name="multimodalembedding@001")
+async def test_embed_text_calls_embed():
+    embedder = VertexAIMultimodalEmbedder(model_name="multimodalembedding@001")
 
-    # Mock the embedding call with different dimensions
-    with patch.object(embedder, "_embed") as mock_embed:
-        mock_embed.return_value = [
-            {"embedding": [0.1] * 768}  # Different dimension
-        ]
-
-        vector_size = await embedder.get_vector_size()
-
-        assert isinstance(vector_size, VectorSize)
-        assert vector_size.is_sparse is False
-        assert vector_size.size == 768
-
-
-def test_vertex_multimodal_unsupported_model():
-    """Test that VertexAI multimodal embedder raises error for unsupported models."""
-    with pytest.raises(ValueError, match="Model unsupported-model is not supported"):
-        VertexAIMultimodelEmbedder(model_name="unsupported-model")
-
-
-async def test_vertex_multimodal_embed_text_calls_get_vector_size():
-    """Test that embed_text and get_vector_size use the same underlying mechanism."""
-    embedder = VertexAIMultimodelEmbedder(model_name="multimodalembedding@001")
-
-    # Mock the _embed method
     with patch.object(embedder, "_embed") as mock_embed:
         mock_embed.return_value = [{"embedding": [0.1, 0.2, 0.3]}]
 
-        # Call both methods
         vector_size = await embedder.get_vector_size()
         embeddings = await embedder.embed_text(["test"])
 
-        # Both should call _embed
-        assert mock_embed.call_count == 2
-        assert vector_size.size == len(embeddings[0])
+    assert mock_embed.call_count == 2
+    assert vector_size.size == len(embeddings[0])
+
+
+def test_image_support():
+    embedder = VertexAIMultimodalEmbedder(model_name="multimodalembedding@001")
+    assert embedder.image_support() is True
+
+
+def test_is_legacy_model():
+    legacy = VertexAIMultimodalEmbedder(model_name="multimodalembedding@001")
+    assert legacy._is_legacy_model is True
+
+
+@patch("ragbits.core.embeddings.dense.vertex_multimodal.genai")
+def test_is_modern_model(mock_genai: MagicMock):
+    mock_genai.Client.return_value = MagicMock()
+    modern = VertexAIMultimodalEmbedder(model_name="gemini-embedding-exp-03-07")
+    assert modern._is_legacy_model is False
+
+
+def test_concurrency_param():
+    embedder = VertexAIMultimodalEmbedder(model_name="multimodalembedding@001", concurrency=5)
+    assert embedder.concurrency == 5
+
+
+def test_concurrency_must_be_positive():
+    with pytest.raises(ValueError, match="concurrency must be >= 1"):
+        VertexAIMultimodalEmbedder(model_name="multimodalembedding@001", concurrency=0)
+
+
+# --- Modern model tests (gemini-embedding-*) ---
+
+
+@patch("ragbits.core.embeddings.dense.vertex_multimodal.genai")
+async def test_modern_embed_text(mock_genai: MagicMock):
+    mock_client = MagicMock()
+    mock_aio = MagicMock()
+    mock_models = MagicMock()
+
+    mock_response = MagicMock()
+    mock_embedding = MagicMock()
+    mock_embedding.values = [0.1, 0.2, 0.3]
+    mock_response.embeddings = [mock_embedding]
+    mock_models.embed_content = AsyncMock(return_value=mock_response)
+    mock_aio.models = mock_models
+    mock_client.aio = mock_aio
+    mock_genai.Client.return_value = mock_client
+
+    embedder = VertexAIMultimodalEmbedder(model_name="gemini-embedding-exp-03-07")
+    result = await embedder.embed_text(["test"])
+
+    assert result == [[0.1, 0.2, 0.3]]
+    mock_models.embed_content.assert_called_once()
+
+
+@patch("ragbits.core.embeddings.dense.vertex_multimodal.genai")
+async def test_modern_embed_multiple_texts(mock_genai: MagicMock):
+    mock_client = MagicMock()
+    mock_aio = MagicMock()
+    mock_models = MagicMock()
+
+    def make_response(values: list[float]) -> MagicMock:
+        mock_response = MagicMock()
+        mock_embedding = MagicMock()
+        mock_embedding.values = values
+        mock_response.embeddings = [mock_embedding]
+        return mock_response
+
+    mock_models.embed_content = AsyncMock(side_effect=[make_response([0.1, 0.2]), make_response([0.3, 0.4])])
+    mock_aio.models = mock_models
+    mock_client.aio = mock_aio
+    mock_genai.Client.return_value = mock_client
+
+    embedder = VertexAIMultimodalEmbedder(model_name="gemini-embedding-exp-03-07")
+    result = await embedder.embed_text(["hello", "world"])
+
+    assert len(result) == 2
+    assert result[0] == [0.1, 0.2]
+    assert result[1] == [0.3, 0.4]
+
+
+@patch("ragbits.core.embeddings.dense.vertex_multimodal.genai")
+async def test_modern_omits_none_dimensions_in_config(mock_genai: MagicMock):
+    mock_client = MagicMock()
+    mock_aio = MagicMock()
+    mock_models = MagicMock()
+    mock_response = MagicMock()
+    mock_embedding = MagicMock()
+    mock_embedding.values = [0.1, 0.2, 0.3]
+    mock_response.embeddings = [mock_embedding]
+    mock_models.embed_content = AsyncMock(return_value=mock_response)
+    mock_aio.models = mock_models
+    mock_client.aio = mock_aio
+    mock_genai.Client.return_value = mock_client
+
+    embedder = VertexAIMultimodalEmbedder(model_name="gemini-embedding-exp-03-07")
+    options = VertexAIMultimodalEmbedderOptions(dimensions=None)
+    await embedder.embed_text(["test"], options=options)
+
+    assert mock_models.embed_content.call_args.kwargs["config"] is None
+
+
+@patch("ragbits.core.embeddings.dense.vertex_multimodal.genai")
+async def test_modern_timeout_error_mapped_to_embedding_connection_error(mock_genai: MagicMock):
+    mock_client = MagicMock()
+    mock_aio = MagicMock()
+    mock_models = MagicMock()
+
+    async def slow_embed(*args, **kwargs) -> MagicMock:  # noqa: ARG001
+        await asyncio.sleep(1.2)
+        return MagicMock(embeddings=[MagicMock(values=[0.1, 0.2, 0.3])])
+
+    mock_models.embed_content = AsyncMock(side_effect=slow_embed)
+    mock_aio.models = mock_models
+    mock_client.aio = mock_aio
+    mock_genai.Client.return_value = mock_client
+
+    embedder = VertexAIMultimodalEmbedder(model_name="gemini-embedding-exp-03-07")
+    options = VertexAIMultimodalEmbedderOptions(timeout=1)
+
+    with pytest.raises(EmbeddingConnectionError, match="Request timed out"):
+        await embedder.embed_text(["test"], options=options)
+
+
+@patch("ragbits.core.embeddings.dense.vertex_multimodal.genai")
+async def test_modern_empty_response(mock_genai: MagicMock):
+    mock_client = MagicMock()
+    mock_aio = MagicMock()
+    mock_models = MagicMock()
+    mock_response = MagicMock()
+    mock_response.embeddings = []
+    mock_models.embed_content = AsyncMock(return_value=mock_response)
+    mock_aio.models = mock_models
+    mock_client.aio = mock_aio
+    mock_genai.Client.return_value = mock_client
+
+    embedder = VertexAIMultimodalEmbedder(model_name="gemini-embedding-exp-03-07")
+
+    with pytest.raises(EmbeddingResponseError):
+        await embedder.embed_text(["test"])
+
+
+@patch("ragbits.core.embeddings.dense.vertex_multimodal.genai")
+@patch("ragbits.core.embeddings.dense.vertex_multimodal.google_exceptions")
+async def test_modern_api_call_error(mock_google_exc: MagicMock, mock_genai: MagicMock):
+    mock_client = MagicMock()
+    mock_aio = MagicMock()
+    mock_models = MagicMock()
+
+    exc = Exception("Not found")
+    exc.code = 404
+    mock_google_exc.GoogleAPICallError = type(exc)
+    mock_google_exc.GoogleAPIError = Exception
+    mock_models.embed_content = AsyncMock(side_effect=exc)
+    mock_aio.models = mock_models
+    mock_client.aio = mock_aio
+    mock_genai.Client.return_value = mock_client
+
+    embedder = VertexAIMultimodalEmbedder(model_name="gemini-embedding-exp-03-07")
+
+    with pytest.raises(EmbeddingStatusError) as exc_info:
+        await embedder.embed_text(["test"])
+    assert exc_info.value.status_code == 404
+
+
+@patch("ragbits.core.embeddings.dense.vertex_multimodal.genai")
+@patch("ragbits.core.embeddings.dense.vertex_multimodal.google_exceptions")
+async def test_modern_connection_error(mock_google_exc: MagicMock, mock_genai: MagicMock):
+    mock_client = MagicMock()
+    mock_aio = MagicMock()
+    mock_models = MagicMock()
+
+    class MockGoogleAPIError(Exception):
+        pass
+
+    class MockGoogleAPICallError(MockGoogleAPIError):
+        pass
+
+    exc = MockGoogleAPIError("Connection failed")
+    mock_google_exc.GoogleAPICallError = MockGoogleAPICallError
+    mock_google_exc.GoogleAPIError = MockGoogleAPIError
+    mock_models.embed_content = AsyncMock(side_effect=exc)
+    mock_aio.models = mock_models
+    mock_client.aio = mock_aio
+    mock_genai.Client.return_value = mock_client
+
+    embedder = VertexAIMultimodalEmbedder(model_name="gemini-embedding-exp-03-07")
+
+    with pytest.raises(EmbeddingConnectionError):
+        await embedder.embed_text(["test"])
+
+
+@patch("ragbits.core.embeddings.dense.vertex_multimodal.genai")
+async def test_modern_invalid_image_payload_mapped_to_embedding_response_error(mock_genai: MagicMock):
+    mock_client = MagicMock()
+    mock_aio = MagicMock()
+    mock_models = MagicMock()
+    mock_models.embed_content = AsyncMock()
+    mock_aio.models = mock_models
+    mock_client.aio = mock_aio
+    mock_genai.Client.return_value = mock_client
+
+    embedder = VertexAIMultimodalEmbedder(model_name="gemini-embedding-exp-03-07")
+    with pytest.raises(EmbeddingResponseError, match="Invalid base64-encoded image payload"):
+        await embedder._embed([{"image": {"bytesBase64Encoded": "%%%"}}])
+
+
+# --- Legacy model tests (multimodalembedding*) ---
+
+
+async def test_legacy_embed_text():
+    embedder = VertexAIMultimodalEmbedder(model_name="multimodalembedding@001")
+
+    mock_response = [{"embedding": [0.1, 0.2, 0.3]}]
+    with patch.object(embedder, "_embed_legacy", new_callable=AsyncMock, return_value=mock_response):
+        result = await embedder.embed_text(["test"])
+
+    assert result == [[0.1, 0.2, 0.3]]
+
+
+async def test_legacy_embed_image():
+    embedder = VertexAIMultimodalEmbedder(model_name="multimodalembedding@001")
+
+    mock_response = [{"embedding": [0.4, 0.5, 0.6]}]
+    with patch.object(embedder, "_embed_legacy", new_callable=AsyncMock, return_value=mock_response):
+        result = await embedder.embed_image([b"\x89PNG\r\n\x1a\n"])
+
+    assert result == [[0.4, 0.5, 0.6]]
+
+
+@patch("ragbits.core.embeddings.dense.vertex_multimodal.google.auth")
+@patch("ragbits.core.embeddings.dense.vertex_multimodal.aiohttp.ClientSession")
+async def test_legacy_embed_http_call(mock_session_cls: MagicMock, mock_google_auth: MagicMock):
+    # Mock google.auth.default()
+    mock_credentials = MagicMock()
+    mock_credentials.token = "test-token"  # noqa: S105
+    mock_credentials.valid = True
+    mock_google_auth.default.return_value = (mock_credentials, "test-project")
+
+    # Mock aiohttp response
+    mock_response = MagicMock()
+    mock_response.status = 200
+    mock_response.json = AsyncMock(return_value={"predictions": [{"textEmbedding": [0.1, 0.2, 0.3]}]})
+    mock_response.__aenter__ = AsyncMock(return_value=mock_response)
+    mock_response.__aexit__ = AsyncMock(return_value=False)
+
+    mock_session = MagicMock()
+    mock_session.post.return_value = mock_response
+    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session.__aexit__ = AsyncMock(return_value=False)
+    mock_session_cls.return_value = mock_session
+
+    embedder = VertexAIMultimodalEmbedder(model_name="multimodalembedding@001")
+    result = await embedder.embed_text(["test"])
+
+    assert result == [[0.1, 0.2, 0.3]]
+    mock_session.post.assert_called_once()
+    call_kwargs = mock_session.post.call_args
+    assert "multimodalembedding@001:predict" in call_kwargs.args[0]
+    assert call_kwargs.kwargs["json"] == {"instances": [{"text": "test"}]}
+
+
+@patch("ragbits.core.embeddings.dense.vertex_multimodal.google.auth")
+@patch("ragbits.core.embeddings.dense.vertex_multimodal.aiohttp.ClientSession")
+async def test_legacy_embed_http_error(mock_session_cls: MagicMock, mock_google_auth: MagicMock):
+    mock_credentials = MagicMock()
+    mock_credentials.token = "test-token"  # noqa: S105
+    mock_credentials.valid = True
+    mock_google_auth.default.return_value = (mock_credentials, "test-project")
+
+    mock_response = MagicMock()
+    mock_response.status = 400
+    mock_response.text = AsyncMock(return_value="Bad request")
+    mock_response.__aenter__ = AsyncMock(return_value=mock_response)
+    mock_response.__aexit__ = AsyncMock(return_value=False)
+
+    mock_session = MagicMock()
+    mock_session.post.return_value = mock_response
+    mock_session.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_session.__aexit__ = AsyncMock(return_value=False)
+    mock_session_cls.return_value = mock_session
+
+    embedder = VertexAIMultimodalEmbedder(model_name="multimodalembedding@001")
+
+    with pytest.raises(EmbeddingStatusError) as exc_info:
+        await embedder.embed_text(["test"])
+    assert exc_info.value.status_code == 400
+
+
+@patch("ragbits.core.embeddings.dense.vertex_multimodal.google.auth")
+async def test_legacy_auth_failure_mapped_to_embedding_connection_error(mock_google_auth: MagicMock):
+    mock_google_auth.default.side_effect = Exception("No ADC")
+    embedder = VertexAIMultimodalEmbedder(model_name="multimodalembedding@001")
+
+    with pytest.raises(EmbeddingConnectionError, match="Failed to authenticate with Google Cloud"):
+        await embedder.embed_text(["test"])

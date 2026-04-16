@@ -2,7 +2,7 @@
 Ragbits Document Search Example: Weaviate
 
 This example demonstrates how to use the `DocumentSearch` class to search for documents with a more advanced setup.
-We will use the `LiteLLMEmbedder` class to embed the documents and the query, the `WeaviateVectorStore` class to store
+We will use the `OpenAIEmbedder` class to embed the documents and the query, the `WeaviateVectorStore` class to store
 the embeddings.
 
 To run the script, execute the following command:
@@ -28,7 +28,7 @@ import asyncio
 import weaviate
 
 from ragbits.core.audit import set_trace_handlers
-from ragbits.core.embeddings.dense import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.core.vector_stores.weaviate import WeaviateVectorStore
 from ragbits.document_search import DocumentSearch, DocumentSearchOptions
@@ -65,7 +65,7 @@ async def main() -> None:
     Run the example.
     """
     client = weaviate.use_async_with_local()
-    embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+    embedder = OpenAIEmbedder(model_name="text-embedding-3-small")
     vector_store = WeaviateVectorStore(
         client=client,
         index_name="jokes",

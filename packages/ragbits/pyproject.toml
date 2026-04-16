@@ -41,8 +41,12 @@ dependencies = ["ragbits-agents==1.7.0.dev202604150306","ragbits-document-search
 
 [project.optional-dependencies]
 openai = [
+    "ragbits-core[openai]==1.7.0.dev202604150306",
     "ragbits-guardrails[openai]==1.7.0.dev202604150306",
     "ragbits-agents[openai]==1.7.0.dev202604150306",
+]
+gemini = [
+    "ragbits-core[gemini]==1.7.0.dev202604020305",
 ]
 chroma = [
     "ragbits-core[chroma]==1.7.0.dev202604150306",

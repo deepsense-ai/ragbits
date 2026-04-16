@@ -2,7 +2,7 @@
 Ragbits Document Search Example: Chroma
 
 This example demonstrates how to use the `DocumentSearch` class to search for documents with a more advanced setup.
-We will use the `LiteLLMEmbedder` class to embed the documents and the query, the `ChromaVectorStore` class to store
+We will use the `OpenAIEmbedder` class to embed the documents and the query, the `ChromaVectorStore` class to store
 the embeddings.
 
 To run the script, execute the following command:
@@ -25,7 +25,7 @@ import asyncio
 from chromadb import EphemeralClient
 
 from ragbits.core.audit import set_trace_handlers
-from ragbits.core.embeddings.dense import LiteLLMEmbedder, LiteLLMEmbedderOptions
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder, OpenAIEmbedderOptions
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.document_search import DocumentSearch, DocumentSearchOptions
@@ -61,9 +61,9 @@ async def main() -> None:
     """
     Run the example.
     """
-    embedder = LiteLLMEmbedder(
+    embedder = OpenAIEmbedder(
         model_name="text-embedding-3-small",
-        default_options=LiteLLMEmbedderOptions(
+        default_options=OpenAIEmbedderOptions(
             dimensions=1024,
             timeout=1000,
         ),

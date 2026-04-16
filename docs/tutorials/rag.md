@@ -45,7 +45,7 @@ Now we will configure our document search pipeline using Qdrant as the vector da
 
 ```python hl_lines="11 12 17"
 from qdrant_client import AsyncQdrantClient
-from ragbits.core.embeddings import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 from ragbits.core.vector_stores import VectorStoreOptions
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.document_search import DocumentSearch
@@ -55,7 +55,7 @@ from ragbits.document_search.ingestion.strategies import BatchedIngestStrategy
 retriever = DocumentSearch(
     vector_store=QdrantVectorStore(
         client=AsyncQdrantClient(path="./ragqa_arena_tech_corpus"),
-        embedder=LiteLLMEmbedder(model_name="text-embedding-3-small"),
+        embedder=OpenAIEmbedder(model_name="text-embedding-3-small"),
         default_options=VectorStoreOptions(k=5),
         index_name="ragqa_arena_tech_corpus",
     ),

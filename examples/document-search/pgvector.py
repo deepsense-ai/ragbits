@@ -2,7 +2,7 @@
 Ragbits Document Search Example: PgVector
 
 This example demonstrates how to use the `DocumentSearch` class to search for documents with a more advanced setup.
-We will use the `LiteLLMEmbedder` class to embed the documents and the query, and the `PgVectorStore` class to store
+We will use the `OpenAIEmbedder` class to embed the documents and the query, and the `PgVectorStore` class to store
 the embeddings in a Postgres database.
 
 The script requires a Postgres database with the `pgvector` extension installed.
@@ -36,7 +36,7 @@ import asyncio
 import asyncpg
 
 from ragbits.core.audit import set_trace_handlers
-from ragbits.core.embeddings.dense import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 from ragbits.core.vector_stores.pgvector import PgVectorStore
 from ragbits.document_search import DocumentSearch
 from ragbits.document_search.documents.document import DocumentMeta
@@ -73,7 +73,7 @@ async def main() -> None:
     """
     database_url = "postgresql://ragbits_example:ragbits_example@localhost/ragbits_example"
     async with asyncpg.create_pool(dsn=database_url) as pool:
-        embedder = LiteLLMEmbedder(
+        embedder = OpenAIEmbedder(
             model_name="text-embedding-3-small",
         )
         vector_store = PgVectorStore(embedder=embedder, client=pool, table_name="example")
