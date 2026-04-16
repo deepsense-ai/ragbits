@@ -42,7 +42,7 @@ async def pgvector_test_db_fixture(postgres_container: PostgresContainer) -> Asy
 
 
 @pytest.fixture(name="weaviate_test_db")
-async def weaviate_test_db_fixture(weaviate_container: WeaviateContainer) -> AsyncGenerator[WeaviateContainer, None]:
+async def weaviate_test_db_fixture(weaviate_container: WeaviateContainer) -> WeaviateContainer:
     async with weaviate.use_async_with_local(
         host=weaviate_container.get_container_host_ip(),
         port=int(weaviate_container.get_exposed_port(8080)),
@@ -50,4 +50,4 @@ async def weaviate_test_db_fixture(weaviate_container: WeaviateContainer) -> Asy
     ) as client:
         await client.collections.delete_all()
 
-    yield weaviate_container
+    return weaviate_container
