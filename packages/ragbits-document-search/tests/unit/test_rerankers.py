@@ -2,14 +2,18 @@ from argparse import Namespace
 from collections.abc import Sequence
 from unittest.mock import Mock, patch
 
-from ragbits.core.utils.config_handling import ObjectConstructionConfig
-from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.documents.element import Element, TextElement
-from ragbits.document_search.retrieval.rerankers.answerai import AnswerAIReranker
-from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
-from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker, LiteLLMRerankerOptions
-from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
-from ragbits.document_search.retrieval.rerankers.rrf import ReciprocalRankFusionReranker
+import pytest
+
+pytest.importorskip("litellm")
+
+from ragbits.core.utils.config_handling import ObjectConstructionConfig  # noqa: E402
+from ragbits.document_search.documents.document import DocumentMeta  # noqa: E402
+from ragbits.document_search.documents.element import Element, TextElement  # noqa: E402
+from ragbits.document_search.retrieval.rerankers.answerai import AnswerAIReranker  # noqa: E402
+from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions  # noqa: E402
+from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker, LiteLLMRerankerOptions  # noqa: E402
+from ragbits.document_search.retrieval.rerankers.noop import NoopReranker  # noqa: E402
+from ragbits.document_search.retrieval.rerankers.rrf import ReciprocalRankFusionReranker  # noqa: E402
 
 
 class CustomReranker(Reranker):

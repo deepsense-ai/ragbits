@@ -18,6 +18,13 @@ from ragbits.core.utils.lazy_litellm import LazyLiteLLM
 if TYPE_CHECKING:
     from litellm import Router
 
+try:
+    import litellm as _litellm_check  # noqa: F401
+
+    HAS_LITELLM = True
+except ImportError:
+    HAS_LITELLM = False
+
 
 class LiteLLMEmbedderOptions(Options):
     """
@@ -63,7 +70,15 @@ class LiteLLMEmbedder(DenseEmbedder[LiteLLMEmbedderOptions], LazyLiteLLM):
                 [LiteLLM documentation](https://docs.litellm.ai/docs/embedding/supported_embedding).
             api_version: The API version for the call.
             router: Router to be used to [route requests](https://docs.litellm.ai/docs/routing) to different models.
+
+        Raises:
+            ImportError: If the optional ``litellm`` dependency is not installed.
         """
+        if not HAS_LITELLM:
+            raise ImportError(
+                "You need to install the 'litellm' package to use LiteLLMEmbedder."
+                " Please install ragbits-core with the 'litellm' extra: pip install ragbits-core[litellm]"
+            )
         super().__init__(default_options=default_options)
 
         self.model_name = model_name

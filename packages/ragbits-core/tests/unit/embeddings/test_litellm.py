@@ -1,8 +1,12 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
-from ragbits.core.embeddings.base import VectorSize
-from ragbits.core.embeddings.dense.litellm import LiteLLMEmbedder, LiteLLMEmbedderOptions
-from ragbits.core.types import NOT_GIVEN
+import pytest
+
+pytest.importorskip("litellm")
+
+from ragbits.core.embeddings.base import VectorSize  # noqa: E402
+from ragbits.core.embeddings.dense.litellm import LiteLLMEmbedder, LiteLLMEmbedderOptions  # noqa: E402
+from ragbits.core.types import NOT_GIVEN  # noqa: E402
 
 
 def create_mock_response(embeddings_data: list[list[float]]) -> MagicMock:

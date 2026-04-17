@@ -51,6 +51,10 @@ print(response)
 ## Local LLM servers
 Ragbits also supports local LLM servers, you can use [llama.cpp](https://github.com/ggml-org/llama.cpp), [vllm](https://docs.vllm.ai/en/latest/) or other servers that are supported by [LiteLLM](https://docs.litellm.ai/docs/providers).
 
+> ℹ️ **NOTE**
+>
+> LiteLLM is an optional dependency. Install it with `pip install ragbits[litellm]` (or `pip install ragbits-core[litellm]`) before using `LiteLLM` or `LiteLLMEmbedder`.
+
 ### Using llama.cpp
 To use llama.cpp you first need to install it. You can do this by [building the sources](https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md) or by [using a package manager](https://github.com/ggml-org/llama.cpp/blob/master/docs/install.md).
 The next step is downloading one of the models in gguf format. You can find a list of available models [here](https://huggingface.co/models?library=gguf&sort=trending).

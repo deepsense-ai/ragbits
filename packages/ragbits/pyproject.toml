@@ -40,6 +40,11 @@ dependencies = ["ragbits-agents==1.7.0.dev202604150306","ragbits-document-search
 "Source" = "https://github.com/deepsense-ai/ragbits"
 
 [project.optional-dependencies]
+litellm = [
+    "ragbits-core[litellm]==1.7.0.dev202604150306",
+    "ragbits-document-search[litellm]==1.7.0.dev202604150306",
+    "ragbits-agents[litellm]==1.7.0.dev202604150306",
+]
 openai = [
     "ragbits-core[openai]==1.7.0.dev202604150306",
     "ragbits-guardrails[openai]==1.7.0.dev202604150306",

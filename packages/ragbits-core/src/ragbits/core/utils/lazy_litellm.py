@@ -4,6 +4,18 @@ from concurrent.futures import Future, ThreadPoolExecutor
 from types import ModuleType
 from typing import Any
 
+_MISSING_LITELLM_MESSAGE = (
+    "LiteLLM is not installed. Install the optional extra to use LiteLLM-backed "
+    "components: pip install ragbits-core[litellm]"
+)
+
+
+def _import_litellm() -> ModuleType:
+    try:
+        return importlib.import_module("litellm")
+    except ImportError as exc:
+        raise ImportError(_MISSING_LITELLM_MESSAGE) from exc
+
 
 class LazyLiteLLM:
     """Mixin class for lazy loading of litellm module."""
@@ -21,21 +33,23 @@ class LazyLiteLLM:
         if cls._litellm_future is None:
             with cls._litellm_import_lock:
                 if cls._litellm_future is None:
-                    cls._litellm_future = cls._import_executor.submit(lambda: importlib.import_module("litellm"))
+                    cls._litellm_future = cls._import_executor.submit(_import_litellm)
         return instance
 
     @classmethod
     def _get_litellm_module(cls) -> ModuleType:
-        """Get the lazily loaded litellm module for class methods."""
+        """Get the lazily loaded litellm module for class methods.
+
+        Raises:
+            ImportError: If the optional ``litellm`` dependency is not installed.
+        """
         if cls._litellm_module is None:
             with cls._litellm_module_lock:
                 if cls._litellm_module is None:
                     if cls._litellm_future is not None:
-                        # Wait for background import to complete
                         cls._litellm_module = cls._litellm_future.result()
                     else:
-                        # Fallback to synchronous import
-                        cls._litellm_module = importlib.import_module("litellm")
+                        cls._litellm_module = _import_litellm()
         return cls._litellm_module
 
     @property

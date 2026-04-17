@@ -1,8 +1,12 @@
-import litellm
+import pytest
 
-from ragbits.core.llms import LLM
-from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
-from ragbits.core.utils.config_handling import ObjectConstructionConfig
+pytest.importorskip("litellm")
+
+import litellm  # noqa: E402
+
+from ragbits.core.llms import LLM  # noqa: E402
+from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions  # noqa: E402
+from ragbits.core.utils.config_handling import ObjectConstructionConfig  # noqa: E402
 
 
 def test_subclass_from_config():

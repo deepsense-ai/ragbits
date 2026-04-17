@@ -21,9 +21,9 @@ class CoreConfig(BaseModel):
 
     # Path to a functions that returns LLM objects, e.g. "my_project.llms.get_llm"
     llm_preference_factories: dict[LLMType, str] = {
-        LLMType.TEXT: "ragbits.core.llms.factory:simple_litellm_factory",
-        LLMType.VISION: "ragbits.core.llms.factory:simple_litellm_vision_factory",
-        LLMType.STRUCTURED_OUTPUT: "ragbits.core.llms.factory:simple_litellm_structured_output_factory",
+        LLMType.TEXT: "ragbits.core.llms.factory:simple_openai_factory",
+        LLMType.VISION: "ragbits.core.llms.factory:simple_openai_vision_factory",
+        LLMType.STRUCTURED_OUTPUT: "ragbits.core.llms.factory:simple_openai_structured_output_factory",
     }
 
     # Path to functions that returns instances of diffrent types of Ragbits objects

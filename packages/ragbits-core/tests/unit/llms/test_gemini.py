@@ -19,13 +19,14 @@ def mock_genai_types():
     with patch("ragbits.core.llms.gemini.genai_types", mock_types):
         yield mock_types
 
-from ragbits.core.llms.exceptions import (
+
+from ragbits.core.llms.exceptions import (  # noqa: E402
     LLMConnectionError,
     LLMEmptyResponseError,
     LLMStatusError,
 )
-from ragbits.core.llms.gemini import GeminiLLM
-from ragbits.core.prompt.base import BasePrompt, ChatFormat
+from ragbits.core.llms.gemini import GeminiLLM  # noqa: E402
+from ragbits.core.prompt.base import BasePrompt, ChatFormat  # noqa: E402
 
 
 class MockPrompt(BasePrompt):

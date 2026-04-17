@@ -4,10 +4,12 @@ Ragbits [`Agent`][ragbits.agents.Agent] combines the reasoning power of LLMs wit
 
 When using tool-enabled agents, the LLM reviews the system prompt and incoming messages to decide whether a tool should be called. Instead of just generating a text response, the model can choose to invoke a tool or combine both approaches.
 
-Before using tools, you can check whether your selected model supports function calling with:
+Before using tools, you can check whether your selected model supports function calling. If you have the optional `litellm` extra installed (`pip install ragbits[litellm]`), you can use:
 ```python
+import litellm
 litellm.supports_function_calling(model="your-model-name")
 ```
+Otherwise consult the provider's documentation directly.
 
 If function calling is supported and tools are enabled, the agent interprets the user input, decides whether a tool is needed, executes it if necessary, and returns a final response enriched with tool results.
 

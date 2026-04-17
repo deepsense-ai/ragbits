@@ -1,12 +1,17 @@
 from collections.abc import Sequence
 from itertools import chain
 
-import litellm
-
 from ragbits.core.audit.traces import traceable
 from ragbits.core.types import NOT_GIVEN, NotGiven
 from ragbits.document_search.documents.element import Element
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
+
+try:
+    import litellm
+
+    HAS_LITELLM = True
+except ImportError:
+    HAS_LITELLM = False
 
 
 class LiteLLMRerankerOptions(RerankerOptions):
@@ -41,7 +46,16 @@ class LiteLLMReranker(Reranker[LiteLLMRerankerOptions]):
         Args:
             model: The reranker model to use.
             default_options: The default options for reranking.
+
+        Raises:
+            ImportError: If the optional ``litellm`` dependency is not installed.
         """
+        if not HAS_LITELLM:
+            raise ImportError(
+                "You need to install the 'litellm' package to use LiteLLMReranker."
+                " Please install ragbits-document-search with the 'litellm' extra:"
+                " pip install ragbits-document-search[litellm]"
+            )
         super().__init__(default_options=default_options)
         self.model = model
 

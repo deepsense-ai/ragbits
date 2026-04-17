@@ -42,6 +42,9 @@ a2a = [
 mcp = [
     "mcp>=1.23.0,<2.0.0",
 ]
+litellm = [
+    "ragbits-core[litellm]==1.7.0.dev202604150306",
+]
 openai = [
     "openai>=1.91.0,<2.0.0",
 ]

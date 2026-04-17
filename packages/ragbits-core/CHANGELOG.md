@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- BREAKING: `litellm` is now an optional extra. Install it with `pip install ragbits-core[litellm]` to use `LiteLLM` / `LiteLLMEmbedder`.
+- BREAKING: default `llm_preference_factories` switched from `simple_litellm_*` to `simple_openai_*`; projects relying on the implicit LiteLLM default should either install the `[litellm]` extra and override the factories, or install the `[openai]` extra.
+- `tiktoken` is now a direct dependency of `ragbits-core` (previously pulled in transitively via `litellm`).
+
 ## 1.6.2 (2026-03-26)
 
 ## 1.6.1 (2026-03-19)

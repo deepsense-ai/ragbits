@@ -1,6 +1,5 @@
 from ragbits.core.config import core_config
 from ragbits.core.llms.base import LLM, LLMType
-from ragbits.core.llms.litellm import LiteLLM
 
 
 def get_preferred_llm(llm_type: LLMType = LLMType.TEXT) -> LLM:
@@ -64,6 +63,8 @@ def simple_litellm_factory() -> LLM:
     Returns:
         LLM: An instance of the LiteLLM class.
     """
+    from ragbits.core.llms.litellm import LiteLLM
+
     return LiteLLM()
 
 
@@ -75,6 +76,8 @@ def simple_litellm_vision_factory() -> LLM:
     Returns:
         LLM: An instance of the LiteLLM class.
     """
+    from ragbits.core.llms.litellm import LiteLLM
+
     return LiteLLM(model_name="gpt-4o-mini")
 
 
@@ -85,4 +88,6 @@ def simple_litellm_structured_output_factory() -> LLM:
     Returns:
         LLM: An instance of the LiteLLM class.
     """
+    from ragbits.core.llms.litellm import LiteLLM
+
     return LiteLLM(model_name="gpt-4o-mini-2024-07-18", use_structured_output=True)

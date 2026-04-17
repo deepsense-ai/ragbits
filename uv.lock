@@ -5821,6 +5821,11 @@ google-drive = [
 hf = [
     { name = "ragbits-core", extra = ["hf"] },
 ]
+litellm = [
+    { name = "ragbits-agents", extra = ["litellm"] },
+    { name = "ragbits-core", extra = ["litellm"] },
+    { name = "ragbits-document-search", extra = ["litellm"] },
+]
 local = [
     { name = "ragbits-core", extra = ["local"] },
 ]
@@ -5871,6 +5876,7 @@ requires-dist = [
     { name = "ragbits-agents", editable = "packages/ragbits-agents" },
     { name = "ragbits-agents", extras = ["a2a"], marker = "extra == 'a2a'", editable = "packages/ragbits-agents" },
     { name = "ragbits-agents", extras = ["cli"], marker = "extra == 'cli'", editable = "packages/ragbits-agents" },
+    { name = "ragbits-agents", extras = ["litellm"], marker = "extra == 'litellm'", editable = "packages/ragbits-agents" },
     { name = "ragbits-agents", extras = ["mcp"], marker = "extra == 'mcp'", editable = "packages/ragbits-agents" },
     { name = "ragbits-agents", extras = ["openai"], marker = "extra == 'openai'", editable = "packages/ragbits-agents" },
     { name = "ragbits-chat", editable = "packages/ragbits-chat" },
@@ -5885,6 +5891,7 @@ requires-dist = [
     { name = "ragbits-core", extras = ["gemini"], marker = "extra == 'gemini'", editable = "packages/ragbits-core" },
     { name = "ragbits-core", extras = ["google-drive"], marker = "extra == 'google-drive'", editable = "packages/ragbits-core" },
     { name = "ragbits-core", extras = ["hf"], marker = "extra == 'hf'", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["litellm"], marker = "extra == 'litellm'", editable = "packages/ragbits-core" },
     { name = "ragbits-core", extras = ["local"], marker = "extra == 'local'", editable = "packages/ragbits-core" },
     { name = "ragbits-core", extras = ["logfire"], marker = "extra == 'logfire'", editable = "packages/ragbits-core" },
     { name = "ragbits-core", extras = ["openai"], marker = "extra == 'openai'", editable = "packages/ragbits-core" },
@@ -5895,6 +5902,7 @@ requires-dist = [
     { name = "ragbits-core", extras = ["s3"], marker = "extra == 's3'", editable = "packages/ragbits-core" },
     { name = "ragbits-core", extras = ["weaviate"], marker = "extra == 'weaviate'", editable = "packages/ragbits-core" },
     { name = "ragbits-document-search", editable = "packages/ragbits-document-search" },
+    { name = "ragbits-document-search", extras = ["litellm"], marker = "extra == 'litellm'", editable = "packages/ragbits-document-search" },
     { name = "ragbits-document-search", extras = ["ray"], marker = "extra == 'ray'", editable = "packages/ragbits-document-search" },
     { name = "ragbits-document-search", extras = ["unstructured"], marker = "extra == 'unstructured'", editable = "packages/ragbits-document-search" },
     { name = "ragbits-evaluate", editable = "packages/ragbits-evaluate" },
@@ -5904,7 +5912,7 @@ requires-dist = [
     { name = "ragbits-guardrails", editable = "packages/ragbits-guardrails" },
     { name = "ragbits-guardrails", extras = ["openai"], marker = "extra == 'openai'", editable = "packages/ragbits-guardrails" },
 ]
-provides-extras = ["openai", "gemini", "chroma", "local", "fastembed", "promptfoo", "otel", "logfire", "qdrant", "pgvector", "fastembed-gpu", "azure", "gcs", "hf", "s3", "google-drive", "weaviate", "agents", "document-search", "relari", "a2a", "mcp", "cli", "unstructured", "ray", "sql"]
+provides-extras = ["litellm", "openai", "gemini", "chroma", "local", "fastembed", "promptfoo", "otel", "logfire", "qdrant", "pgvector", "fastembed-gpu", "azure", "gcs", "hf", "s3", "google-drive", "weaviate", "agents", "document-search", "relari", "a2a", "mcp", "cli", "unstructured", "ray", "sql"]
 
 [[package]]
 name = "ragbits-agents"
@@ -5923,6 +5931,9 @@ a2a = [
 cli = [
     { name = "textual" },
 ]
+litellm = [
+    { name = "ragbits-core", extra = ["litellm"] },
+]
 mcp = [
     { name = "mcp" },
 ]
@@ -5937,10 +5948,11 @@ requires-dist = [
     { name = "mcp", marker = "extra == 'mcp'", specifier = ">=1.23.0,<2.0.0" },
     { name = "openai", marker = "extra == 'openai'", specifier = ">=1.91.0,<2.0.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["litellm"], marker = "extra == 'litellm'", editable = "packages/ragbits-core" },
     { name = "textual", marker = "extra == 'cli'", specifier = ">=0.85.2,<1.0.0" },
     { name = "uvicorn", marker = "extra == 'a2a'", specifier = ">=0.31.0,<1.0.0" },
 ]
-provides-extras = ["a2a", "mcp", "openai", "cli"]
+provides-extras = ["a2a", "mcp", "litellm", "openai", "cli"]
 
 [[package]]
 name = "ragbits-chat"
@@ -6000,8 +6012,8 @@ dependencies = [
     { name = "filetype" },
     { name = "griffe" },
     { name = "jinja2" },
-    { name = "litellm" },
     { name = "pydantic" },
+    { name = "tiktoken" },
     { name = "tomli" },
     { name = "typer" },
 ]
@@ -6043,6 +6055,9 @@ google-drive = [
 ]
 hf = [
     { name = "datasets" },
+]
+litellm = [
+    { name = "litellm" },
 ]
 local = [
     { name = "accelerate" },
@@ -6109,7 +6124,7 @@ requires-dist = [
     { name = "googleapis-common-protos", marker = "extra == 'google-drive'", specifier = ">=1.70.0,<2.0.0" },
     { name = "griffe", specifier = ">=1.7.3,<2.0.0" },
     { name = "jinja2", specifier = ">=3.1.4,<4.0.0" },
-    { name = "litellm", specifier = ">=1.74.0,<1.82.7" },
+    { name = "litellm", marker = "extra == 'litellm'", specifier = ">=1.74.0,<1.82.7" },
     { name = "logfire", marker = "extra == 'logfire'", specifier = ">=3.19.0,<4.0.0" },
     { name = "logfire", extras = ["system-metrics"], marker = "extra == 'logfire'", specifier = ">=3.19.0,<4.0.0" },
     { name = "numpy", marker = "extra == 'local'", specifier = ">=1.26.0,<2.0.0" },
@@ -6120,13 +6135,14 @@ requires-dist = [
     { name = "pyyaml", marker = "extra == 'promptfoo'", specifier = ">=6.0.2,<7.0.0" },
     { name = "qdrant-client", marker = "extra == 'qdrant'", specifier = ">=1.12.1,<2.0.0" },
     { name = "sentence-transformers", marker = "extra == 'local'", specifier = ">=4.0.2,<5.0.0" },
+    { name = "tiktoken", specifier = ">=0.8.0,<1.0.0" },
     { name = "tomli", specifier = ">=2.0.2,<3.0.0" },
     { name = "torch", marker = "extra == 'local'", specifier = ">=2.6.0,<2.7.0" },
     { name = "transformers", marker = "extra == 'local'", specifier = ">=4.48.0,<5.0.0" },
     { name = "typer", specifier = ">=0.12.5,<1.0.0" },
     { name = "weaviate-client", marker = "extra == 'weaviate'", specifier = ">=4.15.4,<5.0.0" },
 ]
-provides-extras = ["chroma", "local", "fastembed", "promptfoo", "otel", "logfire", "qdrant", "pgvector", "fastembed-gpu", "openai", "anthropic", "gemini", "vertex", "azure", "gcs", "hf", "s3", "google-drive", "weaviate"]
+provides-extras = ["litellm", "chroma", "local", "fastembed", "promptfoo", "otel", "logfire", "qdrant", "pgvector", "fastembed-gpu", "openai", "anthropic", "gemini", "vertex", "azure", "gcs", "hf", "s3", "google-drive", "weaviate"]
 
 [[package]]
 name = "ragbits-document-search"
@@ -6142,6 +6158,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+litellm = [
+    { name = "ragbits-core", extra = ["litellm"] },
+]
 ray = [
     { name = "pyarrow" },
     { name = "ray", extra = ["data"] },
@@ -6159,12 +6178,13 @@ requires-dist = [
     { name = "pyarrow", marker = "extra == 'ray'", specifier = ">=17.0.0,<18.0.0" },
     { name = "python-pptx", specifier = ">=1.0.0,<2.0.0" },
     { name = "ragbits-core", editable = "packages/ragbits-core" },
+    { name = "ragbits-core", extras = ["litellm"], marker = "extra == 'litellm'", editable = "packages/ragbits-core" },
     { name = "ray", extras = ["data"], marker = "extra == 'ray'", specifier = "~=2.43.0" },
     { name = "rerankers", specifier = ">=0.6.1,<1.0.0" },
     { name = "unstructured", marker = "extra == 'unstructured'", specifier = ">=0.18.18,<1.0.0" },
     { name = "unstructured-client", marker = "extra == 'unstructured'", specifier = ">=0.26.0,<1.0.0" },
 ]
-provides-extras = ["unstructured", "ray"]
+provides-extras = ["litellm", "unstructured", "ray"]
 
 [[package]]
 name = "ragbits-evaluate"
@@ -6233,8 +6253,8 @@ dependencies = [
     { name = "ragbits-agents", extra = ["a2a", "cli", "mcp"] },
     { name = "ragbits-chat" },
     { name = "ragbits-cli" },
-    { name = "ragbits-core", extra = ["azure", "chroma", "fastembed", "gcs", "google-drive", "hf", "local", "logfire", "otel", "pgvector", "qdrant", "s3", "weaviate"] },
-    { name = "ragbits-document-search", extra = ["ray", "unstructured"] },
+    { name = "ragbits-core", extra = ["azure", "chroma", "fastembed", "gcs", "google-drive", "hf", "litellm", "local", "logfire", "otel", "pgvector", "qdrant", "s3", "weaviate"] },
+    { name = "ragbits-document-search", extra = ["litellm", "ray", "unstructured"] },
     { name = "ragbits-evaluate", extra = ["relari"] },
     { name = "ragbits-guardrails", extra = ["openai"] },
 ]
@@ -6271,8 +6291,8 @@ requires-dist = [
     { name = "ragbits-agents", extras = ["a2a", "cli", "mcp"], editable = "packages/ragbits-agents" },
     { name = "ragbits-chat", editable = "packages/ragbits-chat" },
     { name = "ragbits-cli", editable = "packages/ragbits-cli" },
-    { name = "ragbits-core", extras = ["chroma", "fastembed", "local", "otel", "logfire", "qdrant", "pgvector", "weaviate", "azure", "gcs", "hf", "s3", "google-drive"], editable = "packages/ragbits-core" },
-    { name = "ragbits-document-search", extras = ["unstructured", "ray"], editable = "packages/ragbits-document-search" },
+    { name = "ragbits-core", extras = ["chroma", "fastembed", "local", "otel", "logfire", "qdrant", "pgvector", "weaviate", "azure", "gcs", "hf", "s3", "google-drive", "litellm"], editable = "packages/ragbits-core" },
+    { name = "ragbits-document-search", extras = ["unstructured", "ray", "litellm"], editable = "packages/ragbits-document-search" },
     { name = "ragbits-evaluate", extras = ["relari"], editable = "packages/ragbits-evaluate" },
     { name = "ragbits-guardrails", extras = ["openai"], editable = "packages/ragbits-guardrails" },
 ]

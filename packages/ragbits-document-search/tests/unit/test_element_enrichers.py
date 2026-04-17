@@ -2,13 +2,15 @@ from pathlib import Path
 
 import pytest
 
-from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
-from ragbits.core.utils.config_handling import ObjectConstructionConfig
-from ragbits.document_search.documents.document import DocumentMeta
-from ragbits.document_search.documents.element import Element, ImageElement, TextElement
-from ragbits.document_search.ingestion.enrichers.base import ElementEnricher
-from ragbits.document_search.ingestion.enrichers.exceptions import EnricherElementNotSupportedError
-from ragbits.document_search.ingestion.enrichers.image import ImageDescriberPrompt, ImageElementEnricher
+pytest.importorskip("litellm")
+
+from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions  # noqa: E402
+from ragbits.core.utils.config_handling import ObjectConstructionConfig  # noqa: E402
+from ragbits.document_search.documents.document import DocumentMeta  # noqa: E402
+from ragbits.document_search.documents.element import Element, ImageElement, TextElement  # noqa: E402
+from ragbits.document_search.ingestion.enrichers.base import ElementEnricher  # noqa: E402
+from ragbits.document_search.ingestion.enrichers.exceptions import EnricherElementNotSupportedError  # noqa: E402
+from ragbits.document_search.ingestion.enrichers.image import ImageDescriberPrompt, ImageElementEnricher  # noqa: E402
 
 
 def test_enricher_validates_supported_element_types() -> None:

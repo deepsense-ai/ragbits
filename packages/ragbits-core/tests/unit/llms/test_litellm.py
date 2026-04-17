@@ -3,20 +3,23 @@ import pickle
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from litellm import Message, Router, Usage
-from litellm.types.utils import ChatCompletionMessageToolCall, Choices, Function, ModelResponse
-from pydantic import BaseModel
 
-from ragbits.core.llms.base import ToolCall
-from ragbits.core.llms.exceptions import (
+pytest.importorskip("litellm")
+
+from litellm import Message, Router, Usage  # noqa: E402
+from litellm.types.utils import ChatCompletionMessageToolCall, Choices, Function, ModelResponse  # noqa: E402
+from pydantic import BaseModel  # noqa: E402
+
+from ragbits.core.llms.base import ToolCall  # noqa: E402
+from ragbits.core.llms.exceptions import (  # noqa: E402
     LLMNotSupportingImagesError,
     LLMNotSupportingReasoningEffortError,
     LLMNotSupportingToolUseError,
 )
-from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
-from ragbits.core.prompt import Prompt
-from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat
-from ragbits.core.utils.function_schema import convert_function_to_function_schema
+from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions  # noqa: E402
+from ragbits.core.prompt import Prompt  # noqa: E402
+from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat  # noqa: E402
+from ragbits.core.utils.function_schema import convert_function_to_function_schema  # noqa: E402
 
 
 class MockPrompt(BasePrompt):

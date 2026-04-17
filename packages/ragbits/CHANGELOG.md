@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- BREAKING: `litellm` is now an optional extra. Install with `pip install ragbits[litellm]` to pull it into both `ragbits-core` and `ragbits-document-search`.
+- BREAKING: default LLM preference factory now points at OpenAI (`simple_openai_factory`) instead of LiteLLM.
+
 ## 1.6.2 (2026-03-26)
 
 - ragbits-chat updated to version v1.6.2
