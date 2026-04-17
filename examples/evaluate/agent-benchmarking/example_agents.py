@@ -243,6 +243,34 @@ class AgentGAIA:
         return candidate
 
 
+class AgentSOCRATES:
+    """Factory for the SOCRATES base agent for multi-hop reasoning."""
+
+    @staticmethod
+    def build_system_prompt() -> str:
+        """Return the SOCRATES system prompt."""
+        return "You are a helpful AI assistant. Try to answer user query.\n"
+
+    @staticmethod
+    def build_tools() -> list[Callable[..., Any]]:
+        """Return the callable toolset used by the SOCRATES agent."""
+        tools: list[Callable[..., Any]] = [
+            cast(Callable[..., Any], get_web_search_tool(model_name="gpt-4.1-mini")),
+        ]
+        return tools
+
+    @classmethod
+    def build(cls) -> Agent:
+        """Build the SOCRATES agent and attach final-answer parser."""
+        agent: Agent = Agent(
+            llm=LiteLLM("gpt-4.1-mini"),
+            prompt=cls.build_system_prompt(),
+            tools=cls.build_tools(),
+            default_options=AgentOptions(max_turns=30),
+        )
+        return agent
+
+
 # Export agent instances for import
 humaneval_agent: Agent = AgentHumanEval.build()
 humaneval_planning_agent: Agent = build_planning_agent(
@@ -260,5 +288,12 @@ gaia_agent: Agent = AgentGAIA.build()
 gaia_planning_agent: Agent = build_planning_agent(
     base_prompt=AgentGAIA.build_system_prompt(),
     tools=AgentGAIA.build_tools(),
+    max_turns=50,
+)
+
+socrates_agent: Agent = AgentSOCRATES.build()
+socrates_planning_agent: Agent = build_planning_agent(
+    base_prompt=AgentSOCRATES.build_system_prompt(),
+    tools=AgentSOCRATES.build_tools(),
     max_turns=50,
 )
