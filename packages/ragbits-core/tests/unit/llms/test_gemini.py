@@ -84,7 +84,7 @@ def get_weather(location: str) -> str:
     return json.dumps({"location": location, "temperature": "72"})
 
 
-def _make_llm(model_name: str = "gemini-2.0-flash", **kwargs: Any) -> GeminiLLM:
+def _make_llm(model_name: str = "gemini-2.5-flash", **kwargs: Any) -> GeminiLLM:
     """Create a GeminiLLM with a stub client (no real google-genai SDK needed)."""
     mock_client = MagicMock()
     with (
@@ -209,8 +209,8 @@ async def test_empty_parts_raises():
 
 
 def test_get_model_id():
-    llm = _make_llm(model_name="gemini-2.0-flash")
-    assert llm.get_model_id() == "gemini:gemini-2.0-flash"
+    llm = _make_llm(model_name="gemini-2.5-flash")
+    assert llm.get_model_id() == "gemini:gemini-2.5-flash"
 
 
 # ---------------------------------------------------------------------------

@@ -141,7 +141,7 @@ async def process_request() -> None:
     philosophers = [
         OpenAILLM(model_name="gpt-4.1-2025-04-14", use_structured_output=True),
         AnthropicLLM(model_name="claude-haiku-4-5-20251001", use_structured_output=True),
-        GeminiLLM(model_name="gemini-2.0-flash", use_structured_output=True),
+        GeminiLLM(model_name="gemini-2.5-flash", use_structured_output=True),
     ]
     prompts = [
         PhilosopherPrompt(PhilosopherPromptInput(question=question, philosopher_type=philosopher_type))

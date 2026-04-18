@@ -4,16 +4,13 @@ import asyncio
 import base64
 import binascii
 import logging
-from typing import TYPE_CHECKING, cast
+from typing import cast
 
 import filetype
 
 from ragbits.core.embeddings.base import VectorSize
 from ragbits.core.options import Options
 from ragbits.core.types import NOT_GIVEN, NotGiven
-
-if TYPE_CHECKING:
-    from google.genai import types as genai_types
 
 try:
     from google import genai

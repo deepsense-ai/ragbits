@@ -26,7 +26,6 @@ except ImportError:
     genai_types = None  # type: ignore[assignment]
 
 if TYPE_CHECKING:
-    from google.genai import types as genai_types
     from PIL.Image import Image as PILImage
 
 

@@ -4,7 +4,7 @@ import asyncio
 import json
 import time
 from collections.abc import AsyncGenerator, MutableSequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import LLMMetric, MetricType
@@ -16,9 +16,6 @@ from ragbits.core.llms.exceptions import (
 )
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
-
-if TYPE_CHECKING:
-    from google.genai import types as genai_types
 
 try:
     from google import genai
@@ -59,7 +56,7 @@ class GeminiLLM(LLM[GeminiLLMOptions]):
 
     def __init__(
         self,
-        model_name: str = "gemini-2.0-flash",
+        model_name: str = "gemini-2.5-flash",
         default_options: GeminiLLMOptions | None = None,
         *,
         api_key: str | None = None,
@@ -71,7 +68,7 @@ class GeminiLLM(LLM[GeminiLLMOptions]):
         Constructs a new GeminiLLM instance.
 
         Args:
-            model_name: Name of the Gemini model to use. Default is "gemini-2.0-flash".
+            model_name: Name of the Gemini model to use. Default is "gemini-2.5-flash".
             default_options: Default options to be used.
             api_key: Google AI API key. If not specified, reads from the GOOGLE_API_KEY environment variable.
                 Not used when vertexai=True.

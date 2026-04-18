@@ -13,6 +13,7 @@ dependencies = [
     "ragbits-chat",
     "ragbits-agents[a2a,cli,mcp]",
     "mike>=2.1.3",
+    "openai>=1.92.2",
 ]
 
 [dependency-groups]

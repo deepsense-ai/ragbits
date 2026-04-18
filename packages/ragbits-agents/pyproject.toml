@@ -48,6 +48,12 @@ litellm = [
 openai = [
     "openai>=1.91.0,<2.0.0",
 ]
+gemini = [
+    "ragbits-core[gemini]==1.7.0.dev202604150306",
+]
+anthropic = [
+    "ragbits-core[anthropic]==1.7.0.dev202604150306",
+]
 cli = [
     "textual>=0.85.2,<1.0.0",
 ]

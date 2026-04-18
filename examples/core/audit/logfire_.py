@@ -120,7 +120,7 @@ async def process_request() -> None:
     chefs = [
         OpenAILLM(model_name="gpt-4.1-2025-04-14", use_structured_output=True),
         AnthropicLLM(model_name="claude-haiku-4-5-20251001", use_structured_output=True),
-        GeminiLLM(model_name="gemini-2.0-flash", use_structured_output=True),
+        GeminiLLM(model_name="gemini-2.5-flash", use_structured_output=True),
     ]
     prompts = [
         DinnerIdeaPrompt(DinnerIdeaPromptInput(chef_type=chef_type, ingredients=ingredients))

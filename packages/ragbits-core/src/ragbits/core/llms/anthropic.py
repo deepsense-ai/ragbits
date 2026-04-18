@@ -4,7 +4,9 @@ import asyncio
 import json
 import time
 from collections.abc import AsyncGenerator, MutableSequence
-from typing import TYPE_CHECKING, Any
+from typing import Any
+
+import httpx
 
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import LLMMetric, MetricType
@@ -17,9 +19,6 @@ from ragbits.core.llms.exceptions import (
 )
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
-
-if TYPE_CHECKING:
-    from anthropic import AsyncAnthropic
 
 try:
     import anthropic
@@ -281,6 +280,10 @@ class AnthropicLLM(LLM[AnthropicLLMOptions]):
             kwargs = self._build_create_kwargs(conversation, system, options, tools, tool_choice)
             try:
                 return await self._client.messages.create(**kwargs)
+            except httpx.HTTPStatusError as exc:
+                raise LLMStatusError(str(exc), exc.response.status_code) from exc
+            except httpx.HTTPError as exc:
+                raise LLMConnectionError() from exc
             except anthropic.APIConnectionError as exc:
                 raise LLMConnectionError() from exc
             except anthropic.APIStatusError as exc:
@@ -368,6 +371,10 @@ class AnthropicLLM(LLM[AnthropicLLMOptions]):
 
         try:
             stream = await self._client.messages.create(**kwargs)
+        except httpx.HTTPStatusError as exc:
+            raise LLMStatusError(str(exc), exc.response.status_code) from exc
+        except httpx.HTTPError as exc:
+            raise LLMConnectionError() from exc
         except anthropic.APIConnectionError as exc:
             raise LLMConnectionError() from exc
         except anthropic.APIStatusError as exc:
