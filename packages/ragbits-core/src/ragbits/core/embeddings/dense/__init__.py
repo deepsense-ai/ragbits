@@ -4,13 +4,22 @@ from .base import DenseEmbedder
 from .noop import NoopEmbedder
 
 if TYPE_CHECKING:
+    from .gemini import GeminiEmbedder, GeminiEmbedderOptions
     from .litellm import LiteLLMEmbedder, LiteLLMEmbedderOptions
+    from .openai import OpenAIEmbedder, OpenAIEmbedderOptions
+    from .vertex_multimodal import VertexAIMultimodalEmbedder, VertexAIMultimodalEmbedderOptions
 
-# LiteLLMEmbedder is loaded lazily to avoid importing the optional ``litellm``
-# dependency at package-import time.
+# Provider embedders are loaded lazily to avoid importing optional dependencies
+# (openai, google-genai, google-auth, litellm) at package-import time.
 _LAZY: dict[str, str] = {
+    "GeminiEmbedder": "ragbits.core.embeddings.dense.gemini",
+    "GeminiEmbedderOptions": "ragbits.core.embeddings.dense.gemini",
     "LiteLLMEmbedder": "ragbits.core.embeddings.dense.litellm",
     "LiteLLMEmbedderOptions": "ragbits.core.embeddings.dense.litellm",
+    "OpenAIEmbedder": "ragbits.core.embeddings.dense.openai",
+    "OpenAIEmbedderOptions": "ragbits.core.embeddings.dense.openai",
+    "VertexAIMultimodalEmbedder": "ragbits.core.embeddings.dense.vertex_multimodal",
+    "VertexAIMultimodalEmbedderOptions": "ragbits.core.embeddings.dense.vertex_multimodal",
 }
 
 
@@ -27,7 +36,13 @@ def __getattr__(name: str) -> object:
 
 __all__ = [
     "DenseEmbedder",
+    "GeminiEmbedder",
+    "GeminiEmbedderOptions",
     "LiteLLMEmbedder",
     "LiteLLMEmbedderOptions",
     "NoopEmbedder",
+    "OpenAIEmbedder",
+    "OpenAIEmbedderOptions",
+    "VertexAIMultimodalEmbedder",
+    "VertexAIMultimodalEmbedderOptions",
 ]
