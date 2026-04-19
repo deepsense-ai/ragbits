@@ -146,7 +146,7 @@ class TestPreToolExecution:
         manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.PRE_TOOL, callback=ask_hook)])
 
         # Simulate cross-turn: frontend sends back tool_name but with a stale confirmation_id
-        ctx = AgentRunContext(
+        ctx: AgentRunContext = AgentRunContext(
             tool_confirmations=[
                 {"confirmation_id": "stale_id_from_previous_turn", "tool_name": "test_tool", "confirmed": True}
             ]
@@ -161,7 +161,7 @@ class TestPreToolExecution:
         """When confirmation_id doesn't match but tool_name does and user declined."""
         manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.PRE_TOOL, callback=ask_hook)])
 
-        ctx = AgentRunContext(
+        ctx: AgentRunContext = AgentRunContext(
             tool_confirmations=[
                 {"confirmation_id": "stale_id_from_previous_turn", "tool_name": "test_tool", "confirmed": False}
             ]
@@ -179,7 +179,7 @@ class TestPreToolExecution:
         manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.PRE_TOOL, callback=ask_hook)])
         exact_id = make_confirmation_id("ask_hook", "test_tool", {"arg1": "value1"})
 
-        ctx = AgentRunContext(
+        ctx: AgentRunContext = AgentRunContext(
             tool_confirmations=[
                 # tool_name match says declined
                 {"confirmation_id": "wrong_id", "tool_name": "test_tool", "confirmed": False},
@@ -198,7 +198,7 @@ class TestPreToolExecution:
         """tool_name fallback should not match confirmations for a different tool."""
         manager: HookManager = HookManager(hooks=[Hook(event_type=EventType.PRE_TOOL, callback=ask_hook)])
 
-        ctx = AgentRunContext(
+        ctx: AgentRunContext = AgentRunContext(
             tool_confirmations=[{"confirmation_id": "some_id", "tool_name": "other_tool", "confirmed": True}]
         )
         result, confirmation = await manager.execute_pre_tool(tool_call, ctx)

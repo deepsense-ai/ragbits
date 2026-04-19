@@ -1097,11 +1097,13 @@ class Agent(
             AgentToolNotAvailableError: If the tool is not registered on this agent.
         """
         tools_mapping = await self._get_all_tools()
+        # ToolCall declares arguments as dict but has a "before" validator that
+        # json.loads strings, so we pass the serialized form to satisfy the validator.
         tool_call = ToolCall(
             id=tool_call_id,
             type="function",
             name=tool_name,
-            arguments=json.dumps(arguments),
+            arguments=json.dumps(arguments),  # type: ignore[arg-type]
         )
         result: ToolCallResult | None = None
         async for item in self._execute_tool(tool_call=tool_call, tools_mapping=tools_mapping, context=context):

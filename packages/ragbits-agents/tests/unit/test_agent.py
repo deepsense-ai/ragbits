@@ -917,7 +917,7 @@ async def test_execute_tool_directly_runs_tool_with_given_arguments(llm_without_
     """execute_tool_directly runs the named tool with explicit args, bypassing LLM tool selection."""
     agent = Agent(llm=llm_without_tool_call, prompt=CustomPrompt, tools=[get_weather])
 
-    context = AgentRunContext()
+    context: AgentRunContext = AgentRunContext()
     result = await agent.execute_tool_directly(
         tool_call_id="call_1",
         tool_name="get_weather",

@@ -1,7 +1,6 @@
 """Tests for ChatInterface confirmation-resolution helpers."""
 
 from collections.abc import AsyncGenerator
-from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
@@ -10,11 +9,12 @@ from ragbits.agents._main import ToolCallResult
 from ragbits.agents.confirmation import ConfirmationRequest
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponseUnion, TextContent, TextResponse
+from ragbits.core.prompt.base import ChatFormat
 
 
 class _Dummy(ChatInterface):
-    async def chat(  # type: ignore[override]
-        self, message: str, history: Any, context: ChatContext
+    async def chat(  # type: ignore[override]  # noqa: PLR6301
+        self, message: str, history: ChatFormat, context: ChatContext
     ) -> AsyncGenerator[ChatResponseUnion, None]:
         yield TextResponse(content=TextContent(text="ok"))
 
@@ -141,5 +141,5 @@ async def test_resolve_pending_confirmations_unknown_confirmation_id_is_ignored(
 
 
 @pytest.fixture(autouse=True)
-def _secret_key(monkeypatch):
+def _secret_key(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("RAGBITS_SECRET_KEY", "test-secret")

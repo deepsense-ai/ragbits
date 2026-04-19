@@ -39,17 +39,13 @@ def test_inject_tool_call_does_not_mutate_input():
     """Helper returns a new list; caller's history is untouched."""
     history = [{"role": "user", "content": "hi"}]
 
-    inject_tool_call(
-        history, tool_call_id="c", tool_name="t", arguments={}, result="ok"
-    )
+    inject_tool_call(history, tool_call_id="c", tool_name="t", arguments={}, result="ok")
 
     assert history == [{"role": "user", "content": "hi"}]
 
 
 def test_inject_tool_call_stringifies_non_string_result():
     """Non-string results are coerced to str (matching add_tool_use_message)."""
-    result = inject_tool_call(
-        [], tool_call_id="c", tool_name="t", arguments={}, result={"key": "value"}
-    )
+    result = inject_tool_call([], tool_call_id="c", tool_name="t", arguments={}, result={"key": "value"})
 
     assert result[1]["content"] == str({"key": "value"})
