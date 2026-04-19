@@ -14,6 +14,9 @@ class ConfirmationRequest(BaseModel):
 
     confirmation_id: str
     """Unique identifier for this confirmation request."""
+    tool_call_id: str
+    """Identifier of the originating ToolCall — threads the tool_use and tool_result messages
+    when the chat layer resumes execution via Agent.execute_tool_directly."""
     tool_name: str
     """Name of the tool requiring confirmation."""
     tool_description: str

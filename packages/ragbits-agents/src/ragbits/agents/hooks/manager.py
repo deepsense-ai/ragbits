@@ -207,6 +207,7 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
                 else:
                     confirmation_request = ConfirmationRequest(
                         confirmation_id=confirmation_id,
+                        tool_call_id=tool_call.id,
                         tool_name=tool_call.name,
                         tool_description=result.reason,  # type: ignore[arg-type]  # guaranteed non-None by ValueError check above
                         arguments=current_tool_call.arguments,
