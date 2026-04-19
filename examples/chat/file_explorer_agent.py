@@ -564,15 +564,12 @@ class FileExplorerChat(ChatInterface):
         """
         Chat implementation with non-blocking confirmation support.
 
-        The agent will check context.tool_confirmations for any confirmations.
-        If a hook needs confirmation but hasn't been confirmed yet, it will
-        yield a ConfirmationRequest and exit. The frontend will then send a
-        new request with the confirmation in context.tool_confirmations.
+        Confirmed tools from the previous turn are executed directly by the chat layer
+        (via ``resolve_pending_confirmations``), then their results are injected into
+        history before the agent continues. The LLM never regenerates the tool call,
+        so the confirmation_id hash stays stable and there is no approval loop.
         """
-        # Create agent with history passed explicitly
-        agent: Agent = Agent(
-            llm=self.llm,
-            prompt=f"""
+        agent_prompt = f"""
             You are a file explorer agent. You have tools available.
 
             CRITICAL: When a user asks you to perform an action, you MUST IMMEDIATELY CALL THE APPROPRIATE TOOL.
@@ -586,16 +583,35 @@ class FileExplorerChat(ChatInterface):
 
             Available tools: {', '.join([t.__name__ for t in self.tools])}
             Restricted to: {TEMP_DIR}
-            """,
+            """
+
+        # Resolve any pending confirmations the user just responded to: execute the
+        # approved tools directly, append (tool_use, tool_result) pairs to history.
+        resolver_agent: Agent = Agent(
+            llm=self.llm,
+            prompt=agent_prompt,
+            tools=self.tools,  # type: ignore[arg-type]
+            hooks=self.hooks,
+            history=history,
+        )
+        history, resolution_responses = await self.resolve_pending_confirmations(resolver_agent, context, history)
+        for response in resolution_responses:
+            yield response
+
+        # Build the run-time agent with the (possibly updated) history so the LLM
+        # continues from the injected tool results rather than re-deciding calls.
+        agent: Agent = Agent(
+            llm=self.llm,
+            prompt=agent_prompt,
             tools=self.tools,  # type: ignore[arg-type]
             hooks=self.hooks,
             history=history,
         )
 
-        # Create agent context with tool_confirmations from the request context
+        # Forward any tool_confirmations to the agent context — supports legacy
+        # hash-matched confirmations for tools that don't flow through the direct
+        # execution path.
         agent_context: AgentRunContext = AgentRunContext()
-
-        # Pass tool_confirmations from ChatContext to AgentRunContext
         if context.tool_confirmations:
             agent_context.tool_confirmations = context.tool_confirmations
 
@@ -616,7 +632,10 @@ class FileExplorerChat(ChatInterface):
                     yield self.create_live_update(response.id, LiveUpdateType.START, f"🔧 {response.name}")
 
                 case ConfirmationRequest():
-                    # Confirmation needed - send to frontend and wait for user response
+                    # Persist the pending confirmation so the next turn can resolve it
+                    # directly (via resolve_pending_confirmations) instead of asking
+                    # the LLM to regenerate the tool call.
+                    yield self.create_state_update(self.create_pending_confirmation_state(response))
                     yield ConfirmationRequestResponse(content=ConfirmationRequestContent(confirmation_request=response))
 
                 case ToolCallResult():
