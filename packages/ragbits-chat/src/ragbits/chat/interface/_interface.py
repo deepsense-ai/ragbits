@@ -317,10 +317,9 @@ class ChatInterface(ABC):
         self,
         agent: Agent,
         context: ChatContext,
-        history: ChatFormat,
-    ) -> tuple[ChatFormat, list[ChatResponseUnion]]:
+    ) -> list[ChatResponseUnion]:
         """
-        Execute tools whose confirmations the user just returned, producing updated history.
+        Execute tools whose confirmations the user just returned, updating ``agent.history`` in place.
 
         For each entry in ``context.tool_confirmations`` matched against
         ``context.state["pending_confirmations"]``:
@@ -329,28 +328,27 @@ class ChatInterface(ABC):
           stored arguments, then append the (tool_use, tool_result) pair to history.
         - **declined**: append a synthetic tool_result saying the user declined.
 
-        The agent's next ``run_streaming`` call sees these pairs already in history
-        and continues naturally — the LLM is never asked to regenerate the confirmed
-        tool call, so there is no argument drift or hash-mismatch loop.
+        When the caller next runs ``agent.run_streaming(...)``, the LLM sees the
+        injected tool results already in history and continues naturally — it is
+        never asked to regenerate the confirmed tool call, so there is no argument
+        drift or hash-mismatch loop.
 
         Args:
-            agent: The agent whose tools should be executed for confirmed entries.
+            agent: The agent whose tools should be executed. ``agent.history`` is
+                mutated in place to include the injected (tool_use, tool_result) pairs.
             context: The chat context from this turn.
-            history: The conversation history passed to this chat turn.
 
         Returns:
-            Tuple of ``(new_history, responses_to_yield)``. Caller should yield the
-            responses (UI live updates) before continuing the agent run with
-            ``new_history``.
+            UI responses (e.g. LiveUpdates) the caller should yield before continuing
+            the agent run. Empty list if there are no pending confirmations to resolve.
         """
         pending_map: dict[str, dict[str, Any]] = context.state.get("pending_confirmations", {}) or {}
         confirmations = context.tool_confirmations or []
         if not pending_map or not confirmations:
-            return history, []
+            return []
 
         agent_context: AgentRunContext = AgentRunContext(tool_confirmations=list(confirmations))
         responses: list[ChatResponseUnion] = []
-        new_history = history
 
         for entry in confirmations:
             confirmation_id = entry.get("confirmation_id")
@@ -374,8 +372,8 @@ class ChatInterface(ABC):
                         tool_call_id, LiveUpdateType.FINISH, f"✅ {tool_name}", str(result.result)[:100]
                     )
                 )
-                new_history = inject_tool_call(
-                    new_history,
+                agent.history = inject_tool_call(
+                    agent.history,
                     tool_call_id=tool_call_id,
                     tool_name=tool_name,
                     arguments=arguments,
@@ -384,15 +382,15 @@ class ChatInterface(ABC):
             else:
                 decline_msg = "❌ User declined this action"
                 responses.append(self.create_live_update(tool_call_id, LiveUpdateType.FINISH, f"❌ {tool_name}"))
-                new_history = inject_tool_call(
-                    new_history,
+                agent.history = inject_tool_call(
+                    agent.history,
                     tool_call_id=tool_call_id,
                     tool_name=tool_name,
                     arguments=arguments,
                     result=decline_msg,
                 )
 
-        return new_history, responses
+        return responses
 
     @staticmethod
     def _sign_state(state: dict[str, Any]) -> str:

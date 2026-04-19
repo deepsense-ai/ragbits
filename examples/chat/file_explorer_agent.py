@@ -569,7 +569,9 @@ class FileExplorerChat(ChatInterface):
         history before the agent continues. The LLM never regenerates the tool call,
         so the confirmation_id hash stays stable and there is no approval loop.
         """
-        agent_prompt = f"""
+        agent: Agent = Agent(
+            llm=self.llm,
+            prompt=f"""
             You are a file explorer agent. You have tools available.
 
             CRITICAL: When a user asks you to perform an action, you MUST IMMEDIATELY CALL THE APPROPRIATE TOOL.
@@ -583,34 +585,20 @@ class FileExplorerChat(ChatInterface):
 
             Available tools: {', '.join([t.__name__ for t in self.tools])}
             Restricted to: {TEMP_DIR}
-            """
-
-        # Resolve any pending confirmations the user just responded to: execute the
-        # approved tools directly, append (tool_use, tool_result) pairs to history.
-        resolver_agent: Agent = Agent(
-            llm=self.llm,
-            prompt=agent_prompt,
+            """,
             tools=self.tools,  # type: ignore[arg-type]
             hooks=self.hooks,
             history=history,
         )
-        history, resolution_responses = await self.resolve_pending_confirmations(resolver_agent, context, history)
-        for response in resolution_responses:
+
+        # Execute tools the user just approved/declined: mutates agent.history in place
+        # with synthetic (tool_use, tool_result) pairs so the LLM continues from the
+        # results instead of re-deciding the confirmed call.
+        for response in await self.resolve_pending_confirmations(agent, context):
             yield response
 
-        # Build the run-time agent with the (possibly updated) history so the LLM
-        # continues from the injected tool results rather than re-deciding calls.
-        agent: Agent = Agent(
-            llm=self.llm,
-            prompt=agent_prompt,
-            tools=self.tools,  # type: ignore[arg-type]
-            hooks=self.hooks,
-            history=history,
-        )
-
-        # Forward any tool_confirmations to the agent context — supports legacy
-        # hash-matched confirmations for tools that don't flow through the direct
-        # execution path.
+        # Forward tool_confirmations to the agent context — supports any legacy
+        # hash-matched confirmations for tools not routed through direct execution.
         agent_context: AgentRunContext = AgentRunContext()
         if context.tool_confirmations:
             agent_context.tool_confirmations = context.tool_confirmations

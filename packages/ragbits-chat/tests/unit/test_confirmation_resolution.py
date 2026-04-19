@@ -42,11 +42,12 @@ def test_create_pending_confirmation_state_shape():
     }
 
 
-async def test_resolve_pending_confirmations_confirmed_executes_and_appends_history():
-    """A confirmed pending causes execute_tool_directly to run and history to grow."""
+async def test_resolve_pending_confirmations_confirmed_executes_and_mutates_history():
+    """A confirmed pending causes execute_tool_directly to run and agent.history to grow."""
     iface = _Dummy()
 
     agent = AsyncMock()
+    agent.history = [{"role": "user", "content": "send hi to #general"}]
     agent.execute_tool_directly.return_value = ToolCallResult(
         id="call_1", name="send_slack", arguments={"channel": "#general", "text": "hi"}, result="sent"
     )
@@ -63,9 +64,8 @@ async def test_resolve_pending_confirmations_confirmed_executes_and_appends_hist
         },
         tool_confirmations=[{"confirmation_id": "conf_1", "confirmed": True}],
     )
-    history = [{"role": "user", "content": "send hi to #general"}]
 
-    new_history, responses = await iface.resolve_pending_confirmations(agent, context, history)
+    responses = await iface.resolve_pending_confirmations(agent, context)
 
     agent.execute_tool_directly.assert_awaited_once()
     call_kwargs = agent.execute_tool_directly.call_args.kwargs
@@ -73,10 +73,10 @@ async def test_resolve_pending_confirmations_confirmed_executes_and_appends_hist
     assert call_kwargs["tool_name"] == "send_slack"
     assert call_kwargs["arguments"] == {"channel": "#general", "text": "hi"}
 
-    assert len(new_history) == 3
-    assert new_history[1]["role"] == "assistant"
-    assert new_history[1]["tool_calls"][0]["id"] == "call_1"
-    assert new_history[2] == {"role": "tool", "tool_call_id": "call_1", "content": "sent"}
+    assert len(agent.history) == 3
+    assert agent.history[1]["role"] == "assistant"
+    assert agent.history[1]["tool_calls"][0]["id"] == "call_1"
+    assert agent.history[2] == {"role": "tool", "tool_call_id": "call_1", "content": "sent"}
     assert responses  # at least one UI response emitted
 
 
@@ -85,6 +85,7 @@ async def test_resolve_pending_confirmations_declined_skips_execution():
     iface = _Dummy()
 
     agent = AsyncMock()
+    agent.history = []
 
     context = ChatContext(
         state={
@@ -99,11 +100,11 @@ async def test_resolve_pending_confirmations_declined_skips_execution():
         tool_confirmations=[{"confirmation_id": "conf_1", "confirmed": False}],
     )
 
-    new_history, _ = await iface.resolve_pending_confirmations(agent, context, [])
+    await iface.resolve_pending_confirmations(agent, context)
 
     agent.execute_tool_directly.assert_not_called()
-    assert new_history[-1]["role"] == "tool"
-    assert "declined" in new_history[-1]["content"].lower()
+    assert agent.history[-1]["role"] == "tool"
+    assert "declined" in agent.history[-1]["content"].lower()
 
 
 async def test_resolve_pending_confirmations_no_pending_returns_input_unchanged():
@@ -111,14 +112,14 @@ async def test_resolve_pending_confirmations_no_pending_returns_input_unchanged(
     iface = _Dummy()
 
     agent = AsyncMock()
+    agent.history = [{"role": "user", "content": "hi"}]
 
     context = ChatContext(state={}, tool_confirmations=[])
-    history = [{"role": "user", "content": "hi"}]
 
-    new_history, responses = await iface.resolve_pending_confirmations(agent, context, history)
+    responses = await iface.resolve_pending_confirmations(agent, context)
 
     agent.execute_tool_directly.assert_not_called()
-    assert new_history == history
+    assert agent.history == [{"role": "user", "content": "hi"}]
     assert responses == []
 
 
@@ -127,16 +128,17 @@ async def test_resolve_pending_confirmations_unknown_confirmation_id_is_ignored(
     iface = _Dummy()
 
     agent = AsyncMock()
+    agent.history = []
 
     context = ChatContext(
         state={"pending_confirmations": {}},
         tool_confirmations=[{"confirmation_id": "unknown", "confirmed": True}],
     )
 
-    new_history, responses = await iface.resolve_pending_confirmations(agent, context, [])
+    responses = await iface.resolve_pending_confirmations(agent, context)
 
     agent.execute_tool_directly.assert_not_called()
-    assert new_history == []
+    assert agent.history == []
     assert responses == []
 
 
