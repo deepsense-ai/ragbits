@@ -112,6 +112,17 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         return [hook for hook in hooks if hook.matches_tool(tool_name)]
 
     @staticmethod
+    def _compute_confirmation_id(hook_name: str, tool_name: str, arguments: dict[str, Any]) -> str:
+        """
+        Compute the confirmation_id for a given (hook, tool, arguments) triple.
+
+        Exposed so the chat layer (or tests) can reproduce the same id when resuming
+        a paused confirmation flow.
+        """
+        payload = f"{hook_name}:{tool_name}:{json.dumps(arguments, sort_keys=True)}"
+        return hashlib.sha256(payload.encode()).hexdigest()[:CONFIRMATION_ID_LENGTH]
+
+    @staticmethod
     def _find_confirmation(
         tool_confirmations: list[dict[str, Any]],
         confirmation_id: str,
@@ -163,12 +174,11 @@ class HookManager(Generic[LLMClientOptionsT, PromptInputT, PromptOutputT]):
         current_tool_call = tool_call.model_copy()
 
         for hook in self.get_hooks(EventType.PRE_TOOL, tool_call.name):
-            # Generate confirmation_id: hash(hook_function_name + tool_name + arguments)
-            hook_name = hook.callback.__name__
-            confirmation_id_str = (
-                f"{hook_name}:{tool_call.name}:{json.dumps(current_tool_call.arguments, sort_keys=True)}"
+            confirmation_id = self._compute_confirmation_id(
+                hook_name=hook.callback.__name__,
+                tool_name=tool_call.name,
+                arguments=current_tool_call.arguments,
             )
-            confirmation_id = hashlib.sha256(confirmation_id_str.encode()).hexdigest()[:CONFIRMATION_ID_LENGTH]
 
             result: ToolCall = await hook.callback(current_tool_call)
 
