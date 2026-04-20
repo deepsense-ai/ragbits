@@ -67,7 +67,6 @@ def test_simple_litellm_vision_factory_uses_vision_model() -> None:
 def test_simple_litellm_structured_output_factory_enables_structured_output() -> None:
     """simple_litellm_structured_output_factory() must set use_structured_output=True."""
     import ragbits.core.llms.factory as factory_module
-
     from ragbits.core.llms.litellm import LiteLLM
 
     llm = factory_module.simple_litellm_structured_output_factory()
