@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
 
 from ragbits.core.utils.config_handling import ObjectConstructionConfig
@@ -5,6 +7,13 @@ from ragbits.document_search.documents.element import ImageElement, TextElement
 from ragbits.document_search.ingestion.enrichers.exceptions import EnricherNotFoundError
 from ragbits.document_search.ingestion.enrichers.image import ImageElementEnricher
 from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRouter
+
+
+@pytest.fixture(autouse=True)
+def mock_preferred_llm() -> MagicMock:
+    with patch("ragbits.document_search.ingestion.enrichers.image.get_preferred_llm") as mock:
+        mock.return_value = MagicMock()
+        yield mock
 
 
 def test_enricher_router_from_config() -> None:
