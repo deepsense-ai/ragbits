@@ -1,3 +1,4 @@
+from collections.abc import Generator
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -10,7 +11,7 @@ from ragbits.document_search.ingestion.enrichers.router import ElementEnricherRo
 
 
 @pytest.fixture(autouse=True)
-def mock_preferred_llm() -> MagicMock:
+def mock_preferred_llm() -> Generator[MagicMock, None, None]:
     with patch("ragbits.document_search.ingestion.enrichers.image.get_preferred_llm") as mock:
         mock.return_value = MagicMock()
         yield mock
