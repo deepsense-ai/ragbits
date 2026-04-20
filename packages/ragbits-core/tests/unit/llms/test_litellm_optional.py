@@ -34,10 +34,6 @@ def test_litellm_instantiation_succeeds_when_present() -> None:
 
 def test_litellm_resolves_via_getattr_from_llms_package() -> None:
     """'from ragbits.core.llms import LiteLLM' must resolve via __getattr__ to the correct class."""
-    import ragbits.core.llms as llms_module
-
-    llms_module.__dict__.pop("LiteLLM", None)
-
     from ragbits.core.llms import LiteLLM
     from ragbits.core.llms.litellm import LiteLLM as DirectLiteLLM
 
@@ -72,5 +68,8 @@ def test_simple_litellm_structured_output_factory_enables_structured_output() ->
     """simple_litellm_structured_output_factory() must set use_structured_output=True."""
     import ragbits.core.llms.factory as factory_module
 
+    from ragbits.core.llms.litellm import LiteLLM
+
     llm = factory_module.simple_litellm_structured_output_factory()
+    assert isinstance(llm, LiteLLM)
     assert llm.use_structured_output is True

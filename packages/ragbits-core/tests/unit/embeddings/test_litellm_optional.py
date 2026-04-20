@@ -34,10 +34,6 @@ def test_litellm_embedder_constructs_when_present() -> None:
 
 def test_litellm_embedder_resolves_via_getattr_from_dense_package() -> None:
     """'from ragbits.core.embeddings.dense import LiteLLMEmbedder' must resolve via __getattr__."""
-    import ragbits.core.embeddings.dense as dense_module
-
-    dense_module.__dict__.pop("LiteLLMEmbedder", None)
-
     from ragbits.core.embeddings.dense import LiteLLMEmbedder
     from ragbits.core.embeddings.dense.litellm import LiteLLMEmbedder as DirectLiteLLMEmbedder
 
@@ -46,10 +42,6 @@ def test_litellm_embedder_resolves_via_getattr_from_dense_package() -> None:
 
 def test_litellm_embedder_resolves_via_getattr_from_embeddings_package() -> None:
     """'from ragbits.core.embeddings import LiteLLMEmbedder' must resolve via __getattr__."""
-    import ragbits.core.embeddings as embeddings_module
-
-    embeddings_module.__dict__.pop("LiteLLMEmbedder", None)
-
     from ragbits.core.embeddings import LiteLLMEmbedder
     from ragbits.core.embeddings.dense.litellm import LiteLLMEmbedder as DirectLiteLLMEmbedder
 

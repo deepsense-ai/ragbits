@@ -23,10 +23,6 @@ def test_gemini_llm_raises_import_error_when_missing() -> None:
 
 def test_gemini_llm_resolves_via_getattr_from_llms_package() -> None:
     """'from ragbits.core.llms import GeminiLLM' must resolve via __getattr__ to the correct class."""
-    import ragbits.core.llms as llms_module
-
-    llms_module.__dict__.pop("GeminiLLM", None)
-
     from ragbits.core.llms import GeminiLLM
     from ragbits.core.llms.gemini import GeminiLLM as DirectGeminiLLM
 

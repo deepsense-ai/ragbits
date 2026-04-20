@@ -142,4 +142,4 @@ class OpenAIEmbedder(DenseEmbedder[OpenAIEmbedderOptions]):
 
     async def aclose(self) -> None:
         """Close the underlying HTTP client and release connections."""
-        await self.client.aclose()
+        await self.client.close()

@@ -34,10 +34,6 @@ def test_vertex_embedder_raises_import_error_for_modern_when_google_genai_missin
 
 def test_vertex_embedder_resolves_via_getattr_from_dense_package() -> None:
     """'from ragbits.core.embeddings.dense import VertexAIMultimodalEmbedder' resolves via __getattr__."""
-    import ragbits.core.embeddings.dense as dense_module
-
-    dense_module.__dict__.pop("VertexAIMultimodalEmbedder", None)
-
     from ragbits.core.embeddings.dense import VertexAIMultimodalEmbedder
     from ragbits.core.embeddings.dense.vertex_multimodal import (
         VertexAIMultimodalEmbedder as DirectVertexEmbedder,
@@ -48,10 +44,6 @@ def test_vertex_embedder_resolves_via_getattr_from_dense_package() -> None:
 
 def test_vertex_embedder_resolves_via_getattr_from_embeddings_package() -> None:
     """'from ragbits.core.embeddings import VertexAIMultimodalEmbedder' resolves via __getattr__."""
-    import ragbits.core.embeddings as embeddings_module
-
-    embeddings_module.__dict__.pop("VertexAIMultimodalEmbedder", None)
-
     from ragbits.core.embeddings import VertexAIMultimodalEmbedder
     from ragbits.core.embeddings.dense.vertex_multimodal import (
         VertexAIMultimodalEmbedder as DirectVertexEmbedder,

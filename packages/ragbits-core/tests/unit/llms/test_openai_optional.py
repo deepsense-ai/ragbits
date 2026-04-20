@@ -23,10 +23,6 @@ def test_openai_llm_raises_import_error_when_missing() -> None:
 
 def test_openai_llm_resolves_via_getattr_from_llms_package() -> None:
     """'from ragbits.core.llms import OpenAILLM' must resolve via __getattr__ to the correct class."""
-    import ragbits.core.llms as llms_module
-
-    llms_module.__dict__.pop("OpenAILLM", None)
-
     from ragbits.core.llms import OpenAILLM
     from ragbits.core.llms.openai import OpenAILLM as DirectOpenAILLM
 

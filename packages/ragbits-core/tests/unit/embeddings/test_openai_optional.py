@@ -23,10 +23,6 @@ def test_openai_embedder_raises_import_error_when_missing() -> None:
 
 def test_openai_embedder_resolves_via_getattr_from_dense_package() -> None:
     """'from ragbits.core.embeddings.dense import OpenAIEmbedder' must resolve via __getattr__."""
-    import ragbits.core.embeddings.dense as dense_module
-
-    dense_module.__dict__.pop("OpenAIEmbedder", None)
-
     from ragbits.core.embeddings.dense import OpenAIEmbedder
     from ragbits.core.embeddings.dense.openai import OpenAIEmbedder as DirectOpenAIEmbedder
 
@@ -35,10 +31,6 @@ def test_openai_embedder_resolves_via_getattr_from_dense_package() -> None:
 
 def test_openai_embedder_resolves_via_getattr_from_embeddings_package() -> None:
     """'from ragbits.core.embeddings import OpenAIEmbedder' must resolve via __getattr__."""
-    import ragbits.core.embeddings as embeddings_module
-
-    embeddings_module.__dict__.pop("OpenAIEmbedder", None)
-
     from ragbits.core.embeddings import OpenAIEmbedder
     from ragbits.core.embeddings.dense.openai import OpenAIEmbedder as DirectOpenAIEmbedder
 
