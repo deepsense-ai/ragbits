@@ -1,13 +1,38 @@
+import time
 from collections.abc import AsyncGenerator
 
 import asyncpg
 import pytest
 import weaviate
+from requests import get
+from requests.exceptions import RequestException
+from testcontainers.core.config import testcontainers_config
 from testcontainers.postgres import PostgresContainer
-from testcontainers.weaviate import WeaviateContainer
+from testcontainers.weaviate import WeaviateContainer as _BaseWeaviateContainer
 
 POSTGRES_IMAGE = "pgvector/pgvector:0.8.0-pg17"
 WEAVIATE_IMAGE = "cr.weaviate.io/semitechnologies/weaviate:1.30.6"
+
+
+class WeaviateContainer(_BaseWeaviateContainer):
+    """WeaviateContainer that retries on HTTP 503 during startup.
+
+    The upstream _connect only catches ConnectionError, but Weaviate returns 503
+    while still initializing, which raises HTTPError and aborts the wait loop.
+    """
+
+    def _connect(self) -> None:
+        start = time.time()
+        url = f"http://{self.get_http_host()}:{self.get_http_port()}/v1/.well-known/ready"
+        while True:
+            try:
+                response = get(url, timeout=5)
+                response.raise_for_status()
+                return
+            except RequestException:
+                if time.time() - start > testcontainers_config.timeout:
+                    raise
+                time.sleep(testcontainers_config.sleep_time)
 
 
 @pytest.fixture(scope="session")
