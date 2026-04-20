@@ -241,7 +241,7 @@ class VertexAIMultimodalEmbedder(DenseEmbedder[VertexAIMultimodalEmbedderOptions
                         response = await asyncio.wait_for(call_coro, timeout=timeout)
                     else:
                         response = await call_coro
-                except TimeoutError as exc:
+                except (TimeoutError, asyncio.TimeoutError) as exc:
                     raise EmbeddingConnectionError("Request timed out.") from exc
                 except google_exceptions.GoogleAPICallError as exc:
                     status_code = exc.code if exc.code is not None else 500
