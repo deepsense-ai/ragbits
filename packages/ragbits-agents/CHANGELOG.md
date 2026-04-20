@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- BREAKING: `from_pydantic_ai` now requires both `pydantic_ai` and `litellm` to be installed.
+- Added `litellm`, `gemini`, and `anthropic` optional extras that install the corresponding `ragbits-core` provider extra.
+
 ## 1.6.2 (2026-03-26)
 
 - ragbits-core updated to version v1.6.2
