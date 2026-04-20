@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix tool-confirmation loop across conversation turns caused by LLM argument drift (#969). Adds `Agent.execute_tool_directly` and an `inject_tool_call` helper so chat layers can resume confirmed tools without re-prompting the LLM. `HookManager` also falls back to matching by `tool_name` when the exact `confirmation_id` hash misses. `ConfirmationRequest` now carries `tool_call_id`.
+
 ## 1.6.2 (2026-03-26)
 
 - ragbits-core updated to version v1.6.2
