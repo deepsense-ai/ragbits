@@ -38,7 +38,7 @@ def vector_store_factory() -> VectorStore:
     store = InMemoryVectorStore(
         embedder=NoopEmbedder(return_values=[[[4.0, 5.0], [1.0, 2.0], [7.0, 8.0]], [[1.0, 1.0]]])
     )
-    asyncio.new_event_loop().run_until_complete(add_examples(store))
+    asyncio.run(add_examples(store))
     return store
 
 
@@ -71,7 +71,7 @@ def vector_store_factory_for_remove() -> VectorStore:
     global _vector_store_for_remove  # noqa: PLW0603
     if _vector_store_for_remove is None:
         _vector_store_for_remove = InMemoryVectorStore(embedder=NoopEmbedder())
-        asyncio.new_event_loop().run_until_complete(add_examples(_vector_store_for_remove))
+        asyncio.run(add_examples(_vector_store_for_remove))
     return _vector_store_for_remove
 
 
