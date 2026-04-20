@@ -1,12 +1,11 @@
+import litellm
 import pytest
 
-litellm = pytest.importorskip("litellm")
-
-from ragbits.core.embeddings import DenseEmbedder, NoopEmbedder  # noqa: E402
-from ragbits.core.embeddings.dense import LiteLLMEmbedder, LiteLLMEmbedderOptions  # noqa: E402
-from ragbits.core.embeddings.sparse import BagOfTokens, BagOfTokensOptions, SparseEmbedder  # noqa: E402
-from ragbits.core.types import NOT_GIVEN  # noqa: E402
-from ragbits.core.utils.config_handling import ObjectConstructionConfig  # noqa: E402
+from ragbits.core.embeddings import DenseEmbedder, NoopEmbedder
+from ragbits.core.embeddings.dense import LiteLLMEmbedder, LiteLLMEmbedderOptions
+from ragbits.core.embeddings.sparse import BagOfTokens, BagOfTokensOptions, SparseEmbedder
+from ragbits.core.types import NOT_GIVEN
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
 
 
 def test_subclass_from_config_litellm():

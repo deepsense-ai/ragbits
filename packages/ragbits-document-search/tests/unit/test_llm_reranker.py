@@ -4,15 +4,13 @@ from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-pytest.importorskip("litellm")
-
-from ragbits.core.llms.base import LLMResponseWithMetadata  # noqa: E402
-from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions  # noqa: E402
-from ragbits.core.utils.config_handling import ObjectConstructionConfig  # noqa: E402
-from ragbits.document_search.documents.document import DocumentMeta  # noqa: E402
-from ragbits.document_search.documents.element import TextElement  # noqa: E402
-from ragbits.document_search.retrieval.rerankers.base import Reranker  # noqa: E402
-from ragbits.document_search.retrieval.rerankers.llm import (  # noqa: E402
+from ragbits.core.llms.base import LLMResponseWithMetadata
+from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
+from ragbits.document_search.documents.document import DocumentMeta
+from ragbits.document_search.documents.element import TextElement
+from ragbits.document_search.retrieval.rerankers.base import Reranker
+from ragbits.document_search.retrieval.rerankers.llm import (
     LLMReranker,
     LLMRerankerOptions,
     RerankerPrompt,

@@ -1,11 +1,9 @@
 import pytest
 
-pytest.importorskip("litellm")
-
-from ragbits.core.config import core_config  # noqa: E402
-from ragbits.core.llms.base import LLMType  # noqa: E402
-from ragbits.core.llms.factory import get_preferred_llm  # noqa: E402
-from ragbits.core.llms.litellm import LiteLLM  # noqa: E402
+from ragbits.core.config import core_config
+from ragbits.core.llms.base import LLMType
+from ragbits.core.llms.factory import get_preferred_llm
+from ragbits.core.llms.litellm import LiteLLM
 
 
 def mock_llm_factory() -> LiteLLM:

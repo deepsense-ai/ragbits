@@ -1,12 +1,8 @@
-import pytest
-
-pytest.importorskip("litellm")
-
-from ragbits.core.llms.litellm import LiteLLM  # noqa: E402
-from ragbits.core.utils.config_handling import ObjectConstructionConfig  # noqa: E402
-from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser  # noqa: E402
-from ragbits.document_search.retrieval.rephrasers.llm import LLMQueryRephraser, LLMQueryRephraserPrompt  # noqa: E402
-from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser  # noqa: E402
+from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.utils.config_handling import ObjectConstructionConfig
+from ragbits.document_search.retrieval.rephrasers.base import QueryRephraser
+from ragbits.document_search.retrieval.rephrasers.llm import LLMQueryRephraser, LLMQueryRephraserPrompt
+from ragbits.document_search.retrieval.rephrasers.noop import NoopQueryRephraser
 
 
 def test_subclass_from_config():
