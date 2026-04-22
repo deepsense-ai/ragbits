@@ -5717,7 +5717,7 @@ wheels = [
 
 [[package]]
 name = "ragbits"
-version = "1.7.0.dev202604150306"
+version = "1.7.0.dev202604240307"
 source = { editable = "packages/ragbits" }
 dependencies = [
     { name = "ragbits-agents" },
@@ -5847,7 +5847,7 @@ provides-extras = ["openai", "chroma", "local", "fastembed", "promptfoo", "otel"
 
 [[package]]
 name = "ragbits-agents"
-version = "1.7.0.dev202604150306"
+version = "1.7.0.dev202604240307"
 source = { editable = "packages/ragbits-agents" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5883,7 +5883,7 @@ provides-extras = ["a2a", "mcp", "openai", "cli"]
 
 [[package]]
 name = "ragbits-chat"
-version = "1.7.0.dev202604150306"
+version = "1.7.0.dev202604240307"
 source = { editable = "packages/ragbits-chat" }
 dependencies = [
     { name = "bcrypt" },
@@ -5915,7 +5915,7 @@ provides-extras = ["sql"]
 
 [[package]]
 name = "ragbits-cli"
-version = "1.7.0.dev202604150306"
+version = "1.7.0.dev202604240307"
 source = { editable = "packages/ragbits-cli" }
 dependencies = [
     { name = "ragbits-core" },
@@ -5930,7 +5930,7 @@ requires-dist = [
 
 [[package]]
 name = "ragbits-core"
-version = "1.7.0.dev202604150306"
+version = "1.7.0.dev202604240307"
 source = { editable = "packages/ragbits-core" }
 dependencies = [
     { name = "aiohttp" },
@@ -6047,7 +6047,7 @@ provides-extras = ["chroma", "local", "fastembed", "promptfoo", "otel", "logfire
 
 [[package]]
 name = "ragbits-document-search"
-version = "1.7.0.dev202604150306"
+version = "1.7.0.dev202604240307"
 source = { editable = "packages/ragbits-document-search" }
 dependencies = [
     { name = "docling", extra = ["easyocr"] },
@@ -6087,7 +6087,7 @@ provides-extras = ["unstructured", "ray"]
 
 [[package]]
 name = "ragbits-evaluate"
-version = "1.7.0.dev202604150306"
+version = "1.7.0.dev202604240307"
 source = { editable = "packages/ragbits-evaluate" }
 dependencies = [
     { name = "datasets" },
@@ -6125,7 +6125,7 @@ provides-extras = ["agents", "document-search", "relari"]
 
 [[package]]
 name = "ragbits-guardrails"
-version = "1.7.0.dev202604150306"
+version = "1.7.0.dev202604240307"
 source = { editable = "packages/ragbits-guardrails" }
 dependencies = [
     { name = "ragbits-core" },
