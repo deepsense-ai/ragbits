@@ -39,7 +39,6 @@ dev = [
     "mypy>=1.13.0",
     "moto~=4.2.7",
     "testcontainers[postgres,weaviate]>=4.0.0",
-    "greenlet>=3.0.0",
     "ruff>=0.6.8",
 ]
 
