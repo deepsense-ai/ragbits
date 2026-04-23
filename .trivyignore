@@ -1,8 +1,9 @@
-# ray 2.43.0: ray 2.52+ hangs in CI during ray.data operations — tested ray.init(num_cpus),
-# materialize(), concurrency=1, RAY_NUM_CPUS env var — none resolved the hang.
-# CVE is browser-based RCE via Safari/Firefox — not applicable to backend batch processing.
-CVE-2025-62593
-
 # pillow 10.4.0: blocked by docling 2.65.x (pillow<12.0.0) and fastembed (numpy<2.0.0).
 # CVE requires processing a malicious PSD file — low risk for our document pipeline.
 CVE-2026-25990
+CVE-2026-40192
+
+# litellm <1.83.0: fix requires openai>=2.x which is a breaking change for ragbits-agents[openai].
+CVE-2026-35030
+CVE-2026-35029
+GHSA-69x8-hrgq-fjj8
