@@ -35,6 +35,7 @@ dev = [
     "griffe>=1.3.2",
     "griffe-typingdoc>=0.2.7",
     "types-PyYAML>=6.0.2",
+    "types-requests>=2.31.0",
     "mypy>=1.13.0",
     "moto~=4.2.7",
     "testcontainers[postgres,weaviate]>=4.0.0",

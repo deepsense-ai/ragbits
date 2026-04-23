@@ -98,7 +98,11 @@ class OpenAILLM(LLM[OpenAILLMOptions]):
         self.api_key = api_key
         self.base_url = base_url
         self.use_structured_output = use_structured_output
-        self._client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+        # Local servers (e.g. Ollama) don't require a real API key, but AsyncOpenAI
+        # raises if api_key is None and OPENAI_API_KEY is not set. Use a placeholder
+        # so that custom base_url targets work without setting any environment variable.
+        effective_api_key = api_key if api_key is not None else ("local" if base_url is not None else None)
+        self._client = AsyncOpenAI(api_key=effective_api_key, base_url=base_url)
 
     def get_model_id(self) -> str:
         """

@@ -358,3 +358,38 @@ async def test_pdf_file_data_attachment_is_uploaded_and_replaced_with_file_id():
     call_kwargs = llm._client.chat.completions.create.call_args.kwargs
     assert call_kwargs["messages"][0]["content"][1]["file"]["file_id"] == "file-uploaded-xyz"
     llm._client.files.delete.assert_awaited_once_with("file-uploaded-xyz")
+
+
+# --- Local / OpenAI-compatible server initialisation ---
+
+
+def test_local_server_without_api_key_uses_placeholder():
+    """When base_url points to a local server and no api_key is given, a placeholder
+    key is supplied so AsyncOpenAI does not raise about a missing OPENAI_API_KEY env var.
+    """
+    llm = OpenAILLM(model_name="llama3.2", base_url="http://localhost:11434/v1")
+    assert llm._client.api_key == "local"
+
+
+def test_local_server_explicit_api_key_is_preserved():
+    """An explicitly provided api_key always takes precedence over the placeholder,
+    even when base_url is also set.
+    """
+    llm = OpenAILLM(model_name="llama3.2", base_url="http://localhost:11434/v1", api_key="my-secret")
+    assert llm._client.api_key == "my-secret"
+
+
+@patch("ragbits.core.llms.openai.AsyncOpenAI")
+def test_no_base_url_no_api_key_passes_none_to_client(mock_async_openai: MagicMock):
+    """Without a custom base_url, api_key=None is forwarded to AsyncOpenAI so that
+    the standard OPENAI_API_KEY environment variable lookup is preserved.
+    """
+    OpenAILLM(model_name="gpt-4o-mini")
+    mock_async_openai.assert_called_once_with(api_key=None, base_url=None)
+
+
+def test_local_server_base_url_is_forwarded_to_client():
+    """The base_url supplied by the caller reaches the underlying AsyncOpenAI client."""
+    llm = OpenAILLM(model_name="llama3.2", base_url="http://localhost:11434/v1")
+    # AsyncOpenAI normalises base_url to an httpx.URL; compare as string
+    assert "localhost:11434" in str(llm._client.base_url)
