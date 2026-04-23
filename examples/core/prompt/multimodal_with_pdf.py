@@ -63,9 +63,10 @@ async def main() -> None:
     """
     llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
     document = Attachment(
-        url="https://etc.usf.edu/lit2go/pdf/passage/1/alices-adventures-in-wonderland-001-chapter-i-down-the-rabbit-hole.pdf"
+        url="https://arxiv.org/pdf/1706.03762",
+        mime_type="application/pdf",
     )
-    prompt_input = DocumentPromptInput(document=document, question="What happened to Alice?")
+    prompt_input = DocumentPromptInput(document=document, question="What is the main contribution of this paper?")
     prompt = DocumentPrompt(prompt_input)
     response = await llm.generate(prompt)
     print(response.answer)

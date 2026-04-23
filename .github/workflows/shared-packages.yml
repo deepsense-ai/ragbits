@@ -151,7 +151,7 @@ jobs:
     strategy:
       fail-fast: false # do not stop all jobs if one fails
       matrix:
-        python-version: [ "3.10", "3.11", "3.12" ]
+        python-version: [ "3.10", "3.11", "3.12", "3.13" ]
         install-method: ${{ fromJson(inputs.install-methods) }}
 
     steps:
@@ -195,6 +195,19 @@ jobs:
           uv pip install --find-links dist \
             "$(ls dist/ragbits-*.whl)[a2a,azure,chroma,cli,fastembed,fastembed-gpu,gcs,google-drive,hf,local,logfire,mcp,openai,otel,pgvector,promptfoo,qdrant,ray,relari,s3,sql,unstructured,weaviate]"
 
+      - name: Export installed packages
+        if: matrix.install-method == 'package'
+        run: uv pip freeze > installed-packages-${{ matrix.install-method }}-py${{ matrix.python-version }}.txt
+
+      - name: Publish installed packages
+        if: matrix.install-method == 'package'
+        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        with:
+          name: installed-packages-${{ matrix.install-method }}-py${{ matrix.python-version }}
+          path: installed-packages-${{ matrix.install-method }}-py${{ matrix.python-version }}.txt
+          retention-days: 10
+
       - name: Run Tests With Coverage
         run: |
           UV_FLAGS="${{ matrix.install-method == 'package' && '--no-sync' || '' }}"
@@ -205,6 +218,7 @@ jobs:
           GOOGLE_DRIVE_CLIENTID_JSON: ${{ secrets.GOOGLE_DRIVE_CLIENTID_JSON }}
           GOOGLE_SOURCE_UNIT_TEST_FOLDER: ${{ secrets.GOOGLE_SOURCE_UNIT_TEST_FOLDER }}
           GOOGLE_DRIVE_TARGET_EMAIL: ${{ secrets.GOOGLE_DRIVE_TARGET_EMAIL }}
+          RAY_ENABLE_UV_RUN_RUNTIME_ENV: "0"
 
       - name: Test Report
         uses: mikepenz/action-junit-report@v4
