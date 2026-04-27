@@ -77,7 +77,7 @@ def main() -> None:
     (hooks_dir / "pre-push").unlink(missing_ok=True)
 
     pre_commit_hook = hooks_dir / hook_type
-    pre_commit_hook.write_text(HOOK_BODY)
+    pre_commit_hook.write_text(HOOK_BODY, encoding="utf-8")
     pre_commit_hook.chmod(0o755)
 
     pprint(f"[cyan]Git hook for [b]{hook_type}[/b] installed!")
