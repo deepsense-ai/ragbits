@@ -29,7 +29,7 @@ from ragbits.agents.tool import ToolReturn
 from ragbits.chat.api import RagbitsAPI
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse, TextContent, TextResponse
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt.base import ChatFormat
 
 # ---------------------------------------------------------------------------
@@ -84,7 +84,7 @@ class RevenueChatInterface(ChatInterface):
     """Chat interface with a tool that streams revenue tables."""
 
     def __init__(self) -> None:
-        self.llm = LiteLLM(model_name="gpt-4o")
+        self.llm = OpenAILLM(model_name="gpt-4o")
         self.agent = Agent(
             llm=self.llm,
             prompt="""

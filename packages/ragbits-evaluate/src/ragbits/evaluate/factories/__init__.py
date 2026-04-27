@@ -3,7 +3,7 @@ import asyncio
 from continuous_eval.metrics.retrieval.matching_strategy import RougeChunkMatch
 from datasets import load_dataset
 
-from ragbits.core.embeddings.dense import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 from ragbits.core.sources.hf import HuggingFaceSource
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
@@ -23,7 +23,7 @@ def basic_document_search_factory() -> DocumentSearch:
     """
     Factory for basic example document search instance.
     """
-    document_search: DocumentSearch = DocumentSearch(vector_store=InMemoryVectorStore(embedder=LiteLLMEmbedder()))
+    document_search: DocumentSearch = DocumentSearch(vector_store=InMemoryVectorStore(embedder=OpenAIEmbedder()))
     asyncio.run(_add_example_documents(document_search))
     return document_search
 

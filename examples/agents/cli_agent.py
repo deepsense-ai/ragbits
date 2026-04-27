@@ -18,7 +18,7 @@ To expose the CLI Agent simply run:
 # ///
 
 from ragbits.agents import Agent
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 
 def get_current_weather(location: str) -> str:
@@ -43,7 +43,7 @@ def get_current_weather(location: str) -> str:
 
 
 # Create a simple test agent
-llm = LiteLLM(model_name="gpt-3.5-turbo")
+llm = OpenAILLM(model_name="gpt-3.5-turbo")
 
 test_agent = Agent(
     llm=llm,

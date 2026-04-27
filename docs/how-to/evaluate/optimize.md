@@ -29,7 +29,7 @@ In this example, we will optimize a system prompt for a question-answering pipel
 ```python
 from dataclasses import dataclass
 from ragbits.evaluate.pipelines.base import EvaluationResult, EvaluationPipeline
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Prompt
 from pydantic import BaseModel
 
@@ -54,7 +54,7 @@ class RandomQuestionRespondPipeline(EvaluationPipeline):
         self.system_prompt_content = system_prompt_content
 
     async def __call__(self, data: dict[str, str]) -> RandomQuestionPipelineResult:
-        llm = LiteLLM()
+        llm = OpenAILLM()
         input_prompt = QuestionRespondPrompt(
             QuestionRespondPromptInput(
                 system_prompt_content=self.system_prompt_content,
@@ -72,7 +72,7 @@ Next, we define the data loader. We'll use Ragbits generation stack to create an
 
 ```python
 from ragbits.evaluate.dataloaders.base import DataLoader
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Prompt
 from pydantic import BaseModel
 
@@ -93,7 +93,7 @@ class RandomQuestionsDataLoader(DataLoader):
 
     async def load(self) -> list[dict[str, str]]:
         questions = []
-        llm = LiteLLM()
+        llm = OpenAILLM()
         for _ in range(self.num_questions):
             question = await llm.generate(
                 DatasetGenerationPrompt(DatasetGenerationPromptInput(topic=self.question_topic))

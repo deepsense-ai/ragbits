@@ -5,6 +5,9 @@ This example demonstrates how to use the `DocumentSearch` to index and search fo
 It employs the `MultimodalEmbedding` from VertexAI. In order to use it, make sure that you are
 logged in to Google Cloud (using the `gcloud auth login` command) and that you have the necessary permissions.
 
+Supports both legacy multimodalembedding models (via direct HTTP) and modern gemini-embedding-* models
+(via google-genai SDK).
+
 To run the script, execute the following command:
 
     ```bash
@@ -16,15 +19,14 @@ To run the script, execute the following command:
 # requires-python = ">=3.10"
 # dependencies = [
 #     "ragbits-document-search",
-#     "ragbits-core",
-#     "google-auth>=2.35.0",
+#     "ragbits-core[vertex]",
 # ]
 # ///
 
 import asyncio
 from pathlib import Path
 
-from ragbits.core.embeddings.dense.vertex_multimodal import VertexAIMultimodelEmbedder
+from ragbits.core.embeddings.dense.vertex_multimodal import VertexAIMultimodalEmbedder
 from ragbits.core.sources import LocalFileSource
 from ragbits.core.vector_stores.base import EmbeddingType
 from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
@@ -40,7 +42,7 @@ documents = [
     DocumentMeta(document_type=DocumentType.JPG, source=LocalFileSource(path=IMAGES_PATH / "bear.jpg")),
     DocumentMeta(document_type=DocumentType.JPG, source=LocalFileSource(path=IMAGES_PATH / "game.jpg")),
     DocumentMeta(document_type=DocumentType.JPG, source=LocalFileSource(path=IMAGES_PATH / "tree.jpg")),
-    DocumentMeta.from_literal("A beautiful teady bear."),
+    DocumentMeta.from_literal("A beautiful teddy bear."),
     DocumentMeta.from_literal("The constitution of the United States."),
 ]
 
@@ -50,7 +52,7 @@ async def main() -> None:
     Run the example.
     """
     # Has to support both text and image embeddings
-    embedder = VertexAIMultimodelEmbedder()
+    embedder = VertexAIMultimodalEmbedder()
 
     # You can replace InMemoryVectorStore with other vector store implementations
     vector_store_text = InMemoryVectorStore(embedder=embedder, embedding_type=EmbeddingType.TEXT)
@@ -74,8 +76,8 @@ async def main() -> None:
         print(f"Document: {entry.metadata['document_meta']}")
         print()
 
-    results = await document_search.search("Fluffy teady bear")
-    print("Results for 'Fluffy teady bear':")
+    results = await document_search.search("Fluffy teddy bear")
+    print("Results for 'Fluffy teddy bear':")
     for result in results:
         document = await result.document_meta.fetch()
         print(f"Type: {result.element_type}, Location: {document.local_path}, Text: {result.text_representation}")

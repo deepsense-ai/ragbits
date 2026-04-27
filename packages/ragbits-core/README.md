@@ -15,7 +15,7 @@ import asyncio
 
 from pydantic import BaseModel
 from ragbits.core.prompt import Prompt
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 
 class Dog(BaseModel):
@@ -29,11 +29,11 @@ class DogNamePrompt(Prompt[Dog, str]):
     """
 
     user_prompt = """
-    The dog is a {breed} breed, {age} years old, and has a {temperament} temperament.
+    The dog is a {{ breed }} breed, {{ age }} years old, and has a {{ temperament }} temperament.
     """
 
 async def main() -> None:
-    llm = LiteLLM("gpt-4o")
+    llm = OpenAILLM("gpt-4o")
     dog = Dog(breed="Golden Retriever", age=3, temperament="friendly")
     prompt = DogNamePrompt(dog)
     response = await llm.generate(prompt)

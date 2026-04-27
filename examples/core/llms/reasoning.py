@@ -13,28 +13,28 @@ To run the script, execute the following command:
 # /// script
 # requires-python = ">=3.10"
 # dependencies = [
-#     "ragbits-core",
+#     "ragbits-core[anthropic]",
 # ]
 # ///
 
 import asyncio
 
-from ragbits.core.llms import LiteLLM, LiteLLMOptions
+from ragbits.core.llms import AnthropicLLM, AnthropicLLMOptions
 
 
 async def main() -> None:
     """
     Run the example.
     """
-    options = LiteLLMOptions(reasoning_effort="medium")
-    model = LiteLLM(model_name="claude-haiku-4-5-20251001", default_options=options)
+    options = AnthropicLLMOptions(thinking={"type": "enabled", "budget_tokens": 1024})
+    model = AnthropicLLM(model_name="claude-haiku-4-5-20251001", default_options=options)
     response = await model.generate_with_metadata(
         "Do you like Jazz?",
     )
     print(f"reasoning: {response.reasoning}")
 
-    options = LiteLLMOptions(thinking={"type": "enabled", "budget_tokens": 1024})
-    model = LiteLLM(model_name="claude-haiku-4-5-20251001", default_options=options)
+    options = AnthropicLLMOptions(thinking={"type": "enabled", "budget_tokens": 1024})
+    model = AnthropicLLM(model_name="claude-haiku-4-5-20251001", default_options=options)
     response = await model.generate_with_metadata(
         "Do you like Jazz?",
     )

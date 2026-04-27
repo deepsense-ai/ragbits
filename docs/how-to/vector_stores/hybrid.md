@@ -14,9 +14,9 @@ To create a hybrid vector store, you need to pass a list of vector stores to the
 ```python
 from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
-from ragbits.core.embeddings.dense.vertex_multimodal import VertexAIMultimodelEmbedder
+from ragbits.core.embeddings.dense.vertex_multimodal import VertexAIMultimodalEmbedder
 
-embedder = VertexAIMultimodelEmbedder()
+embedder = VertexAIMultimodalEmbedder()
 
 vector_store_text = InMemoryVectorStore(embedder=embedder, embedding_type=EmbeddingType.TEXT)
 vector_store_image = InMemoryVectorStore(embedder=embedder, embedding_type=EmbeddingType.IMAGE)
@@ -33,12 +33,12 @@ You can create a hybrid vector store with different types of embeddings, includi
 ```python
 from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
-from ragbits.core.embeddings.dense import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 from ragbits.core.embeddings.sparse.fastembed import FastEmbedSparseEmbedder
 
 # Create a dense vector store using OpenAI embeddings
 vector_store_dense = InMemoryVectorStore(
-    embedder=LiteLLMEmbedder(model="text-embedding-3-small")
+    embedder=OpenAIEmbedder(model="text-embedding-3-small")
 )
 
 # Create a sparse vector store using sparse embeddings
@@ -65,7 +65,7 @@ from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
 from ragbits.core.vector_stores.chroma import ChromaVectorStore
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.core.vector_stores.pgvector import PgVectorStore
-from ragbits.core.embeddings.dense import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 
 postgres_pool = await asyncpg.create_pool("postgresql://user:password@localhost/db")
 
@@ -73,18 +73,18 @@ vector_store_hybrid = HybridSearchVectorStore(
     ChromaVectorStore(
         client=EphemeralClient(),
         index_name="chroma_example",
-        embedder=LiteLLMEmbedder(),
+        embedder=OpenAIEmbedder(),
     ),
     QdrantVectorStore(
         client=AsyncQdrantClient(location=":memory:"),
         index_name="qdrant_example",
-        embedder=LiteLLMEmbedder(),
+        embedder=OpenAIEmbedder(),
     ),
     PgVectorStore(
         client=pool,
         table_name="postgres_example",
         vector_size=1536,
-        embedder=LiteLLMEmbedder(),
+        embedder=OpenAIEmbedder(),
     ),
 )
 
@@ -108,9 +108,9 @@ To specify a retrieval strategy when searching a hybrid vector store, you can pa
 from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.core.vector_stores.hybrid_strategies import DistributionBasedScoreFusion
-from ragbits.core.embeddings.dense import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 
-embedder = LiteLLMEmbedder()
+embedder = OpenAIEmbedder()
 
 vector_store_text = InMemoryVectorStore(embedder=embedder, embedding_type=EmbeddingType.TEXT)
 vector_store_image = InMemoryVectorStore(embedder=embedder, embedding_type=EmbeddingType.IMAGE)

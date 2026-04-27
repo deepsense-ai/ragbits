@@ -14,11 +14,11 @@ from collections.abc import AsyncGenerator
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatResponse
 from ragbits.core.prompt import ChatFormat
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 class MyChat(ChatInterface):
     def __init__(self) -> None:
-        self.llm = LiteLLM(model_name="gpt-4o-mini")
+        self.llm = OpenAILLM(model_name="gpt-4o-mini")
 
     async def chat(
         self,
@@ -452,7 +452,7 @@ from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
 from ragbits.core.prompt import ChatFormat
 from ragbits.chat.interface.ui_customization import HeaderCustomization, PageMetaCustomization, UICustomization
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 
 class LikeFormExample(BaseModel):
@@ -538,7 +538,7 @@ class MyChat(ChatInterface):
     conversation_history = True
 
     def __init__(self) -> None:
-        self.llm = LiteLLM(model_name="gpt-4o-mini")
+        self.llm = OpenAILLM(model_name="gpt-4o-mini")
 
     async def chat(
         self,

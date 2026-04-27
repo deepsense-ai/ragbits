@@ -2,7 +2,7 @@
 Ragbits Document Search Example: Qdrant
 
 This example demonstrates how to use the `DocumentSearch` class to search for documents with a more advanced setup.
-We will use the `LiteLLMEmbedder` class to embed the documents and the query, the `QdrantVectorStore` class to store
+We will use the `OpenAIEmbedder` class to embed the documents and the query, the `QdrantVectorStore` class to store
 the embeddings.
 
 To run the script, execute the following command:
@@ -25,7 +25,7 @@ import asyncio
 from qdrant_client import AsyncQdrantClient
 
 from ragbits.core.audit import set_trace_handlers
-from ragbits.core.embeddings.dense import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 from ragbits.document_search import DocumentSearch, DocumentSearchOptions
@@ -61,7 +61,7 @@ async def main() -> None:
     """
     Run the example.
     """
-    embedder = LiteLLMEmbedder(
+    embedder = OpenAIEmbedder(
         model_name="text-embedding-3-small",
     )
     vector_store = QdrantVectorStore(
@@ -84,7 +84,7 @@ async def main() -> None:
     query = "I'm boiling my water and I need a joke"
     vector_store_options = VectorStoreOptions(
         k=2,
-        score_threshold=0.6,
+        score_threshold=0.4,
     )
     options = DocumentSearchOptions(vector_store_options=vector_store_options)
     results = await document_search.search(query, options=options)

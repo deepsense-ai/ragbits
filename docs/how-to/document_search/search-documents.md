@@ -9,11 +9,11 @@ Searching for elements is performed using a vector store. [`DocumentSearch`][rag
 === "Dense search"
 
     ```python
-    from ragbits.core.embeddings import LiteLLMEmbedder
+    from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
     from ragbits.core.vector_stores.qdrant import QdrantVectorStore
     from ragbits.document_search import DocumentSearch
 
-    embedder = LiteLLMEmbedder(model="text-embedding-3-small", ...)
+    embedder = OpenAIEmbedder(model="text-embedding-3-small", ...)
     vector_store = QdrantVectorStore(embedder=embedder, index_name="index", ...)
     document_search = DocumentSearch(vector_store=vector_store, ...)
 
@@ -46,14 +46,14 @@ Searching for elements is performed using a vector store. [`DocumentSearch`][rag
 === "Hybrid search"
 
     ```python
-    from ragbits.core.embeddings.dense import LiteLLMEmbedder
+    from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
     from ragbits.core.embeddings.sparse.fastembed import FastEmbedSparseEmbedder
     from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
     from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
     from ragbits.document_search import DocumentSearch
 
     # Create a dense embedder
-    dense_embedder = LiteLLMEmbedder(model="text-embedding-3-small", ...)
+    dense_embedder = OpenAIEmbedder(model="text-embedding-3-small", ...)
 
     # Create a sparse embedder
     sparse_embedder = FastEmbedSparseEmbedder(model_name="prithivida/Splade_PP_en-distil-cocodenser-retriever")
@@ -112,7 +112,7 @@ By default, the input query is provided directly to the embedding model. However
     from ragbits.document_search.retrieval.rephrasers import LLMQueryRephraser
     from ragbits.document_search import DocumentSearch
 
-    query_rephraser = LLMQueryRephraser(LiteLLM(model_name="gpt-3.5-turbo"))
+    query_rephraser = LLMQueryRephraser(OpenAILLM(model_name="gpt-3.5-turbo"))
     document_search = DocumentSearch(query_rephraser=query_rephraser, ...)
 
     elements = await document_search.search("What is the capital of Poland?")
@@ -126,7 +126,7 @@ By default, the input query is provided directly to the embedding model. However
     from ragbits.document_search.retrieval.rephrasers import LLMQueryRephraser, LLMQueryRephraserOptions
     from ragbits.document_search import DocumentSearch
 
-    query_rephraser = LLMQueryRephraser(LiteLLM(model_name="gpt-3.5-turbo"), default_options=LLMQueryRephraserOptions(n=3))
+    query_rephraser = LLMQueryRephraser(OpenAILLM(model_name="gpt-3.5-turbo"), default_options=LLMQueryRephraserOptions(n=3))
     document_search = DocumentSearch(query_rephraser=query_rephraser, ...)
 
     elements = await document_search.search("What is the capital of Poland?")

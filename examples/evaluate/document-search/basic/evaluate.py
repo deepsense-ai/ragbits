@@ -2,7 +2,7 @@
 Ragbits Evaluate Example: Basic Document Search Evaluation
 
 This example demonstrates how to evaluate a basic document search pipeline using the `Evaluator` class.
-It configures a simple pipeline with ChromaDB as the vector store, LiteLLMEmbedder for embeddings, and HuggingFaceSource for data.
+It configures a simple pipeline with ChromaDB as the vector store, OpenAIEmbedder for embeddings, and HuggingFaceSource for data.
 
 To run the script, execute the following command:
 
@@ -26,7 +26,6 @@ import logging
 
 from ragbits.evaluate.evaluator import Evaluator
 
-logging.getLogger("LiteLLM").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
 
 config = {
@@ -59,7 +58,7 @@ config = {
                             "score_threshold": -1.2,
                         },
                         "embedder": {
-                            "type": "ragbits.core.embeddings.dense:LiteLLMEmbedder",
+                            "type": "ragbits.core.embeddings.dense.openai:OpenAIEmbedder",
                             "config": {
                                 "model_name": "text-embedding-3-small",
                             },

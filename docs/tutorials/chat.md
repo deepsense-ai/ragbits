@@ -41,7 +41,7 @@ from ragbits.agents import Agent, ToolCallResult
 from ragbits.agents.tools.openai import get_image_generation_tool, get_web_search_tool
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType, Message
-from ragbits.core.llms import LiteLLM, ToolCall
+from ragbits.core.llms import OpenAILLM, ToolCall
 from ragbits.core.prompt import Prompt
 
 # Define the agent's input format
@@ -78,7 +78,7 @@ class BasicMountainChat(ChatInterface):
 
     def __init__(self) -> None:
         self.model_name = "gpt-4o-2024-08-06"
-        self.llm = LiteLLM(model_name=self.model_name, use_structured_output=True)
+        self.llm = OpenAILLM(model_name=self.model_name, use_structured_output=True)
 
         # Create agent with real tools
         self.agent = Agent(
@@ -391,7 +391,7 @@ class MountainChatWithUI(ChatInterface):
 
     def __init__(self) -> None:
         self.model_name = "gpt-4o-2024-08-06"
-        self.llm = LiteLLM(model_name=self.model_name, use_structured_output=True)
+        self.llm = OpenAILLM(model_name=self.model_name, use_structured_output=True)
 
         self.agent = Agent(
             llm=self.llm,
@@ -520,7 +520,7 @@ class AuthenticatedMountainChat(ChatInterface):
 
     def __init__(self) -> None:
         self.model_name = "gpt-4o-2024-08-06"
-        self.llm = LiteLLM(model_name=self.model_name, use_structured_output=True)
+        self.llm = OpenAILLM(model_name=self.model_name, use_structured_output=True)
         self.agent = Agent(
             llm=self.llm,
             prompt=GeneralAssistantPrompt,
@@ -647,7 +647,7 @@ from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.forms import FeedbackConfig, UserSettings
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType, Message
 from ragbits.chat.interface.ui_customization import HeaderCustomization, PageMetaCustomization, UICustomization
-from ragbits.core.llms import LiteLLM, ToolCall
+from ragbits.core.llms import OpenAILLM, ToolCall
 from ragbits.core.prompt import Prompt
 
 # Forms
@@ -709,7 +709,7 @@ class MyChat(ChatInterface):
 
     def __init__(self) -> None:
         self.model_name = "gpt-4o-2024-08-06"
-        self.llm = LiteLLM(model_name=self.model_name, use_structured_output=True)
+        self.llm = OpenAILLM(model_name=self.model_name, use_structured_output=True)
         self.agent = Agent(llm=self.llm, prompt=GeneralAssistantPrompt, tools=[
             get_web_search_tool(self.model_name), get_image_generation_tool(self.model_name),
         ])

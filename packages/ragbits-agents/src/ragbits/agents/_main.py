@@ -1269,7 +1269,7 @@ class Agent(
         )
 
     @classmethod
-    @requires_dependencies("pydantic_ai")
+    @requires_dependencies(["pydantic_ai", "litellm"])
     def from_pydantic_ai(cls, pydantic_ai_agent: "PydanticAIAgent") -> Self:
         """
         Construct an agent instance from a `pydantic_ai.Agent` representation.

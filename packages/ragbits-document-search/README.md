@@ -14,7 +14,7 @@ pip install ragbits-document-search
 ```python
 import asyncio
 
-from ragbits.core.embeddings import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 
@@ -22,7 +22,7 @@ async def main() -> None:
     """
     Run the example.
     """
-    embedder = LiteLLMEmbedder(
+    embedder = OpenAIEmbedder(
         model_name="text-embedding-3-small",
     )
     vector_store = InMemoryVectorStore(embedder=embedder)

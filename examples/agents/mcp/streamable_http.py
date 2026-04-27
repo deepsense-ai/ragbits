@@ -28,7 +28,7 @@ from mcp.server.fastmcp import FastMCP
 
 from ragbits.agents import Agent
 from ragbits.agents.mcp.server import MCPServerStreamableHttp
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 mcp = FastMCP()
 
@@ -59,7 +59,7 @@ async def main() -> None:
         },
         client_session_timeout_seconds=20,
     ) as server:
-        llm = LiteLLM(model_name="gpt-4o-2024-08-06")
+        llm = OpenAILLM(model_name="gpt-4o-2024-08-06")
         agent = Agent(llm=llm, mcp_servers=[server])
         response = await agent.run("What's the weather in Bydgoszcz?")
         print(response)

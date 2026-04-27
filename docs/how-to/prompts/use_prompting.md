@@ -26,10 +26,10 @@ class JokePrompt(Prompt):
 Passing the prompt to a model is as simple as:
 ```python
 import asyncio
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 async def main():
-    llm = LiteLLM("gpt-4o-2024-08-06", use_structured_output=True)
+    llm = OpenAILLM("gpt-4o-2024-08-06", use_structured_output=True)
     static_prompt = JokePrompt()
     print(await llm.generate(static_prompt))
 
@@ -49,7 +49,7 @@ import asyncio
 from pydantic import BaseModel
 
 from ragbits.core.prompt import Prompt
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 
 class QueryWithContext(BaseModel):
@@ -83,7 +83,7 @@ class RAGPrompt(Prompt[QueryWithContext]):
 
 
 async def main():
-    llm = LiteLLM()
+    llm = OpenAILLM()
     query = "Write down names of last two world cup winners"
     context = ["Today is November 2017", "Germany won 2014 world cup", "Spain won 2010 world cup"]
     prompt = RAGPrompt(QueryWithContext(query=query, context=context))
@@ -110,7 +110,7 @@ import asyncio
 from pydantic import BaseModel
 
 from ragbits.core.prompt import Prompt
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 
 class QueryWithContext(BaseModel):
@@ -149,7 +149,7 @@ class RAGPrompt(Prompt[QueryWithContext, OutputSchema]):
 
 
 async def main():
-    llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
+    llm = OpenAILLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
     query = "Write down names of last two world cup winners"
     context = ["Today is November 2017", "Germany won 2014 world cup", "Spain won 2010 world cup"]
     prompt = RAGPrompt(QueryWithContext(query=query, context=context))
@@ -177,7 +177,7 @@ import asyncio
 
 from pydantic import BaseModel
 
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Prompt
 from ragbits.core.prompt.parsers import ResponseParsingError
 
@@ -200,7 +200,7 @@ def assert_responses(boolean_prompt: BooleanPrompt) -> None:
         assert not boolean_prompt.parse_response(s)
 
 async def main():
-    llm = LiteLLM()
+    llm = OpenAILLM()
     boolean_prompt = BooleanPrompt(RoleInput(role="a human"))
     assert_responses(boolean_prompt)
     try:
@@ -223,7 +223,7 @@ import asyncio
 import re
 from pydantic import BaseModel
 
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Prompt
 
 
@@ -245,7 +245,7 @@ class IntegerPrompt(Prompt[ItemInput, int]):
 
 
 async def main():
-    llm = LiteLLM()
+    llm = OpenAILLM()
     prompt = IntegerPrompt(ItemInput(items="people do live in Raglandia?"))
     response = await llm.generate(prompt=prompt)
     print(response)

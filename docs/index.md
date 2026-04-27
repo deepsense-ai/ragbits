@@ -105,7 +105,7 @@ To define a prompt and run LLM:
 ```python
 import asyncio
 from pydantic import BaseModel
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Prompt
 
 class QuestionAnswerPromptInput(BaseModel):
@@ -119,7 +119,7 @@ class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, str]):
     Question: {{ question }}
     """
 
-llm = LiteLLM(model_name="gpt-4.1-nano")
+llm = OpenAILLM(model_name="gpt-4.1-nano")
 
 async def main() -> None:
     prompt = QuestionAnswerPrompt(QuestionAnswerPromptInput(question="What are high memory and low memory on linux?"))
@@ -136,11 +136,11 @@ To build and query a simple vector store index:
 
 ```python
 import asyncio
-from ragbits.core.embeddings import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 from ragbits.core.vector_stores import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 
-embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+embedder = OpenAIEmbedder(model_name="text-embedding-3-small")
 vector_store = InMemoryVectorStore(embedder=embedder)
 document_search = DocumentSearch(vector_store=vector_store)
 
@@ -161,8 +161,8 @@ To build a simple RAG pipeline:
 import asyncio
 from collections.abc import Iterable
 from pydantic import BaseModel
-from ragbits.core.embeddings import LiteLLMEmbedder
-from ragbits.core.llms import LiteLLM
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Prompt
 from ragbits.core.vector_stores import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
@@ -182,8 +182,8 @@ class QuestionAnswerPrompt(Prompt[QuestionAnswerPromptInput, str]):
     Context: {% for chunk in context %}{{ chunk.text_representation }}{%- endfor %}
     """
 
-llm = LiteLLM(model_name="gpt-4.1-nano")
-embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+llm = OpenAILLM(model_name="gpt-4.1-nano")
+embedder = OpenAIEmbedder(model_name="text-embedding-3-small")
 vector_store = InMemoryVectorStore(embedder=embedder)
 document_search = DocumentSearch(vector_store=vector_store)
 
@@ -208,16 +208,16 @@ To build an agentic RAG pipeline:
 ```python
 import asyncio
 from ragbits.agents import Agent
-from ragbits.core.embeddings import LiteLLMEmbedder
-from ragbits.core.llms import LiteLLM
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.vector_stores import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 
-embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+embedder = OpenAIEmbedder(model_name="text-embedding-3-small")
 vector_store = InMemoryVectorStore(embedder=embedder)
 document_search = DocumentSearch(vector_store=vector_store)
 
-llm = LiteLLM(model_name="gpt-4.1-nano")
+llm = OpenAILLM(model_name="gpt-4.1-nano")
 agent = Agent(llm=llm, tools=[document_search.search])
 
 async def main() -> None:
@@ -239,17 +239,17 @@ from ragbits.agents import Agent, ToolCallResult
 from ragbits.chat.api import RagbitsAPI
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
-from ragbits.core.embeddings import LiteLLMEmbedder
-from ragbits.core.llms import LiteLLM, ToolCall
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
+from ragbits.core.llms import OpenAILLM, ToolCall
 from ragbits.core.prompt import ChatFormat
 from ragbits.core.vector_stores import InMemoryVectorStore
 from ragbits.document_search import DocumentSearch
 
-embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+embedder = OpenAIEmbedder(model_name="text-embedding-3-small")
 vector_store = InMemoryVectorStore(embedder=embedder)
 document_search = DocumentSearch(vector_store=vector_store)
 
-llm = LiteLLM(model_name="gpt-4.1-nano")
+llm = OpenAILLM(model_name="gpt-4.1-nano")
 agent = Agent(llm=llm, tools=[document_search.search])
 
 class MyChat(ChatInterface):

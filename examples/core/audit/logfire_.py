@@ -44,7 +44,7 @@ from pydantic import BaseModel
 from tqdm.asyncio import tqdm
 
 from ragbits.core.audit import set_metric_handlers, set_trace_handlers, traceable
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import AnthropicLLM, GeminiLLM, OpenAILLM
 from ragbits.core.prompt import Prompt
 
 # Ragbits observability setup
@@ -118,9 +118,9 @@ async def process_request() -> None:
     """
     ingredients = ["eggs", "bread", "cheddar cheese", "tomatoes"]
     chefs = [
-        LiteLLM(model_name="gpt-4.1-2025-04-14", use_structured_output=True),
-        LiteLLM(model_name="claude-haiku-4-5-20251001", use_structured_output=True),
-        LiteLLM(model_name="gemini-2.0-flash", use_structured_output=True),
+        OpenAILLM(model_name="gpt-4.1-2025-04-14", use_structured_output=True),
+        AnthropicLLM(model_name="claude-haiku-4-5-20251001", use_structured_output=True),
+        GeminiLLM(model_name="gemini-2.5-flash", use_structured_output=True),
     ]
     prompts = [
         DinnerIdeaPrompt(DinnerIdeaPromptInput(chef_type=chef_type, ingredients=ingredients))
@@ -128,7 +128,7 @@ async def process_request() -> None:
     ]
     responses = await asyncio.gather(*[llm.generate(prompt) for llm, prompt in zip(chefs, prompts, strict=False)])
 
-    assistant = LiteLLM(model_name="o3", use_structured_output=True)
+    assistant = OpenAILLM(model_name="o3", use_structured_output=True)
     prompt = AssistantPrompt(AssistantPromptInput(suggestions=[response.answer for response in responses]))
     async for _ in assistant.generate_streaming(prompt):
         pass

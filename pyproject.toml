@@ -6,13 +6,14 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "ragbits-cli",
-    "ragbits-core[chroma,fastembed,local,otel,logfire,qdrant,pgvector,weaviate,azure,gcs,hf,s3,google_drive]",
-    "ragbits-document-search[unstructured,ray]",
+    "ragbits-core[chroma,fastembed,local,otel,logfire,qdrant,pgvector,weaviate,azure,gcs,hf,s3,google_drive,litellm]",
+    "ragbits-document-search[unstructured,ray,litellm]",
     "ragbits-evaluate[relari]",
     "ragbits-guardrails[openai]",
     "ragbits-chat",
     "ragbits-agents[a2a,cli,mcp]",
     "mike>=2.1.3",
+    "openai>=1.92.2",
 ]
 
 [dependency-groups]

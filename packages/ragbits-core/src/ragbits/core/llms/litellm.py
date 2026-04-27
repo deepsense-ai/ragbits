@@ -3,7 +3,6 @@ import time
 from collections.abc import AsyncGenerator, Callable, Iterable
 from typing import TYPE_CHECKING, Any, Literal
 
-import tiktoken
 from pydantic import BaseModel
 from typing_extensions import Self
 
@@ -26,6 +25,13 @@ from ragbits.core.utils.lazy_litellm import LazyLiteLLM
 
 if TYPE_CHECKING:
     from litellm import CustomStreamWrapper, ModelResponse, Router
+
+try:
+    import litellm as _litellm_check  # noqa: F401
+
+    HAS_LITELLM = True
+except ImportError:
+    HAS_LITELLM = False
 
 
 class LiteLLMOptions(LLMOptions):
@@ -95,6 +101,11 @@ class LiteLLM(LLM[LiteLLMOptions], LazyLiteLLM):
                 See the [LiteLLM documentation](https://docs.litellm.ai/docs/completion/token_usage#9-register_model)
                 for more information.
         """
+        if not HAS_LITELLM:
+            raise ImportError(
+                "You need to install the 'litellm' package to use LiteLLM."
+                " Please install ragbits-core with the 'litellm' extra: pip install ragbits-core[litellm]"
+            )
         super().__init__(model_name, default_options)
         self.api_base = api_base or base_url
         self.api_key = api_key
@@ -153,6 +164,8 @@ class LiteLLM(LLM[LiteLLMOptions], LazyLiteLLM):
         Returns:
             The id for the given token.
         """
+        import tiktoken
+
         try:
             tokenizer = tiktoken.encoding_for_model(self.model_name)
             return tokenizer.encode_single_token(token)

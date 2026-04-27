@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- BREAKING: `litellm` is now an optional extra. Install it with `pip install ragbits-core[litellm]` to use `LiteLLM` / `LiteLLMEmbedder`.
+- BREAKING: default `llm_preference_factories` switched from `simple_litellm_*` to `simple_openai_*`; projects relying on the implicit LiteLLM default should either install the `[litellm]` extra and override the factories, or install the `[openai]` extra.
+- `tiktoken` is now a direct dependency of `ragbits-core` (previously pulled in transitively via `litellm`).
+- Added `OpenAILLM` — a dedicated LLM client using the OpenAI API directly (requires `[openai]` extra).
+- Added `AnthropicLLM` — a dedicated LLM client using the Anthropic API directly (requires `[anthropic]` extra).
+- Added `GeminiLLM` — a dedicated LLM client using the Google Gemini API via `google-genai` SDK; supports both Google AI Studio and Vertex AI (requires `[gemini]` or `[vertex]` extra).
+- Added `OpenAIEmbedder` — a dedicated embedder using the OpenAI embeddings API directly (requires `[openai]` extra).
+- Added `GeminiEmbedder` — a dedicated embedder using the Google Gemini embeddings API (requires `[gemini]` extra).
+- Added `VertexMultimodalEmbedder` — a multimodal embedder using Vertex AI (requires `[vertex]` extra).
+- Added `openai`, `anthropic`, `gemini`, and `vertex` optional extras for the new provider-specific classes.
+
 ## 1.6.2 (2026-03-26)
 
 ## 1.6.1 (2026-03-19)

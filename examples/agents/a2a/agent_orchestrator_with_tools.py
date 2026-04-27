@@ -5,7 +5,7 @@ import requests
 from pydantic import BaseModel
 
 from ragbits.agents import Agent, ToolCallResult
-from ragbits.core.llms import LiteLLM, ToolCall
+from ragbits.core.llms import OpenAILLM, ToolCall
 from ragbits.core.prompt import Prompt
 
 AGENTS_CARDS = {}
@@ -94,10 +94,10 @@ def execute_agent(agent_name: str, query: str) -> str:
 
 async def main() -> None:
     """
-    Sets up a LiteLLM-powered AgentOrchestrator with two remote agents and sends a travel planning query.
+    Sets up an AgentOrchestrator with two remote agents and sends a travel planning query.
     The orchestrator delegates the task (finding flights and hotels) to the appropriate agents and prints the response.
     """
-    llm = LiteLLM(
+    llm = OpenAILLM(
         model_name="gpt-4.1",
         use_structured_output=True,
     )

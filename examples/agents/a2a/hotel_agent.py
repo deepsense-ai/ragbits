@@ -3,7 +3,7 @@ import json
 from pydantic import BaseModel
 
 from ragbits.agents import Agent
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Prompt
 
 
@@ -66,7 +66,7 @@ class HotelPrompt(Prompt[HotelPromptInput]):
     """
 
 
-llm = LiteLLM(
+llm = OpenAILLM(
     model_name="gpt-4o-2024-08-06",
     use_structured_output=True,
 )

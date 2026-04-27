@@ -2,7 +2,7 @@
 Ragbits Document Search Example: Weaviate
 
 This example demonstrates how to use the `DocumentSearch` class to search for documents with a more advanced setup.
-We will use the `LiteLLMEmbedder` class to embed the documents and the query, the `WeaviateVectorStore` class to store
+We will use the `OpenAIEmbedder` class to embed the documents and the query, the `WeaviateVectorStore` class to store
 the embeddings.
 
 To run the script, execute the following command:
@@ -28,7 +28,7 @@ import asyncio
 import weaviate
 
 from ragbits.core.audit import set_trace_handlers
-from ragbits.core.embeddings.dense import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 from ragbits.core.vector_stores.base import VectorStoreOptions
 from ragbits.core.vector_stores.weaviate import WeaviateVectorStore
 from ragbits.document_search import DocumentSearch, DocumentSearchOptions
@@ -65,35 +65,38 @@ async def main() -> None:
     Run the example.
     """
     client = weaviate.use_async_with_local()
-    embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
-    vector_store = WeaviateVectorStore(
-        client=client,
-        index_name="jokes",
-        embedder=embedder,
-    )
-    document_search = DocumentSearch(
-        vector_store=vector_store,
-    )
+    embedder = OpenAIEmbedder(model_name="text-embedding-3-small")
+    try:
+        vector_store = WeaviateVectorStore(
+            client=client,
+            index_name="jokes",
+            embedder=embedder,
+        )
+        document_search = DocumentSearch(
+            vector_store=vector_store,
+        )
 
-    await document_search.ingest(documents)
+        await document_search.ingest(documents)
 
-    all_documents = await vector_store.list()
+        all_documents = await vector_store.list()
 
-    print()
-    print("All documents:")
-    print([doc.metadata["content"] for doc in all_documents])
+        print()
+        print("All documents:")
+        print([doc.metadata["content"] for doc in all_documents])
 
-    query = "I'm boiling my water and I need a joke"
-    vector_store_options = VectorStoreOptions(
-        k=2,
-        score_threshold=0.6,
-    )
-    options = DocumentSearchOptions(vector_store_options=vector_store_options)
-    results = await document_search.search(query, options=options)
+        query = "I'm boiling my water and I need a joke"
+        vector_store_options = VectorStoreOptions(
+            k=2,
+            score_threshold=0.6,
+        )
+        options = DocumentSearchOptions(vector_store_options=vector_store_options)
+        results = await document_search.search(query, options=options)
 
-    print()
-    print(f"Documents similar to: {query}")
-    print([element.text_representation for element in results])
+        print()
+        print(f"Documents similar to: {query}")
+        print([element.text_representation for element in results])
+    finally:
+        await embedder.aclose()
 
 
 if __name__ == "__main__":

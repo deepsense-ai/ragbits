@@ -25,7 +25,7 @@ from pydantic import BaseModel
 
 from ragbits.agents import Agent
 from ragbits.agents.tools import get_web_search_tool
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Prompt
 
 
@@ -56,7 +56,7 @@ async def main() -> None:
     Run the example.
     """
     model_name = "gpt-4o-2024-08-06"
-    llm = LiteLLM(model_name=model_name, use_structured_output=True)
+    llm = OpenAILLM(model_name=model_name, use_structured_output=True)
     agent = Agent(llm=llm, prompt=SearchPrompt, tools=[get_web_search_tool(model_name)])
     response = await agent.run(SearchPromptInput(query="What date is today?"))
     print(response, flush=True)

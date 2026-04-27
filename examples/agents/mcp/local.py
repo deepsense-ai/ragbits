@@ -26,7 +26,7 @@ import asyncio
 
 from ragbits.agents import Agent
 from ragbits.agents.mcp import MCPServerStdio
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 
 async def main() -> None:
@@ -40,7 +40,7 @@ async def main() -> None:
         },
         client_session_timeout_seconds=20,
     ) as server:
-        llm = LiteLLM(model_name="gpt-4o-2024-08-06")
+        llm = OpenAILLM(model_name="gpt-4o-2024-08-06")
         agent = Agent(llm=llm, mcp_servers=[server])
         response = await agent.run("List all files in the current directory.")
         print(response)

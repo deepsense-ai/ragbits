@@ -41,7 +41,7 @@ export OPENAI_API_KEY="your-api-key"
 ```
 
 !!! tip "Other Providers"
-    Ragbits uses [LiteLLM](https://docs.litellm.ai/docs/providers) under the hood, supporting 100+ providers:
+    Ragbits ships first-class implementations for OpenAI, Anthropic and Google Gemini and can also use [LiteLLM](https://docs.litellm.ai/docs/providers) (optional, install with `pip install ragbits[litellm]`) to reach 100+ providers:
 
     - Anthropic: `export ANTHROPIC_API_KEY="your-key"`
     - Azure OpenAI: `export AZURE_API_KEY="your-key"` and `export AZURE_API_BASE="your-endpoint"`

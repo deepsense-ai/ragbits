@@ -29,7 +29,7 @@ from hotel_agent import HotelPromptInput, hotel_agent
 from uvicorn import Server
 
 from ragbits.agents.a2a.server import create_agent_server
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Prompt
 
 
@@ -116,7 +116,7 @@ async def wait_for_server_to_start(server: Server, check_interval: float = 0.001
 
 async def main() -> None:
     """
-    Sets up a LiteLLM-powered AgentOrchestrator with two remote agents and sends a travel planning query.
+    Sets up an AgentOrchestrator with two remote agents and sends a travel planning query.
     The orchestrator delegates the task (finding flights and hotels) to the appropriate agents and prints the response.
     """
     flight_agent_card = await flight_agent.get_agent_card(
@@ -131,7 +131,7 @@ async def main() -> None:
 
     await asyncio.gather(*(wait_for_server_to_start(server) for server in [hotel_agent_server, flight_agent_server]))
 
-    llm = LiteLLM(
+    llm = OpenAILLM(
         model_name="gpt-4o-2024-08-06",
         use_structured_output=True,
     )

@@ -17,7 +17,7 @@ from typing import Any, cast
 from ragbits.agents import Agent, AgentOptions
 from ragbits.agents.tools.openai import get_web_search_tool
 from ragbits.agents.tools.planning import PlanningState, create_planning_tools
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 
 def build_planning_agent(
@@ -51,7 +51,7 @@ For simple questions, answer directly."""
     all_tools.extend(create_planning_tools(planning_state))
 
     return Agent(
-        llm=LiteLLM("gpt-4.1-mini"),
+        llm=OpenAILLM("gpt-4.1-mini"),
         prompt=planning_prompt,
         tools=all_tools,
         default_options=AgentOptions(max_turns=max_turns),
@@ -77,7 +77,7 @@ class AgentHumanEval:
     def build(cls) -> Agent:
         """Build the HumanEval agent and attach code sanitization callable."""
         agent: Agent = Agent(
-            llm=LiteLLM("gpt-4.1-mini"),
+            llm=OpenAILLM("gpt-4.1-mini"),
             prompt=cls.build_system_prompt(),
             tools=[],
             default_options=AgentOptions(max_turns=30),
@@ -121,7 +121,7 @@ class AgentHotpot:
     def build(cls) -> Agent:
         """Build the HotpotQA agent and attach parsing helpers."""
         agent: Agent = Agent(
-            llm=LiteLLM("gpt-4.1-mini"),
+            llm=OpenAILLM("gpt-4.1-mini"),
             prompt=cls.build_system_prompt(),
             tools=[],
             default_options=AgentOptions(max_turns=5),
@@ -222,7 +222,7 @@ class AgentGAIA:
     def build(cls) -> Agent:
         """Build the GAIA agent and attach final-answer parser."""
         agent: Agent = Agent(
-            llm=LiteLLM("gpt-4.1-mini"),
+            llm=OpenAILLM("gpt-4.1-mini"),
             prompt=cls.build_system_prompt(),
             tools=cls.build_tools(),
             default_options=AgentOptions(max_turns=30),

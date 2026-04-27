@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- BREAKING: `basic_document_search_factory` now uses `OpenAIEmbedder` instead of `LiteLLMEmbedder` as the default embedder.
+
 ## 1.6.2 (2026-03-26)
 
 - ragbits-document-search updated to version v1.6.2

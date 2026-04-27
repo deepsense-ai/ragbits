@@ -6,6 +6,10 @@
 
 ::: ragbits.core.embeddings.dense.local.LocalEmbedder
 
+::: ragbits.core.embeddings.dense.openai.OpenAIEmbedder
+
+::: ragbits.core.embeddings.dense.gemini.GeminiEmbedder
+
 ::: ragbits.core.embeddings.dense.litellm.LiteLLMEmbedder
 
 ::: ragbits.core.embeddings.dense.fastembed.FastEmbedEmbedder

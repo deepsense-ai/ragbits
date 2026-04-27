@@ -25,7 +25,7 @@ from pydantic import BaseModel
 
 from ragbits.agents import Agent
 from ragbits.agents.tool import ToolReturn
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 
 class MyEvent(BaseModel):
@@ -47,7 +47,7 @@ async def my_tool() -> AsyncGenerator[ToolReturn | str | int | MyEvent]:
 
 async def main() -> None:
     """Run the agent with streaming events from the tools"""
-    llm = LiteLLM(model_name="gpt-4o")
+    llm = OpenAILLM(model_name="gpt-4o")
     agent = Agent(llm, prompt="Call my_tool for every answer", tools=[my_tool])
     result = agent.run_streaming("Hello, please call my_tool and tell me what is the number it returned!")
     async for event in result:

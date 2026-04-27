@@ -42,8 +42,17 @@ a2a = [
 mcp = [
     "mcp>=1.23.0,<2.0.0",
 ]
+litellm = [
+    "ragbits-core[litellm]==1.7.0.dev202604240307",
+]
 openai = [
     "openai>=1.91.0,<2.0.0",
+]
+gemini = [
+    "ragbits-core[gemini]==1.7.0.dev202604240307",
+]
+anthropic = [
+    "ragbits-core[anthropic]==1.7.0.dev202604240307",
 ]
 cli = [
     "textual>=0.85.2,<1.0.0",

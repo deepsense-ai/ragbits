@@ -23,7 +23,7 @@ from pydantic import BaseModel
 from ragbits.core.prompt import Prompt
 from ragbits.agents import Agent
 from ragbits.agents._main import AgentOptions
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 --8<-- "examples/agents/downstream_agents_streaming.py:54:82"
 ```

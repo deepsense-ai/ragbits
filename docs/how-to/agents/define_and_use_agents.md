@@ -4,10 +4,12 @@ Ragbits [`Agent`][ragbits.agents.Agent] combines the reasoning power of LLMs wit
 
 When using tool-enabled agents, the LLM reviews the system prompt and incoming messages to decide whether a tool should be called. Instead of just generating a text response, the model can choose to invoke a tool or combine both approaches.
 
-Before using tools, you can check whether your selected model supports function calling with:
+Before using tools, you can check whether your selected model supports function calling. If you have the optional `litellm` extra installed (`pip install ragbits[litellm]`), you can use:
 ```python
+import litellm
 litellm.supports_function_calling(model="your-model-name")
 ```
+Otherwise consult the provider's documentation directly.
 
 If function calling is supported and tools are enabled, the agent interprets the user input, decides whether a tool is needed, executes it if necessary, and returns a final response enriched with tool results.
 
@@ -40,7 +42,7 @@ Create the agent, attach the prompt and tool, and run it:
 ```python
 import asyncio
 from ragbits.agents import Agent
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 --8<-- "examples/agents/tool_use.py:73:84"
 ```
@@ -69,7 +71,7 @@ Once defined, the agent class can be used directly, just like any other subclass
 ```python
 import asyncio
 from ragbits.agents import Agent
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 --8<-- "examples/agents/with_decorator.py:73:84"
 ```
@@ -95,7 +97,7 @@ The following example demonstrates how an agent with history enabled maintains c
 ```python
 async def main() -> None:
     """Run the weather agent with conversation history."""
-    llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
+    llm = OpenAILLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
     agent = Agent(llm=llm, prompt=WeatherPrompt, tools=[get_weather], keep_history=True)
 
     await agent.run(WeatherPromptInput(location="Paris"))
@@ -118,8 +120,8 @@ from pydantic import BaseModel
 
 from ragbits.agents import Agent
 from ragbits.agents.tools.memory import LongTermMemory, create_memory_tools
-from ragbits.core.embeddings import LiteLLMEmbedder
-from ragbits.core.llms import LiteLLM
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Prompt
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 
@@ -148,8 +150,8 @@ class ConversationPrompt(Prompt[ConversationInput, str]):
 
 async def main() -> None:
     # Initialize components
-    llm = LiteLLM(model_name="gpt-4o-mini")
-    embedder = LiteLLMEmbedder(model_name="text-embedding-3-small")
+    llm = OpenAILLM(model_name="gpt-4o-mini")
+    embedder = OpenAIEmbedder(model_name="text-embedding-3-small")
     vector_store = InMemoryVectorStore(embedder=embedder)
     long_term_memory = LongTermMemory(vector_store=vector_store)
 
@@ -162,7 +164,7 @@ async def main() -> None:
     ))
 
     # New session
-    llm = LiteLLM(model_name="gpt-4o-mini")
+    llm = OpenAILLM(model_name="gpt-4o-mini")
     memory_tools = create_memory_tools(long_term_memory, user_id="user_1")
     agent = Agent(llm=llm, prompt=ConversationPrompt, tools=[*memory_tools])
 
@@ -219,11 +221,11 @@ tool-related events in real time.
 
 ```python
 from ragbits.agents import Agent, ToolCall, ToolCallResult
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 async def main() -> None:
     """Run the weather agent with streaming output."""
-    llm = LiteLLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
+    llm = OpenAILLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
     agent = Agent(llm=llm, prompt=WeatherPrompt, tools=[get_weather])
 
     async for chunk in agent.run_streaming(WeatherPromptInput(location="Paris")):
@@ -255,7 +257,7 @@ after the stream completes:
 
 ```python
 from ragbits.agents import Agent
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 --8<-- "examples/agents/stream_events_from_tools.py:46:55"
 ```
@@ -270,7 +272,7 @@ from ragbits.agents.tools import get_web_search_tool
 async def main() -> None:
     """Run the weather agent with additional tool."""
     model_name = "gpt-4o-2024-08-06"
-    llm = LiteLLM(model_name=model_name, use_structured_output=True)
+    llm = OpenAILLM(model_name=model_name, use_structured_output=True)
     agent = Agent(llm=llm, prompt=WeatherPrompt, tools=[get_web_search_tool(model_name)], keep_history=True)
 
     response = await agent.run(WeatherPromptInput(location="Paris"))

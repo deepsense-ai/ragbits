@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fixed `sql` optional extra to correctly declare `sqlalchemy[asyncio]` and `greenlet` as dependencies, resolving a missing `greenlet` error when using `SQLHistoryPersistence`.
+
 ## 1.6.2 (2026-03-26)
 
 - ragbits-agents updated to version v1.6.2

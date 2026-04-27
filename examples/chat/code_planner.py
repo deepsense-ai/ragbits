@@ -28,7 +28,7 @@ from ragbits.agents.tools.planning import PlanningState, create_planning_tools
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponseUnion, LiveUpdateType
 from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
-from ragbits.core.llms import LiteLLM
+from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import ChatFormat, Prompt
 
 
@@ -74,7 +74,7 @@ class CodePlannerChat(ChatInterface):
     def __init__(self) -> None:
         self.planning_state = PlanningState()
         self.agent = Agent(
-            llm=LiteLLM("gpt-4.1-mini"),
+            llm=OpenAILLM("gpt-4.1-mini"),
             prompt=CodePlannerPrompt,
             tools=create_planning_tools(self.planning_state),
             default_options=AgentOptions(max_turns=50),

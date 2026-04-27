@@ -15,14 +15,14 @@ For example, to designate [`QdrantVectorStore`][ragbits.core.vector_stores.qdran
 
 ```python
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
-from ragbits.core.embeddings import LiteLLMEmbedder
+from ragbits.core.embeddings.dense.openai import OpenAIEmbedder
 from qdrant_client import AsyncQdrantClient
 
 def get_qdrant_vector_store():
     return QdrantVectorStore(
         client=AsyncQdrantClient(location=":memory:"),
         index_name="my_index",
-        embedder=LiteLLMEmbedder(),
+        embedder=OpenAIEmbedder(),
     )
 ```
 
@@ -67,7 +67,7 @@ vector_store:
       location: ":memory:"
     index_name: my_index
     embedder:
-      type: LiteLLMEmbedder
+      type: OpenAIEmbedder
 ```
 
 Then, you set the path to this file as `component_preference_config_path` in the `[tool.ragbits.core]` section of your project's `pyproject.toml` file:
@@ -92,7 +92,7 @@ vector_store:
       location: ":memory:"
     index_name: my_index
     embedder:
-      type: LiteLLMEmbedder
+      type: OpenAIEmbedder
 
 rephraser:
   type: NoopQueryRephraser

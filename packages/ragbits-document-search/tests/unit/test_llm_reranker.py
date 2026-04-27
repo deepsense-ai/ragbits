@@ -10,7 +10,11 @@ from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.document_search.documents.document import DocumentMeta
 from ragbits.document_search.documents.element import TextElement
 from ragbits.document_search.retrieval.rerankers.base import Reranker
-from ragbits.document_search.retrieval.rerankers.llm import LLMReranker, LLMRerankerOptions, RerankerPrompt
+from ragbits.document_search.retrieval.rerankers.llm import (
+    LLMReranker,
+    LLMRerankerOptions,
+    RerankerPrompt,
+)
 
 
 @pytest.fixture

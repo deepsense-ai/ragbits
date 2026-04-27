@@ -4,21 +4,19 @@ This guide will walk you through configuring and using both local and remote LLM
 
 ## Setting up and using a remote LLMs
 
-To interact with a remote LLM (e.g., OpenAI, Azure, or other providers), provide an API key and specify the endpoint. Ragbits uses [LiteLLM](https://docs.litellm.ai/) as an abstraction layer, allowing you to call models from multiple providers seamlessly. You can see the full list of supported providers [here](https://docs.litellm.ai/docs/providers).
+To interact with a remote LLM (e.g., OpenAI), provide an API key and specify the model name.
 
 ```python
 import asyncio
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 async def main():
-    llm = LiteLLM(model_name="gpt-4o-2024-08-06")
+    llm = OpenAILLM(model_name="gpt-4o-2024-08-06")
     response = await llm.generate("Tell me a joke.")
     print(response)
 
 asyncio.run(main())
 ```
-
-With LiteLLM, you can switch between different LLM providers by changing the `model_name` parameter and configuring authentication accordingly. See the [LiteLLM documentation](https://docs.litellm.ai/docs/providers) for details on calling models from different providers.
 
 !!! tip
     For batch generation just provide list of prompts `#!py await llm.generate(["Tell me a joke.", "Tell me another joke"])`
@@ -27,22 +25,22 @@ With LiteLLM, you can switch between different LLM providers by changing the `mo
 
 LLMs in Ragbits allow you to customize the behavior of the model using various options. These options are passed during initialization or when calling the [`generate`][ragbits.core.llms.LLM.generate] method.
 
-### LiteLLM Options
+### OpenAI LLM Options
 
-The `LiteLLMOptions` class provides options for remote LLMs, aligning with the LiteLLM API. These options allow you to control the behavior of models from various providers. Each of the option is described in the [LiteLLM documentation](https://docs.litellm.ai/docs/completion/input) and [Reasoning Documentation](https://docs.litellm.ai/docs/reasoning_content)
+The `OpenAILLMOptions` class provides options for configuring OpenAI model behavior.
 
 Example usage:
 ```python
-from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
+from ragbits.core.llms import OpenAILLM, OpenAILLMOptions
 
-options = LiteLLMOptions(
+options = OpenAILLMOptions(
     temperature=0.5,
     max_tokens=150,
     top_p=0.8,
     stop=["\n"]
 )
 
-llm = LiteLLM(model_name="gpt-4o-2024-08-06", default_options=options)
+llm = OpenAILLM(model_name="gpt-4o-2024-08-06", default_options=options)
 response = llm.generate("Write a short story about a robot learning to paint.")
 print(response)
 ```
@@ -83,10 +81,10 @@ Passing the prompt to a model is then as simple as:
 
 ```python
 import asyncio
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 async def main():
-    llm = LiteLLM("gpt-4o-2024-08-06", use_structured_output=True)
+    llm = OpenAILLM("gpt-4o-2024-08-06", use_structured_output=True)
     static_prompt = JokePrompt()
     print(await llm.generate(static_prompt))
 
@@ -99,10 +97,10 @@ For simpler use cases, you can directly pass a raw string to the [`generate`][ra
 
 ```python
 import asyncio
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 async def main():
-    llm = LiteLLM(model_name="gpt-4o-2024-08-06")
+    llm = OpenAILLM(model_name="gpt-4o-2024-08-06")
     response = await llm.generate("Tell me a fun fact about space.")
     print(response)
 
@@ -115,10 +113,10 @@ Ragbits also supports OpenAI-style chat formats, where you can pass a list of me
 
 ```python
 import asyncio
-from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.llms import OpenAILLM
 
 async def main():
-    llm = LiteLLM(model_name="gpt-4o-2024-08-06")
+    llm = OpenAILLM(model_name="gpt-4o-2024-08-06")
     messages = [
         {"role": "system", "content": "You are a helpful assistant."},
         {"role": "user", "content": "What is the capital of France?"}

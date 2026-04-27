@@ -9,7 +9,7 @@ from ragbits.document_search.retrieval.rerankers.answerai import AnswerAIReranke
 from ragbits.document_search.retrieval.rerankers.base import Reranker, RerankerOptions
 from ragbits.document_search.retrieval.rerankers.litellm import LiteLLMReranker, LiteLLMRerankerOptions
 from ragbits.document_search.retrieval.rerankers.noop import NoopReranker
-from ragbits.document_search.retrieval.rerankers.rrf import ReciprocalRankFusionReranker
+from ragbits.document_search.retrieval.rerankers.rrf import ReciprocalRankFusionReranker  # noqa: E402
 
 
 class CustomReranker(Reranker):

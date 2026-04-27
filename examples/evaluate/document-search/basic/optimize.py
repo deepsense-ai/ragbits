@@ -2,7 +2,7 @@
 Ragbits Evaluate Example: Basic Document Search Optimization
 
 This example demonstrates how to optimize a basic document search pipeline using the `Optimizer` class.
-It configures a simple pipeline with ChromaDB as the vector store, LiteLLMEmbedder for embeddings, and HuggingFaceSource for data.
+It configures a simple pipeline with ChromaDB as the vector store, OpenAIEmbedder for embeddings, and HuggingFaceSource for data.
 
 To run the script, execute the following command:
 
@@ -26,7 +26,6 @@ from pathlib import Path
 from ragbits.evaluate.optimizer import Optimizer
 from ragbits.evaluate.utils import log_optimization_to_file
 
-logging.getLogger("LiteLLM").setLevel(logging.ERROR)
 logging.getLogger("httpx").setLevel(logging.ERROR)
 
 config = {
@@ -60,7 +59,7 @@ config = {
                             },
                             "index_name": "baseline",
                             "embedder": {
-                                "type": "ragbits.core.embeddings.dense:LiteLLMEmbedder",
+                                "type": "ragbits.core.embeddings.dense.openai:OpenAIEmbedder",
                                 "config": {
                                     "model_name": "text-embedding-3-small",
                                     "default_options": {
