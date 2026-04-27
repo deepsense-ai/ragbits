@@ -1,6 +1,6 @@
 [project]
 name = "ragbits-core"
-version = "1.7.0.dev202604150306"
+version = "1.7.0.dev202604240307"
 description = "Building blocks for rapid development of GenAI applications"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -59,11 +59,11 @@ local = [
     "sentence-transformers>=4.0.2,<5.0.0",
     "torch>=2.6.0,<2.7.0",
     "transformers>=4.48.0,<5.0.0",
-    "numpy>=1.26.0,<2.0.0",
+    "numpy>=2.1.0,<3.0.0",
     "accelerate>=1.7.0",
 ]
 fastembed = [
-    "fastembed>=0.4.2,<1.0.0"
+    "fastembed>=0.5.0,<1.0.0"
 ]
 promptfoo = [
     "PyYAML>=6.0.2,<7.0.0",
@@ -83,7 +83,7 @@ pgvector = [
     "asyncpg>=0.30.0,<1.0.0",
 ]
 fastembed-gpu = [
-    "fastembed-gpu>=0.4.2,<1.0.0",
+    "fastembed-gpu>=0.5.0,<1.0.0",
 ]
 openai = [
     "openai>=1.91.0,<2.0.0",

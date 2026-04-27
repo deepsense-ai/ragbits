@@ -25,8 +25,6 @@ from pydantic import BaseModel
 from ragbits.core.llms import OpenAILLM
 from ragbits.core.prompt import Attachment, Prompt
 
-PDF_URL = "https://lhohe.github.io/github1/E5/E5.pdf"
-
 
 class DocumentPromptInput(BaseModel):
     """
@@ -64,7 +62,10 @@ async def main() -> None:
     Run the example.
     """
     llm = OpenAILLM(model_name="gpt-4o-2024-08-06", use_structured_output=True)
-    document = Attachment(url=PDF_URL, mime_type="application/pdf")
+    document = Attachment(
+        url="https://arxiv.org/pdf/1706.03762",
+        mime_type="application/pdf",
+    )
     prompt_input = DocumentPromptInput(document=document, question="What is this document about?")
     prompt = DocumentPrompt(prompt_input)
     response = await llm.generate(prompt)

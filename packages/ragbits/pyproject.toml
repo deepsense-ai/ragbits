@@ -1,6 +1,6 @@
 [project]
 name = "ragbits"
-version = "1.7.0.dev202604150306"
+version = "1.7.0.dev202604240307"
 description = "Building blocks for rapid development of GenAI applications"
 dynamic = ["readme"]
 requires-python = ">=3.10"
@@ -31,7 +31,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
-dependencies = ["ragbits-agents==1.7.0.dev202604150306","ragbits-document-search==1.7.0.dev202604150306", "ragbits-cli==1.7.0.dev202604150306", "ragbits-evaluate==1.7.0.dev202604150306", "ragbits-guardrails==1.7.0.dev202604150306", "ragbits-chat==1.7.0.dev202604150306", "ragbits-core==1.7.0.dev202604150306"]
+dependencies = ["ragbits-agents==1.7.0.dev202604240307","ragbits-document-search==1.7.0.dev202604240307", "ragbits-cli==1.7.0.dev202604240307", "ragbits-evaluate==1.7.0.dev202604240307", "ragbits-guardrails==1.7.0.dev202604240307", "ragbits-chat==1.7.0.dev202604240307", "ragbits-core==1.7.0.dev202604240307"]
 
 [project.urls]
 "Homepage" = "https://github.com/deepsense-ai/ragbits"
@@ -46,84 +46,84 @@ litellm = [
     "ragbits-agents[litellm]==1.7.0.dev202604150306",
 ]
 openai = [
-    "ragbits-core[openai]==1.7.0.dev202604150306",
-    "ragbits-guardrails[openai]==1.7.0.dev202604150306",
-    "ragbits-agents[openai]==1.7.0.dev202604150306",
+    "ragbits-core[openai]==1.7.0.dev202604240307",
+    "ragbits-guardrails[openai]==1.7.0.dev202604240307",
+    "ragbits-agents[openai]==1.7.0.dev202604240307",
 ]
 gemini = [
     "ragbits-core[gemini]==1.7.0.dev202604020305",
 ]
 chroma = [
-    "ragbits-core[chroma]==1.7.0.dev202604150306",
+    "ragbits-core[chroma]==1.7.0.dev202604240307",
 ]
 local = [
-    "ragbits-core[local]==1.7.0.dev202604150306",
+    "ragbits-core[local]==1.7.0.dev202604240307",
 ]
 fastembed = [
-    "ragbits-core[fastembed]==1.7.0.dev202604150306",
+    "ragbits-core[fastembed]==1.7.0.dev202604240307",
 ]
 promptfoo = [
-    "ragbits-core[promptfoo]==1.7.0.dev202604150306",
+    "ragbits-core[promptfoo]==1.7.0.dev202604240307",
 ]
 otel = [
-    "ragbits-core[otel]==1.7.0.dev202604150306",
+    "ragbits-core[otel]==1.7.0.dev202604240307",
 ]
 logfire = [
-    "ragbits-core[logfire]==1.7.0.dev202604150306",
+    "ragbits-core[logfire]==1.7.0.dev202604240307",
 ]
 qdrant = [
-    "ragbits-core[qdrant]==1.7.0.dev202604150306",
+    "ragbits-core[qdrant]==1.7.0.dev202604240307",
 ]
 pgvector = [
-    "ragbits-core[pgvector]==1.7.0.dev202604150306",
+    "ragbits-core[pgvector]==1.7.0.dev202604240307",
 ]
 fastembed-gpu = [
-    "ragbits-core[fastembed-gpu]==1.7.0.dev202604150306",
+    "ragbits-core[fastembed-gpu]==1.7.0.dev202604240307",
 ]
 azure = [
-    "ragbits-core[azure]==1.7.0.dev202604150306",
+    "ragbits-core[azure]==1.7.0.dev202604240307",
 ]
 gcs = [
-    "ragbits-core[gcs]==1.7.0.dev202604150306",
+    "ragbits-core[gcs]==1.7.0.dev202604240307",
 ]
 hf = [
-    "ragbits-core[hf]==1.7.0.dev202604150306",
+    "ragbits-core[hf]==1.7.0.dev202604240307",
 ]
 s3 = [
-    "ragbits-core[s3]==1.7.0.dev202604150306",
+    "ragbits-core[s3]==1.7.0.dev202604240307",
 ]
 google_drive = [
-    "ragbits-core[google_drive]==1.7.0.dev202604150306",
+    "ragbits-core[google_drive]==1.7.0.dev202604240307",
 ]
 weaviate = [
-    "ragbits-core[weaviate]==1.7.0.dev202604150306",
+    "ragbits-core[weaviate]==1.7.0.dev202604240307",
 ]
 agents = [
-    "ragbits-evaluate[agents]==1.7.0.dev202604150306",
+    "ragbits-evaluate[agents]==1.7.0.dev202604240307",
 ]
 document-search = [
-    "ragbits-evaluate[document-search]==1.7.0.dev202604150306",
+    "ragbits-evaluate[document-search]==1.7.0.dev202604240307",
 ]
 relari = [
-    "ragbits-evaluate[relari]==1.7.0.dev202604150306",
+    "ragbits-evaluate[relari]==1.7.0.dev202604240307",
 ]
 a2a = [
-    "ragbits-agents[a2a]==1.7.0.dev202604150306",
+    "ragbits-agents[a2a]==1.7.0.dev202604240307",
 ]
 mcp = [
-    "ragbits-agents[mcp]==1.7.0.dev202604150306",
+    "ragbits-agents[mcp]==1.7.0.dev202604240307",
 ]
 cli = [
-    "ragbits-agents[cli]==1.7.0.dev202604150306",
+    "ragbits-agents[cli]==1.7.0.dev202604240307",
 ]
 unstructured = [
-    "ragbits-document-search[unstructured]==1.7.0.dev202604150306",
+    "ragbits-document-search[unstructured]==1.7.0.dev202604240307",
 ]
 ray = [
-    "ragbits-document-search[ray]==1.7.0.dev202604150306",
+    "ragbits-document-search[ray]==1.7.0.dev202604240307",
 ]
 sql = [
-    "ragbits-chat[sql]==1.7.0.dev202604150306",
+    "ragbits-chat[sql]==1.7.0.dev202604240307",
 ]
 
 [build-system]

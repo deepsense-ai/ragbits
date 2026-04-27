@@ -19,6 +19,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "aiosqlite>=0.21.0",
+    "greenlet>=3.1.1",
     "pre-commit~=3.8.0",
     "pytest~=8.3.3",
     "pytest-cov~=5.0.0",
@@ -35,11 +36,10 @@ dev = [
     "griffe>=1.3.2",
     "griffe-typingdoc>=0.2.7",
     "types-PyYAML>=6.0.2",
-    "types-requests>=2.31.0",
+    "types-requests>=2.32.0",
     "mypy>=1.13.0",
     "moto~=4.2.7",
     "testcontainers[postgres,weaviate]>=4.0.0",
-    "greenlet>=3.0.0",
     "ruff>=0.6.8",
 ]
 
