@@ -17,7 +17,7 @@ from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 from ragbits.core.vector_stores.pgvector import PgVectorStore
 from ragbits.core.vector_stores.qdrant import QdrantVectorStore
 
-from .test_vector_store import pgvector_test_db_fixture, vector_store_entries_fixture  # noqa: F401
+from .test_vector_store import vector_store_entries_fixture  # noqa: F401
 
 
 @pytest.fixture(

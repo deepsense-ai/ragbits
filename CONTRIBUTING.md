@@ -34,18 +34,7 @@ We use `pytest` for testing. To run the tests, simply run:
 $ uv run pytest
 ```
 
-Running integration tests requires PostgreSQL with the pgvector extention installed.
-Minimal version of pgvector is 0.7.0, which added support for sparse vectors.
-
-On Ubuntu Linux you can get in by installing the `postgresql-17-pgvector` package.
-
-If it is not in your system's default repositories, you can install it from the official PostgreSQL Apt Repository:
-
-```bash
-sudo apt install postgresql-common
-sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh
-sudo apt install postgresql-17-pgvector
-```
+Running integration tests requires Docker — all backing services (PostgreSQL/pgvector, Weaviate) are started automatically via testcontainers. No manual setup is needed.
 
 ## Install pre-commit or pre-push hooks
 

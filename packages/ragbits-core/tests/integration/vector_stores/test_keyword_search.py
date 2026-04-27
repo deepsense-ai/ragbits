@@ -4,6 +4,7 @@ from uuid import UUID
 
 import pytest
 import weaviate
+from testcontainers.weaviate import WeaviateContainer
 
 from ragbits.core.embeddings.dense import NoopEmbedder
 from ragbits.core.vector_stores.base import (
@@ -19,20 +20,26 @@ IMAGES_PATH = Path(__file__).parent.parent.parent / "assets" / "img"
 @pytest.fixture(
     name="vector_store_cls",
     params=[
-        lambda _: partial(
-            WeaviateVectorStore, client=weaviate.use_async_with_local(), index_name="test_keyword_index_name"
+        lambda weaviate_c: partial(
+            WeaviateVectorStore,
+            client=weaviate.use_async_with_local(
+                host=weaviate_c.get_container_host_ip(),
+                port=int(weaviate_c.get_exposed_port(8080)),
+                grpc_port=int(weaviate_c.get_exposed_port(50051)),
+            ),
+            index_name="test_keyword_index_name",
         ),
     ],
     ids=["WeaviateVectorStore"],
 )
 async def vector_store_cls_fixture(
-    request: pytest.FixtureRequest,
+    request: pytest.FixtureRequest, weaviate_container: WeaviateContainer
 ) -> type[VectorStoreWithEmbedder]:
     """
     Returns vector stores classes with different backends, with backend-specific parameters already set,
     but parameters common to VectorStoreWithEmbedder left to be set.
     """
-    return request.param(None)
+    return request.param(weaviate_container)
 
 
 @pytest.fixture(name="vector_store")

@@ -154,37 +154,6 @@ jobs:
         python-version: [ "3.10", "3.11", "3.12", "3.13" ]
         install-method: ${{ fromJson(inputs.install-methods) }}
 
-    services:
-      postgres:
-        image: pgvector/pgvector:0.8.0-pg17
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: tests
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      weaviate:
-        image: cr.weaviate.io/semitechnologies/weaviate:1.30.6
-        env:
-          QUERY_DEFAULTS_LIMIT: 25
-          AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: true
-          PERSISTENCE_DATA_PATH: /var/lib/weaviate
-          ENABLE_API_BASED_MODULES: true
-          CLUSTER_HOSTNAME: node1
-        ports:
-          - 8080:8080
-          - 50051:50051
-        options: >-
-          --health-cmd "wget --no-verbose --tries=1 --spider http://localhost:8080/v1/.well-known/ready || exit 1"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     steps:
       - uses: actions/checkout@v4
 
@@ -242,7 +211,7 @@ jobs:
       - name: Run Tests With Coverage
         run: |
           UV_FLAGS="${{ matrix.install-method == 'package' && '--no-sync' || '' }}"
-          uv run $UV_FLAGS coverage run -m pytest --postgresql-password postgres -v -p no:warnings --junitxml=report.xml
+          uv run $UV_FLAGS coverage run -m pytest -v -p no:warnings --junitxml=report.xml
           uv run $UV_FLAGS coverage report
           uv run $UV_FLAGS coverage xml
         env:
