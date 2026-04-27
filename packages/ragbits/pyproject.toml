@@ -41,9 +41,9 @@ dependencies = ["ragbits-agents==1.7.0.dev202604240307","ragbits-document-search
 
 [project.optional-dependencies]
 litellm = [
-    "ragbits-core[litellm]==1.7.0.dev202604150306",
-    "ragbits-document-search[litellm]==1.7.0.dev202604150306",
-    "ragbits-agents[litellm]==1.7.0.dev202604150306",
+    "ragbits-core[litellm]==1.7.0.dev202604240307",
+    "ragbits-document-search[litellm]==1.7.0.dev202604240307",
+    "ragbits-agents[litellm]==1.7.0.dev202604240307",
 ]
 openai = [
     "ragbits-core[openai]==1.7.0.dev202604240307",

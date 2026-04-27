@@ -39,7 +39,7 @@ dependencies = ["docling[easyocr]>=2.65.0,<2.66.0", "opencv-python>=4.11.0.86,<5
 
 [project.optional-dependencies]
 litellm = [
-    "ragbits-core[litellm]==1.7.0.dev202604150306",
+    "ragbits-core[litellm]==1.7.0.dev202604240307",
 ]
 unstructured = [
     "unstructured>=0.18.18,<1.0.0",
