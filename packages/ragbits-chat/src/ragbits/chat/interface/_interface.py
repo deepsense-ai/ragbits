@@ -11,6 +11,9 @@ from typing import Any
 
 from fastapi import UploadFile
 
+from ragbits.agents._main import Agent, AgentRunContext
+from ragbits.agents.confirmation import ConfirmationRequest
+from ragbits.agents.history import inject_tool_call
 from ragbits.agents.tools.planning import Task
 from ragbits.chat.interface.summary import HeuristicSummaryGenerator, SummaryGenerator
 from ragbits.chat.interface.ui_customization import UICustomization
@@ -288,6 +291,106 @@ class ChatInterface(ABC):
     @staticmethod
     def create_plan_item_response(task: Task) -> PlanItemResponse:
         return PlanItemResponse(content=PlanItemContent(task=task))
+
+    @staticmethod
+    def create_pending_confirmation_state(request: ConfirmationRequest) -> dict[str, Any]:
+        """
+        Build the state-dict fragment that records a pending confirmation.
+
+        Merge this into ``ChatContext.state`` (via ``create_state_update``) whenever a
+        ``ConfirmationRequest`` is streamed to the frontend. On the continuation turn,
+        ``resolve_pending_confirmations`` uses this fragment to replay the approved
+        tool with its original arguments — avoiding LLM regeneration and the fragile
+        confirmation_id hash match.
+        """
+        return {
+            "pending_confirmations": {
+                request.confirmation_id: {
+                    "tool_call_id": request.tool_call_id,
+                    "tool_name": request.tool_name,
+                    "arguments": request.arguments,
+                }
+            }
+        }
+
+    async def resolve_pending_confirmations(
+        self,
+        agent: Agent,
+        context: ChatContext,
+    ) -> list[ChatResponseUnion]:
+        """
+        Execute tools whose confirmations the user just returned, updating ``agent.history`` in place.
+
+        For each entry in ``context.tool_confirmations`` matched against
+        ``context.state["pending_confirmations"]``:
+
+        - **confirmed**: invoke the tool via ``agent.execute_tool_directly`` with the
+          stored arguments, then append the (tool_use, tool_result) pair to history.
+        - **declined**: append a synthetic tool_result saying the user declined.
+
+        When the caller next runs ``agent.run_streaming(...)``, the LLM sees the
+        injected tool results already in history and continues naturally — it is
+        never asked to regenerate the confirmed tool call, so there is no argument
+        drift or hash-mismatch loop.
+
+        Args:
+            agent: The agent whose tools should be executed. ``agent.history`` is
+                mutated in place to include the injected (tool_use, tool_result) pairs.
+            context: The chat context from this turn.
+
+        Returns:
+            UI responses (e.g. LiveUpdates) the caller should yield before continuing
+            the agent run. Empty list if there are no pending confirmations to resolve.
+        """
+        pending_map: dict[str, dict[str, Any]] = context.state.get("pending_confirmations", {}) or {}
+        confirmations = context.tool_confirmations or []
+        if not pending_map or not confirmations:
+            return []
+
+        agent_context: AgentRunContext = AgentRunContext(tool_confirmations=list(confirmations))
+        responses: list[ChatResponseUnion] = []
+
+        for entry in confirmations:
+            confirmation_id = entry.get("confirmation_id")
+            pending = pending_map.get(confirmation_id) if confirmation_id else None
+            if pending is None:
+                continue
+
+            tool_call_id = pending["tool_call_id"]
+            tool_name = pending["tool_name"]
+            arguments = pending["arguments"]
+
+            if entry.get("confirmed"):
+                result = await agent.execute_tool_directly(
+                    tool_call_id=tool_call_id,
+                    tool_name=tool_name,
+                    arguments=arguments,
+                    context=agent_context,
+                )
+                responses.append(
+                    self.create_live_update(
+                        tool_call_id, LiveUpdateType.FINISH, f"✅ {tool_name}", str(result.result)[:100]
+                    )
+                )
+                agent.history = inject_tool_call(
+                    agent.history,
+                    tool_call_id=tool_call_id,
+                    tool_name=tool_name,
+                    arguments=arguments,
+                    result=result.result,
+                )
+            else:
+                decline_msg = "❌ User declined this action"
+                responses.append(self.create_live_update(tool_call_id, LiveUpdateType.FINISH, f"❌ {tool_name}"))
+                agent.history = inject_tool_call(
+                    agent.history,
+                    tool_call_id=tool_call_id,
+                    tool_name=tool_name,
+                    arguments=arguments,
+                    result=decline_msg,
+                )
+
+        return responses
 
     @staticmethod
     def _sign_state(state: dict[str, Any]) -> str:

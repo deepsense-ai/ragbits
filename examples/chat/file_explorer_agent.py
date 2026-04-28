@@ -564,12 +564,11 @@ class FileExplorerChat(ChatInterface):
         """
         Chat implementation with non-blocking confirmation support.
 
-        The agent will check context.tool_confirmations for any confirmations.
-        If a hook needs confirmation but hasn't been confirmed yet, it will
-        yield a ConfirmationRequest and exit. The frontend will then send a
-        new request with the confirmation in context.tool_confirmations.
+        Confirmed tools from the previous turn are executed directly by the chat layer
+        (via ``resolve_pending_confirmations``), then their results are injected into
+        history before the agent continues. The LLM never regenerates the tool call,
+        so the confirmation_id hash stays stable and there is no approval loop.
         """
-        # Create agent with history passed explicitly
         agent: Agent = Agent(
             llm=self.llm,
             prompt=f"""
@@ -592,10 +591,15 @@ class FileExplorerChat(ChatInterface):
             history=history,
         )
 
-        # Create agent context with tool_confirmations from the request context
-        agent_context: AgentRunContext = AgentRunContext()
+        # Execute tools the user just approved/declined: mutates agent.history in place
+        # with synthetic (tool_use, tool_result) pairs so the LLM continues from the
+        # results instead of re-deciding the confirmed call.
+        for response in await self.resolve_pending_confirmations(agent, context):
+            yield response
 
-        # Pass tool_confirmations from ChatContext to AgentRunContext
+        # Forward tool_confirmations to the agent context — supports any legacy
+        # hash-matched confirmations for tools not routed through direct execution.
+        agent_context: AgentRunContext = AgentRunContext()
         if context.tool_confirmations:
             agent_context.tool_confirmations = context.tool_confirmations
 
@@ -616,7 +620,10 @@ class FileExplorerChat(ChatInterface):
                     yield self.create_live_update(response.id, LiveUpdateType.START, f"🔧 {response.name}")
 
                 case ConfirmationRequest():
-                    # Confirmation needed - send to frontend and wait for user response
+                    # Persist the pending confirmation so the next turn can resolve it
+                    # directly (via resolve_pending_confirmations) instead of asking
+                    # the LLM to regenerate the tool call.
+                    yield self.create_state_update(self.create_pending_confirmation_state(response))
                     yield ConfirmationRequestResponse(content=ConfirmationRequestContent(confirmation_request=response))
 
                 case ToolCallResult():

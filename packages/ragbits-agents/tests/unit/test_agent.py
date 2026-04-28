@@ -913,6 +913,94 @@ async def test_pre_tool_hook_ask_with_confirmation_approved(llm_with_tool_call: 
     assert "72" in result.tool_calls[0].result
 
 
+async def test_execute_tool_directly_runs_tool_with_given_arguments(llm_without_tool_call: MockLLM):
+    """execute_tool_directly runs the named tool with explicit args, bypassing LLM tool selection."""
+    agent = Agent(llm=llm_without_tool_call, prompt=CustomPrompt, tools=[get_weather])
+
+    context: AgentRunContext = AgentRunContext()
+    result = await agent.execute_tool_directly(
+        tool_call_id="call_1",
+        tool_name="get_weather",
+        arguments={"location": "San Francisco"},
+        context=context,
+    )
+
+    assert result.id == "call_1"
+    assert result.name == "get_weather"
+    assert "72" in result.result
+
+
+async def test_execute_tool_directly_respects_prior_confirmation(
+    llm_without_tool_call: MockLLM, ask_hook: PreToolCallback
+):
+    """A PRE_TOOL ask hook still runs, but a matching confirmation in context makes it pass."""
+    from ragbits.agents.hooks.manager import HookManager
+
+    hook = Hook(event_type=EventType.PRE_TOOL, callback=ask_hook)
+    agent = Agent(llm=llm_without_tool_call, prompt=CustomPrompt, tools=[get_weather], hooks=[hook])
+
+    arguments = {"location": "San Francisco"}
+    confirmation_id = HookManager._compute_confirmation_id(
+        hook_name="ask_hook", tool_name="get_weather", arguments=arguments
+    )
+    context: AgentRunContext = AgentRunContext(
+        tool_confirmations=[{"confirmation_id": confirmation_id, "confirmed": True}]
+    )
+
+    result = await agent.execute_tool_directly(
+        tool_call_id="call_1", tool_name="get_weather", arguments=arguments, context=context
+    )
+
+    assert "72" in result.result
+
+
+async def test_execute_tool_directly_deny_hook_blocks_execution(
+    llm_without_tool_call: MockLLM, deny_hook: PreToolCallback
+):
+    """A non-confirmation PRE_TOOL hook returning deny still blocks execution."""
+    hook = Hook(event_type=EventType.PRE_TOOL, callback=deny_hook)
+    agent = Agent(llm=llm_without_tool_call, prompt=CustomPrompt, tools=[get_weather], hooks=[hook])
+
+    result = await agent.execute_tool_directly(
+        tool_call_id="call_1",
+        tool_name="get_weather",
+        arguments={"location": "San Francisco"},
+        context=AgentRunContext(),
+    )
+
+    assert result.result == "Blocked by hook"
+
+
+async def test_execute_tool_directly_unknown_tool_raises(llm_without_tool_call: MockLLM):
+    """Unknown tool name raises AgentToolNotAvailableError."""
+    agent = Agent(llm=llm_without_tool_call, prompt=CustomPrompt, tools=[get_weather])
+
+    with pytest.raises(AgentToolNotAvailableError):
+        await agent.execute_tool_directly(
+            tool_call_id="call_1",
+            tool_name="not_a_tool",
+            arguments={},
+            context=AgentRunContext(),
+        )
+
+
+async def test_execute_tool_directly_runs_post_tool_hooks(
+    llm_without_tool_call: MockLLM, post_tool_append: Callable[..., PostToolCallback]
+):
+    """POST_TOOL hooks must run on the direct-execution result."""
+    hook = Hook(event_type=EventType.POST_TOOL, callback=post_tool_append("[PT]", prepend=True))
+    agent = Agent(llm=llm_without_tool_call, prompt=CustomPrompt, tools=[get_weather], hooks=[hook])
+
+    result = await agent.execute_tool_directly(
+        tool_call_id="call_1",
+        tool_name="get_weather",
+        arguments={"location": "San Francisco"},
+        context=AgentRunContext(),
+    )
+
+    assert result.result.startswith("[PT]")
+
+
 async def test_hook_priority_order(llm_with_tool_call: MockLLM):
     """Test that hooks execute in priority order (lower first)."""
     execution_order: list[int] = []

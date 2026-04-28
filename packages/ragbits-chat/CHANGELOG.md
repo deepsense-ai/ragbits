@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add `ChatInterface.resolve_pending_confirmations` and `create_pending_confirmation_state` helpers so chat implementations can execute user-approved tools directly on the continuation turn, preventing the confirmation loop caused by LLM argument drift (#969).
+
 ## 1.6.2 (2026-03-26)
 
 - ragbits-agents updated to version v1.6.2

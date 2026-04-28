@@ -1,4 +1,5 @@
 import asyncio
+import json
 import types
 import uuid
 import warnings
@@ -1060,6 +1061,57 @@ class Agent(
                 yield event if isinstance(event, ToolReturn) else ToolEvent(content=event)
         else:
             yield ToolReturn(value=tool_output, metadata=None)
+
+    async def execute_tool_directly(
+        self,
+        tool_call_id: str,
+        tool_name: str,
+        arguments: dict[str, Any],
+        context: AgentRunContext,
+    ) -> ToolCallResult:
+        """
+        Execute a tool with caller-supplied arguments, returning its final result.
+
+        Intended for chat layers resuming after a user confirmation: rather than asking
+        the LLM to regenerate the tool call (which risks argument drift and a broken
+        confirmation_id match), the chat layer stores the pre-confirmation arguments
+        and replays them directly through this method.
+
+        PRE_TOOL hooks still run. If a hook requests confirmation, the caller is
+        responsible for having populated ``context.tool_confirmations`` with the
+        matching approval so the existing hash-match path resolves to ``pass``.
+        A ``deny`` decision from any PRE_TOOL hook is respected and short-circuits
+        execution. POST_TOOL hooks run on success.
+
+        Args:
+            tool_call_id: Identifier to attach to the resulting ``ToolCallResult``.
+            tool_name: Name of the tool to invoke.
+            arguments: Arguments to pass to the tool (should be the original
+                pre-confirmation arguments to keep the confirmation_id stable).
+            context: Agent run context, including any prior ``tool_confirmations``.
+
+        Returns:
+            The ``ToolCallResult`` yielded by the tool execution path.
+
+        Raises:
+            AgentToolNotAvailableError: If the tool is not registered on this agent.
+        """
+        tools_mapping = await self._get_all_tools()
+        # ToolCall declares arguments as dict but has a "before" validator that
+        # json.loads strings, so we pass the serialized form to satisfy the validator.
+        tool_call = ToolCall(
+            id=tool_call_id,
+            type="function",
+            name=tool_name,
+            arguments=json.dumps(arguments),  # type: ignore[arg-type]
+        )
+        result: ToolCallResult | None = None
+        async for item in self._execute_tool(tool_call=tool_call, tools_mapping=tools_mapping, context=context):
+            if isinstance(item, ToolCallResult):
+                result = item
+        if result is None:
+            raise RuntimeError(f"Tool {tool_name!r} produced no ToolCallResult")
+        return result
 
     async def _execute_tool(
         self,
