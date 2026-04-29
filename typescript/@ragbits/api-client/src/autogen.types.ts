@@ -75,9 +75,9 @@ export interface ChatContext {
     user: User | null
     session_id: string | null
     /**
-     * List of confirmed/declined tools from the frontend
+     * List of confirmed/declined tool executions from the frontend. Each entry has 'confirmation_id' and 'confirmed' (bool)
      */
-    confirmed_tools:
+    tool_confirmations:
         | {
               [k: string]: unknown
           }[]
@@ -185,7 +185,7 @@ export interface MessageUsage {
 }
 
 /**
- * Simple task representation.
+ * A single task in a plan.
  */
 export interface Task {
     id: string
@@ -383,6 +383,10 @@ export interface ConfigResponse {
      */
     show_usage: boolean
     authentication: AuthenticationConfig
+    /**
+     * Flag to enable conversation sharing
+     */
+    sharing: boolean
 }
 
 /**
@@ -546,6 +550,57 @@ export interface User {
     metadata: {
         [k: string]: unknown
     }
+}
+
+/**
+ * Validated input for sharing a conversation.
+ */
+export interface ShareConversationRequest {
+    /**
+     * List of recipient identifiers (user IDs or emails)
+     *
+     * @minItems 1
+     */
+    recipients: [string, ...string[]]
+}
+
+/**
+ * API response model for a single share recipient.
+ */
+export interface ConversationShareResponse {
+    recipient: string
+    shared_at: string
+}
+
+/**
+ * Conversation metadata returned in list endpoints.
+ */
+export interface ConversationMeta {
+    conversation_id: string
+    created_at: string
+    summary: string | null
+    is_shared: boolean
+    shared_by: string | null
+}
+
+/**
+ * A single user/assistant interaction belonging to a conversation.
+ */
+export interface ConversationInteractionData {
+    message_id: string | null
+    message: string
+    response: string
+}
+
+/**
+ * Full conversation detail including messages.
+ */
+export interface ConversationDetail {
+    conversation_id: string
+    messages: ConversationInteractionData[]
+    is_shared: boolean
+    shared_by: string | null
+    shares: ConversationShareResponse[] | null
 }
 
 /**

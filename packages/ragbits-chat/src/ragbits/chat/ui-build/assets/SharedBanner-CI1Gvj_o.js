@@ -1,0 +1,1 @@
+import{h as n,j as s,I as a}from"./index-D5CTl864.js";function i(){const t=n(e=>e.isShared),r=n(e=>e.sharedBy);return!t||!r?null:s.jsxs("div",{className:"bg-default-100 text-default-600 mb-4 flex items-center gap-2 rounded-lg px-4 py-2 text-sm",children:[s.jsx(a,{icon:"heroicons:link",width:16}),s.jsxs("span",{children:["Shared by ",r]})]})}export{i as default};

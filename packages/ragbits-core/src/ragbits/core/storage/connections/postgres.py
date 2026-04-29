@@ -2,12 +2,24 @@
 
 from __future__ import annotations
 
+import contextvars
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, ClassVar
 
 from ragbits.core.storage.connections.base import DatabaseConnection
 
 if TYPE_CHECKING:
     import asyncpg
+
+
+# Per-task pointer to the connection acquired by :meth:`PostgresConnection.transaction`.
+# Set on transaction entry and read by ``execute``/``fetch_*`` so that all
+# statements issued in the transactional scope run on the same connection.
+_current_tx_connection: contextvars.ContextVar[asyncpg.Connection | None] = contextvars.ContextVar(
+    "_ragbits_postgres_tx_connection",
+    default=None,
+)
 
 
 class PostgresConnection(DatabaseConnection["asyncpg.Connection"]):
@@ -29,6 +41,7 @@ class PostgresConnection(DatabaseConnection["asyncpg.Connection"]):
     """
 
     configuration_key: ClassVar = "postgres_connection"
+    placeholder_style: ClassVar = "numeric"
 
     def __init__(
         self,
@@ -121,18 +134,29 @@ class PostgresConnection(DatabaseConnection["asyncpg.Connection"]):
         if self._pool is not None:
             await self._pool.release(connection)
 
-    async def execute(self, query: str, *args: Any) -> Any:  # noqa: ANN401
-        """Execute a query and return results.
+    async def execute(self, query: str, *args: Any) -> int:  # noqa: ANN401
+        """Execute a query and return the number of affected rows.
+
+        When called from within :meth:`transaction`, statements run on the
+        transaction's dedicated connection rather than a fresh one from the
+        pool.
 
         Args:
             query: The SQL query to execute (use $1, $2, etc. for parameters).
             *args: Query parameters.
 
         Returns:
-            Query result status.
+            Rowcount parsed from the asyncpg status string (``"INSERT 0 N"``,
+            ``"UPDATE N"``, ``"DELETE N"``). Returns ``0`` for DDL or unknown
+            status strings.
         """
         await self._ensure_connected()
-        return await self.pool.execute(query, *args)
+        tx_conn = _current_tx_connection.get()
+        if tx_conn is not None:
+            status = await tx_conn.execute(query, *args)
+        else:
+            status = await self.pool.execute(query, *args)
+        return _parse_rowcount(status)
 
     async def execute_many(self, query: str, args_list: list[tuple[Any, ...]]) -> None:
         """Execute a query multiple times with different parameters.
@@ -142,7 +166,9 @@ class PostgresConnection(DatabaseConnection["asyncpg.Connection"]):
             args_list: List of parameter tuples.
         """
         await self._ensure_connected()
-        await self.pool.executemany(query, args_list)
+        tx_conn = _current_tx_connection.get()
+        executor = tx_conn if tx_conn is not None else self.pool
+        await executor.executemany(query, args_list)
 
     async def fetch_one(self, query: str, *args: Any) -> dict[str, Any] | None:
         """Fetch a single row from the database.
@@ -155,7 +181,9 @@ class PostgresConnection(DatabaseConnection["asyncpg.Connection"]):
             A dictionary representing the row, or None if not found.
         """
         await self._ensure_connected()
-        row = await self.pool.fetchrow(query, *args)
+        tx_conn = _current_tx_connection.get()
+        executor = tx_conn if tx_conn is not None else self.pool
+        row = await executor.fetchrow(query, *args)
         return dict(row) if row else None
 
     async def fetch_all(self, query: str, *args: Any) -> list[dict[str, Any]]:
@@ -169,7 +197,9 @@ class PostgresConnection(DatabaseConnection["asyncpg.Connection"]):
             A list of dictionaries representing the rows.
         """
         await self._ensure_connected()
-        rows = await self.pool.fetch(query, *args)
+        tx_conn = _current_tx_connection.get()
+        executor = tx_conn if tx_conn is not None else self.pool
+        rows = await executor.fetch(query, *args)
         return [dict(row) for row in rows]
 
     async def fetch_val(self, query: str, *args: Any) -> Any:  # noqa: ANN401
@@ -183,4 +213,44 @@ class PostgresConnection(DatabaseConnection["asyncpg.Connection"]):
             The value from the first column of the first row.
         """
         await self._ensure_connected()
-        return await self.pool.fetchval(query, *args)
+        tx_conn = _current_tx_connection.get()
+        executor = tx_conn if tx_conn is not None else self.pool
+        return await executor.fetchval(query, *args)
+
+    @asynccontextmanager
+    async def transaction(self) -> AsyncIterator[None]:
+        """Run a block of statements inside a single asyncpg transaction.
+
+        Acquires a dedicated connection from the pool for the duration of the
+        block. ``execute`` and ``fetch_*`` calls made by the same task while
+        inside this context will route to that connection (via a
+        :class:`~contextvars.ContextVar`) so the entire block is atomic.
+        Connections from concurrent tasks remain unaffected.
+        """
+        await self._ensure_connected()
+        connection = await self.pool.acquire()
+        token = _current_tx_connection.set(connection)
+        try:
+            async with connection.transaction():
+                yield
+        finally:
+            _current_tx_connection.reset(token)
+            await self.pool.release(connection)
+
+
+def _parse_rowcount(status: Any) -> int:  # noqa: ANN401
+    """Parse asyncpg's command status string into a rowcount.
+
+    asyncpg returns strings like ``"INSERT 0 5"``, ``"UPDATE 3"``, or
+    ``"DELETE 1"``. DDL statements return ``"CREATE TABLE"`` or similar with
+    no count. Returns ``0`` when the count cannot be parsed.
+    """
+    if not isinstance(status, str):
+        return 0
+    parts = status.split()
+    if not parts:
+        return 0
+    try:
+        return int(parts[-1])
+    except ValueError:
+        return 0

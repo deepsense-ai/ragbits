@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+### Added
+
+- Add conversation sharing: new `SharePersistence` SQL-backed store (`ragbits.chat.persistence.SharePersistence`) and `share_persistence` parameter on `RagbitsAPI` that together expose REST endpoints for listing/sharing/unsharing/dismissing conversations and wire the `ShareButton`, shared-conversation sidebar entries and read-only conversation guard in the default UI.
+- Extend `SQLHistoryPersistence` with a `user_id` ownership column on the `Conversation` model and `list_conversations`, `get_conversation_summaries`, `delete_conversation` and `get_conversation_owner` helpers used by the sharing endpoints.
+- Add `sharing` flag on `ConfigResponse` plus `ShareConversationRequest`, `ConversationShareResponse`, `ConversationMeta` and `ConversationDetail` schemas for the new sharing API.
+- Add `examples/chat/shared_chat.py` demonstrating an end-to-end conversation sharing setup with `ListAuthenticationBackend`, `SQLHistoryPersistence` and a Postgres-backed `SharePersistence`.
+
 ## 1.6.2 (2026-03-26)
 
 - ragbits-agents updated to version v1.6.2

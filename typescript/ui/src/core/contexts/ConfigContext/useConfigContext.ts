@@ -14,6 +14,7 @@ const DEFAULT_CONFIG: IConfigContext = {
     debug_mode: false,
     customization: null,
     supports_upload: false,
+    sharing: false,
   },
 };
 

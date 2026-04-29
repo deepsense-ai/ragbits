@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -50,12 +51,19 @@ class PostgresKVStore(KVStore[dict[str, Any]]):
         self._connection = connection
         self._table_name = table_name
         self._schema_initialized = False
+        self._schema_lock = asyncio.Lock()
 
     async def _ensure_schema(self) -> None:
-        """Create the KV table if it doesn't exist."""
+        """Create the KV table if it doesn't exist (lazy, concurrency-safe)."""
         if self._schema_initialized:
             return
+        async with self._schema_lock:
+            if self._schema_initialized:
+                return
+            await self._init_schema()
+            self._schema_initialized = True
 
+    async def _init_schema(self) -> None:
         await self._connection._ensure_connected()
         await self._connection.execute(
             f"""
@@ -76,7 +84,6 @@ class PostgresKVStore(KVStore[dict[str, Any]]):
             WHERE expires_at IS NOT NULL
             """  # noqa: S608
         )
-        self._schema_initialized = True
 
     async def get(self, key: str) -> dict[str, Any] | None:
         """Get a value by key.
@@ -141,12 +148,11 @@ class PostgresKVStore(KVStore[dict[str, Any]]):
             True if the key was deleted, False if it didn't exist.
         """
         await self._ensure_schema()
-        result = await self._connection.execute(
+        rowcount = await self._connection.execute(
             f"DELETE FROM {self._table_name} WHERE key = $1",  # noqa: S608
             key,
         )
-        # asyncpg returns "DELETE N" where N is the count
-        return result and "DELETE 1" in str(result)
+        return rowcount > 0
 
     async def exists(self, key: str) -> bool:
         """Check if a key exists.
@@ -198,21 +204,17 @@ class PostgresKVStore(KVStore[dict[str, Any]]):
             Number of keys removed.
         """
         await self._ensure_schema()
-        result = await self._connection.execute(
+        return await self._connection.execute(
             f"DELETE FROM {self._table_name} WHERE expires_at IS NOT NULL AND expires_at <= NOW()"  # noqa: S608
         )
-        # Parse "DELETE N" to get count
-        if result:
-            parts = str(result).split()
-            if len(parts) >= 2:  # noqa: PLR2004
-                try:
-                    return int(parts[1])
-                except ValueError:
-                    pass
-        return 0
 
     async def __aenter__(self) -> PostgresKVStore:
-        """Async context manager entry."""
+        """Async context manager entry.
+
+        Lazily connects the underlying database and ensures the schema is
+        initialised. Connection lifecycle stays with the caller; ``__aexit__``
+        does not disconnect.
+        """
         await self._connection._ensure_connected()
         await self._ensure_schema()
         return self
@@ -223,5 +225,5 @@ class PostgresKVStore(KVStore[dict[str, Any]]):
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
-        """Async context manager exit."""
-        await self._connection.disconnect()
+        """Async context manager exit (no-op; caller owns the connection)."""
+        return None

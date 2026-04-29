@@ -8,6 +8,10 @@ import {
     LoginResponse,
     User,
     OAuth2AuthorizeResponse,
+    ConversationMeta,
+    ConversationDetail,
+    ConversationShareResponse,
+    ShareConversationRequest,
 } from './autogen.types'
 
 export interface GenericResponse {
@@ -66,6 +70,27 @@ export interface BaseApiEndpoints {
     '/api/upload': EndpointDefinition<
         FormData,
         { status: string; filename: string }
+    >
+    '/api/conversations': EndpointDefinition<never, ConversationMeta[]>
+    '/api/conversations/:conversationId': EndpointDefinition<
+        never,
+        ConversationDetail,
+        { conversationId: string }
+    >
+    '/api/conversations/:conversationId/shares': EndpointDefinition<
+        ShareConversationRequest,
+        ConversationShareResponse[],
+        { conversationId: string }
+    >
+    '/api/conversations/:conversationId/shares/:recipient': EndpointDefinition<
+        never,
+        GenericResponse,
+        { conversationId: string; recipient: string }
+    >
+    '/api/shared/:conversationId': EndpointDefinition<
+        never,
+        GenericResponse,
+        { conversationId: string }
     >
 }
 

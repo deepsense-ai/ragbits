@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from collections.abc import Sequence
 from typing import Any, Protocol, TypeVar
@@ -22,6 +23,7 @@ class ConversationProtocol(Protocol):
     """Protocol for Conversation model."""
 
     id: str
+    user_id: str | None
     created_at: Any
 
 
@@ -65,6 +67,7 @@ def create_conversation_model(table_name: str, base_class: type[DeclarativeBase]
 
         __tablename__ = table_name
         id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+        user_id = Column(String, nullable=True, index=True)
         created_at = Column(TIMESTAMP, server_default=func.now())
 
     return Conversation
@@ -158,6 +161,7 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
         self.sqlalchemy_engine = sqlalchemy_engine
         self.options = options or SQLHistoryPersistenceOptions()
         self._db_initialized = False
+        self._init_lock = asyncio.Lock()
 
         # Create a unique DeclarativeBase for this instance to avoid table conflicts
         class _Base(DeclarativeBase):
@@ -179,7 +183,11 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
 
         This method is called automatically on first usage.
         """
-        if not self._db_initialized:
+        if self._db_initialized:
+            return
+        async with self._init_lock:
+            if self._db_initialized:
+                return
             async with self.sqlalchemy_engine.begin() as conn:
                 await conn.run_sync(self._base.metadata.create_all)
             self._db_initialized = True
@@ -205,9 +213,9 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
         await self._init_db()
 
         async with AsyncSession(self.sqlalchemy_engine) as session, session.begin():
-            # Ensure conversation exists if conversation_id is provided
             if context.conversation_id:
-                await self._ensure_conversation_exists(session, context.conversation_id)
+                user_id = context.user.user_id if context.user else None
+                await self._ensure_conversation_exists(session, context.conversation_id, user_id)
 
             # Convert to JSON-serializable format with type information
             extra_responses_data = [
@@ -229,21 +237,22 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
             session.add(interaction)
             await session.commit()
 
-    async def _ensure_conversation_exists(self, session: AsyncSession, conversation_id: str) -> None:
+    async def _ensure_conversation_exists(
+        self, session: AsyncSession, conversation_id: str, user_id: str | None = None
+    ) -> None:
         """
         Ensures that a conversation with the given ID exists in the database.
 
         Args:
             session: The database session to use.
             conversation_id: The ID of the conversation to check/create.
+            user_id: The owner user ID to associate with a new conversation.
         """
-        # Check if conversation exists
         result = await session.execute(sqlalchemy.select(self.Conversation).filter_by(id=conversation_id).limit(1))
         existing_conversation = result.scalar_one_or_none()
 
-        # Create conversation if it doesn't exist
         if not existing_conversation:
-            conversation = self.Conversation(id=conversation_id)
+            conversation = self.Conversation(id=conversation_id, user_id=user_id)
             session.add(conversation)
             await session.flush()
 
@@ -281,6 +290,105 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
                 }
                 for interaction in interactions
             ]
+
+    async def list_conversations(self, user_id: str, limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
+        """
+        List conversations owned by a user, ordered by creation time descending.
+
+        Args:
+            user_id: The owner's user ID.
+            limit: Maximum number of conversations to return.
+            offset: Number of conversations to skip.
+
+        Returns:
+            A list of conversation dictionaries.
+        """
+        await self._init_db()
+
+        async with AsyncSession(self.sqlalchemy_engine) as session:
+            result = await session.execute(
+                sqlalchemy.select(self.Conversation)
+                .filter_by(user_id=user_id)
+                .order_by(self.Conversation.created_at.desc())
+                .limit(limit)
+                .offset(offset)
+            )
+            conversations = result.scalars().all()
+
+            return [
+                {
+                    "id": conv.id,
+                    "user_id": conv.user_id,
+                    "created_at": conv.created_at,
+                }
+                for conv in conversations
+            ]
+
+    async def get_conversation_summaries(self, conversation_ids: list[str]) -> dict[str, str]:
+        """
+        Get a display summary for each conversation, derived from the first user message.
+
+        Args:
+            conversation_ids: List of conversation IDs to fetch summaries for.
+
+        Returns:
+            A dict mapping conversation_id → summary string (truncated first message).
+        """
+        if not conversation_ids:
+            return {}
+
+        await self._init_db()
+
+        max_len = 80
+        summaries: dict[str, str] = {}
+        async with AsyncSession(self.sqlalchemy_engine) as session:
+            for cid in conversation_ids:
+                result = await session.execute(
+                    sqlalchemy.select(self.ChatInteraction.message)
+                    .filter_by(conversation_id=cid)
+                    .order_by(self.ChatInteraction.id.asc())
+                    .limit(1)
+                )
+                first_msg = result.scalar_one_or_none()
+                if first_msg:
+                    summaries[cid] = first_msg[:max_len] + ("…" if len(first_msg) > max_len else "")
+        return summaries
+
+    async def delete_conversation(self, conversation_id: str) -> bool:
+        """
+        Delete a conversation and all its interactions.
+
+        Args:
+            conversation_id: The ID of the conversation to delete.
+
+        Returns:
+            True if the conversation was deleted, False if it didn't exist.
+        """
+        await self._init_db()
+
+        async with AsyncSession(self.sqlalchemy_engine) as session:
+            await session.execute(sqlalchemy.delete(self.ChatInteraction).filter_by(conversation_id=conversation_id))
+            result = await session.execute(sqlalchemy.delete(self.Conversation).filter_by(id=conversation_id))
+            await session.commit()
+            return result.rowcount > 0  # type: ignore[union-attr]
+
+    async def get_conversation_owner(self, conversation_id: str) -> str | None:
+        """
+        Get the owner user_id for a conversation.
+
+        Args:
+            conversation_id: The conversation ID.
+
+        Returns:
+            The owner's user_id, or None if the conversation doesn't exist.
+        """
+        await self._init_db()
+
+        async with AsyncSession(self.sqlalchemy_engine) as session:
+            result = await session.execute(
+                sqlalchemy.select(self.Conversation.user_id).filter_by(id=conversation_id).limit(1)
+            )
+            return result.scalar_one_or_none()
 
     @classmethod
     def from_config(cls, config: dict) -> Self:

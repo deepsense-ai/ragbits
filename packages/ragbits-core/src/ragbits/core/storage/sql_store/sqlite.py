@@ -74,21 +74,20 @@ class SQLiteSQLStore(SQLStore["aiosqlite.Connection"]):
         return None
 
     async def execute_returning(self, query: str, *args: Any) -> dict[str, Any] | None:
-        """Execute a query and fetch the last inserted row.
+        """Execute a query that includes a SQLite ``RETURNING`` clause.
 
-        Note: SQLite doesn't support RETURNING in the same way as PostgreSQL.
-        This method executes the query and then fetches the last inserted row
-        using last_insert_rowid().
+        SQLite ≥ 3.35 supports ``RETURNING`` directly. The query is forwarded to
+        the underlying connection's ``fetch_one`` so the returned row reflects
+        the affected row. Callers using older SQLite versions should add their
+        own ``SELECT`` after the write instead of relying on this method.
 
         Args:
-            query: SQL query to execute.
+            query: SQL query to execute (must include a ``RETURNING`` clause).
             *args: Query parameters.
 
         Returns:
-            The inserted row as a dictionary, or None.
+            The returned row as a dictionary, or ``None`` when no row was
+            written/affected.
         """
         await self._ensure_schema()
-        await self._connection.execute(query, *args)
-        # Get the last inserted rowid
-        row = await self._connection.fetch_one("SELECT * FROM sqlite_master WHERE type='table' LIMIT 1")
-        return row
+        return await self._connection.fetch_one(query, *args)

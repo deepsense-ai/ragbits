@@ -11,6 +11,21 @@ import type {
 } from './types'
 
 /**
+ * Error thrown when an API request returns a non-2xx response. Exposes the
+ * HTTP status so callers can react to specific cases (e.g. treat 404 as a
+ * benign no-op when removing already-gone resources) without parsing strings.
+ */
+export class HttpError extends Error {
+    readonly status: number
+
+    constructor(status: number, message?: string) {
+        super(message ?? `HTTP error! status: ${status}`)
+        this.name = 'HttpError'
+        this.status = status
+    }
+}
+
+/**
  * Client for communicating with the Ragbits API
  */
 export class RagbitsClient {
@@ -103,7 +118,7 @@ export class RagbitsClient {
         }
 
         if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`)
+            throw new HttpError(response.status)
         }
         return response
     }
@@ -309,7 +324,7 @@ export class RagbitsClient {
                 }
 
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`)
+                    throw new HttpError(response.status)
                 }
 
                 await processStream(response)

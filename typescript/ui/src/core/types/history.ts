@@ -48,6 +48,12 @@ export interface Conversation {
   isLoading: boolean;
   abortController: AbortController | null;
   summary?: string;
+  /** True when this conversation was shared with the current user by someone else. */
+  isShared?: boolean;
+  /** Identifier (user_id) of the user who shared this conversation. */
+  sharedBy?: string;
+  /** True when this is a stub loaded from the server (messages not yet fetched). */
+  isServerOnly?: boolean;
 }
 
 export interface HistoryStore {
@@ -61,7 +67,10 @@ export interface HistoryStore {
   actions: {
     newConversation: () => string;
     selectConversation: (conversationId: string) => void;
-    deleteConversation: (conversationId: string) => void;
+    deleteConversation: (
+      conversationId: string,
+      ragbitsClient?: RagbitsClient,
+    ) => void;
     sendMessage: (
       text: string,
       ragbitsClient: RagbitsClient,
@@ -86,6 +95,13 @@ export interface HistoryStore {
       conversationKey: string,
       properties: Partial<Conversation>,
     ) => void;
+    /** Fetch conversations from server (owned + shared) and merge into local store. */
+    loadServerConversations: (ragbitsClient: RagbitsClient) => Promise<void>;
+    /** Load a single shared conversation from the server by ID. Returns true on success. */
+    loadSharedConversation: (
+      conversationId: string,
+      ragbitsClient: RagbitsClient,
+    ) => Promise<boolean>;
   };
 
   primitives: {
@@ -94,13 +110,6 @@ export interface HistoryStore {
       message: Omit<ChatMessage, "id">,
     ) => string;
     deleteMessage: (conversationId: string, messageId: string) => void;
-    restore: (
-      history: Conversation["history"],
-      followupMessages: Conversation["followupMessages"],
-      chatOptions: Conversation["chatOptions"],
-      serverState: Conversation["serverState"],
-      conversationId: Conversation["conversationId"],
-    ) => string;
     getCurrentConversation: () => Conversation;
     stopAnswering: (conversationId: string) => void;
   };

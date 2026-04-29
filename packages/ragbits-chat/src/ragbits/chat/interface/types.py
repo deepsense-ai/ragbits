@@ -907,3 +907,45 @@ class ConfigResponse(BaseModel):
     conversation_history: bool = Field(default=False, description="Flag to enable conversation history")
     show_usage: bool = Field(default=False, description="Flag to enable usage statistics")
     authentication: AuthenticationConfig = Field(..., description="Authentication configuration")
+    sharing: bool = Field(default=False, description="Flag to enable conversation sharing")
+
+
+class ShareConversationRequest(BaseModel):
+    """Validated input for sharing a conversation."""
+
+    recipients: list[str] = Field(min_length=1, description="List of recipient identifiers (user IDs or emails)")
+
+
+class ConversationShareResponse(BaseModel):
+    """API response model for a single share recipient."""
+
+    recipient: str
+    shared_at: str
+
+
+class ConversationMeta(BaseModel):
+    """Conversation metadata returned in list endpoints."""
+
+    conversation_id: str
+    created_at: str
+    summary: str | None = None
+    is_shared: bool = False
+    shared_by: str | None = None
+
+
+class ConversationInteractionData(BaseModel):
+    """A single user/assistant interaction belonging to a conversation."""
+
+    message_id: str | None = None
+    message: str
+    response: str
+
+
+class ConversationDetail(BaseModel):
+    """Full conversation detail including messages."""
+
+    conversation_id: str
+    messages: list[ConversationInteractionData]
+    is_shared: bool = False
+    shared_by: str | None = None
+    shares: list[ConversationShareResponse] | None = None

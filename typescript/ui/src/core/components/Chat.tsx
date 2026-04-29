@@ -15,6 +15,7 @@ import QuickMessageInput from "./inputs/QuickMessageInput";
 import { useConfigContext } from "../contexts/ConfigContext/useConfigContext";
 import { useRagbitsContext } from "@ragbits/api-client-react";
 import { markdownComponents } from "./markdownComponents";
+import { Slot } from "./Slot";
 
 export default function Chat() {
   const {
@@ -26,6 +27,7 @@ export default function Chat() {
   const historyIsLoading = useConversationProperty((s) => s.isLoading);
   const followupMessages = useConversationProperty((s) => s.followupMessages);
   const hasPendingConfirmations = useHasPendingConfirmations();
+  const isShared = useConversationProperty((s) => s.isShared);
   const { sendMessage, stopAnswering } = useHistoryActions();
   const [showScrollDownButton, setShowScrollDownButton] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
@@ -143,34 +145,40 @@ export default function Chat() {
     </div>
   );
 
-  const content = showHistory ? historyComponent : heroComponent;
+  const content = showHistory
+    ? historyComponent
+    : isShared
+      ? null
+      : heroComponent;
   return (
     <div className="relative flex h-full flex-col overflow-y-auto p-6 pb-8">
+      <Slot name="chat.banner.top" disableSkeleton />
       {content}
-      <div className="relative mt-auto flex max-w-full flex-col gap-2 px-6">
-        {/* Floating Scroll-to-bottom button */}
-        <Button
-          variant="solid"
-          onPress={scrollToBottom}
-          className={cn(
-            "absolute -top-16 left-1/2 z-10 -translate-x-1/2 transition-all duration-200 ease-out",
-            showScrollDownButton && showHistory
-              ? "opacity-100"
-              : "pointer-events-none opacity-0",
-          )}
-          tabIndex={-1}
-          startContent={<Icon icon="heroicons:arrow-down" />}
-        >
-          Scroll to bottom
-        </Button>
-        <QuickMessageInput
-          isLoading={historyIsLoading}
-          submit={authorizedSendMessage}
-          stopAnswering={stopAnswering}
-          followupMessages={followupMessages}
-          isDisabled={hasPendingConfirmations}
-        />
-      </div>
+      {!isShared && (
+        <div className="relative mt-auto flex max-w-full flex-col gap-2 px-6">
+          <Button
+            variant="solid"
+            onPress={scrollToBottom}
+            className={cn(
+              "absolute -top-16 left-1/2 z-10 -translate-x-1/2 transition-all duration-200 ease-out",
+              showScrollDownButton && showHistory
+                ? "opacity-100"
+                : "pointer-events-none opacity-0",
+            )}
+            tabIndex={-1}
+            startContent={<Icon icon="heroicons:arrow-down" />}
+          >
+            Scroll to bottom
+          </Button>
+          <QuickMessageInput
+            isLoading={historyIsLoading}
+            submit={authorizedSendMessage}
+            stopAnswering={stopAnswering}
+            followupMessages={isShared ? null : followupMessages}
+            isDisabled={hasPendingConfirmations}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeVar
 
@@ -56,6 +57,7 @@ class SQLStore(WithConstructionConfig, ABC, Generic[ConnectionT]):
         self._connection = connection
         self._table_prefix = table_prefix
         self._schema_initialized = False
+        self._schema_lock = asyncio.Lock()
 
     @property
     def connection(self) -> DatabaseConnection[ConnectionT]:
@@ -87,12 +89,16 @@ class SQLStore(WithConstructionConfig, ABC, Generic[ConnectionT]):
         """
 
     async def _ensure_schema(self) -> None:
-        """Ensure the schema is initialized (lazy initialization)."""
-        if not self._schema_initialized:
+        """Ensure the schema is initialized (lazy, concurrency-safe)."""
+        if self._schema_initialized:
+            return
+        async with self._schema_lock:
+            if self._schema_initialized:
+                return
             await self._create_schema()
             self._schema_initialized = True
 
-    async def execute(self, query: str, *args: Any) -> Any:  # noqa: ANN401
+    async def execute(self, query: str, *args: Any) -> int:  # noqa: ANN401
         """Execute a query.
 
         Args:
@@ -100,7 +106,7 @@ class SQLStore(WithConstructionConfig, ABC, Generic[ConnectionT]):
             *args: Query parameters.
 
         Returns:
-            Query result (implementation-specific).
+            Number of rows affected by the query.
         """
         await self._ensure_schema()
         return await self._connection.execute(query, *args)
@@ -142,7 +148,12 @@ class SQLStore(WithConstructionConfig, ABC, Generic[ConnectionT]):
         return await self._connection.fetch_all(query, *args)
 
     async def __aenter__(self) -> SQLStore[ConnectionT]:
-        """Async context manager entry."""
+        """Async context manager entry.
+
+        Lazily connects the underlying database and ensures the store schema is
+        created. The connection lifecycle is owned by the caller; ``__aexit__``
+        does **not** close it so the same connection may be shared across stores.
+        """
         await self._connection._ensure_connected()
         await self._ensure_schema()
         return self
@@ -153,5 +164,9 @@ class SQLStore(WithConstructionConfig, ABC, Generic[ConnectionT]):
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
-        """Async context manager exit."""
-        await self._connection.disconnect()
+        """Async context manager exit.
+
+        Intentionally does not disconnect the underlying connection; the caller
+        retains ownership of it.
+        """
+        return None

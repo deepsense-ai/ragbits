@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import json
 import time
 from typing import TYPE_CHECKING, Any, ClassVar
@@ -49,33 +50,36 @@ class SQLiteKVStore(KVStore[dict[str, Any]]):
         self._connection = connection
         self._table_name = table_name
         self._schema_initialized = False
+        self._schema_lock = asyncio.Lock()
 
     async def _ensure_schema(self) -> None:
-        """Create the KV table if it doesn't exist."""
+        """Create the KV table if it doesn't exist (lazy, concurrency-safe)."""
         if self._schema_initialized:
             return
-
-        await self._connection._ensure_connected()
-        await self._connection.execute(
-            f"""
-            CREATE TABLE IF NOT EXISTS {self._table_name} (
-                key TEXT PRIMARY KEY,
-                value TEXT NOT NULL,
-                expires_at REAL,
-                created_at REAL DEFAULT (strftime('%s', 'now')),
-                updated_at REAL DEFAULT (strftime('%s', 'now'))
+        async with self._schema_lock:
+            if self._schema_initialized:
+                return
+            await self._connection._ensure_connected()
+            await self._connection.execute(
+                f"""
+                CREATE TABLE IF NOT EXISTS {self._table_name} (
+                    key TEXT PRIMARY KEY,
+                    value TEXT NOT NULL,
+                    expires_at REAL,
+                    created_at REAL DEFAULT (strftime('%s', 'now')),
+                    updated_at REAL DEFAULT (strftime('%s', 'now'))
+                )
+                """  # noqa: S608
             )
-            """  # noqa: S608
-        )
-        # Index for TTL cleanup
-        await self._connection.execute(
-            f"""
-            CREATE INDEX IF NOT EXISTS idx_{self._table_name}_expires
-            ON {self._table_name} (expires_at)
-            WHERE expires_at IS NOT NULL
-            """  # noqa: S608
-        )
-        self._schema_initialized = True
+            # Index for TTL cleanup
+            await self._connection.execute(
+                f"""
+                CREATE INDEX IF NOT EXISTS idx_{self._table_name}_expires
+                ON {self._table_name} (expires_at)
+                WHERE expires_at IS NOT NULL
+                """  # noqa: S608
+            )
+            self._schema_initialized = True
 
     async def get(self, key: str) -> dict[str, Any] | None:
         """Get a value by key.
@@ -140,15 +144,11 @@ class SQLiteKVStore(KVStore[dict[str, Any]]):
             True if the key was deleted, False if it didn't exist.
         """
         await self._ensure_schema()
-        # First check if key exists
-        exists = await self.exists(key)
-        if exists:
-            await self._connection.execute(
-                f"DELETE FROM {self._table_name} WHERE key = ?",  # noqa: S608
-                key,
-            )
-            return True
-        return False
+        rowcount = await self._connection.execute(
+            f"DELETE FROM {self._table_name} WHERE key = ?",  # noqa: S608
+            key,
+        )
+        return rowcount > 0
 
     async def exists(self, key: str) -> bool:
         """Check if a key exists.
@@ -202,22 +202,18 @@ class SQLiteKVStore(KVStore[dict[str, Any]]):
             Number of keys removed.
         """
         await self._ensure_schema()
-        now = time.time()
-        # Count before delete
-        row = await self._connection.fetch_one(
-            f"SELECT COUNT(*) as cnt FROM {self._table_name} WHERE expires_at IS NOT NULL AND expires_at <= ?",  # noqa: S608
-            now,
-        )
-        count = row["cnt"] if row else 0
-
-        await self._connection.execute(
+        return await self._connection.execute(
             f"DELETE FROM {self._table_name} WHERE expires_at IS NOT NULL AND expires_at <= ?",  # noqa: S608
-            now,
+            time.time(),
         )
-        return count
 
     async def __aenter__(self) -> SQLiteKVStore:
-        """Async context manager entry."""
+        """Async context manager entry.
+
+        Lazily connects the underlying database and ensures the schema is
+        initialised. Connection lifecycle stays with the caller; ``__aexit__``
+        does not disconnect.
+        """
         await self._connection._ensure_connected()
         await self._ensure_schema()
         return self
@@ -228,5 +224,5 @@ class SQLiteKVStore(KVStore[dict[str, Any]]):
         exc_val: BaseException | None,
         exc_tb: TracebackType | None,
     ) -> None:
-        """Async context manager exit."""
-        await self._connection.disconnect()
+        """Async context manager exit (no-op; caller owns the connection)."""
+        return None
