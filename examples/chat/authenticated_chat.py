@@ -64,6 +64,51 @@ To run with both credentials and Discord OAuth2:
 
 The preferred components approach allows the CLI to automatically use your configured authentication
 backend while keeping the ChatInterface class focused on its core functionality.
+
+## Running with Google Calendar Tool
+
+This example also shows how to add real tools (Google Calendar) that the LLM can call.
+After login the user sees a *Connect* button in the sidebar — clicking it grants calendar access
+via incremental OAuth without requiring a new login.
+
+    ```bash
+    export RAGBITS_BASE_URL=http://localhost:8000
+    export GOOGLE_CLIENT_ID="your_client_id_here"
+    export GOOGLE_CLIENT_SECRET="your_client_secret_here"
+    python examples/chat/authenticated_chat.py
+    ```
+
+Prerequisites (in addition to Google OAuth2 setup above):
+1. Enable Google Calendar API at https://console.cloud.google.com/apis/library
+2. Add https://www.googleapis.com/auth/calendar.readonly to the OAuth consent screen scopes
+3. Add http://localhost:8000/api/auth/google/callback to the authorized redirect URIs
+
+## Adding your own tools
+
+Subclass ``ChatTool`` and register it on your ``ChatInterface``:
+
+    ```python
+    from ragbits.chat.tools.base import ChatTool
+    from ragbits.agents.tool import Tool
+
+    class BigQueryTool(ChatTool):
+        tool_id = "query_bigquery"
+        display_name = "📊 BigQuery"
+        category = "Data Sources"
+
+        def build(self, context: ChatContext) -> Tool:
+            async def query_bigquery(sql: str) -> str:
+                \"\"\"Run a BigQuery SQL query and return results.
+
+                Args:
+                    sql: The SQL query to execute.
+                \"\"\"
+                ...
+            return Tool.from_callable(query_bigquery)
+
+    class MyChat(ChatInterface):
+        tools = [GoogleCalendarTool(), BigQueryTool()]
+    ```
 """
 
 # /// script
@@ -74,15 +119,20 @@ backend while keeping the ChatInterface class focused on its core functionality.
 # ///
 
 import asyncio
+import os
 from collections.abc import AsyncGenerator
+from datetime import date
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 from ragbits.chat.auth import ListAuthenticationBackend
 from ragbits.chat.auth.backends import MultiAuthenticationBackend, OAuth2AuthenticationBackend
-from ragbits.chat.auth.oauth2_providers import OAuth2Providers
+from ragbits.chat.auth.oauth2_providers import OAuth2Provider, OAuth2Providers
 from ragbits.chat.auth.session_store import InMemorySessionStore
+from ragbits.chat.auth.types import User
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, ChatResponse, LiveUpdateType
 from ragbits.chat.interface.ui_customization import HeaderCustomization, UICustomization
+from ragbits.chat.tools import GoogleCalendarTool
 from ragbits.core.llms import LiteLLM
 from ragbits.core.prompt.base import ChatFormat
 
@@ -375,7 +425,98 @@ def get_multi_auth_backend() -> MultiAuthenticationBackend:
     )
 
 
+class GoogleOAuthBackend(OAuth2AuthenticationBackend):
+    """Google OAuth backend that requests offline access so refresh tokens are issued."""
+
+    def generate_authorize_url(self) -> tuple[str, str]:
+        url, state = super().generate_authorize_url()
+        parsed = urlparse(url)
+        params = parse_qs(parsed.query)
+        params.update({"access_type": ["offline"], "prompt": ["consent"]})
+        return urlunparse(parsed._replace(query=urlencode(params, doseq=True))), state
+
+
+class MyChatWithTools(ChatInterface):
+    """Chat with Google Calendar access granted via the *Connect* button in the sidebar.
+
+    The LLM automatically calls ``search_calendar_events`` when the user asks about
+    their schedule.  No calendar access is required at login — the user clicks
+    *Connect* next to "Calendar Events" in the sidebar after logging in.
+    """
+
+    ui_customization = UICustomization(
+        header=HeaderCustomization(
+            title="Ragbits Chat",
+            subtitle="Powered by ragbits",
+            logo="🐰",
+        ),
+        welcome_message="Hello! I'm your AI assistant. How can I help you today?",
+        starter_questions=[
+            "What are my meetings today?",
+            "Show me my calendar for this week",
+        ],
+    )
+
+    conversation_history = True
+    tools = [GoogleCalendarTool()]
+
+    def __init__(self) -> None:
+        self.llm = LiteLLM(model_name="gpt-4o-mini")
+
+    async def chat(
+        self,
+        message: str,
+        history: ChatFormat,
+        context: ChatContext,
+    ) -> AsyncGenerator[ChatResponse, None]:
+        today = date.today().isoformat()
+        async for response in self.run_with_tools(
+            message,
+            history,
+            context,
+            llm=self.llm,
+            system_prompt=(
+                f"You are a helpful AI assistant. Today's date is {today}. "
+                "Use available tools whenever they are relevant to the user's request."
+            ),
+        ):
+            yield response
+
+
+def get_google_calendar_auth_backend() -> GoogleOAuthBackend:
+    """Google OAuth2 backend for use with ``MyChatWithTools``.
+
+    Reads ``GOOGLE_CLIENT_ID`` and ``GOOGLE_CLIENT_SECRET`` from the environment.
+    """
+    return GoogleOAuthBackend(
+        session_store=InMemorySessionStore(),
+        provider=OAuth2Provider(
+            name=OAuth2Providers.GOOGLE.name,
+            display_name=OAuth2Providers.GOOGLE.display_name,
+            authorize_url=OAuth2Providers.GOOGLE.authorize_url,
+            token_url=OAuth2Providers.GOOGLE.token_url,
+            user_info_url=OAuth2Providers.GOOGLE.user_info_url,
+            scopes=["openid", "email", "profile"],
+            user_factory=lambda d: User(
+                user_id=f"google_{d['id']}",
+                username=str(d.get("email", "")).split("@")[0],
+                email=str(d["email"]) if d.get("email") else None,
+                full_name=str(d["name"]) if d.get("name") else None,
+                roles=["user"],
+                metadata={"provider": "google", "picture": d.get("picture")},
+            ),
+        ),
+        client_id=os.environ.get("GOOGLE_CLIENT_ID", ""),
+        client_secret=os.environ.get("GOOGLE_CLIENT_SECRET", ""),
+        session_expiry_hours=24 * 7,
+    )
+
+
 if __name__ == "__main__":
     from ragbits.chat.api import RagbitsAPI
 
-    RagbitsAPI(MyAuthenticatedChat, auth_backend=get_auth_backend()).run()
+    auth_backend = None
+    if os.environ.get("GOOGLE_CLIENT_ID") and os.environ.get("GOOGLE_CLIENT_SECRET"):
+        auth_backend = get_google_calendar_auth_backend()
+
+    RagbitsAPI(MyChatWithTools, auth_backend=auth_backend).run()

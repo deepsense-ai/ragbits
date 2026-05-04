@@ -3,12 +3,14 @@ import { ChatMessage } from "./history";
 
 export type SlotName =
   | "layout.sidebar"
+  | "layout.sidebarBottom"
   | "layout.headerActions"
   | "message.actions"
   | "prompt.beforeSend";
 
 export interface SlotPropsMap {
   "layout.sidebar": Record<string, never>;
+  "layout.sidebarBottom": Record<string, never>;
   "layout.headerActions": Record<string, never>;
   "message.actions": {
     message: ChatMessage;

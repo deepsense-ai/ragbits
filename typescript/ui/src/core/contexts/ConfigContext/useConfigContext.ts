@@ -14,6 +14,8 @@ const DEFAULT_CONFIG: IConfigContext = {
     debug_mode: false,
     customization: null,
     supports_upload: false,
+    available_tools: [],
+    google_incremental_oauth: { enabled: false },
   },
 };
 

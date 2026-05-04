@@ -12,6 +12,7 @@ import { UsagePluginName } from "../plugins/UsagePlugin";
 import { CredentialsLoginPluginName } from "../plugins/AuthPlugin/plugins/CredentialsLoginPlugin";
 import { createOAuth2LoginPlugin } from "../plugins/AuthPlugin/plugins/OAuth2LoginPlugin";
 import { UploadPluginName } from "../plugins/UploadPlugin";
+import { ToolsPluginName } from "../plugins/ToolsPlugin";
 
 export function usePluginActivation() {
   const { config } = useConfigContext();
@@ -72,6 +73,10 @@ export function usePluginActivation() {
 
     if (supports_upload) {
       pluginManager.activate(UploadPluginName);
+    }
+
+    if (config.available_tools?.length > 0) {
+      pluginManager.activate(ToolsPluginName);
     }
 
     pluginManager.activate(SharePluginName);

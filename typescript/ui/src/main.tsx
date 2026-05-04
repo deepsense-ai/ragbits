@@ -19,6 +19,7 @@ import { UsagePlugin } from "./plugins/UsagePlugin/index.tsx";
 import { CredentialsLoginPlugin } from "./plugins/AuthPlugin/plugins/CredentialsLoginPlugin.tsx";
 import RagbitsHistoryStoreProvider from "./ragbits/stores/HistoryStore/RagbitsHistoryStoreProvider.tsx";
 import { UploadPlugin } from "./plugins/UploadPlugin/index.tsx";
+import { ToolsPlugin } from "./plugins/ToolsPlugin/index.tsx";
 
 //Register plugins
 pluginManager.register(FeedbackFormPlugin);
@@ -29,6 +30,7 @@ pluginManager.register(AuthPlugin);
 pluginManager.register(UsagePlugin);
 pluginManager.register(CredentialsLoginPlugin);
 pluginManager.register(UploadPlugin);
+pluginManager.register(ToolsPlugin);
 // OAuth2 login plugins are registered dynamically in PluginActivator
 
 // Preload icons

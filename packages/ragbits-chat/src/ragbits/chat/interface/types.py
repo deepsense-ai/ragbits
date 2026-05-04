@@ -896,6 +896,26 @@ class AuthenticationConfig(BaseModel):
     )
 
 
+class ToolEntry(BaseModel):
+    """A single tool entry for the Available Tools panel."""
+
+    tool_id: str = Field(..., description="Unique tool identifier")
+    display_name: str = Field(..., description="Human-readable name shown in the UI")
+    category: str = Field(..., description="Category for grouping (e.g. 'Utilities')")
+    has_access: bool = Field(default=True, description="Whether the current user has access to this tool")
+    google_scope: str | None = Field(
+        default=None,
+        description="Google OAuth scope group required for this tool (e.g. 'calendar'). "
+        "When set, a Connect button is shown until the user grants the scope.",
+    )
+
+
+class GoogleIncrementalOAuthConfig(BaseModel):
+    """Configuration for Google incremental OAuth (scope-by-scope grant)."""
+
+    enabled: bool = Field(default=False, description="Whether Google incremental OAuth is available")
+
+
 class ConfigResponse(BaseModel):
     """Configuration response from the API."""
 
@@ -907,3 +927,11 @@ class ConfigResponse(BaseModel):
     conversation_history: bool = Field(default=False, description="Flag to enable conversation history")
     show_usage: bool = Field(default=False, description="Flag to enable usage statistics")
     authentication: AuthenticationConfig = Field(..., description="Authentication configuration")
+    available_tools: list[ToolEntry] = Field(
+        default_factory=list,
+        description="List of tools to display in the Available Tools panel. Empty list disables the panel.",
+    )
+    google_incremental_oauth: GoogleIncrementalOAuthConfig = Field(
+        default_factory=GoogleIncrementalOAuthConfig,
+        description="Configuration for Google incremental OAuth",
+    )

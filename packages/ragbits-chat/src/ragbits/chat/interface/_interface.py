@@ -11,11 +11,15 @@ from typing import Any
 
 from fastapi import UploadFile
 
+from ragbits.agents._main import Agent
+from ragbits.agents.tool import ToolCallResult
 from ragbits.agents.tools.planning import Task
 from ragbits.chat.interface.summary import HeuristicSummaryGenerator, SummaryGenerator
 from ragbits.chat.interface.ui_customization import UICustomization
+from ragbits.chat.tools.base import ChatTool
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
+from ragbits.core.llms.base import ToolCall as LLMToolCall
 from ragbits.core.llms.base import Usage
 from ragbits.core.prompt.base import ChatFormat
 from ragbits.core.utils import get_secret_key
@@ -52,6 +56,7 @@ from .types import (
     StateUpdateResponse,
     TextContent,
     TextResponse,
+    ToolEntry,
     UsageContent,
     UsageResponse,
 )
@@ -224,6 +229,8 @@ class ChatInterface(ABC):
     history_persistence: HistoryPersistenceStrategy | None = None
     summary_generator: SummaryGenerator = HeuristicSummaryGenerator()
     upload_handler: Callable[[UploadFile], Any] | None = None
+    available_tools: list["ToolEntry"] = []
+    tools: list[ChatTool] = []
 
     def __init_subclass__(cls, **kwargs: dict) -> None:
         """Automatically apply the with_chat_metadata decorator to the chat method in subclasses."""
@@ -404,6 +411,48 @@ class ChatInterface(ABC):
         )
 
         logger.info(f"[{self.__class__.__name__}] Saving {feedback} for message {message_id} with payload {payload}")
+
+    async def run_with_tools(
+        self,
+        message: str,
+        history: ChatFormat,
+        context: ChatContext,
+        llm: Any,
+        system_prompt: str = "You are a helpful assistant.",
+    ) -> AsyncGenerator[ChatResponseUnion, None]:
+        built_tools = [t.build(context) for t in self.tools]
+
+        agent = Agent(
+            llm=llm,
+            prompt=system_prompt,
+            tools=built_tools,
+            history=history,
+        )
+
+        streaming = agent.run_streaming(
+            input=message,
+            context=None,
+            tool_choice="required" if built_tools else None,
+        )
+
+        async for item in streaming:
+            if isinstance(item, str):
+                if item:
+                    yield TextResponse(content=TextContent(text=item))
+            elif isinstance(item, LLMToolCall):
+                yield self.create_live_update(
+                    update_id=item.id,
+                    type=LiveUpdateType.START,
+                    label=item.name,
+                )
+            elif isinstance(item, ToolCallResult):
+                yield self.create_live_update(
+                    update_id=item.id,
+                    type=LiveUpdateType.FINISH,
+                    label=item.name,
+                )
+            elif isinstance(item, Usage):
+                yield self.create_usage_response(item)
 
     async def generate_conversation_summary(self, message: str, history: ChatFormat, context: ChatContext) -> str:
         """Handles conversation summary generation using the configured summary_generator."""

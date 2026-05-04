@@ -9,7 +9,9 @@ from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import Any, cast
+from urllib.parse import urlencode
 
+import httpx
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request, UploadFile, status
 from fastapi.exceptions import RequestValidationError
@@ -23,6 +25,7 @@ from ragbits.chat.auth.backends import MultiAuthenticationBackend, OAuth2Authent
 from ragbits.chat.auth.provider_config import get_provider_visual_config
 from ragbits.chat.auth.types import LoginRequest, LoginResponse, OAuth2Credentials
 from ragbits.chat.config import BASE_URL, CHUNK_SIZE, IS_PRODUCTION, SESSION_COOKIE_NAME
+from ragbits.chat.tools.token_store import OAuthTokenData, get_token_store
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import (
     AuthenticationConfig,
@@ -35,10 +38,22 @@ from ragbits.chat.interface.types import (
     FeedbackConfig,
     FeedbackItem,
     FeedbackRequest,
+    GoogleIncrementalOAuthConfig,
     Image,
     ImageResponse,
     OAuth2ProviderConfig,
+    ToolEntry,
 )
+
+# Supported Google scope groups for incremental OAuth
+_GOOGLE_SCOPE_GROUPS: dict[str, list[str]] = {
+    "calendar": ["https://www.googleapis.com/auth/calendar.readonly"],
+    "people": ["https://www.googleapis.com/auth/directory.readonly"],
+    "drive": ["https://www.googleapis.com/auth/drive.readonly"],
+}
+
+# In-memory per-session granted scope groups: session_id -> set of scope strings
+_google_granted_scopes: dict[str, set[str]] = {}
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
 from ragbits.core.audit.traces import trace
@@ -247,6 +262,7 @@ class RagbitsAPI:
                     # Single credentials backend
                     auth_types = [AuthType.CREDENTIALS]
 
+            google_oauth_enabled = self._is_google_oauth_backend()
             config_response = ConfigResponse(
                 feedback=FeedbackConfig(
                     like=FeedbackItem(
@@ -269,6 +285,8 @@ class RagbitsAPI:
                     oauth2_providers=oauth2_providers,
                 ),
                 supports_upload=self.chat_interface.upload_handler is not None,
+                available_tools=self._build_available_tools(),
+                google_incremental_oauth=GoogleIncrementalOAuthConfig(enabled=google_oauth_enabled),
             )
 
             return JSONResponse(content=config_response.model_dump())
@@ -301,11 +319,131 @@ class RagbitsAPI:
                 logger.error(f"Error serving theme: {e}")
                 raise HTTPException(status_code=500, detail="Error loading theme") from e
 
+        # Google incremental OAuth endpoints (only when a Google OAuth backend is configured)
+        if self._is_google_oauth_backend():
+            google_client_id, google_client_secret = self._get_google_credentials()
+
+            @self.app.get("/api/auth/google/status", response_class=JSONResponse)
+            async def google_oauth_status(request: Request) -> JSONResponse:
+                """Return which Google scope groups are already granted for the current session."""
+                session_id = request.cookies.get(SESSION_COOKIE_NAME)
+                if not session_id:
+                    return JSONResponse({"granted": []})
+                granted = _google_granted_scopes.get(session_id, set())
+                granted_groups = [
+                    group
+                    for group, scopes in _GOOGLE_SCOPE_GROUPS.items()
+                    if all(s in granted for s in scopes)
+                ]
+                return JSONResponse({"granted": granted_groups})
+
+            @self.app.get("/api/auth/google/connect", response_class=RedirectResponse)
+            async def google_oauth_connect(request: Request) -> RedirectResponse:
+                """Start incremental OAuth for a given scope group (e.g. ?scope=calendar)."""
+                scope_group = request.query_params.get("scope")
+                if scope_group not in _GOOGLE_SCOPE_GROUPS:
+                    return RedirectResponse(url="/", status_code=302)
+                params: dict[str, str] = {
+                    "client_id": google_client_id,
+                    "redirect_uri": f"{BASE_URL}/api/auth/google/callback",
+                    "response_type": "code",
+                    "scope": " ".join(_GOOGLE_SCOPE_GROUPS[scope_group]),
+                    "access_type": "offline",
+                    "prompt": "consent",
+                    "state": scope_group,
+                }
+                user = await self.get_current_user_from_cookie(request)
+                if user and user.email:
+                    params["login_hint"] = user.email
+                return RedirectResponse(
+                    url=f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}", status_code=302
+                )
+
+            @self.app.get("/api/auth/google/callback", response_model=None)
+            async def google_oauth_callback(request: Request) -> HTMLResponse | RedirectResponse:
+                """Handle Google OAuth callback and store newly granted scopes on the session."""
+                code = request.query_params.get("code")
+                scope_group = request.query_params.get("state")
+                if not code or scope_group not in _GOOGLE_SCOPE_GROUPS:
+                    return RedirectResponse(url="/", status_code=302)
+                session_id = request.cookies.get(SESSION_COOKIE_NAME)
+                if not session_id:
+                    return RedirectResponse(url="/", status_code=302)
+                try:
+                    async with httpx.AsyncClient(timeout=10) as client:
+                        response = await client.post(
+                            "https://oauth2.googleapis.com/token",
+                            data={
+                                "client_id": google_client_id,
+                                "client_secret": google_client_secret,
+                                "grant_type": "authorization_code",
+                                "code": code,
+                                "redirect_uri": f"{BASE_URL}/api/auth/google/callback",
+                            },
+                            headers={"Content-Type": "application/x-www-form-urlencoded"},
+                        )
+                    if response.status_code == 200:  # noqa: PLR2004
+                        token_data = response.json()
+                        access_token = token_data.get("access_token", "")
+                        granted_scopes = set(token_data.get("scope", "").split())
+                        newly_granted = granted_scopes & set(_GOOGLE_SCOPE_GROUPS[scope_group])
+                        if access_token:
+                            get_token_store().save(
+                                session_id,
+                                scope_group,
+                                OAuthTokenData(access_token=access_token),
+                            )
+                            _google_granted_scopes.setdefault(session_id, set()).update(
+                                newly_granted or set(_GOOGLE_SCOPE_GROUPS[scope_group])
+                            )
+                except Exception:
+                    logger.exception("Google incremental OAuth callback error")
+                return HTMLResponse(content="<html><body><script>window.close();</script></body></html>")
+
         @self.app.get("/{full_path:path}", response_class=HTMLResponse)
         async def root() -> HTMLResponse:
             index_file = self.dist_dir / "index.html"
             with open(str(index_file)) as file:
                 return HTMLResponse(content=file.read())
+
+    def _build_available_tools(self) -> list[ToolEntry]:
+        """Merge explicit ``available_tools`` entries with tools derived from ``ChatTool`` instances."""
+        from ragbits.chat.tools.base import ChatTool
+
+        entries = list(self.chat_interface.available_tools)
+        existing_ids = {e.tool_id for e in entries}
+        for tool in self.chat_interface.tools:
+            if isinstance(tool, ChatTool) and tool.tool_id not in existing_ids:
+                entries.append(
+                    ToolEntry(
+                        tool_id=tool.tool_id,
+                        display_name=tool.display_name,
+                        category=tool.category,
+                        has_access=tool.has_access,
+                        google_scope=tool.google_scope,
+                    )
+                )
+        return entries
+
+    def _is_google_oauth_backend(self) -> bool:
+        """Return True if a Google OAuth backend is configured."""
+        if isinstance(self.auth_backend, OAuth2AuthenticationBackend):
+            return self.auth_backend.provider.name == "google"
+        if isinstance(self.auth_backend, MultiAuthenticationBackend):
+            return any(
+                b.provider.name == "google" for b in self.auth_backend.get_oauth2_backends()
+            )
+        return False
+
+    def _get_google_credentials(self) -> tuple[str, str]:
+        """Return (client_id, client_secret) for the Google OAuth backend."""
+        if isinstance(self.auth_backend, OAuth2AuthenticationBackend):
+            return self.auth_backend.client_id or "", self.auth_backend.client_secret or ""
+        if isinstance(self.auth_backend, MultiAuthenticationBackend):
+            for b in self.auth_backend.get_oauth2_backends():
+                if b.provider.name == "google":
+                    return b.client_id or "", b.client_secret or ""
+        return "", ""
 
     @staticmethod
     def _prepare_chat_context(

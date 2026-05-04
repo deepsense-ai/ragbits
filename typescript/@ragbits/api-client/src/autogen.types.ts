@@ -357,6 +357,24 @@ export interface FeedbackConfig {
 }
 
 /**
+ * A tool entry displayed in the Available Tools panel.
+ */
+export interface ToolEntry {
+    tool_id: string
+    display_name: string
+    category: string
+    has_access: boolean
+    google_scope: string | null
+}
+
+/**
+ * Configuration for Google incremental OAuth.
+ */
+export interface GoogleIncrementalOAuthConfig {
+    enabled: boolean
+}
+
+/**
  * Configuration response from the API.
  */
 export interface ConfigResponse {
@@ -383,6 +401,11 @@ export interface ConfigResponse {
      */
     show_usage: boolean
     authentication: AuthenticationConfig
+    /**
+     * List of tools to display in the Available Tools panel. Empty list disables the panel.
+     */
+    available_tools: ToolEntry[]
+    google_incremental_oauth: GoogleIncrementalOAuthConfig
 }
 
 /**

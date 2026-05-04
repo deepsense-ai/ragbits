@@ -9,6 +9,7 @@ import {
 import { Icon } from "@iconify/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRef, useState } from "react";
+import { Slot } from "../../../core/components/Slot";
 import DelayedTooltip from "../../../core/components/DelayedTooltip";
 import { useHistoryActions } from "../../../core/stores/HistoryStore/selectors";
 import { useHistoryStore } from "../../../core/stores/HistoryStore/useHistoryStore";
@@ -153,7 +154,7 @@ export default function ChatHistory() {
 
         {!isCollapsed && (
           <motion.div
-            className="mt-2 flex flex-1 flex-col gap-2 overflow-auto overflow-x-hidden"
+            className="mt-2 flex flex-col gap-2 overflow-auto overflow-x-hidden"
             key="conversation-list"
             initial={false}
             animate={{
@@ -256,6 +257,17 @@ export default function ChatHistory() {
                 </div>
               );
             })}
+          </motion.div>
+        )}
+        {!isCollapsed && (
+          <motion.div
+            key="sidebar-bottom"
+            initial={false}
+            animate={{ opacity: 1, width: "100%" }}
+            exit={{ opacity: 0, width: 0 }}
+            className="mt-auto pt-2 border-t border-divider"
+          >
+            <Slot name="layout.sidebarBottom" disableSkeleton />
           </motion.div>
         )}
       </AnimatePresence>
