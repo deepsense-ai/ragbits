@@ -62,6 +62,45 @@ def _generate_func_documentation(func: Callable[..., Any]) -> dict:
     }
 
 
+def _build_field(param: inspect.Parameter, ann: Any, description: str | None) -> tuple[Any, Any]:  # noqa: ANN401
+    """Build the (annotation, Field) tuple for a single parameter."""
+    if param.kind == param.VAR_POSITIONAL:
+        # e.g. *args: extend positional args
+        if get_origin(ann) is tuple:
+            # e.g. def foo(*args: tuple[int, ...]) -> treat as List[int]
+            tuple_args = get_args(ann)
+            args_of_tuple_with_ellipsis_length = 2
+            ann = (
+                list[tuple_args[0]]
+                if len(tuple_args) == args_of_tuple_with_ellipsis_length and tuple_args[1] is Ellipsis
+                else list[Any]
+            )
+        else:
+            # If user wrote *args: int, treat as List[int]
+            ann = list[ann]
+        # Default factory to empty list
+        return ann, Field(default_factory=list, description=description)
+
+    if param.kind == param.VAR_KEYWORD:
+        # **kwargs handling
+        if get_origin(ann) is dict:
+            # e.g. def foo(**kwargs: dict[str, int])
+            dict_args = get_args(ann)
+            dict_args_to_check_length = 2
+            ann = dict[dict_args[0], dict_args[1]] if len(dict_args) == dict_args_to_check_length else dict[str, Any]
+        else:
+            # e.g. def foo(**kwargs: int) -> Dict[str, int]
+            ann = dict[str, ann]
+        return ann, Field(default_factory=dict, description=description)
+
+    if param.default == inspect._empty:
+        # Required field
+        return ann, Field(..., description=description)
+
+    # Parameter with a default value
+    return ann, Field(default=param.default, description=description)
+
+
 def convert_function_to_function_schema(func: Callable[..., Any]) -> dict:
     """
     Given a python function, extracts a `FuncSchema` from it, capturing the name, description,
@@ -98,69 +137,9 @@ def convert_function_to_function_schema(func: Callable[..., Any]) -> dict:
 
     for name, param in filtered_params:
         ann = type_hints.get(name, param.annotation)
-        default = param.default
-
-        # If there's no type hint, assume `Any`
         if ann == inspect._empty:
             ann = Any
-
-        # If a docstring param description exists, use it
-        field_description = param_descs.get(name, None)
-
-        # Handle different parameter kinds
-        if param.kind == param.VAR_POSITIONAL:
-            # e.g. *args: extend positional args
-            if get_origin(ann) is tuple:
-                # e.g. def foo(*args: tuple[int, ...]) -> treat as List[int]
-                args_of_tuple = get_args(ann)
-                args_of_tuple_with_ellipsis_length = 2
-                ann = (
-                    list[args_of_tuple[0]]  # type: ignore
-                    if len(args_of_tuple) == args_of_tuple_with_ellipsis_length and args_of_tuple[1] is Ellipsis
-                    else list[Any]
-                )
-            else:
-                # If user wrote *args: int, treat as List[int]
-                ann = list[ann]  # type: ignore
-
-            # Default factory to empty list
-            fields[name] = (
-                ann,
-                Field(default_factory=list, description=field_description),  # type: ignore
-            )
-
-        elif param.kind == param.VAR_KEYWORD:
-            # **kwargs handling
-            if get_origin(ann) is dict:
-                # e.g. def foo(**kwargs: dict[str, int])
-                dict_args = get_args(ann)
-                dict_args_to_check_length = 2
-                ann = (
-                    dict[dict_args[0], dict_args[1]]  # type: ignore
-                    if len(dict_args) == dict_args_to_check_length
-                    else dict[str, Any]
-                )  # type: ignore
-            else:
-                # e.g. def foo(**kwargs: int) -> Dict[str, int]
-                ann = dict[str, ann]  # type: ignore
-
-            fields[name] = (
-                ann,
-                Field(default_factory=dict, description=field_description),  # type: ignore
-            )
-
-        elif default == inspect._empty:
-            # Required field
-            fields[name] = (
-                ann,
-                Field(..., description=field_description),
-            )
-        else:
-            # Parameter with a default value
-            fields[name] = (
-                ann,
-                Field(default=default, description=field_description),
-            )
+        fields[name] = _build_field(param, ann, param_descs.get(name))
 
     # 3. Dynamically build a Pydantic model
     dynamic_model = create_model(f"{func_name}_args", __base__=BaseModel, **fields)
