@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel
 
 from ragbits.agents.tool import Tool
@@ -8,7 +10,7 @@ class User(BaseModel):
     age: int
 
 
-def add_user(user: User, other_argument: int) -> dict[str, str]:
+def add_user(user: User, other_argument: int) -> dict[str, Any]:
     """Adds a user to a database"""
     return {"status": "OK", "user": user}
 

@@ -71,15 +71,15 @@ def _build_field(param: inspect.Parameter, ann: Any, description: str | None) ->
             tuple_args = get_args(ann)
             args_of_tuple_with_ellipsis_length = 2
             ann = (
-                list[tuple_args[0]]
+                list[tuple_args[0]]  # type: ignore
                 if len(tuple_args) == args_of_tuple_with_ellipsis_length and tuple_args[1] is Ellipsis
                 else list[Any]
             )
         else:
             # If user wrote *args: int, treat as List[int]
-            ann = list[ann]
+            ann = list[ann]  # type: ignore
         # Default factory to empty list
-        return ann, Field(default_factory=list, description=description)
+        return ann, Field(default_factory=list, description=description)  # type: ignore
 
     if param.kind == param.VAR_KEYWORD:
         # **kwargs handling
@@ -87,11 +87,15 @@ def _build_field(param: inspect.Parameter, ann: Any, description: str | None) ->
             # e.g. def foo(**kwargs: dict[str, int])
             dict_args = get_args(ann)
             dict_args_to_check_length = 2
-            ann = dict[dict_args[0], dict_args[1]] if len(dict_args) == dict_args_to_check_length else dict[str, Any]
+            ann = (
+                dict[dict_args[0], dict_args[1]]  # type: ignore
+                if len(dict_args) == dict_args_to_check_length
+                else dict[str, Any]
+            )
         else:
             # e.g. def foo(**kwargs: int) -> Dict[str, int]
-            ann = dict[str, ann]
-        return ann, Field(default_factory=dict, description=description)
+            ann = dict[str, ann]  # type: ignore
+        return ann, Field(default_factory=dict, description=description)  # type: ignore
 
     if param.default == inspect._empty:
         # Required field
