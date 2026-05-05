@@ -3,7 +3,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validate_call
 from typing_extensions import Self
 
 from ragbits.core.llms.base import LLMClientOptionsT
@@ -93,7 +93,7 @@ class Tool:
             name=schema["function"]["name"],
             description=schema["function"]["description"],
             parameters=schema["function"]["parameters"],
-            on_tool_call=callable,
+            on_tool_call=validate_call(callable),
             context_var_name=get_context_variable_name(callable),
         )
 

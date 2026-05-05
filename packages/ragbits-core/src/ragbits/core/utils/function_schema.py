@@ -65,7 +65,7 @@ def _generate_func_documentation(func: Callable[..., Any]) -> dict:
 def convert_function_to_function_schema(func: Callable[..., Any]) -> dict:
     """
     Given a python function, extracts a `FuncSchema` from it, capturing the name, description,
-    parameter descriptions, and other metadata.
+    parameter descriptions, and other metadata. Supports nested pydantic models as function arguments.
 
     Args:
         func: The function to extract the schema from.
@@ -177,6 +177,7 @@ def convert_function_to_function_schema(func: Callable[..., Any]) -> dict:
                 "type": "object",
                 "properties": json_schema.get("properties", {}),
                 "required": json_schema.get("required", []),
+                "$defs": json_schema.get("$defs", {}),
             },
         },
     }
