@@ -62,7 +62,6 @@ def test_convert_function_to_function_schema(function: Callable):
                     }
                 },
                 "required": ["location"],
-                "$defs": {},
             },
         },
     }

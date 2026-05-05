@@ -168,17 +168,20 @@ def convert_function_to_function_schema(func: Callable[..., Any]) -> dict:
     # 4. Build JSON schema from that model
     json_schema = dynamic_model.model_json_schema()
 
+    parameters: dict[str, Any] = {
+        "type": "object",
+        "properties": json_schema.get("properties", {}),
+        "required": json_schema.get("required", []),
+    }
+    if json_schema.get("$defs"):
+        parameters["$defs"] = json_schema["$defs"]
+
     return {
         "type": "function",
         "function": {
             "name": func_name,
             "description": doc_info["description"] if doc_info else None,
-            "parameters": {
-                "type": "object",
-                "properties": json_schema.get("properties", {}),
-                "required": json_schema.get("required", []),
-                "$defs": json_schema.get("$defs", {}),
-            },
+            "parameters": parameters,
         },
     }
 
