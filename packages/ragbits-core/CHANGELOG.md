@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added support for pydantic models in `convert_function_to_function_schema`
+
 ## 1.6.2 (2026-03-26)
 
 ## 1.6.1 (2026-03-19)
