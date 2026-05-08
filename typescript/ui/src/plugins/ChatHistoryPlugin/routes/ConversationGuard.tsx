@@ -32,22 +32,10 @@ export default function ConversationGuard({ children }: PropsWithChildren) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    console.log(
-      "[Guard] effect fire " +
-        JSON.stringify({
-          conversationId,
-          isKnown,
-          isTemp,
-          isServerOnly,
-          loading,
-          conversations,
-        }),
-    );
+
     const fallbackToHomeConversation = () => {
       const newestConversation = conversations.at(-1);
-      console.log("[Guard] fallback " + JSON.stringify({ newestConversation }));
       const target = newestConversation ?? newConversation();
-      console.log("[Guard] fallback target=" + target);
       selectConversation(target);
       navigate(getConversationRoute(target), { replace: true });
     };
