@@ -317,7 +317,7 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
 
     async def list_conversations(self, user_id: str, limit: int = 50, offset: int = 0) -> list[dict[str, Any]]:
         """
-        List conversations owned by a user, ordered by creation time descending.
+        List conversations owned by a user, ordered by most recent activity.
 
         Args:
             user_id: The owner's user ID.
@@ -330,10 +330,26 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
         await self._init_db()
 
         async with AsyncSession(self.sqlalchemy_engine) as session:
+            latest_interaction_subquery = (
+                sqlalchemy.select(
+                    self.ChatInteraction.conversation_id.label("conversation_id"),
+                    sqlalchemy.func.max(self.ChatInteraction.timestamp).label("updated_at"),
+                )
+                .group_by(self.ChatInteraction.conversation_id)
+                .subquery()
+            )
             result = await session.execute(
                 sqlalchemy.select(self.Conversation)
-                .filter_by(user_id=user_id)
-                .order_by(self.Conversation.created_at.desc())
+                .join(
+                    latest_interaction_subquery,
+                    self.Conversation.id == latest_interaction_subquery.c.conversation_id,
+                    isouter=True,
+                )
+                .where(self.Conversation.user_id == user_id)
+                .order_by(
+                    latest_interaction_subquery.c.updated_at.desc(),
+                    self.Conversation.created_at.desc(),
+                )
                 .limit(limit)
                 .offset(offset)
             )

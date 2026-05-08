@@ -24,7 +24,7 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from ragbits.chat.api_routes import build_share_router
+from ragbits.chat.api_routes import build_conversations_router
 from ragbits.chat.auth import AuthenticationBackend, User
 from ragbits.chat.auth.backends import MultiAuthenticationBackend, OAuth2AuthenticationBackend
 from ragbits.chat.auth.provider_config import get_provider_visual_config
@@ -325,8 +325,8 @@ class RagbitsAPI:
                 logger.error(f"Error serving theme: {e}")
                 raise HTTPException(status_code=500, detail="Error loading theme") from e
 
-        if self.share_persistence and self.auth_backend:
-            self._setup_share_routes()
+        if self.auth_backend:
+            self._setup_conversation_routes()
 
         @self.app.get("/{full_path:path}", response_class=HTMLResponse)
         async def root() -> HTMLResponse:
@@ -334,27 +334,24 @@ class RagbitsAPI:
             with open(str(index_file)) as file:
                 return HTMLResponse(content=file.read())
 
-    def _setup_share_routes(self) -> None:
-        """Register routes for conversation sharing.
+    def _setup_conversation_routes(self) -> None:
+        """Register routes for authenticated conversation management.
 
-        Requires ``auth_backend``, ``share_persistence``, and a
-        ``history_persistence`` that supports ownership tracking (i.e. overrides
+        Requires ``auth_backend`` and a ``history_persistence`` that supports
+        ownership tracking (i.e. overrides
         :meth:`HistoryPersistenceStrategy.list_conversations` to return the
-        user's conversations).
+        user's conversations). When ``share_persistence`` is configured, sharing
+        endpoints are enabled as part of the same router.
         """
-        share = self.share_persistence
-        if share is None:
-            return
-
         history_persistence = self.chat_interface.history_persistence
         if history_persistence is None:
-            logger.warning("Share routes require a history_persistence strategy; sharing disabled.")
+            logger.warning("Conversation routes require a history_persistence strategy; routes disabled.")
             return
 
         if not _supports_conversation_listing(history_persistence):
             logger.warning(
-                "history_persistence does not support conversation listing; sharing disabled. "
-                "Override HistoryPersistenceStrategy.list_conversations to enable sharing."
+                "history_persistence does not support conversation listing; conversation routes disabled. "
+                "Override HistoryPersistenceStrategy.list_conversations to enable conversation routes."
             )
             return
 
@@ -364,7 +361,13 @@ class RagbitsAPI:
                 raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
             return user
 
-        self.app.include_router(build_share_router(history_persistence, share, require_user))
+        self.app.include_router(
+            build_conversations_router(
+                history_persistence=history_persistence,
+                require_user=require_user,
+                share_persistence=self.share_persistence,
+            )
+        )
 
     @staticmethod
     def _prepare_chat_context(

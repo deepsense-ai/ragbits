@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import create_async_engine
 
-from ragbits.chat.api_routes import build_share_router
+from ragbits.chat.api_routes import build_conversations_router
 from ragbits.chat.auth import User
 from ragbits.chat.interface.types import ChatContext
 from ragbits.chat.persistence.share import SQLSharePersistence
@@ -14,9 +14,7 @@ from ragbits.core.storage.connections import SQLiteConnection
 
 
 @pytest.fixture
-async def app_with_user(
-    request: pytest.FixtureRequest,
-) -> AsyncIterator[tuple[FastAPI, User, SQLHistoryPersistence, SQLSharePersistence]]:
+async def app_with_user() -> AsyncIterator[tuple[FastAPI, User, SQLHistoryPersistence, SQLSharePersistence]]:
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
     history = SQLHistoryPersistence(engine)
     share_connection = SQLiteConnection(":memory:")
@@ -28,11 +26,39 @@ async def app_with_user(
         return user
 
     app = FastAPI()
-    app.include_router(build_share_router(history, share, require_user))
+    app.include_router(
+        build_conversations_router(
+            history_persistence=history,
+            require_user=require_user,
+            share_persistence=share,
+        )
+    )
     try:
         yield app, user, history, share
     finally:
         await share_connection.disconnect()
+        await engine.dispose()
+
+
+@pytest.fixture
+async def app_with_user_no_share() -> AsyncIterator[tuple[FastAPI, User, SQLHistoryPersistence]]:
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    history = SQLHistoryPersistence(engine)
+    user = User(user_id="alice", username="alice", email="alice@example.com")
+
+    async def require_user(_: Request) -> User:
+        return user
+
+    app = FastAPI()
+    app.include_router(
+        build_conversations_router(
+            history_persistence=history,
+            require_user=require_user,
+        )
+    )
+    try:
+        yield app, user, history
+    finally:
         await engine.dispose()
 
 
@@ -145,4 +171,43 @@ async def test_delete_requires_owner(
 
     with TestClient(app) as client:
         resp = client.delete("/api/conversations/conv-carol")
+        assert resp.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_list_conversations_without_share_persistence(
+    app_with_user_no_share: tuple[FastAPI, User, SQLHistoryPersistence],
+) -> None:
+    app, user, history = app_with_user_no_share
+    await history.save_interaction(
+        "hello",
+        "hi",
+        [],
+        ChatContext(conversation_id="conv-owned", message_id="m1", user=user),
+        1000.0,
+    )
+    with TestClient(app) as client:
+        resp = client.get("/api/conversations")
+        assert resp.status_code == 200
+        data = resp.json()
+
+    assert len(data) == 1
+    assert data[0]["conversation_id"] == "conv-owned"
+    assert data[0]["is_shared"] is False
+
+
+@pytest.mark.asyncio
+async def test_share_routes_are_not_registered_without_share_persistence(
+    app_with_user_no_share: tuple[FastAPI, User, SQLHistoryPersistence],
+) -> None:
+    app, user, history = app_with_user_no_share
+    await history.save_interaction(
+        "hello",
+        "hi",
+        [],
+        ChatContext(conversation_id="conv-owned", message_id="m1", user=user),
+        1000.0,
+    )
+    with TestClient(app) as client:
+        resp = client.put("/api/conversations/conv-owned/shares", json={"recipients": ["bob"]})
         assert resp.status_code == 404

@@ -71,6 +71,21 @@ async def test_list_conversations_respects_limit(persistence: SQLHistoryPersiste
 
 
 @pytest.mark.asyncio
+async def test_list_conversations_orders_by_last_interaction(persistence: SQLHistoryPersistence) -> None:
+    user = User(user_id="user-1", username="alice")
+    conv_1_ctx_1 = ChatContext(conversation_id="conv-1", message_id="msg-1", user=user)
+    conv_2_ctx_1 = ChatContext(conversation_id="conv-2", message_id="msg-2", user=user)
+    conv_1_ctx_2 = ChatContext(conversation_id="conv-1", message_id="msg-3", user=user)
+
+    await persistence.save_interaction("first", "resp1", [], conv_1_ctx_1, 1000.0)
+    await persistence.save_interaction("second", "resp2", [], conv_2_ctx_1, 2000.0)
+    await persistence.save_interaction("third", "resp3", [], conv_1_ctx_2, 3000.0)
+
+    convos = await persistence.list_conversations("user-1")
+    assert [c["id"] for c in convos] == ["conv-1", "conv-2"]
+
+
+@pytest.mark.asyncio
 async def test_summary_falls_back_to_first_message(persistence: SQLHistoryPersistence) -> None:
     user = User(user_id="user-1", username="alice")
     ctx1 = ChatContext(conversation_id="conv-1", message_id="msg-1", user=user)

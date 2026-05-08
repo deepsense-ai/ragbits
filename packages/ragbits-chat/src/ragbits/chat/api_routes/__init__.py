@@ -5,6 +5,6 @@ wiring (middleware, dependencies, lifespan) and makes individual feature
 groups importable and unit-testable on their own.
 """
 
-from ragbits.chat.api_routes.share import build_share_router
+from ragbits.chat.api_routes.conversations import build_conversations_router, build_share_router
 
-__all__ = ["build_share_router"]
+__all__ = ["build_conversations_router", "build_share_router"]
