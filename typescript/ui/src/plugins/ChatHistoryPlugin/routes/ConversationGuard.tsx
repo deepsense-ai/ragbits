@@ -32,7 +32,6 @@ export default function ConversationGuard({ children }: PropsWithChildren) {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-
     const fallbackToHomeConversation = () => {
       const newestConversation = conversations.at(-1);
       const target = newestConversation ?? newConversation();

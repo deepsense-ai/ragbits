@@ -99,7 +99,7 @@ def get_auth_backend() -> ListAuthenticationBackend:
 
 
 def get_share_persistence() -> SQLSharePersistence:
-    """Factory for a SharePersistence backed by `ragbits.core.storage`.
+    """Factory for `SQLSharePersistence` backed by `ragbits.core.storage`.
 
     Defaults to a local SQLite file. Set ``USE_POSTGRES=1`` (with optional
     ``PG_*`` overrides) to use a PostgreSQL connection instead.

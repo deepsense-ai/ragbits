@@ -62,7 +62,7 @@ All necessary details are provided in the comments at the top of each script.
 | [Upload Chat Interface](/examples/chat/upload_chat.py)                                  | [ragbits-chat](/packages/ragbits-chat)           | Example of how to use the `ChatInterface` with file upload support via `upload_handler`.                                         |
 | [File Explorer Agent](/examples/chat/file_explorer_agent.py)                            | [ragbits-chat](/packages/ragbits-chat)           | Secure file management agent with path validation and confirmation for all file operations within a restricted directory.        |
 | [Code Planner](/examples/chat/code_planner.py)                                          | [ragbits-chat](/packages/ragbits-chat)           | Example of how to use the `ChatInterface` with planning tools for code architecture tasks.                                      |
-| [Shared Chat Interface](/examples/chat/shared_chat.py)                                  | [ragbits-chat](/packages/ragbits-chat)           | Example of how to use the `ChatInterface` with conversation sharing via `SharePersistence` and `SQLHistoryPersistence`.          |
+| [Shared Chat Interface](/examples/chat/shared_chat.py)                                  | [ragbits-chat](/packages/ragbits-chat)           | Example of how to use the `ChatInterface` with conversation sharing via `SQLSharePersistence` and `SQLHistoryPersistence`.       |
 
 ### Agents (`examples/agents/`)
 

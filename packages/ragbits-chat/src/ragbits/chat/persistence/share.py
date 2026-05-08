@@ -66,6 +66,9 @@ class SQLSharePersistence(SharePersistenceStrategy):
     so the same class works for PostgreSQL and SQLite. Multiple persistences
     may share the same underlying ``DatabaseConnection``; the class never
     closes the connection it was given — that lifecycle stays with the caller.
+    Unlike ``SQLHistoryPersistence`` (which uses SQLAlchemy ORM), this class
+    intentionally targets the lighter ``ragbits.core.storage`` abstraction so
+    callers can share one cross-database connection layer for non-ORM stores.
 
     Example:
         ```python
@@ -356,8 +359,3 @@ class SQLSharePersistence(SharePersistenceStrategy):
         connection_options = ObjectConstructionConfig.model_validate(config["connection"])
         config["connection"] = DatabaseConnection.subclass_from_config(connection_options)
         return cls(**config)
-
-
-# Backwards-compatible alias kept while downstream code migrates to the
-# explicit ``SQLSharePersistence`` name.
-SharePersistence = SQLSharePersistence

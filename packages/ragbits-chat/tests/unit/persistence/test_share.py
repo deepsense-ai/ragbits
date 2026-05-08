@@ -5,7 +5,6 @@ from collections.abc import AsyncIterator
 import pytest
 
 from ragbits.chat.persistence.share import (
-    SharePersistence,
     SQLSharePersistence,
     SQLSharePersistenceOptions,
 )
@@ -20,11 +19,6 @@ async def share_persistence() -> AsyncIterator[SQLSharePersistence]:
         yield SQLSharePersistence(connection)
     finally:
         await connection.disconnect()
-
-
-def test_backwards_compatible_alias() -> None:
-    """``SharePersistence`` must keep pointing at ``SQLSharePersistence``."""
-    assert SharePersistence is SQLSharePersistence
 
 
 @pytest.mark.asyncio
