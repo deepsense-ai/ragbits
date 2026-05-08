@@ -1,0 +1,1 @@
+import{i as r,j as t,I as i}from"./index-DKQs0Q0w.js";function a({conversationId:s}){return r(e=>e.conversations[s]?.isShared??!1)?t.jsx(i,{icon:"heroicons:link",className:"text-default-400 shrink-0",width:14}):null}export{a as default};

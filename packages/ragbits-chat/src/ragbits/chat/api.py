@@ -14,10 +14,17 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, Request, UploadFile, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import (
+    HTMLResponse,
+    JSONResponse,
+    PlainTextResponse,
+    RedirectResponse,
+    StreamingResponse,
+)
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+from ragbits.chat.api_routes import build_conversations_router
 from ragbits.chat.auth import AuthenticationBackend, User
 from ragbits.chat.auth.backends import MultiAuthenticationBackend, OAuth2AuthenticationBackend
 from ragbits.chat.auth.provider_config import get_provider_visual_config
@@ -39,6 +46,7 @@ from ragbits.chat.interface.types import (
     ImageResponse,
     OAuth2ProviderConfig,
 )
+from ragbits.chat.persistence.base import HistoryPersistenceStrategy, SharePersistenceStrategy
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
 from ragbits.core.audit.traces import trace
@@ -46,6 +54,16 @@ from ragbits.core.audit.traces import trace
 from .metrics import ChatCounterMetric, ChatHistogramMetric
 
 logger = logging.getLogger(__name__)
+
+
+def _supports_conversation_listing(history_persistence: HistoryPersistenceStrategy) -> bool:
+    """Return True if the strategy overrides ``list_conversations`` from the base class.
+
+    Used to decide whether conversation-sharing routes can be registered.
+    """
+    impl = type(history_persistence).list_conversations
+    base = HistoryPersistenceStrategy.list_conversations
+    return impl is not base
 
 
 class RagbitsAPI:
@@ -61,6 +79,7 @@ class RagbitsAPI:
         debug_mode: bool = False,
         auth_backend: AuthenticationBackend | type[AuthenticationBackend] | str | None = None,
         theme_path: str | None = None,
+        share_persistence: SharePersistenceStrategy | None = None,
     ) -> None:
         """
         Initialize the RagbitsAPI.
@@ -73,6 +92,9 @@ class RagbitsAPI:
             debug_mode: Flag enabling debug tools in the default UI
             auth_backend: Authentication backend for user authentication. If None, no authentication required.
             theme_path: Path to a JSON file containing HeroUI theme configuration from heroui.com/themes
+            share_persistence: Optional share persistence for conversation sharing. Requires auth_backend
+                and a HistoryPersistenceStrategy that supports ownership tracking (see
+                :meth:`HistoryPersistenceStrategy.get_conversation_owner`).
         """
         self.chat_interface: ChatInterface = self._load_chat_interface(chat_interface)
         self.dist_dir = Path(ui_build_dir) if ui_build_dir else Path(__file__).parent / "ui-build"
@@ -80,6 +102,7 @@ class RagbitsAPI:
         self.debug_mode = debug_mode
         self.auth_backend = self._load_auth_backend(auth_backend)
         self.theme_path = Path(theme_path) if theme_path else None
+        self.share_persistence = share_persistence
 
         self.frontend_base_url = BASE_URL
 
@@ -269,6 +292,7 @@ class RagbitsAPI:
                     oauth2_providers=oauth2_providers,
                 ),
                 supports_upload=self.chat_interface.upload_handler is not None,
+                sharing=self.share_persistence is not None,
             )
 
             return JSONResponse(content=config_response.model_dump())
@@ -301,11 +325,49 @@ class RagbitsAPI:
                 logger.error(f"Error serving theme: {e}")
                 raise HTTPException(status_code=500, detail="Error loading theme") from e
 
+        if self.auth_backend:
+            self._setup_conversation_routes()
+
         @self.app.get("/{full_path:path}", response_class=HTMLResponse)
         async def root() -> HTMLResponse:
             index_file = self.dist_dir / "index.html"
             with open(str(index_file)) as file:
                 return HTMLResponse(content=file.read())
+
+    def _setup_conversation_routes(self) -> None:
+        """Register routes for authenticated conversation management.
+
+        Requires ``auth_backend`` and a ``history_persistence`` that supports
+        ownership tracking (i.e. overrides
+        :meth:`HistoryPersistenceStrategy.list_conversations` to return the
+        user's conversations). When ``share_persistence`` is configured, sharing
+        endpoints are enabled as part of the same router.
+        """
+        history_persistence = self.chat_interface.history_persistence
+        if history_persistence is None:
+            logger.warning("Conversation routes require a history_persistence strategy; routes disabled.")
+            return
+
+        if not _supports_conversation_listing(history_persistence):
+            logger.warning(
+                "history_persistence does not support conversation listing; conversation routes disabled. "
+                "Override HistoryPersistenceStrategy.list_conversations to enable conversation routes."
+            )
+            return
+
+        async def require_user(request: Request) -> User:
+            user = await self.require_authenticated_user(request)
+            if user is None:
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+            return user
+
+        self.app.include_router(
+            build_conversations_router(
+                history_persistence=history_persistence,
+                require_user=require_user,
+                share_persistence=self.share_persistence,
+            )
+        )
 
     @staticmethod
     def _prepare_chat_context(

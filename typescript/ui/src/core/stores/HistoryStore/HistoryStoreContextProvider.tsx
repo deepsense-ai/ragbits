@@ -7,7 +7,6 @@ import { MessageRole } from "@ragbits/api-client-react";
 import { v4 as uuidv4 } from "uuid";
 import InitializationScreen from "../../components/InitializationScreen";
 import {
-  getTemporaryConversationId,
   initialConversationValues,
   initialHistoryValues,
   isTemporaryConversation,
@@ -55,9 +54,6 @@ const createMinimalHistoryStore = immer<HistoryStore>((set, get) => {
             delete draft.history[messageId];
           }),
         );
-      },
-      restore: () => {
-        return getTemporaryConversationId();
       },
       stopAnswering: (conversationId) => {
         const conversation = get().conversations[conversationId];
@@ -175,6 +171,10 @@ const createMinimalHistoryStore = immer<HistoryStore>((set, get) => {
       mergeExtensions: () => {},
       initializeChatOptions: () => {},
       setConversationProperties: () => {},
+      loadServerConversations: async () => {
+        /* no-op in minimal store */
+      },
+      loadSharedConversation: async () => false,
     },
 
     computed: {

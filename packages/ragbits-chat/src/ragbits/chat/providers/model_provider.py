@@ -55,7 +55,11 @@ class RagbitsChatModelProvider:
                 ChatMessageRequest,
                 ChunkedContent,
                 ConfigResponse,
+                ConversationDetail,
                 ConversationIdContent,
+                ConversationInteractionData,
+                ConversationMeta,
+                ConversationShareResponse,
                 ConversationSummaryContent,
                 ErrorContent,
                 FeedbackConfig,
@@ -75,6 +79,7 @@ class RagbitsChatModelProvider:
                 OAuth2ProviderConfig,
                 PlanItemContent,
                 Reference,
+                ShareConversationRequest,
                 StateUpdate,
                 TextContent,
                 UsageContent,
@@ -135,6 +140,12 @@ class RagbitsChatModelProvider:
                 "LoginRequest": LoginRequest,
                 "LoginResponse": LoginResponse,
                 "User": User,
+                # Conversation sharing
+                "ShareConversationRequest": ShareConversationRequest,
+                "ConversationShareResponse": ConversationShareResponse,
+                "ConversationMeta": ConversationMeta,
+                "ConversationInteractionData": ConversationInteractionData,
+                "ConversationDetail": ConversationDetail,
             }
 
             return self._models_cache
@@ -198,6 +209,10 @@ class RagbitsChatModelProvider:
                 "ConfigResponse",
                 "LoginResponse",
                 "OAuth2AuthorizeResponse",
+                "ConversationShareResponse",
+                "ConversationMeta",
+                "ConversationInteractionData",
+                "ConversationDetail",
             ],
             "requests": [
                 "ChatRequest",
@@ -206,6 +221,7 @@ class RagbitsChatModelProvider:
                 "OAuth2Credentials",
                 "LoginRequest",
                 "LogoutRequest",
+                "ShareConversationRequest",
             ],
         }
 

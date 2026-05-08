@@ -7,10 +7,23 @@ vi.mock("../../../../src/core/stores/HistoryStore/useHistoryStore", () => {
   };
 });
 
+const mockRagbitsClient = {
+  makeRequest: vi.fn().mockResolvedValue(undefined),
+};
+
+vi.mock("@ragbits/api-client-react", async () => {
+  const actual = await vi.importActual("@ragbits/api-client-react");
+  return {
+    ...actual,
+    useRagbitsContext: () => ({ client: mockRagbitsClient }),
+  };
+});
+
 const selectConversationMock = vi.fn();
 const deleteConversationMock = vi.fn();
 const newConversationMock = vi.fn();
 const setConversationPropertiesMock = vi.fn();
+const loadServerConversationsMock = vi.fn();
 
 vi.mock("../../../../src/core/stores/HistoryStore/selectors", () => {
   return {
@@ -19,6 +32,7 @@ vi.mock("../../../../src/core/stores/HistoryStore/selectors", () => {
       deleteConversation: deleteConversationMock,
       newConversation: newConversationMock,
       setConversationProperties: setConversationPropertiesMock,
+      loadServerConversations: loadServerConversationsMock,
     }),
   };
 });
@@ -153,7 +167,7 @@ describe("ChatHistory", () => {
     await user.click(deleteButton);
 
     const deleteMock = useHistoryActions().deleteConversation;
-    expect(deleteMock).toHaveBeenCalledWith(selectedKey);
+    expect(deleteMock).toHaveBeenCalledWith(selectedKey, mockRagbitsClient);
   });
 
   it('calls clearHistory and stopAnswering when "clear chat" button is clicked', async () => {

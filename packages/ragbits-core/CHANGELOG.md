@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+- Add `ragbits.core.storage` module with shared database connection abstractions (`DatabaseConnection`, `PostgresConnection`, `SQLiteConnection`) and pluggable `KVStore`/`SQLStore` backends for Postgres and SQLite.
+
 ## 1.6.2 (2026-03-26)
 
 ## 1.6.1 (2026-03-19)

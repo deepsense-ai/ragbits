@@ -5,7 +5,9 @@ export type SlotName =
   | "layout.sidebar"
   | "layout.headerActions"
   | "message.actions"
-  | "prompt.beforeSend";
+  | "prompt.beforeSend"
+  | "chat.banner.top"
+  | "chatHistory.itemDecorator";
 
 export interface SlotPropsMap {
   "layout.sidebar": Record<string, never>;
@@ -17,6 +19,10 @@ export interface SlotPropsMap {
   };
   "prompt.beforeSend": {
     isInputDisabled: boolean;
+  };
+  "chat.banner.top": Record<string, never>;
+  "chatHistory.itemDecorator": {
+    conversationId: string;
   };
 }
 

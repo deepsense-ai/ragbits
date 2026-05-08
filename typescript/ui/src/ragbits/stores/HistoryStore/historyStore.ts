@@ -1,7 +1,9 @@
 import {
   ChatRequest,
   ChatResponse,
+  HttpError,
   MessageRole,
+  RagbitsClient,
 } from "@ragbits/api-client-react";
 import {
   ChatMessage,
@@ -18,7 +20,6 @@ import {
   initialHistoryValues,
   isTemporaryConversation,
   updateConversation,
-  getTemporaryConversationId,
   initialConversationValues,
 } from "../../../core/stores/HistoryStore/utils";
 import { v4 as uuidv4 } from "uuid";
@@ -159,34 +160,6 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
 
       return conversation;
     },
-    restore: (
-      history: Conversation["history"],
-      followupMessages: Conversation["followupMessages"],
-      chatOptions: Conversation["chatOptions"],
-      serverState: Conversation["serverState"],
-    ) => {
-      // Copied conversation should be treated as temporary one, it would get it's own
-      // id after first message
-      const conversationId = getTemporaryConversationId();
-      const conversation: Conversation = {
-        ...initialConversationValues(),
-        followupMessages,
-        chatOptions,
-        serverState,
-        history,
-        conversationId,
-      };
-      const nonUserMessages = Object.values(history).filter(
-        (m) => m.role !== MessageRole.User,
-      );
-      conversation.eventsLog = nonUserMessages.map(() => []);
-      set((draft: HistoryStore) => {
-        draft.conversations[conversationId] = conversation;
-        draft.currentConversation = conversationId;
-      });
-
-      return conversationId;
-    },
 
     addMessage: (conversationId, message) => {
       const id = uuidv4();
@@ -251,13 +224,35 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         draft.currentConversation = conversationId;
       });
     },
-    deleteConversation: (conversationId) => {
+    deleteConversation: (conversationId, ragbitsClient) => {
       const {
         actions: { newConversation },
         primitives: { stopAnswering },
         currentConversation,
+        conversations,
       } = get();
       stopAnswering(conversationId);
+
+      const conv = conversations[conversationId];
+      const isPersisted = !isTemporaryConversation(conversationId);
+      if (isPersisted && ragbitsClient) {
+        const serverCall = conv?.isShared
+          ? ragbitsClient.makeRequest("/api/shared/:conversationId", {
+              method: "DELETE",
+              pathParams: { conversationId },
+            })
+          : ragbitsClient.makeRequest("/api/conversations/:conversationId", {
+              method: "DELETE",
+              pathParams: { conversationId },
+            });
+        serverCall.catch((err) => {
+          // 404 means the row is already gone server-side (deleted in another
+          // tab, share revoked, stale localStorage entry). Local removal is
+          // already happening below, so treat it as success.
+          if (err instanceof HttpError && err.status === 404) return;
+          console.error(`Failed to delete conversation ${conversationId}`, err);
+        });
+      }
 
       set((draft) => {
         delete draft.conversations[conversationId];
@@ -342,6 +337,121 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       return newConversation.conversationId;
     },
 
+    loadServerConversations: async (ragbitsClient: RagbitsClient) => {
+      let metas;
+      try {
+        metas = await ragbitsClient.makeRequest("/api/conversations", {
+          method: "GET",
+        });
+      } catch (err) {
+        console.error("Failed to load server conversations", err);
+        return;
+      }
+      set((draft: HistoryStore) => {
+        const serverIds = new Set((metas ?? []).map((m) => m.conversation_id));
+
+        // Drop persisted conversations that no longer exist on the server.
+        // The server is authoritative for any non-temp conversation: if it
+        // didn't return it, the conversation was deleted, the share was
+        // revoked, or it was dismissed. We keep the currently selected
+        // conversation around so a redirect (handled by ConversationGuard)
+        // can resolve cleanly instead of crashing on a missing entry.
+        for (const id of Object.keys(draft.conversations)) {
+          if (
+            !isTemporaryConversation(id) &&
+            id !== draft.currentConversation &&
+            !serverIds.has(id)
+          ) {
+            delete draft.conversations[id];
+          }
+        }
+
+        for (const meta of metas ?? []) {
+          const existing = draft.conversations[meta.conversation_id];
+          if (existing) {
+            if (meta.is_shared) {
+              existing.isShared = true;
+              existing.sharedBy = meta.shared_by ?? undefined;
+            }
+            if (meta.summary && !existing.summary) {
+              existing.summary = meta.summary;
+            }
+          } else {
+            draft.conversations[meta.conversation_id] = {
+              ...initialConversationValues(),
+              conversationId: meta.conversation_id,
+              summary: meta.summary ?? undefined,
+              isShared: meta.is_shared ?? false,
+              sharedBy: meta.shared_by ?? undefined,
+              isServerOnly: true,
+            };
+          }
+        }
+      });
+    },
+
+    loadSharedConversation: async (
+      conversationId: string,
+      ragbitsClient: RagbitsClient,
+    ) => {
+      let detail;
+      try {
+        detail = await ragbitsClient.makeRequest(
+          "/api/conversations/:conversationId",
+          {
+            method: "GET",
+            pathParams: { conversationId },
+          },
+        );
+      } catch (err) {
+        // 404 just means the user has no access to this conversation (never
+        // existed, share revoked, deleted) — that's an expected outcome of
+        // following a stale link, not a bug worth logging.
+        if (!(err instanceof HttpError && err.status === 404)) {
+          console.error(
+            `Failed to load shared conversation ${conversationId}`,
+            err,
+          );
+        }
+        return false;
+      }
+      if (!detail) return false;
+
+      const history: Record<string, ChatMessage> = {};
+      let lastId: string | null = null;
+      for (const interaction of detail.messages) {
+        const userMsgId = interaction.message_id ?? uuidv4();
+        history[userMsgId] = {
+          id: userMsgId,
+          role: MessageRole.User,
+          content: interaction.message,
+        };
+        const botMsgId = `${userMsgId}-response`;
+        history[botMsgId] = {
+          id: botMsgId,
+          role: MessageRole.Assistant,
+          content: interaction.response,
+        };
+        lastId = botMsgId;
+      }
+
+      set((draft: HistoryStore) => {
+        const existing = draft.conversations[detail.conversation_id];
+        const conv: Conversation = {
+          ...initialConversationValues(),
+          conversationId: detail.conversation_id,
+          summary: existing?.summary,
+          isShared: detail.is_shared ?? false,
+          sharedBy: detail.shared_by ?? undefined,
+          isServerOnly: false,
+          history,
+          lastMessageId: lastId,
+        };
+        draft.conversations[detail.conversation_id] = conv;
+      });
+      return true;
+    },
+
     sendMessage: (text, ragbitsClient, additionalContext) => {
       const {
         _internal: { handleResponse },
@@ -349,7 +459,9 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         computed: { getContext },
       } = get();
 
-      const { history, conversationId } = getCurrentConversation();
+      const { history, conversationId, isShared } = getCurrentConversation();
+
+      if (isShared) return;
 
       addMessage(conversationId, {
         role: MessageRole.User,

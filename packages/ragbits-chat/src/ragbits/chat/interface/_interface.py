@@ -92,6 +92,10 @@ def with_chat_metadata(  # noqa: PLR0915
             context.message_id = str(uuid.uuid4())
             yield MessageIdResponse(content=MessageIdContent(message_id=context.message_id))
 
+        responses: list[ChatResponseUnion] = []
+        main_response = ""
+        extra_responses: list[ChatResponseUnion] = []
+
         # Generate conversation_id if this is the first message
         is_new_conversation = False
         if not context.conversation_id:
@@ -111,11 +115,12 @@ def with_chat_metadata(  # noqa: PLR0915
             try:
                 summary = await self.generate_conversation_summary(message, history, context)
                 if summary:
-                    yield ConversationSummaryResponse(content=ConversationSummaryContent(summary=summary))
+                    summary_response = ConversationSummaryResponse(content=ConversationSummaryContent(summary=summary))
+                    extra_responses.append(summary_response)
+                    yield summary_response
             except Exception:
                 logger.exception("Failed to generate conversation title")
 
-        responses, main_response, extra_responses = [], "", []
         timestamp = time.time()
         response_token_count, first_token_time = 0.0, None
 
