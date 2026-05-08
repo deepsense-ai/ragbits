@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, create_async_engin
 from sqlalchemy.orm import DeclarativeBase
 from typing_extensions import Self
 
-from ragbits.chat.interface.types import ChatContext, ChatResponse
+from ragbits.chat.interface.types import ChatContext, ChatResponse, ConversationSummaryResponse
 from ragbits.chat.persistence.base import HistoryPersistenceStrategy
 from ragbits.core.options import Options
 from ragbits.core.utils.config_handling import ObjectConstructionConfig
@@ -24,6 +24,7 @@ class ConversationProtocol(Protocol):
 
     id: str
     user_id: str | None
+    summary: str | None
     created_at: Any
 
 
@@ -59,6 +60,8 @@ def create_conversation_model(table_name: str, base_class: type[DeclarativeBase]
 
         Attributes:
             id: The unique identifier for the conversation.
+            user_id: Identifier of the conversation owner, or ``None`` for anonymous.
+            summary: Latest summary yielded for this conversation, or ``None``.
             created_at: The timestamp when the conversation was created.
 
         Table:
@@ -68,6 +71,7 @@ def create_conversation_model(table_name: str, base_class: type[DeclarativeBase]
         __tablename__ = table_name
         id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
         user_id = Column(String, nullable=True, index=True)
+        summary = Column(Text, nullable=True)
         created_at = Column(TIMESTAMP, server_default=func.now())
 
     return Conversation
@@ -213,9 +217,10 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
         await self._init_db()
 
         async with AsyncSession(self.sqlalchemy_engine) as session, session.begin():
+            summary = self._latest_summary_from_responses(extra_responses)
             if context.conversation_id:
                 user_id = context.user.user_id if context.user else None
-                await self._ensure_conversation_exists(session, context.conversation_id, user_id)
+                await self._ensure_conversation_exists(session, context.conversation_id, user_id, summary)
 
             # Convert to JSON-serializable format with type information
             extra_responses_data = [
@@ -237,8 +242,22 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
             session.add(interaction)
             await session.commit()
 
+    @staticmethod
+    def _latest_summary_from_responses(extra_responses: Sequence[ChatResponse]) -> str | None:
+        """Return the most recent ``ConversationSummaryResponse`` summary, if any."""
+        for response in reversed(extra_responses):
+            if isinstance(response, ConversationSummaryResponse):
+                summary = response.content.summary
+                if summary:
+                    return summary
+        return None
+
     async def _ensure_conversation_exists(
-        self, session: AsyncSession, conversation_id: str, user_id: str | None = None
+        self,
+        session: AsyncSession,
+        conversation_id: str,
+        user_id: str | None = None,
+        summary: str | None = None,
     ) -> None:
         """
         Ensures that a conversation with the given ID exists in the database.
@@ -247,13 +266,18 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
             session: The database session to use.
             conversation_id: The ID of the conversation to check/create.
             user_id: The owner user ID to associate with a new conversation.
+            summary: Latest summary to persist, if available. Existing summaries
+                are only overwritten when a new non-empty value is provided.
         """
         result = await session.execute(sqlalchemy.select(self.Conversation).filter_by(id=conversation_id).limit(1))
         existing_conversation = result.scalar_one_or_none()
 
-        if not existing_conversation:
-            conversation = self.Conversation(id=conversation_id, user_id=user_id)
+        if existing_conversation is None:
+            conversation = self.Conversation(id=conversation_id, user_id=user_id, summary=summary)
             session.add(conversation)
+            await session.flush()
+        elif summary is not None and existing_conversation.summary != summary:
+            existing_conversation.summary = summary
             await session.flush()
 
     async def get_conversation_interactions(self, conversation_id: str) -> list[dict[str, Any]]:
@@ -319,6 +343,7 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
                 {
                     "id": conv.id,
                     "user_id": conv.user_id,
+                    "summary": conv.summary,
                     "created_at": conv.created_at,
                 }
                 for conv in conversations
@@ -326,13 +351,18 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
 
     async def get_conversation_summaries(self, conversation_ids: list[str]) -> dict[str, str]:
         """
-        Get a display summary for each conversation, derived from the first user message.
+        Get a display summary for each conversation.
+
+        Reads the persisted ``summary`` column populated by ``save_interaction``
+        when a ``ConversationSummaryResponse`` is yielded. Falls back to a
+        truncated version of the first user message for conversations that have
+        no stored summary yet.
 
         Args:
             conversation_ids: List of conversation IDs to fetch summaries for.
 
         Returns:
-            A dict mapping conversation_id → summary string (truncated first message).
+            A dict mapping conversation_id → summary string.
         """
         if not conversation_ids:
             return {}
@@ -342,7 +372,18 @@ class SQLHistoryPersistence(HistoryPersistenceStrategy):
         max_len = 80
         summaries: dict[str, str] = {}
         async with AsyncSession(self.sqlalchemy_engine) as session:
+            stored = await session.execute(
+                sqlalchemy.select(self.Conversation.id, self.Conversation.summary).filter(
+                    self.Conversation.id.in_(conversation_ids)
+                )
+            )
+            for conv_id, summary in stored.all():
+                if summary:
+                    summaries[conv_id] = summary
+
             for cid in conversation_ids:
+                if cid in summaries:
+                    continue
                 result = await session.execute(
                     sqlalchemy.select(self.ChatInteraction.message)
                     .filter_by(conversation_id=cid)

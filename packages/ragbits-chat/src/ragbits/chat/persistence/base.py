@@ -56,8 +56,12 @@ class HistoryPersistenceStrategy(ABC):
         """Return a display summary for each requested conversation.
 
         Implementations that support conversation listing should return a dict
-        mapping conversation id to a short summary string. The default
-        implementation returns an empty dict so that summaries remain optional.
+        mapping conversation id to a short summary string. Summaries should
+        reflect the latest ``ConversationSummaryResponse`` yielded by the
+        ``ChatInterface`` during the conversation when one is available; for
+        conversations without one, a sensible fallback (such as a truncated
+        first user message) is acceptable. The default implementation returns
+        an empty dict so that summaries remain optional.
         """
         return {}
 

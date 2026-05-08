@@ -5,7 +5,7 @@
 ### Added
 
 - Add conversation sharing: new `SharePersistence` SQL-backed store (`ragbits.chat.persistence.SharePersistence`) and `share_persistence` parameter on `RagbitsAPI` that together expose REST endpoints for listing/sharing/unsharing/dismissing conversations and wire the `ShareButton`, shared-conversation sidebar entries and read-only conversation guard in the default UI.
-- Extend `SQLHistoryPersistence` with a `user_id` ownership column on the `Conversation` model and `list_conversations`, `get_conversation_summaries`, `delete_conversation` and `get_conversation_owner` helpers used by the sharing endpoints.
+- Extend `SQLHistoryPersistence` with `user_id` and `summary` columns on the `Conversation` model and `list_conversations`, `get_conversation_summaries`, `delete_conversation` and `get_conversation_owner` helpers used by the sharing endpoints. The `summary` column is updated automatically on every `save_interaction` that includes a `ConversationSummaryResponse`.
 - Add `sharing` flag on `ConfigResponse` plus `ShareConversationRequest`, `ConversationShareResponse`, `ConversationMeta` and `ConversationDetail` schemas for the new sharing API.
 - Add `examples/chat/shared_chat.py` demonstrating an end-to-end conversation sharing setup with `ListAuthenticationBackend`, `SQLHistoryPersistence` and a Postgres-backed `SharePersistence`.
 
@@ -51,6 +51,7 @@
 - Fix a UI build that had a hardcoded `127.0.0.1:8000` address
 
 ## 1.4.1 (2026-02-08)
+
 ### Changed
 
 - ragbits-core updated to version v1.4.1
@@ -58,6 +59,7 @@
 - Fix FastAPI installation by adding `standard` extras to ensure all required dependencies are included
 
 ## 1.4.0 (2026-02-04)
+
 ### Changed
 
 - ragbits-core updated to version v1.4.0
