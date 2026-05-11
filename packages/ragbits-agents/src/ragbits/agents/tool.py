@@ -86,6 +86,12 @@ class Tool:
 
         Returns:
             A new Tool instance representing the callable function.
+
+        Note:
+            Validation of the arguments of the callable is strict. Complex nested schemas, union types, or fields
+            that the LLM tends to misformat can raise `pydantic.ValidationError` at call time. If you want to handle
+            that, construct `Tool(...)` directly (bypassing `validate_call`) and handle validation inside `on_tool_call`
+            so you can feed the error back to the LLM as tool output.
         """
         schema = convert_function_to_function_schema(callable)
 
