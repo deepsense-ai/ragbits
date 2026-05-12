@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- added support for pydantic models as tool arguments
+
 ## 1.6.2 (2026-03-26)
 
 - ragbits-core updated to version v1.6.2
