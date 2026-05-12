@@ -3,7 +3,7 @@ from contextlib import suppress
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validate_call
 from typing_extensions import Self
 
 from ragbits.core.llms.base import LLMClientOptionsT
@@ -86,6 +86,12 @@ class Tool:
 
         Returns:
             A new Tool instance representing the callable function.
+
+        Note:
+            Validation of the arguments of the callable is strict. Complex nested schemas, union types, or fields
+            that the LLM tends to misformat can raise `pydantic.ValidationError` at call time. If you want to handle
+            that, construct `Tool(...)` directly (bypassing `validate_call`) and handle validation inside `on_tool_call`
+            so you can feed the error back to the LLM as tool output.
         """
         schema = convert_function_to_function_schema(callable)
 
@@ -93,7 +99,7 @@ class Tool:
             name=schema["function"]["name"],
             description=schema["function"]["description"],
             parameters=schema["function"]["parameters"],
-            on_tool_call=callable,
+            on_tool_call=validate_call(callable),
             context_var_name=get_context_variable_name(callable),
         )
 
