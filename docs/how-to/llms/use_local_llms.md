@@ -5,7 +5,7 @@ This guide explains how to set up and use local LLMs in Ragbits. It covers insta
 >
 > Local implementation is not dedicated for production. Use it only in experiments / evaluation
 
-## Setting up and using a local models
+## Setting up and using local models
 To use local LLMs, you need to install the 'local' extra requirements:
 
 ```bash
@@ -30,7 +30,7 @@ The `model_name` parameter can be specified in several ways:
 
 ### Local LLM Options
 
-The `LocalLLMOptions` class provides a set of parameters to fine-tune the behavior of local LLMs. These options described in the [HuggingFace documentation](https://huggingface.co/docs/huggingface_hub/en/package_reference/inference_client#huggingface_hub.InferenceClient.text_generation).
+The `LocalLLMOptions` class provides a set of parameters to fine-tune the behavior of local LLMs. These options are described in the [HuggingFace documentation](https://huggingface.co/docs/huggingface_hub/en/package_reference/inference_client#huggingface_hub.InferenceClient.text_generation).
 
 Example usage:
 ```python
@@ -119,13 +119,99 @@ After that you can send requests the server in Ragbits:
 ```python
 import asyncio
 
+import litellm
+
 from ragbits.core.embeddings import LiteLLMEmbedder
 
 
 async def main() -> None:
     embedder = LiteLLMEmbedder(model_name="hosted_vllm/<model_name>", api_base="http://127.0.0.1:8000/v1")
-    embeddings = await embedder.embed_text(["Hello"])
-    print(len(embeddings[0]))
+    try:
+        embeddings = await embedder.embed_text(["Hello"])
+        print(len(embeddings[0]))
+    finally:
+        await litellm.module_level_aclient.client.aclose()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+### Using Ollama
+To use Ollama you first need to install it by following the [official installation instructions](https://ollama.com/download). Once installed, pull a model from the [Ollama model library](https://ollama.com/library):
+```bash
+ollama pull llama3.2
+```
+Then start the server:
+```bash
+ollama serve
+```
+
+> ℹ️ **NOTE**
+>
+> By default, the Ollama server listens on `http://localhost:11434`. If you change the address, update `api_base` accordingly.
+
+Now you can use the server in Ragbits. Prefix the model name with `ollama/` to identify it as an Ollama model:
+```python
+import asyncio
+
+from ragbits.core.llms.litellm import LiteLLM
+from ragbits.core.prompt.base import SimplePrompt
+
+
+async def main() -> None:
+    llm = LiteLLM(model_name="ollama/llama3.2", api_base="http://localhost:11434")
+    prompt = SimplePrompt("Explain the difference between a process and a thread.")
+    response = await llm.generate(prompt)
+    print(response)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+You can also pass generation options the same way as with any other LiteLLM-backed model:
+```python
+import asyncio
+
+from ragbits.core.llms.litellm import LiteLLM, LiteLLMOptions
+from ragbits.core.prompt.base import SimplePrompt
+
+
+async def main() -> None:
+    options = LiteLLMOptions(temperature=0.7, max_tokens=512)
+    llm = LiteLLM(model_name="ollama/llama3.2", api_base="http://localhost:11434", default_options=options)
+    prompt = SimplePrompt("Write a short poem about distributed systems.")
+    response = await llm.generate(prompt)
+    print(response)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+#### Using Ollama as embedding server
+Ollama also supports generating embeddings. Pull a dedicated embedding model from the [Ollama model library](https://ollama.com/library):
+```bash
+ollama pull nomic-embed-text
+```
+
+You can then use it in Ragbits:
+```python
+import asyncio
+
+import litellm
+
+from ragbits.core.embeddings import LiteLLMEmbedder
+
+
+async def main() -> None:
+    embedder = LiteLLMEmbedder(model_name="ollama/nomic-embed-text", api_base="http://localhost:11434")
+    try:
+        embeddings = await embedder.embed_text(["Hello"])
+        print(len(embeddings[0]))
+    finally:
+        await litellm.module_level_aclient.client.aclose()
 
 
 if __name__ == "__main__":
