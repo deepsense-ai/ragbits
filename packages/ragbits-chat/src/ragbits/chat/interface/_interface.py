@@ -223,6 +223,7 @@ class ChatInterface(ABC):
     ui_customization: UICustomization | None = None
     history_persistence: HistoryPersistenceStrategy | None = None
     summary_generator: SummaryGenerator = HeuristicSummaryGenerator()
+    supports_upload: bool = False
     upload_handler: Callable[[UploadFile], Any] | None = None
 
     def __init_subclass__(cls, **kwargs: dict) -> None:

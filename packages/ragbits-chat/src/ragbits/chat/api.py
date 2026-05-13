@@ -236,10 +236,6 @@ class RagbitsAPI:
         ) -> JSONResponse:
             return await self._handle_feedback(feedback_request, request)
 
-        @self.app.post("/api/upload", response_class=JSONResponse)
-        async def upload_file(request: Request, file: UploadFile) -> JSONResponse:
-            return await self._handle_file_upload(file, request)
-
         @self.app.get("/api/config", response_class=JSONResponse)
         async def config() -> JSONResponse:
             feedback_config = self.chat_interface.feedback_config
@@ -308,7 +304,7 @@ class RagbitsAPI:
                     auth_types=auth_types,
                     oauth2_providers=oauth2_providers,
                 ),
-                supports_upload=self.chat_interface.upload_handler is not None,
+                supports_upload=self.chat_interface.supports_upload,
             )
 
             return JSONResponse(content=config_response.model_dump())
@@ -617,34 +613,6 @@ class RagbitsAPI:
                 error_type=type(e).__name__,
             )
             raise HTTPException(status_code=500, detail="Internal server error") from None
-
-    async def _handle_file_upload(self, file: UploadFile, request: Request) -> JSONResponse:
-        """
-        Handle file upload requests.
-
-        Args:
-            file: The uploaded file.
-            request: FastAPI request, used to authenticate the caller.
-
-        Returns:
-            JSONResponse with status.
-        """
-        await self.require_authenticated_user(request)
-
-        if self.chat_interface.upload_handler is None:
-            raise HTTPException(status_code=400, detail="File upload not supported")
-
-        try:
-            # Check if handler is async and call it
-            if asyncio.iscoroutinefunction(self.chat_interface.upload_handler):
-                await self.chat_interface.upload_handler(file)
-            else:
-                await asyncio.to_thread(self.chat_interface.upload_handler, file)
-
-            return JSONResponse(content={"status": "success", "filename": file.filename})
-        except Exception as e:
-            logger.error(f"File upload error: {e}")
-            raise HTTPException(status_code=500, detail=str(e)) from e
 
     async def get_current_user_from_cookie(self, request: Request) -> User | None:
         """

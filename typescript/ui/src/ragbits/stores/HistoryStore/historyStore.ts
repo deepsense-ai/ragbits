@@ -21,6 +21,7 @@ import {
   getTemporaryConversationId,
   initialConversationValues,
 } from "../../../core/stores/HistoryStore/utils";
+import { attachmentsStore } from "../../../plugins/UploadPlugin/stores/attachmentsStore";
 import { v4 as uuidv4 } from "uuid";
 
 export const FLUSH_INTERVAL_MS = 100;
@@ -368,6 +369,19 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         context: { ...getContext(), ...additionalContext },
       };
 
+      // Pick up any files staged by the upload plugin and switch to multipart.
+      const pendingFiles = attachmentsStore.getState().pending;
+      let requestBody: ChatRequest | FormData = chatRequest;
+      if (pendingFiles.length > 0) {
+        const formData = new FormData();
+        formData.append("request", JSON.stringify(chatRequest));
+        for (const file of pendingFiles) {
+          formData.append("files", file, file.name);
+        }
+        requestBody = formData;
+        attachmentsStore.getState().clear();
+      }
+
       // Add new entry for events
       set(
         updateConversation(conversationId, (draft) => {
@@ -422,7 +436,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
 
       ragbitsClient.makeStreamRequest(
         "/api/chat",
-        chatRequest,
+        requestBody,
         {
           onMessage: (response: ChatResponse) =>
             buffer.enqueue(response, conversationIdRef, assistantResponseId),
