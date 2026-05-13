@@ -304,7 +304,7 @@ class RagbitsAPI:
                     auth_types=auth_types,
                     oauth2_providers=oauth2_providers,
                 ),
-                supports_upload=self.chat_interface.supports_upload,
+                supports_upload=(self.chat_interface.supports_upload or self.chat_interface.upload_handler is not None),
             )
 
             return JSONResponse(content=config_response.model_dump())
@@ -378,18 +378,28 @@ class RagbitsAPI:
 
         return chat_context
 
-    @staticmethod
-    async def _build_attachments(files: list[UploadFile] | None) -> list[Attachment]:
-        """Read multipart upload parts into ragbits-core Attachment objects."""
+    async def _build_attachments(self, files: list[UploadFile] | None) -> list[Attachment]:
+        """Read multipart upload parts into ragbits-core Attachment objects.
+
+        If the chat interface defines an ``upload_handler``, it is invoked per
+        file: a returned Attachment is appended, ``None`` drops the file. Without
+        a handler, every file becomes a default Attachment carrying its bytes.
+        """
+        handler = self.chat_interface.upload_handler
         attachments: list[Attachment] = []
         for f in files or []:
-            attachments.append(
-                Attachment(
-                    data=await f.read(),
-                    mime_type=f.content_type,
-                    filename=f.filename,
+            if handler is not None:
+                result = await handler(f)
+                if result is not None:
+                    attachments.append(result)
+            else:
+                attachments.append(
+                    Attachment(
+                        data=await f.read(),
+                        mime_type=f.content_type,
+                        filename=f.filename,
+                    )
                 )
-            )
         return attachments
 
     async def _handle_chat_message(
