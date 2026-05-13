@@ -237,6 +237,37 @@ def test_validation_exception_handler(client: TestClient) -> None:
     assert "body" in data
 
 
+def test_chat_endpoint_multipart_with_file(api: RagbitsAPI, client: TestClient) -> None:
+    """/api/chat accepts multipart with files and exposes them on ChatContext.attachments."""
+    captured: dict = {}
+
+    class RecordingChat(MockChatInterface):
+        async def chat(
+            self, message: str, history: ChatFormat, context: ChatContext
+        ) -> AsyncGenerator[ChatResponseUnion, None]:
+            captured["context"] = context
+            captured["message"] = message
+            yield self.create_text_response("ok")
+
+    api.chat_interface = RecordingChat()
+
+    authenticate_user(client)
+    request_payload = {"message": "look at this", "history": [], "context": {}}
+    response = client.post(
+        "/api/chat",
+        data={"request": json.dumps(request_payload)},
+        files={"files": ("hello.txt", b"hello world", "text/plain")},
+    )
+
+    assert response.status_code == 200
+    assert captured["message"] == "look at this"
+    attachments = captured["context"].attachments
+    assert len(attachments) == 1
+    assert attachments[0].filename == "hello.txt"
+    assert attachments[0].mime_type == "text/plain"
+    assert attachments[0].data == b"hello world"
+
+
 def test_unauthenticated_request(client: TestClient) -> None:
     """Test that requests without authentication are rejected."""
     request_data = {
