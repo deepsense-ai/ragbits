@@ -17,6 +17,7 @@ from ragbits.core.llms.exceptions import (
     LLMResponseError,
     LLMStatusError,
 )
+from ragbits.core.llms.pricing import estimate_llm_cost_usd
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
 
@@ -89,9 +90,12 @@ class AnthropicLLM(LLM[AnthropicLLMOptions]):
 
     def get_estimated_cost(self, prompt_tokens: int, completion_tokens: int) -> float:  # noqa: PLR6301
         """
-        Returns 0.0 — cost estimation is not bundled; use the Anthropic console for billing details.
+        Returns an estimated USD cost from token counts using public list prices.
+
+        Unknown ``model_name`` values yield ``0.0``. Bedrock, Vertex, batch, caching,
+        and residency pricing are not modeled.
         """
-        return 0.0
+        return estimate_llm_cost_usd("anthropic", self.model_name, prompt_tokens, completion_tokens)
 
     @staticmethod
     def _convert_messages(messages: list[dict]) -> tuple[str | None, list[dict]]:  # noqa: PLR0912, PLR0915

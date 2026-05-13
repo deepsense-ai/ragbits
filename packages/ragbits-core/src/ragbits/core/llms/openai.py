@@ -21,6 +21,7 @@ from ragbits.core.llms.exceptions import (
     LLMResponseError,
     LLMStatusError,
 )
+from ragbits.core.llms.pricing import estimate_llm_cost_usd
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
 
@@ -112,9 +113,12 @@ class OpenAILLM(LLM[OpenAILLMOptions]):
 
     def get_estimated_cost(self, prompt_tokens: int, completion_tokens: int) -> float:  # noqa: PLR6301
         """
-        Returns 0.0 — cost estimation is not bundled; use OpenAI usage dashboard for billing details.
+        Returns an estimated USD cost from token counts using public list prices.
+
+        Unknown or custom ``model_name`` values yield ``0.0``. Actual invoices may
+        differ (discounts, batch, caching, negotiated rates).
         """
-        return 0.0
+        return estimate_llm_cost_usd("openai", self.model_name, prompt_tokens, completion_tokens)
 
     def count_tokens(self, prompt: BasePrompt) -> int:
         """

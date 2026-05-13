@@ -14,6 +14,7 @@ from ragbits.core.llms.exceptions import (
     LLMEmptyResponseError,
     LLMStatusError,
 )
+from ragbits.core.llms.pricing import estimate_llm_cost_usd
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
 
@@ -103,9 +104,12 @@ class GeminiLLM(LLM[GeminiLLMOptions]):
 
     def get_estimated_cost(self, prompt_tokens: int, completion_tokens: int) -> float:  # noqa: PLR6301
         """
-        Returns 0.0 — cost estimation is not bundled; use the Google Cloud console for billing details.
+        Returns an estimated USD cost from token counts using public list prices.
+
+        Vertex AI and Google AI Studio can differ; this uses the Gemini Developer API
+        list prices as a baseline. Unknown ``model_name`` values yield ``0.0``.
         """
-        return 0.0
+        return estimate_llm_cost_usd("gemini", self.model_name, prompt_tokens, completion_tokens)
 
     @staticmethod
     def _convert_messages(messages: list[dict]) -> tuple[str | None, list[genai_types.Content]]:  # noqa: PLR0912, PLR0915
