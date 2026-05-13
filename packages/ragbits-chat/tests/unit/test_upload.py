@@ -65,7 +65,9 @@ def _make_authed_api() -> tuple[RagbitsAPI, type[MockChat]]:
 
     class MockChatWithUpload(MockChat):
         """Mock ChatInterface with upload handler."""
-        async def upload_handler(self, file: UploadFile) -> None:  # noqa: ARG001
+
+        @staticmethod
+        async def upload_handler(file: UploadFile) -> None:
             await file.read()
 
     auth_backend = ListAuthenticationBackend(

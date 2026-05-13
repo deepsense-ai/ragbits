@@ -378,12 +378,26 @@ class RagbitsAPI:
 
         return chat_context
 
+    @staticmethod
+    async def _build_attachments(files: list[UploadFile] | None) -> list[Attachment]:
+        """Read multipart upload parts into ragbits-core Attachment objects."""
+        attachments: list[Attachment] = []
+        for f in files or []:
+            attachments.append(
+                Attachment(
+                    data=await f.read(),
+                    mime_type=f.content_type,
+                    filename=f.filename,
+                )
+            )
+        return attachments
+
     async def _handle_chat_message(
         self,
         chat_request: ChatMessageRequest,
         request: Request,
         files: list[UploadFile] | None = None,
-    ) -> StreamingResponse:  # noqa: PLR0915
+    ) -> StreamingResponse:
         """Handle chat message requests with metrics tracking."""
         start_time = time.time()
 
@@ -411,18 +425,7 @@ class RagbitsAPI:
             session_id = request.cookies.get(SESSION_COOKIE_NAME)
             chat_context = RagbitsAPI._prepare_chat_context(chat_request, authenticated_user, session_id)
 
-            # Server-built from multipart parts; always overwrites whatever the client may
-            # have supplied in the JSON context
-            attachments: list[Attachment] = []
-            for f in files or []:
-                attachments.append(
-                    Attachment(
-                        data=await f.read(),
-                        mime_type=f.content_type,
-                        filename=f.filename,
-                    )
-                )
-            chat_context.attachments = attachments
+            chat_context.attachments = await self._build_attachments(files)
 
             # Get the response generator from the chat interface
             response_generator = self.chat_interface.chat(

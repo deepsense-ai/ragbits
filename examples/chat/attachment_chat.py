@@ -76,6 +76,10 @@ class AttachmentChat(ChatInterface):
         history: ChatFormat,
         context: ChatContext,
     ) -> AsyncGenerator[ChatResponse, None]:
+        """
+        Implementation of the main chat method supporting attachments and storing the content within the conversation
+        history.
+        """
         prompt = AttachmentPrompt(
             AttachmentPromptInput(question=message, files=context.attachments),
             history=self.history[context.conversation_id],
