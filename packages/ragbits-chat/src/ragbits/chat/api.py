@@ -16,7 +16,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
+from starlette.datastructures import UploadFile as StarletteUploadFile
 
 from ragbits.chat.auth import AuthenticationBackend, User
 from ragbits.chat.auth.backends import MultiAuthenticationBackend, OAuth2AuthenticationBackend
@@ -42,6 +43,7 @@ from ragbits.chat.interface.types import (
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
 from ragbits.core.audit.traces import trace
+from ragbits.core.prompt import Attachment
 
 from .metrics import ChatCounterMetric, ChatHistogramMetric
 
@@ -183,11 +185,49 @@ class RagbitsAPI:
                     return await self._handle_oauth2_callback(code, state, backend)
 
         @self.app.post("/api/chat", response_class=StreamingResponse)
-        async def chat_message(
-            request: Request,
-            chat_request: ChatMessageRequest,
-        ) -> StreamingResponse:
-            return await self._handle_chat_message(chat_request, request)
+        async def chat_message(request: Request) -> StreamingResponse:
+            content_type = request.headers.get("content-type", "").lower()
+            files: list[UploadFile] = []
+
+            if content_type.startswith("multipart/form-data"):
+                form = await request.form()
+                raw_request = form.get("request")
+                if not isinstance(raw_request, str):
+                    raise RequestValidationError(
+                        errors=[
+                            {
+                                "loc": ("body", "request"),
+                                "msg": "Field required (must be a JSON-encoded string)",
+                                "type": "missing",
+                            }
+                        ],
+                        body=None,
+                    )
+                try:
+                    chat_request = ChatMessageRequest.model_validate_json(raw_request)
+                except ValidationError as e:
+                    raise RequestValidationError(errors=e.errors(), body=raw_request) from None
+                for value in form.getlist("files"):
+                    if not isinstance(value, StarletteUploadFile):
+                        raise RequestValidationError(
+                            errors=[
+                                {
+                                    "loc": ("body", "files"),
+                                    "msg": "Expected an uploaded file, got a non-file form field",
+                                    "type": "value_error",
+                                }
+                            ],
+                            body=None,
+                        )
+                    files.append(cast(UploadFile, value))
+            else:
+                body_str = (await request.body()).decode("utf-8", errors="replace")
+                try:
+                    chat_request = ChatMessageRequest.model_validate_json(body_str)
+                except ValidationError as e:
+                    raise RequestValidationError(errors=e.errors(), body=body_str) from None
+
+            return await self._handle_chat_message(chat_request, request, files)
 
         @self.app.post("/api/feedback", response_class=JSONResponse)
         async def feedback(
@@ -197,8 +237,8 @@ class RagbitsAPI:
             return await self._handle_feedback(feedback_request, request)
 
         @self.app.post("/api/upload", response_class=JSONResponse)
-        async def upload_file(file: UploadFile) -> JSONResponse:
-            return await self._handle_file_upload(file)
+        async def upload_file(request: Request, file: UploadFile) -> JSONResponse:
+            return await self._handle_file_upload(file, request)
 
         @self.app.get("/api/config", response_class=JSONResponse)
         async def config() -> JSONResponse:
@@ -268,7 +308,7 @@ class RagbitsAPI:
                     auth_types=auth_types,
                     oauth2_providers=oauth2_providers,
                 ),
-                supports_upload=self.chat_interface.upload_handler is not None,
+                supports_upload=(self.chat_interface.supports_upload or self.chat_interface.upload_handler is not None),
             )
 
             return JSONResponse(content=config_response.model_dump())
@@ -342,7 +382,36 @@ class RagbitsAPI:
 
         return chat_context
 
-    async def _handle_chat_message(self, chat_request: ChatMessageRequest, request: Request) -> StreamingResponse:  # noqa: PLR0915
+    async def _build_attachments(self, files: list[UploadFile] | None) -> list[Attachment]:
+        """Read multipart upload parts into ragbits-core Attachment objects.
+
+        If the chat interface defines an ``upload_handler``, it is invoked per
+        file: a returned Attachment is appended, ``None`` drops the file. Without
+        a handler, every file becomes a default Attachment carrying its bytes.
+        """
+        handler = self.chat_interface.upload_handler
+        attachments: list[Attachment] = []
+        for f in files or []:
+            if handler is not None:
+                result = await handler(f)
+                if result is not None:
+                    attachments.append(result)
+            else:
+                attachments.append(
+                    Attachment(
+                        data=await f.read(),
+                        mime_type=f.content_type,
+                        filename=f.filename,
+                    )
+                )
+        return attachments
+
+    async def _handle_chat_message(
+        self,
+        chat_request: ChatMessageRequest,
+        request: Request,
+        files: list[UploadFile] | None = None,
+    ) -> StreamingResponse:
         """Handle chat message requests with metrics tracking."""
         start_time = time.time()
 
@@ -369,6 +438,8 @@ class RagbitsAPI:
             # Prepare chat context
             session_id = request.cookies.get(SESSION_COOKIE_NAME)
             chat_context = RagbitsAPI._prepare_chat_context(chat_request, authenticated_user, session_id)
+
+            chat_context.attachments = await self._build_attachments(files)
 
             # Get the response generator from the chat interface
             response_generator = self.chat_interface.chat(
@@ -560,26 +631,23 @@ class RagbitsAPI:
             )
             raise HTTPException(status_code=500, detail="Internal server error") from None
 
-    async def _handle_file_upload(self, file: UploadFile) -> JSONResponse:
-        """
-        Handle file upload requests.
+    async def _handle_file_upload(self, file: UploadFile, request: Request) -> JSONResponse:
+        """Handle a standalone file upload via /api/upload. Kept for backward compatibility.
 
         Args:
             file: The uploaded file.
+            request: FastAPI request, used to authenticate the caller.
 
         Returns:
             JSONResponse with status.
         """
+        await self.require_authenticated_user(request)
+
         if self.chat_interface.upload_handler is None:
             raise HTTPException(status_code=400, detail="File upload not supported")
 
         try:
-            # Check if handler is async and call it
-            if asyncio.iscoroutinefunction(self.chat_interface.upload_handler):
-                await self.chat_interface.upload_handler(file)
-            else:
-                await asyncio.to_thread(self.chat_interface.upload_handler, file)
-
+            await self.chat_interface.upload_handler(file)
             return JSONResponse(content={"status": "success", "filename": file.filename})
         except Exception as e:
             logger.error(f"File upload error: {e}")

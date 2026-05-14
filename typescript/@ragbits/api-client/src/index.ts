@@ -277,9 +277,12 @@ export class RagbitsClient {
 
         const startStream = async (): Promise<void> => {
             try {
+                const isFormData = data instanceof FormData
                 const defaultHeaders: Record<string, string> = {
-                    'Content-Type': 'application/json',
                     Accept: 'text/event-stream',
+                }
+                if (!isFormData) {
+                    defaultHeaders['Content-Type'] = 'application/json'
                 }
 
                 const headers = {
@@ -296,7 +299,7 @@ export class RagbitsClient {
                     {
                         method: 'POST',
                         headers,
-                        body: JSON.stringify(data),
+                        body: isFormData ? data : JSON.stringify(data),
                         signal,
                         ...(this.auth?.credentials
                             ? { credentials: this.auth?.credentials }

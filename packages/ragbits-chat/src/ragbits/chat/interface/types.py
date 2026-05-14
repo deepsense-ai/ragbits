@@ -12,6 +12,7 @@ from ragbits.chat.auth.types import User
 from ragbits.chat.interface.forms import UserSettings
 from ragbits.chat.interface.ui_customization import UICustomization
 from ragbits.core.llms.base import Usage
+from ragbits.core.prompt import Attachment
 
 
 class MessageRole(str, Enum):
@@ -311,6 +312,11 @@ class ChatContext(BaseModel):
     state: dict[str, Any] = Field(default_factory=dict)
     user: User | None = None
     session_id: str | None = None
+    attachments: list[Attachment] = Field(
+        default_factory=list,
+        description="Files attached to the current chat message. Populated by the server from multipart parts on "
+        "/api/chat; any value supplied by the client in the JSON context is overwritten.",
+    )
     tool_confirmations: list[dict[str, Any]] | None = Field(
         default=None,
         description="List of confirmed/declined tool executions from the frontend. Each entry has 'confirmation_id' "

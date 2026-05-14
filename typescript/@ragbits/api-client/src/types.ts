@@ -73,7 +73,13 @@ export interface BaseApiEndpoints {
  * Streaming API endpoint definitions with their request/stream response types
  */
 export interface BaseStreamingEndpoints {
-    '/api/chat': EndpointDefinition<ChatRequest, ChatResponse>
+    /**
+     * Chat-message stream. Use a plain `ChatRequest` for JSON requests, or
+     * `FormData` for multipart requests carrying file attachments. The
+     * FormData must contain a `request` part with a JSON-encoded ChatRequest
+     * body, plus zero or more `files` parts (one per attached file).
+     */
+    '/api/chat': EndpointDefinition<ChatRequest | FormData, ChatResponse>
 }
 
 type AnyEndpointDefinition = EndpointDefinition<

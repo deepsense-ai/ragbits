@@ -292,7 +292,7 @@ class LiteLLM(LLM[LiteLLMOptions], LazyLiteLLM):
         if prompt.list_images() and not self._litellm.supports_vision(self.model_name):
             raise LLMNotSupportingImagesError()
 
-        if prompt.list_pdfs() and not self._litellm.supports_pdf_input(self.model_name):
+        if prompt.list_pdfs() and not self._litellm.utils.supports_pdf_input(self.model_name):
             raise LLMNotSupportingPdfsError()
 
         if tools and not self._litellm.supports_function_calling(self.model_name):

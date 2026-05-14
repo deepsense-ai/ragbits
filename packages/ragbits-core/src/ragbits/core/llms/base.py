@@ -229,6 +229,7 @@ class LLMResultStreaming(AsyncIterator[T]):
 
     def __init__(self, generator: AsyncGenerator[T | LLMResponseWithMetadata]):
         self._generator = generator
+        self.content: str = ""
         self.usage = Usage()
 
     def __aiter__(self) -> AsyncIterator[T]:
@@ -239,7 +240,7 @@ class LLMResultStreaming(AsyncIterator[T]):
             item = await self._generator.__anext__()
             match item:
                 case str():
-                    pass
+                    self.content += item
                 case ToolCall():
                     pass
                 case LLMResponseWithMetadata():

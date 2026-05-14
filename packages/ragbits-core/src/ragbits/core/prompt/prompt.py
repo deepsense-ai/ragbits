@@ -30,6 +30,7 @@ class Attachment(BaseModel):
     url: str | None = None
     data: bytes | None = None
     mime_type: str | None = None
+    filename: str | None = None
 
 
 class Prompt(Generic[PromptInputT, PromptOutputT], BasePromptWithParser[PromptOutputT], metaclass=ABCMeta):

@@ -6,7 +6,7 @@ import logging
 import time
 import uuid
 from abc import ABC, abstractmethod
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator, Awaitable, Callable
 from typing import Any
 
 from fastapi import UploadFile
@@ -17,6 +17,7 @@ from ragbits.chat.interface.ui_customization import UICustomization
 from ragbits.core.audit.metrics import record_metric
 from ragbits.core.audit.metrics.base import MetricType
 from ragbits.core.llms.base import Usage
+from ragbits.core.prompt import Attachment
 from ragbits.core.prompt.base import ChatFormat
 from ragbits.core.utils import get_secret_key
 
@@ -206,14 +207,26 @@ class ChatInterface(ABC):
     * State updates: Updates to the conversation state
 
     Attributes:
-        upload_handler: Optional async callback for handling file uploads.
-            Should accept an UploadFile parameter.
+        supports_upload: Set to True to advertise file-attachment support to
+            clients. The frontend reads this from /api/config to show the
+            upload UI.
+        upload_handler: Optional async hook invoked once per file attached to
+            a chat message. Receives the raw ``UploadFile`` and returns the
+            ``Attachment`` that should land on ``ChatContext.attachments``,
+            or ``None`` to drop the file. When unset, every uploaded file is
+            converted to a default ``Attachment`` carrying its bytes,
+            ``content_type`` and ``filename``.
 
             Example::
 
-                async def upload_handler(self, file: UploadFile) -> None:
-                    content = await file.read()
-                    # process content
+                async def upload_handler(self, file: UploadFile) -> Attachment | None:
+                    if not (file.content_type or "").startswith("image/"):
+                        return None  # drop non-images
+                    return Attachment(
+                        data=await file.read(),
+                        mime_type=file.content_type,
+                        filename=file.filename,
+                    )
     """
 
     feedback_config: FeedbackConfig = FeedbackConfig()
@@ -223,7 +236,8 @@ class ChatInterface(ABC):
     ui_customization: UICustomization | None = None
     history_persistence: HistoryPersistenceStrategy | None = None
     summary_generator: SummaryGenerator = HeuristicSummaryGenerator()
-    upload_handler: Callable[[UploadFile], Any] | None = None
+    supports_upload: bool = False
+    upload_handler: Callable[[UploadFile], Awaitable[Attachment | None]] | None = None
 
     def __init_subclass__(cls, **kwargs: dict) -> None:
         """Automatically apply the with_chat_metadata decorator to the chat method in subclasses."""

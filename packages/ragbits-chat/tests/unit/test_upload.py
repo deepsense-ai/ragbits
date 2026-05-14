@@ -5,9 +5,11 @@ from fastapi import UploadFile
 from fastapi.testclient import TestClient
 
 from ragbits.chat.api import RagbitsAPI
+from ragbits.chat.auth.backends import ListAuthenticationBackend
+from ragbits.chat.auth.session_store import InMemorySessionStore
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, TextContent, TextResponse
-from ragbits.core.prompt import ChatFormat
+from ragbits.core.prompt import Attachment, ChatFormat
 
 
 class MockChat(ChatInterface):
@@ -56,3 +58,54 @@ async def test_upload_enabled() -> None:
     assert response.status_code == 200
     assert response.json() == {"status": "success", "filename": "test.txt"}
     assert uploaded_content == b"hello world"
+
+
+def _make_authed_api() -> tuple[RagbitsAPI, type[MockChat]]:
+    """Build an API instance with a list auth backend and a handler-equipped chat interface."""
+
+    class MockChatWithUpload(MockChat):
+        """Mock ChatInterface with upload handler."""
+
+        @staticmethod
+        async def upload_handler(file: UploadFile) -> Attachment | None:
+            await file.read()
+
+    auth_backend = ListAuthenticationBackend(
+        users=[
+            {
+                "username": "testuser",
+                "password": "testpass",
+                "email": "test@example.com",
+                "full_name": "Test User",
+            }
+        ],
+        session_store=InMemorySessionStore(),
+    )
+    api = RagbitsAPI(chat_interface=MockChatWithUpload, auth_backend=auth_backend)
+    return api, MockChatWithUpload
+
+
+def test_upload_unauthenticated_rejected_when_auth_configured() -> None:
+    """When an auth backend is configured, /api/upload must require an authenticated session."""
+    api, _ = _make_authed_api()
+    client = TestClient(api.app)
+
+    files = {"file": ("test.txt", b"hello world")}
+    response = client.post("/api/upload", files=files)
+
+    assert response.status_code == 401
+
+
+def test_upload_authenticated_allowed_when_auth_configured() -> None:
+    """After login, /api/upload should accept the upload."""
+    api, _ = _make_authed_api()
+    client = TestClient(api.app)
+
+    login = client.post("/api/auth/login", json={"username": "testuser", "password": "testpass"})
+    assert login.status_code == 200
+
+    files = {"file": ("test.txt", b"hello world")}
+    response = client.post("/api/upload", files=files)
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "success", "filename": "test.txt"}
