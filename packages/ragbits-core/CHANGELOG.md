@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Fixed pdf support check via litellm
+- Added `content` to `LLMResultStreaming` (similar to `AgentResultStreaming`)
+
 ## 1.6.2 (2026-03-26)
 
 ## 1.6.1 (2026-03-19)

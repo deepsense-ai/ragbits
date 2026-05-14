@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Added option to attach files to `/api/chat` via multipart/form-data, populating `chat.attachments`. See
+`examples/chat/attachment_chat.py`
+- Added a flag `ChatInterface.supports_upload` sent to frontend via `/api/config`
+- Added auth check for `/api/upload` endpoint
+- `upload_handler` is now required to be async
+
 ## 1.6.2 (2026-03-26)
 
 - ragbits-agents updated to version v1.6.2
