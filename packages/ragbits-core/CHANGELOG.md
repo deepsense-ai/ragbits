@@ -4,6 +4,7 @@
 
 - Fixed pdf support check via litellm
 - Added `content` to `LLMResultStreaming` (similar to `AgentResultStreaming`)
+- Added support for pydantic models in `convert_function_to_function_schema`
 
 ## 1.6.2 (2026-03-26)
 

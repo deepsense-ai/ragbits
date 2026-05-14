@@ -1,6 +1,6 @@
 {
     "name": "@ragbits/api-client-react",
-    "version": "1.7.0-dev.202604280307",
+    "version": "1.7.0-dev.202605130309",
     "description": "React hooks for the Ragbits API client",
     "repository": {
         "type": "git",
