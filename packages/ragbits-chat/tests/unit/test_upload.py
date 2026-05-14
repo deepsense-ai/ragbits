@@ -9,7 +9,7 @@ from ragbits.chat.auth.backends import ListAuthenticationBackend
 from ragbits.chat.auth.session_store import InMemorySessionStore
 from ragbits.chat.interface import ChatInterface
 from ragbits.chat.interface.types import ChatContext, TextContent, TextResponse
-from ragbits.core.prompt import ChatFormat
+from ragbits.core.prompt import Attachment, ChatFormat
 
 
 class MockChat(ChatInterface):
@@ -67,7 +67,7 @@ def _make_authed_api() -> tuple[RagbitsAPI, type[MockChat]]:
         """Mock ChatInterface with upload handler."""
 
         @staticmethod
-        async def upload_handler(file: UploadFile) -> None:
+        async def upload_handler(file: UploadFile) -> Attachment | None:
             await file.read()
 
     auth_backend = ListAuthenticationBackend(

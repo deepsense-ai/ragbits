@@ -219,7 +219,7 @@ class RagbitsAPI:
                             ],
                             body=None,
                         )
-                    files.append(value)
+                    files.append(cast(UploadFile, value))
             else:
                 body_str = (await request.body()).decode("utf-8", errors="replace")
                 try:
