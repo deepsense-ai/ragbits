@@ -48,7 +48,8 @@ except ImportError:
 class OpenAILLMOptions(LLMOptions):
     """
     Dataclass that represents all available LLM call options for the OpenAI client.
-    Each of them is described in the [OpenAI API documentation](https://platform.openai.com/docs/api-reference/chat).
+    Each of them is described in the
+    [OpenAI API documentation](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create).
     """
 
     frequency_penalty: float | None | NotGiven = NOT_GIVEN

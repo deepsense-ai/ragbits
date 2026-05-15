@@ -25,7 +25,7 @@ class OpenAIEmbedderOptions(Options):
     """
     Dataclass that represents available call options for the OpenAIEmbedder client.
     Each of them is described in the
-    [OpenAI API documentation](https://platform.openai.com/docs/api-reference/embeddings/create).
+    [OpenAI API documentation](https://developers.openai.com/api/reference/resources/embeddings/methods/create).
     """
 
     dimensions: int | None | NotGiven = NOT_GIVEN
