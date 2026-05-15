@@ -79,12 +79,15 @@ async def test_call_with_tools(local_llm: LocalLLM):
 async def test_call(local_llm: LocalLLM):
     """Test the _call method."""
     prompt = [SimplePrompt("Prompt1"), SimplePrompt("Prompt2"), SimplePrompt("Prompt3")]
-    options = LocalLLMOptions(temperature=0.7)
+    options = LocalLLMOptions(temperature=0.7, top_p=0.8, max_tokens=5)
 
     result = await local_llm._call(prompt, options)
 
     assert local_llm.model.generate.call_args.kwargs["eos_token_id"] == local_llm.tokenizer.eos_token_id
     assert local_llm.model.generate.call_args.kwargs["temperature"] == options.temperature
+    assert local_llm.model.generate.call_args.kwargs["top_p"] == options.top_p
+    assert local_llm.model.generate.call_args.kwargs["max_new_tokens"] == options.max_tokens
+    assert "max_tokens" not in local_llm.model.generate.call_args.kwargs
 
     assert len(result) == 3
     assert result[0]["response"] == ["VAL", "PAD", "PAD"]

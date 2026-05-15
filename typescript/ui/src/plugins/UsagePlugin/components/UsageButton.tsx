@@ -29,12 +29,16 @@ type TableData = MessageUsage & { model: string };
 
 const COLUMN_OVERRIDES: Partial<Record<keyof TableData, string>> = {
   n_requests: "Number Of Requests",
+  cache_read_input_tokens: "Cache Read Input Tokens",
+  cache_creation_input_tokens: "Cache Creation Input Tokens",
   estimated_cost: "Estimated Cost ($)",
 };
 const PREFERRED_ORDER: (keyof TableData)[] = [
   "model",
   "n_requests",
   "prompt_tokens",
+  "cache_read_input_tokens",
+  "cache_creation_input_tokens",
   "completion_tokens",
   "total_tokens",
   "estimated_cost",
@@ -121,6 +125,20 @@ export default function UsageButton({ message }: UsageButtonProps) {
           <div className="flex justify-between gap-2">
             <span className="font-semibold">Prompt tokens</span>
             <span>{totalStats.prompt_tokens}</span>
+          </div>
+        )}
+
+        {totalStats.cache_read_input_tokens !== undefined && (
+          <div className="flex justify-between gap-2">
+            <span className="font-semibold">Cache read tokens</span>
+            <span>{totalStats.cache_read_input_tokens}</span>
+          </div>
+        )}
+
+        {totalStats.cache_creation_input_tokens !== undefined && (
+          <div className="flex justify-between gap-2">
+            <span className="font-semibold">Cache creation tokens</span>
+            <span>{totalStats.cache_creation_input_tokens}</span>
           </div>
         )}
 

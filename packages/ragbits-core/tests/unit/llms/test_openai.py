@@ -37,6 +37,21 @@ class MockPromptWithParser(BasePromptWithParser[int]):
         return 42
 
 
+class MockPromptMultimodalText(BasePrompt):
+    @property
+    def chat(self) -> ChatFormat:
+        return [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "hello"},
+                    {"type": "image_url", "image_url": {"url": "https://example.com/x.png"}},
+                    {"type": "text", "text": " world"},
+                ],
+            }
+        ]
+
+
 def _make_openai_response(
     content: str | None,
     tool_calls: list[MagicMock] | None = None,
@@ -89,6 +104,19 @@ async def test_generation():
     result = await llm.generate(MockPrompt("Hello, how are you?"))
 
     assert result == "I'm fine, thank you."
+
+
+def test_count_tokens_unknown_model_falls_back_to_bpe_not_char_length() -> None:
+    llm = OpenAILLM(model_name="unknown-custom-model-xyz", api_key="test-key")
+    text = "hello" * 40
+    n = llm.count_tokens(MockPrompt(text))
+    assert n < len(text)
+
+
+def test_count_tokens_multimodal_text_segments() -> None:
+    llm = OpenAILLM(api_key="test-key")
+    n = llm.count_tokens(MockPromptMultimodalText())
+    assert 2 <= n <= 16
 
 
 async def test_generation_with_parser():
@@ -230,13 +258,31 @@ async def test_options_are_passed_to_api():
     """Options that are set get included in the API call."""
     llm = OpenAILLM(api_key="test-key")
     llm._get_openai_response = AsyncMock(return_value=_make_openai_response("ok"))  # type: ignore[method-assign]
-    options = OpenAILLMOptions(temperature=0.5, max_tokens=100)
+    options = OpenAILLMOptions(temperature=0.5, max_tokens=100, top_p=0.8)
 
     await llm.generate(MockPrompt("Hello!"), options=options)
 
     call_kwargs = llm._get_openai_response.call_args.kwargs
     assert call_kwargs["options"].temperature == 0.5
     assert call_kwargs["options"].max_tokens == 100
+    assert call_kwargs["options"].top_p == 0.8
+
+
+async def test_common_options_are_sent_to_openai_api():
+    """Common LLMOptions fields are serialized into the OpenAI request."""
+    llm = OpenAILLM(api_key="test-key")
+    llm._client = MagicMock()
+    llm._client.chat.completions.create = AsyncMock(return_value=_make_openai_response("ok"))
+
+    await llm._get_openai_response(
+        [{"role": "user", "content": "Hello!"}],
+        OpenAILLMOptions(max_tokens=100, temperature=0.5, top_p=0.8),
+    )
+
+    request_kwargs = llm._client.chat.completions.create.call_args.kwargs
+    assert request_kwargs["max_tokens"] == 100
+    assert request_kwargs["temperature"] == 0.5
+    assert request_kwargs["top_p"] == 0.8
 
 
 class MockSchema(BaseModel):

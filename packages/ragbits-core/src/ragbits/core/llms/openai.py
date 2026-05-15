@@ -6,7 +6,10 @@ import time
 from collections.abc import AsyncGenerator, MutableSequence
 from copy import deepcopy
 from pathlib import PurePosixPath
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
+
+if TYPE_CHECKING:
+    import tiktoken as tiktoken_stubs
 from urllib.parse import urlparse
 
 import httpx
@@ -21,8 +24,10 @@ from ragbits.core.llms.exceptions import (
     LLMResponseError,
     LLMStatusError,
 )
+from ragbits.core.llms.pricing import estimate_llm_cost_usd
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
+from ragbits.core.utils.chat_message_text import iter_text_segments_from_openai_message_content
 
 try:
     import openai
@@ -43,7 +48,8 @@ except ImportError:
 class OpenAILLMOptions(LLMOptions):
     """
     Dataclass that represents all available LLM call options for the OpenAI client.
-    Each of them is described in the [OpenAI API documentation](https://platform.openai.com/docs/api-reference/chat).
+    Each of them is described in the
+    [OpenAI API documentation](https://developers.openai.com/api/reference/resources/chat/subresources/completions/methods/create).
     """
 
     frequency_penalty: float | None | NotGiven = NOT_GIVEN
@@ -51,8 +57,6 @@ class OpenAILLMOptions(LLMOptions):
     presence_penalty: float | None | NotGiven = NOT_GIVEN
     seed: int | None | NotGiven = NOT_GIVEN
     stop: str | list[str] | None | NotGiven = NOT_GIVEN
-    temperature: float | None | NotGiven = NOT_GIVEN
-    top_p: float | None | NotGiven = NOT_GIVEN
     logprobs: bool | None | NotGiven = NOT_GIVEN
     top_logprobs: int | None | NotGiven = NOT_GIVEN
     logit_bias: dict | None | NotGiven = NOT_GIVEN
@@ -112,13 +116,20 @@ class OpenAILLM(LLM[OpenAILLMOptions]):
 
     def get_estimated_cost(self, prompt_tokens: int, completion_tokens: int) -> float:  # noqa: PLR6301
         """
-        Returns 0.0 — cost estimation is not bundled; use OpenAI usage dashboard for billing details.
+        Returns an estimated USD cost from token counts using public list prices.
+
+        Unknown or custom ``model_name`` values yield ``0.0``. Actual invoices may
+        differ (discounts, batch, caching, negotiated rates).
         """
-        return 0.0
+        return estimate_llm_cost_usd("openai", self.model_name, prompt_tokens, completion_tokens)
 
     def count_tokens(self, prompt: BasePrompt) -> int:
         """
         Counts tokens in the prompt using tiktoken when available.
+
+        Unknown OpenAI-compatible model names fall back to ``o200k_base`` then
+        ``cl100k_base``. If tiktoken is unavailable, uses a rough ``~4 chars``
+        per token estimate (never raw character count, which is far too high).
 
         Args:
             prompt: Formatted prompt template with conversation.
@@ -127,12 +138,37 @@ class OpenAILLM(LLM[OpenAILLMOptions]):
             Approximate token count.
         """
         if HAS_TIKTOKEN:
-            try:
-                enc = tiktoken.encoding_for_model(self.model_name)
-                return sum(len(enc.encode(str(msg.get("content") or ""))) for msg in prompt.chat)
-            except KeyError:
-                pass
-        return sum(len(str(msg.get("content") or "")) for msg in prompt.chat)
+            enc = self._tiktoken_encoding()
+            if enc is not None:
+                return sum(
+                    len(enc.encode(segment))
+                    for msg in prompt.chat
+                    for segment in iter_text_segments_from_openai_message_content(msg.get("content"))
+                )
+        return sum(
+            self._approx_tokens_no_tiktoken(segment)
+            for msg in prompt.chat
+            for segment in iter_text_segments_from_openai_message_content(msg.get("content"))
+        )
+
+    def _tiktoken_encoding(self) -> tiktoken_stubs.Encoding | None:
+        if not HAS_TIKTOKEN:
+            return None
+        try:
+            return tiktoken.encoding_for_model(self.model_name)
+        except KeyError:
+            for name in ("o200k_base", "cl100k_base"):
+                try:
+                    return tiktoken.get_encoding(name)
+                except KeyError:
+                    continue
+        return None
+
+    @staticmethod
+    def _approx_tokens_no_tiktoken(text: str) -> int:
+        if not text:
+            return 0
+        return max(1, (len(text) + 3) // 4)
 
     @staticmethod
     def _to_json_schema_response_format(output_schema: type[BaseModel] | dict) -> dict:

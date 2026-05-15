@@ -14,8 +14,10 @@ from ragbits.core.llms.exceptions import (
     LLMEmptyResponseError,
     LLMStatusError,
 )
+from ragbits.core.llms.pricing import estimate_llm_cost_usd
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
+from ragbits.core.utils.chat_message_text import iter_text_segments_from_openai_message_content
 
 try:
     from google import genai
@@ -38,8 +40,6 @@ class GeminiLLMOptions(LLMOptions):
     Each of them is described in the [Google AI documentation](https://ai.google.dev/api/generate-content).
     """
 
-    temperature: float | None | NotGiven = NOT_GIVEN
-    top_p: float | None | NotGiven = NOT_GIVEN
     top_k: int | None | NotGiven = NOT_GIVEN
     candidate_count: int | None | NotGiven = NOT_GIVEN
     stop_sequences: list[str] | None | NotGiven = NOT_GIVEN
@@ -103,9 +103,29 @@ class GeminiLLM(LLM[GeminiLLMOptions]):
 
     def get_estimated_cost(self, prompt_tokens: int, completion_tokens: int) -> float:  # noqa: PLR6301
         """
-        Returns 0.0 — cost estimation is not bundled; use the Google Cloud console for billing details.
+        Returns an estimated USD cost from token counts using public list prices.
+
+        Vertex AI and Google AI Studio can differ; this uses the Gemini Developer API
+        list prices as a baseline. Unknown ``model_name`` values yield ``0.0``.
         """
-        return 0.0
+        return estimate_llm_cost_usd("gemini", self.model_name, prompt_tokens, completion_tokens)
+
+    def count_tokens(self, prompt: BasePrompt) -> int:  # noqa: PLR6301
+        """
+        Approximate token count for plain text using ``tiktoken`` (``o200k_base``).
+
+        Gemini uses a different tokenizer; this is a scale-correct preflight estimate
+        so metrics avoid treating each character as a token. Install the ``gemini``
+        extra so ``tiktoken`` is guaranteed for this path.
+        """
+        import tiktoken
+
+        enc = tiktoken.get_encoding("o200k_base")
+        return sum(
+            len(enc.encode(segment))
+            for msg in prompt.chat
+            for segment in iter_text_segments_from_openai_message_content(msg.get("content"))
+        )
 
     @staticmethod
     def _convert_messages(messages: list[dict]) -> tuple[str | None, list[genai_types.Content]]:  # noqa: PLR0912, PLR0915

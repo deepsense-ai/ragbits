@@ -25,7 +25,7 @@ from ragbits.core.llms.exceptions import (  # noqa: E402
     LLMEmptyResponseError,
     LLMStatusError,
 )
-from ragbits.core.llms.gemini import GeminiLLM  # noqa: E402
+from ragbits.core.llms.gemini import GeminiLLM, GeminiLLMOptions  # noqa: E402
 from ragbits.core.prompt.base import BasePrompt, ChatFormat  # noqa: E402
 
 
@@ -104,7 +104,7 @@ def _make_llm(model_name: str = "gemini-2.5-flash", **kwargs: Any) -> GeminiLLM:
 async def test_generation():
     """Basic text generation."""
     llm = _make_llm()
-    llm._client.aio.models.generate_content = AsyncMock(
+    llm._client.aio.models.generate_content = AsyncMock(  # type: ignore[method-assign]
         return_value=_make_gemini_response([_make_text_part("I'm fine, thank you.")])
     )
 
@@ -116,7 +116,7 @@ async def test_generation():
 async def test_generation_with_metadata():
     """generate_with_metadata returns content and token usage."""
     llm = _make_llm()
-    llm._client.aio.models.generate_content = AsyncMock(
+    llm._client.aio.models.generate_content = AsyncMock(  # type: ignore[method-assign]
         return_value=_make_gemini_response(
             [_make_text_part("Great!")],
             prompt_tokens=5,
@@ -136,7 +136,7 @@ async def test_generation_with_metadata():
 async def test_generation_with_tools():
     """Tool calls are returned when the model calls a function."""
     llm = _make_llm()
-    llm._client.aio.models.generate_content = AsyncMock(
+    llm._client.aio.models.generate_content = AsyncMock(  # type: ignore[method-assign]
         return_value=_make_gemini_response([_make_function_call_part("get_weather", {"location": "San Francisco"})])
     )
 
@@ -151,7 +151,7 @@ async def test_generation_with_tools():
 async def test_generation_with_duplicate_tool_calls_gets_unique_ids():
     """Multiple calls to the same function get unique IDs."""
     llm = _make_llm()
-    llm._client.aio.models.generate_content = AsyncMock(
+    llm._client.aio.models.generate_content = AsyncMock(  # type: ignore[method-assign]
         return_value=_make_gemini_response(
             [
                 _make_function_call_part("get_weather", {"location": "San Francisco"}),
@@ -172,7 +172,7 @@ async def test_generation_with_duplicate_tool_calls_gets_unique_ids():
 async def test_generation_with_tools_no_tool_used():
     """Plain text is returned when no tool is called."""
     llm = _make_llm()
-    llm._client.aio.models.generate_content = AsyncMock(
+    llm._client.aio.models.generate_content = AsyncMock(  # type: ignore[method-assign]
         return_value=_make_gemini_response([_make_text_part("I don't need tools.")])
     )
 
@@ -187,7 +187,7 @@ async def test_empty_candidates_raises():
     llm = _make_llm()
     empty_response = MagicMock()
     empty_response.candidates = []
-    llm._client.aio.models.generate_content = AsyncMock(return_value=empty_response)
+    llm._client.aio.models.generate_content = AsyncMock(return_value=empty_response)  # type: ignore[method-assign]
 
     with pytest.raises(LLMEmptyResponseError):
         await llm.generate(MockPrompt("Hello!"))
@@ -202,7 +202,7 @@ async def test_empty_parts_raises():
     candidate.content = content
     response = MagicMock()
     response.candidates = [candidate]
-    llm._client.aio.models.generate_content = AsyncMock(return_value=response)
+    llm._client.aio.models.generate_content = AsyncMock(return_value=response)  # type: ignore[method-assign]
 
     with pytest.raises(LLMEmptyResponseError):
         await llm.generate(MockPrompt("Hello!"))
@@ -211,6 +211,22 @@ async def test_empty_parts_raises():
 def test_get_model_id():
     llm = _make_llm(model_name="gemini-2.5-flash")
     assert llm.get_model_id() == "gemini:gemini-2.5-flash"
+
+
+def test_common_options_are_sent_to_gemini_api(mock_genai_types: MagicMock):
+    llm = _make_llm()
+
+    llm._build_config(
+        system=None,
+        options=GeminiLLMOptions(max_tokens=100, temperature=0.5, top_p=0.8),
+        tools=None,
+        tool_choice=None,
+    )
+
+    config_kwargs = mock_genai_types.GenerateContentConfig.call_args.kwargs
+    assert config_kwargs["max_output_tokens"] == 100
+    assert config_kwargs["temperature"] == 0.5
+    assert config_kwargs["top_p"] == 0.8
 
 
 # ---------------------------------------------------------------------------
@@ -268,7 +284,7 @@ async def test_api_call_error():
             self.code = code
 
     exc = MockGoogleAPICallError("not found", 404)
-    llm._client.aio.models.generate_content = AsyncMock(side_effect=exc)
+    llm._client.aio.models.generate_content = AsyncMock(side_effect=exc)  # type: ignore[method-assign]
 
     with patch("ragbits.core.llms.gemini.google_exceptions") as mock_google_exc:
         mock_google_exc.GoogleAPICallError = MockGoogleAPICallError
@@ -290,7 +306,7 @@ async def test_generic_api_error():
         pass
 
     exc = MockGoogleAPIError("connection failed")
-    llm._client.aio.models.generate_content = AsyncMock(side_effect=exc)
+    llm._client.aio.models.generate_content = AsyncMock(side_effect=exc)  # type: ignore[method-assign]
 
     with patch("ragbits.core.llms.gemini.google_exceptions") as mock_google_exc:
         mock_google_exc.GoogleAPICallError = MockGoogleAPICallError
@@ -323,7 +339,7 @@ async def test_streaming_yields_text_chunks():
             chunk.usage_metadata = usage
             yield chunk
 
-    llm._client.aio.models.generate_content_stream = AsyncMock(return_value=fake_stream())
+    llm._client.aio.models.generate_content_stream = AsyncMock(return_value=fake_stream())  # type: ignore[method-assign]
 
     generator = await llm._call_streaming(MockPrompt("Hi!"), llm.default_options)
     chunks = [chunk async for chunk in generator]

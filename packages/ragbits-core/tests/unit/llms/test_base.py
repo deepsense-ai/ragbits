@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from ragbits.core.audit.metrics import MetricHandler, set_metric_handlers
 from ragbits.core.audit.metrics.base import LLMMetric, MetricType
 from ragbits.core.audit.traces import TraceHandler, set_trace_handlers
-from ragbits.core.llms.base import LLMResponseWithMetadata, Reasoning, ToolCall, Usage, UsageItem
+from ragbits.core.llms.base import LLMOptions, LLMResponseWithMetadata, Reasoning, ToolCall, Usage, UsageItem
 from ragbits.core.llms.mock import MockLLM, MockLLMOptions
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat, SimplePrompt
 
@@ -78,6 +78,53 @@ def get_weather(location: str) -> str:
         return json.dumps({"location": "San Francisco", "temperature": "72", "unit": "fahrenheit"})
     else:
         return json.dumps({"location": location, "temperature": "unknown"})
+
+
+def test_llm_options_include_common_generation_params() -> None:
+    options = LLMOptions(max_tokens=100, temperature=0.3, top_p=0.8)
+
+    assert options.dict()["max_tokens"] == 100
+    assert options.dict()["temperature"] == 0.3
+    assert options.dict()["top_p"] == 0.8
+
+
+def test_usage_aggregates_cached_tokens() -> None:
+    usage = Usage(
+        requests=[
+            UsageItem(
+                model="model-a",
+                prompt_tokens=10,
+                completion_tokens=20,
+                total_tokens=30,
+                cache_read_input_tokens=3,
+                cache_creation_input_tokens=4,
+                estimated_cost=0.1,
+            ),
+            UsageItem(
+                model="model-a",
+                prompt_tokens=5,
+                completion_tokens=10,
+                total_tokens=15,
+                cache_read_input_tokens=1,
+                cache_creation_input_tokens=2,
+                estimated_cost=0.05,
+            ),
+            UsageItem(
+                model="model-b",
+                prompt_tokens=1,
+                completion_tokens=2,
+                total_tokens=3,
+                cache_read_input_tokens=7,
+                cache_creation_input_tokens=8,
+                estimated_cost=0.01,
+            ),
+        ]
+    )
+
+    assert usage.cache_read_input_tokens == 11
+    assert usage.cache_creation_input_tokens == 14
+    assert usage.model_breakdown["model-a"].cache_read_input_tokens == 4
+    assert usage.model_breakdown["model-a"].cache_creation_input_tokens == 6
 
 
 @pytest.fixture(name="get_weather_schema")
@@ -358,11 +405,6 @@ def test_output_schema():
 def test_has_images():
     prompt = SimplePrompt("Hello")
     assert len(prompt.list_images()) == 0
-
-
-def test_get_token_id(llm: MockLLM):
-    with pytest.raises(NotImplementedError):
-        llm.get_token_id("example_token")
 
 
 @pytest.fixture

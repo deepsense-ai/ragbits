@@ -42,13 +42,10 @@ class LiteLLMOptions(LLMOptions):
     """
 
     frequency_penalty: float | None | NotGiven = NOT_GIVEN
-    max_tokens: int | None | NotGiven = NOT_GIVEN
     n: int | None | NotGiven = NOT_GIVEN
     presence_penalty: float | None | NotGiven = NOT_GIVEN
     seed: int | None | NotGiven = NOT_GIVEN
     stop: str | list[str] | None | NotGiven = NOT_GIVEN
-    temperature: float | None | NotGiven = NOT_GIVEN
-    top_p: float | None | NotGiven = NOT_GIVEN
     logprobs: bool | None | NotGiven = NOT_GIVEN
     top_logprobs: int | None | NotGiven = NOT_GIVEN
     logit_bias: dict | None | NotGiven = NOT_GIVEN
@@ -138,6 +135,19 @@ class LiteLLM(LLM[LiteLLMOptions], LazyLiteLLM):
         response_cost_input = prompt_tokens * response_cost["input_cost_per_token"]
         response_cost_output = completion_tokens * response_cost["output_cost_per_token"]
         return response_cost_input + response_cost_output
+
+    @staticmethod
+    def _get_usage_from_litellm_response(usage: object) -> dict[str, int]:
+        """
+        Extracts token usage fields from a LiteLLM usage object.
+        """
+        return {
+            "completion_tokens": getattr(usage, "completion_tokens", 0) or 0,
+            "prompt_tokens": getattr(usage, "prompt_tokens", 0) or 0,
+            "total_tokens": getattr(usage, "total_tokens", 0) or 0,
+            "cache_read_input_tokens": getattr(usage, "cache_read_input_tokens", 0) or 0,
+            "cache_creation_input_tokens": getattr(usage, "cache_creation_input_tokens", 0) or 0,
+        }
 
     def count_tokens(self, prompt: BasePrompt) -> int:
         """
@@ -261,11 +271,7 @@ class LiteLLM(LLM[LiteLLMOptions], LazyLiteLLM):
                 result["logprobs"] = response.choices[0].logprobs["content"]  # type: ignore
 
             if response.usage:  # type: ignore
-                result["usage"] = {
-                    "completion_tokens": response.usage.completion_tokens,  # type: ignore
-                    "prompt_tokens": response.usage.prompt_tokens,  # type: ignore
-                    "total_tokens": response.usage.total_tokens,  # type: ignore
-                }
+                result["usage"] = self._get_usage_from_litellm_response(response.usage)  # type: ignore
 
             results.append(result)
 
@@ -375,36 +381,35 @@ class LiteLLM(LLM[LiteLLMOptions], LazyLiteLLM):
                 if usage := getattr(item, "usage", None):
                     provider_calculated_usage = usage
 
-            total_tokens = input_tokens + output_tokens
-
-            if provider_calculated_usage:
-                input_tokens = provider_calculated_usage.prompt_tokens
-                output_tokens = provider_calculated_usage.completion_tokens
-                total_tokens = provider_calculated_usage.total_tokens
+            usage_data = (
+                self._get_usage_from_litellm_response(provider_calculated_usage)
+                if provider_calculated_usage
+                else {
+                    "prompt_tokens": input_tokens,
+                    "completion_tokens": output_tokens,
+                    "total_tokens": input_tokens + output_tokens,
+                    "cache_read_input_tokens": 0,
+                    "cache_creation_input_tokens": 0,
+                }
+            )
 
             if tool_calls:
                 yield {"tool_calls": tool_calls}
 
             total_time = time.perf_counter() - start_time
 
-            yield {
-                "usage": {
-                    "prompt_tokens": input_tokens,
-                    "completion_tokens": output_tokens,
-                    "total_tokens": total_tokens,
-                }
-            }
+            yield {"usage": usage_data}
 
             record_metric(
                 metric=LLMMetric.INPUT_TOKENS,
-                value=input_tokens,
+                value=usage_data["prompt_tokens"],
                 metric_type=MetricType.HISTOGRAM,
                 model=self.model_name,
                 prompt=prompt.__class__.__name__,
             )
             record_metric(
                 metric=LLMMetric.TOKEN_THROUGHPUT,
-                value=output_tokens / total_time,
+                value=usage_data["completion_tokens"] / total_time,
                 metric_type=MetricType.HISTOGRAM,
                 model=self.model_name,
                 prompt=prompt.__class__.__name__,

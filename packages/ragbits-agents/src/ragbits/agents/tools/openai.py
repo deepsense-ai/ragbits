@@ -1,15 +1,41 @@
+from __future__ import annotations
+
 import base64
 import uuid
 from collections.abc import Callable
 from pathlib import Path
-from typing import cast
+from typing import TYPE_CHECKING, Any, cast
 
-from openai import AsyncOpenAI
-from openai.types.responses import Response
-from openai.types.responses.tool_param import CodeInterpreter, ToolParam
+if TYPE_CHECKING:
+    from openai.types.responses import Response
+    from openai.types.responses.tool_param import CodeInterpreter, ToolParam
+else:
+    CodeInterpreter = Any
+    ToolParam = Any
 
 from ragbits.agents.tools.types import ImageGenerationResponse
 from ragbits.core.sources.base import get_local_storage_dir
+
+AsyncOpenAI: type | None = None
+_OPENAI_EXTRA_ERROR = (
+    "You need to install the 'openai' package to use OpenAI native tools."
+    " Please install ragbits-agents with the 'openai' extra: pip install ragbits-agents[openai]"
+)
+
+
+def _get_async_openai() -> type:
+    global AsyncOpenAI  # noqa: PLW0603
+
+    if AsyncOpenAI is not None:
+        return AsyncOpenAI
+
+    try:
+        from openai import AsyncOpenAI as async_openai
+    except ImportError as exc:
+        raise ImportError(_OPENAI_EXTRA_ERROR) from exc
+
+    AsyncOpenAI = async_openai
+    return async_openai
 
 
 def get_web_search_tool(model_name: str, api_key: str | None = None, additional_params: dict | None = None) -> Callable:
@@ -75,7 +101,8 @@ class OpenAIResponsesLLM:
     """
 
     def __init__(self, model_name: str, api_key: str | None, tool_param: ToolParam):
-        self._client = AsyncOpenAI(api_key=api_key)
+        client_cls = _get_async_openai()
+        self._client = client_cls(api_key=api_key)
         self._model_name = model_name
         self._tool_param = tool_param
 

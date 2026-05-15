@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from ragbits.core.llms.anthropic import AnthropicLLM
+from ragbits.core.llms.anthropic import AnthropicLLM, AnthropicLLMOptions
 from ragbits.core.llms.exceptions import (
     LLMConnectionError,
     LLMEmptyResponseError,
@@ -99,7 +99,7 @@ def _make_llm() -> AnthropicLLM:
 async def test_generation():
     """Basic text generation."""
     llm = _make_llm()
-    llm._client.messages.create = AsyncMock(
+    llm._client.messages.create = AsyncMock(  # type: ignore[method-assign]
         return_value=_make_anthropic_response([_make_text_block("I'm fine, thank you.")])
     )
 
@@ -111,7 +111,7 @@ async def test_generation():
 async def test_generation_with_metadata():
     """generate_with_metadata returns content and token usage."""
     llm = _make_llm()
-    llm._client.messages.create = AsyncMock(
+    llm._client.messages.create = AsyncMock(  # type: ignore[method-assign]
         return_value=_make_anthropic_response(
             [_make_text_block("Great!")],
             input_tokens=5,
@@ -131,7 +131,7 @@ async def test_generation_with_metadata():
 async def test_generation_with_reasoning():
     """Thinking blocks are surfaced as reasoning in generate_with_metadata."""
     llm = _make_llm()
-    llm._client.messages.create = AsyncMock(
+    llm._client.messages.create = AsyncMock(  # type: ignore[method-assign]
         return_value=_make_anthropic_response(
             [_make_thinking_block("Let me think..."), _make_text_block("The answer is 42.")]
         )
@@ -146,7 +146,7 @@ async def test_generation_with_reasoning():
 async def test_generation_with_tools():
     """Tool calls are returned when the model calls a tool."""
     llm = _make_llm()
-    llm._client.messages.create = AsyncMock(
+    llm._client.messages.create = AsyncMock(  # type: ignore[method-assign]
         return_value=_make_anthropic_response(
             [_make_tool_use_block("get_weather", {"location": "San Francisco"}, "toolu_abc")]
         )
@@ -165,7 +165,7 @@ async def test_generation_with_tools():
 async def test_generation_with_tools_no_tool_used():
     """Plain text returned when tools provided but not called."""
     llm = _make_llm()
-    llm._client.messages.create = AsyncMock(
+    llm._client.messages.create = AsyncMock(  # type: ignore[method-assign]
         return_value=_make_anthropic_response([_make_text_block("I don't need tools.")])
     )
 
@@ -178,7 +178,7 @@ async def test_generation_with_tools_no_tool_used():
 async def test_empty_response_raises():
     """Empty content list raises LLMEmptyResponseError."""
     llm = _make_llm()
-    llm._client.messages.create = AsyncMock(return_value=_make_anthropic_response([]))
+    llm._client.messages.create = AsyncMock(return_value=_make_anthropic_response([]))  # type: ignore[method-assign]
 
     with pytest.raises(LLMEmptyResponseError):
         await llm.generate(MockPrompt("Hello!"))
@@ -188,6 +188,21 @@ def test_get_model_id():
     llm = _make_llm()
     llm.model_name = "claude-opus-4-6"
     assert llm.get_model_id() == "anthropic:claude-opus-4-6"
+
+
+def test_common_options_are_sent_to_anthropic_api():
+    llm = _make_llm()
+    kwargs = llm._build_create_kwargs(
+        conversation=[{"role": "user", "content": "Hello!"}],
+        system=None,
+        options=AnthropicLLMOptions(max_tokens=100, temperature=0.5, top_p=0.8),
+        tools=None,
+        tool_choice=None,
+    )
+
+    assert kwargs["max_tokens"] == 100
+    assert kwargs["temperature"] == 0.5
+    assert kwargs["top_p"] == 0.8
 
 
 # ---------------------------------------------------------------------------
@@ -327,7 +342,7 @@ async def test_api_connection_error():
     mock_anthropic_module.APIResponseValidationError = FakeValidationError
 
     llm = _make_llm()
-    llm._client.messages.create = AsyncMock(side_effect=FakeConnectionError("timeout"))
+    llm._client.messages.create = AsyncMock(side_effect=FakeConnectionError("timeout"))  # type: ignore[method-assign]
 
     with (
         patch("ragbits.core.llms.anthropic.anthropic", mock_anthropic_module, create=True),
@@ -362,7 +377,7 @@ async def test_api_status_error():
     mock_anthropic_module.APIResponseValidationError = FakeValidationError
 
     llm = _make_llm()
-    llm._client.messages.create = AsyncMock(side_effect=FakeStatusError("forbidden", status_code=403))
+    llm._client.messages.create = AsyncMock(side_effect=FakeStatusError("forbidden", status_code=403))  # type: ignore[method-assign]
 
     with (
         patch("ragbits.core.llms.anthropic.anthropic", mock_anthropic_module, create=True),
@@ -424,7 +439,7 @@ async def test_streaming_yields_text_chunks():
     mock_anthropic_module.APIResponseValidationError = FakeBaseError
 
     llm = _make_llm()
-    llm._client.messages.create = AsyncMock(return_value=fake_stream())
+    llm._client.messages.create = AsyncMock(return_value=fake_stream())  # type: ignore[method-assign]
 
     with patch("ragbits.core.llms.anthropic.anthropic", mock_anthropic_module, create=True):
         generator = await llm._call_streaming(MockPrompt("Hi!"), llm.default_options)

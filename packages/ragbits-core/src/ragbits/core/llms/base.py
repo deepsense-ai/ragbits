@@ -26,11 +26,15 @@ from ragbits.core.utils.function_schema import convert_function_to_function_sche
 
 class LLMOptions(Options):
     """
-    Options for the LLM.
+    Common options supported by all LLM providers.
     """
 
     max_tokens: int | None | NotGiven = NOT_GIVEN
-    """The maximum number of tokens the LLM can use, if None, LLM will run forever"""
+    """The maximum number of tokens the LLM can generate."""
+    temperature: float | None | NotGiven = NOT_GIVEN
+    """Controls response randomness. Lower values make output more deterministic."""
+    top_p: float | None | NotGiven = NOT_GIVEN
+    """Controls nucleus sampling probability mass."""
 
 
 LLMClientOptionsT = TypeVar("LLMClientOptionsT", bound=LLMOptions)
@@ -80,6 +84,8 @@ class UsageItem(BaseModel):
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
+    cache_read_input_tokens: int = 0
+    cache_creation_input_tokens: int = 0
 
     estimated_cost: float
 
@@ -98,6 +104,8 @@ class Usage(BaseModel):
         prompt_tokens: int,
         completion_tokens: int,
         total_tokens: int,
+        cache_read_input_tokens: int = 0,
+        cache_creation_input_tokens: int = 0,
     ) -> "Usage":
         """
         Creates a new Usage object.
@@ -107,6 +115,8 @@ class Usage(BaseModel):
             prompt_tokens: The number of tokens in the prompt.
             completion_tokens: The number of tokens in the completion.
             total_tokens: The total number of tokens.
+            cache_read_input_tokens: The number of input tokens read from cache.
+            cache_creation_input_tokens: The number of input tokens written to cache.
         """
         return cls(
             requests=[
@@ -115,6 +125,8 @@ class Usage(BaseModel):
                     prompt_tokens=prompt_tokens,
                     completion_tokens=completion_tokens,
                     total_tokens=total_tokens,
+                    cache_read_input_tokens=cache_read_input_tokens,
+                    cache_creation_input_tokens=cache_creation_input_tokens,
                     estimated_cost=llm.get_estimated_cost(prompt_tokens, completion_tokens),
                 )
             ]
@@ -154,6 +166,20 @@ class Usage(BaseModel):
         Returns the total number of tokens.
         """
         return sum(request.total_tokens for request in self.requests)
+
+    @property
+    def cache_read_input_tokens(self) -> int:
+        """
+        Returns the number of input tokens read from cache.
+        """
+        return sum(request.cache_read_input_tokens for request in self.requests)
+
+    @property
+    def cache_creation_input_tokens(self) -> int:
+        """
+        Returns the number of input tokens written to cache.
+        """
+        return sum(request.cache_creation_input_tokens for request in self.requests)
 
     @property
     def model_breakdown(self) -> dict[str, "Usage"]:
@@ -197,6 +223,8 @@ class Usage(BaseModel):
             f"prompt_tokens={self.prompt_tokens}, "
             f"completion_tokens={self.completion_tokens}, "
             f"total_tokens={self.total_tokens}, "
+            f"cache_read_input_tokens={self.cache_read_input_tokens}, "
+            f"cache_creation_input_tokens={self.cache_creation_input_tokens}, "
             f"estimated_cost={self.estimated_cost})"
         )
 
@@ -316,18 +344,6 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
             Number of tokens in the prompt.
         """
         return sum(len(message["content"]) for message in prompt.chat)
-
-    def get_token_id(self, token: str) -> int:
-        """
-        Gets token id.
-
-        Args:
-            token: The token to encode.
-
-        Returns:
-            The id for the given token.
-        """
-        raise NotImplementedError("Token id lookup is not supported by this model")
 
     @deprecated("Use generate_with_metadata() instead")
     async def generate_raw(
@@ -617,6 +633,8 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                         prompt_tokens=cast(int, usage_data.get("prompt_tokens")),
                         completion_tokens=cast(int, usage_data.get("completion_tokens")),
                         total_tokens=cast(int, usage_data.get("total_tokens")),
+                        cache_read_input_tokens=cast(int, usage_data.get("cache_read_input_tokens", 0)),
+                        cache_creation_input_tokens=cast(int, usage_data.get("cache_creation_input_tokens", 0)),
                     )
 
                 content = response.pop("response")
@@ -772,6 +790,8 @@ class LLM(ConfigurableComponent[LLMClientOptionsT], ABC):
                     prompt_tokens=cast(int, usage_data.get("prompt_tokens")),
                     completion_tokens=cast(int, usage_data.get("completion_tokens")),
                     total_tokens=cast(int, usage_data.get("total_tokens")),
+                    cache_read_input_tokens=cast(int, usage_data.get("cache_read_input_tokens", 0)),
+                    cache_creation_input_tokens=cast(int, usage_data.get("cache_creation_input_tokens", 0)),
                 )
 
             outputs.response = LLMResponseWithMetadata[type(content or None)](  # type: ignore
