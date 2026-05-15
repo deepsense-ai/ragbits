@@ -2,7 +2,7 @@ import { Button } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { ChangeEvent, useRef } from "react";
 import { SlotPropsMap } from "../../../core/types/slots";
-import { attachmentsStore } from "../stores/attachmentsStore";
+import { useUploadAttachmentsStore } from "../stores/attachmentsStore";
 
 export default function UploadButton({
   isInputDisabled,
@@ -18,7 +18,8 @@ export default function UploadButton({
     if (!files) return;
 
     for (const file of Array.from(files)) {
-      attachmentsStore.getState().add(file);
+      const id = useUploadAttachmentsStore.getState().add(file);
+      useUploadAttachmentsStore.getState().markReady(id, file);
     }
 
     if (fileInputRef.current) fileInputRef.current.value = "";

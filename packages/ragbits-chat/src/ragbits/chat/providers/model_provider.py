@@ -50,6 +50,7 @@ class RagbitsChatModelProvider:
             )
             from ragbits.chat.interface.forms import UserSettings
             from ragbits.chat.interface.types import (
+                AttachmentsConfig,
                 AuthenticationConfig,
                 ChatContext,
                 ChatMessageRequest,
@@ -120,6 +121,7 @@ class RagbitsChatModelProvider:
                 "PageMetaCustomization": PageMetaCustomization,
                 "UserSettings": UserSettings,
                 "FeedbackConfig": FeedbackConfig,
+                "AttachmentsConfig": AttachmentsConfig,
                 # API response models
                 "ConfigResponse": ConfigResponse,
                 "FeedbackResponse": FeedbackResponse,
@@ -192,6 +194,7 @@ class RagbitsChatModelProvider:
                 "FeedbackConfig",
                 "AuthenticationConfig",
                 "OAuth2ProviderConfig",
+                "AttachmentsConfig",
             ],
             "responses": [
                 "FeedbackResponse",

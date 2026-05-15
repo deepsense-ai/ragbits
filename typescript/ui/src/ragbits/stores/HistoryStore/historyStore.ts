@@ -21,7 +21,7 @@ import {
   getTemporaryConversationId,
   initialConversationValues,
 } from "../../../core/stores/HistoryStore/utils";
-import { attachmentsStore } from "../../../plugins/UploadPlugin/stores/attachmentsStore";
+import { useUploadAttachmentsStore } from "../../../plugins/UploadPlugin/stores/attachmentsStore";
 import { v4 as uuidv4 } from "uuid";
 
 export const FLUSH_INTERVAL_MS = 100;
@@ -370,7 +370,9 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       };
 
       // Pick up any files staged by the upload plugin and switch to multipart.
-      const pendingFiles = attachmentsStore.getState().pending;
+      const { files: pendingFiles } = useUploadAttachmentsStore
+        .getState()
+        .consumeReady();
       let requestBody: ChatRequest | FormData = chatRequest;
       if (pendingFiles.length > 0) {
         const formData = new FormData();
@@ -379,7 +381,6 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
           formData.append("files", file, file.name);
         }
         requestBody = formData;
-        attachmentsStore.getState().clear();
       }
 
       // Add new entry for events
