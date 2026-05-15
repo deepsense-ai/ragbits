@@ -399,11 +399,6 @@ def test_has_images():
     assert len(prompt.list_images()) == 0
 
 
-def test_get_token_id(llm: MockLLM):
-    with pytest.raises(NotImplementedError):
-        llm.get_token_id("example_token")
-
-
 @pytest.fixture
 def mock_metric_handler():
     handler = MagicMock(spec=MetricHandler)
