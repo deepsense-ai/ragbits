@@ -182,6 +182,8 @@ export interface MessageUsage {
     prompt_tokens: number
     completion_tokens: number
     total_tokens: number
+    cache_read_input_tokens: number
+    cache_creation_input_tokens: number
 }
 
 /**

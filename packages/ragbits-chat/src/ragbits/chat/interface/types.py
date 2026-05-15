@@ -156,6 +156,8 @@ class MessageUsage(BaseModel):
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
+    cache_read_input_tokens: int = 0
+    cache_creation_input_tokens: int = 0
 
     @classmethod
     def from_usage(cls, usage: Usage) -> "MessageUsage":
@@ -174,6 +176,8 @@ class MessageUsage(BaseModel):
             n_requests=usage.n_requests,
             prompt_tokens=usage.prompt_tokens,
             total_tokens=usage.total_tokens,
+            cache_read_input_tokens=usage.cache_read_input_tokens,
+            cache_creation_input_tokens=usage.cache_creation_input_tokens,
         )
 
 

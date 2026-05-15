@@ -9,6 +9,8 @@ const mockUsage: Exclude<ChatMessage["usage"], undefined> = {
   "gpt-4": {
     n_requests: 2,
     prompt_tokens: 100,
+    cache_read_input_tokens: 30,
+    cache_creation_input_tokens: 20,
     completion_tokens: 200,
     total_tokens: 300,
     estimated_cost: 0.05,
@@ -16,6 +18,8 @@ const mockUsage: Exclude<ChatMessage["usage"], undefined> = {
   "gpt-3.5": {
     n_requests: 1,
     prompt_tokens: 50,
+    cache_read_input_tokens: 10,
+    cache_creation_input_tokens: 5,
     completion_tokens: 100,
     total_tokens: 150,
     estimated_cost: 0.01,
@@ -46,6 +50,8 @@ describe("UsageButton", () => {
 
     expect(await screen.findByText(/Prompt tokens/i)).toBeInTheDocument();
     expect(screen.getByText("150")).toBeInTheDocument();
+    expect(screen.getByText("40")).toBeInTheDocument();
+    expect(screen.getByText("25")).toBeInTheDocument();
     expect(screen.getByText("300")).toBeInTheDocument();
     expect(screen.getByText("450")).toBeInTheDocument();
     expect(screen.getByText(/0\.06/)).toBeInTheDocument();
@@ -79,6 +85,8 @@ describe("UsageButton", () => {
 
     const totalRow = getRowByFirstCell("Total");
     expect(totalRow).toHaveTextContent("3");
+    expect(totalRow).toHaveTextContent("40");
+    expect(totalRow).toHaveTextContent("25");
     expect(totalRow).toHaveTextContent("450");
     expect(totalRow).toHaveTextContent("0.06");
   });

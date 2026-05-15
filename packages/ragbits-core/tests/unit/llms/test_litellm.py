@@ -329,6 +329,32 @@ async def test_generation_with_metadata():
     assert output.usage.total_tokens == 30
 
 
+async def test_generation_with_metadata_cached_tokens():
+    """Test generation metadata includes cached token usage."""
+    llm = LiteLLM(api_key="test_key")
+    llm._get_litellm_response = AsyncMock()  # type: ignore
+    llm._get_litellm_response.return_value = ModelResponse(
+        choices=[
+            Choices(
+                message=Message(content="I'm fine, thank you.", role="assistant"),
+            )
+        ],
+        usage=Usage(
+            completion_tokens=10,
+            prompt_tokens=20,
+            total_tokens=30,
+            cache_read_input_tokens=7,
+            cache_creation_input_tokens=5,
+        ),
+    )
+
+    output = await llm.generate_with_metadata(MockPrompt("Hello, how are you?"))
+
+    assert output.usage is not None
+    assert output.usage.cache_read_input_tokens == 7
+    assert output.usage.cache_creation_input_tokens == 5
+
+
 @patch("litellm.supports_reasoning")
 async def test_generation_with_metadata_reasoning_content(mock_supports_reasoning: MagicMock):
     """Test generation with reasoning content in response."""

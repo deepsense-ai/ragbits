@@ -80,6 +80,45 @@ def get_weather(location: str) -> str:
         return json.dumps({"location": location, "temperature": "unknown"})
 
 
+def test_usage_aggregates_cached_tokens() -> None:
+    usage = Usage(
+        requests=[
+            UsageItem(
+                model="model-a",
+                prompt_tokens=10,
+                completion_tokens=20,
+                total_tokens=30,
+                cache_read_input_tokens=3,
+                cache_creation_input_tokens=4,
+                estimated_cost=0.1,
+            ),
+            UsageItem(
+                model="model-a",
+                prompt_tokens=5,
+                completion_tokens=10,
+                total_tokens=15,
+                cache_read_input_tokens=1,
+                cache_creation_input_tokens=2,
+                estimated_cost=0.05,
+            ),
+            UsageItem(
+                model="model-b",
+                prompt_tokens=1,
+                completion_tokens=2,
+                total_tokens=3,
+                cache_read_input_tokens=7,
+                cache_creation_input_tokens=8,
+                estimated_cost=0.01,
+            ),
+        ]
+    )
+
+    assert usage.cache_read_input_tokens == 11
+    assert usage.cache_creation_input_tokens == 14
+    assert usage.model_breakdown["model-a"].cache_read_input_tokens == 4
+    assert usage.model_breakdown["model-a"].cache_creation_input_tokens == 6
+
+
 @pytest.fixture(name="get_weather_schema")
 def mock_get_weather_schema() -> dict:
     return {
