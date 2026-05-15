@@ -1,13 +1,22 @@
 import { Button } from "@heroui/react";
 import { Icon } from "@iconify/react";
-import { ChangeEvent, useRef } from "react";
+import { ChangeEvent, useEffect, useRef } from "react";
 import { SlotPropsMap } from "../../../core/types/slots";
+import { useConfigContext } from "../../../core/contexts/ConfigContext/useConfigContext";
 import { useUploadAttachmentsStore } from "../stores/attachmentsStore";
+import { processFile } from "../upload";
 
 export default function UploadButton({
   isInputDisabled,
 }: SlotPropsMap["prompt.beforeSend"]) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const {
+    config: { attachments: attachmentsConfig },
+  } = useConfigContext();
+
+  useEffect(() => {
+    useUploadAttachmentsStore.getState().setConfig(attachmentsConfig);
+  }, [attachmentsConfig]);
 
   const handleFileClick = () => {
     fileInputRef.current?.click();
@@ -16,12 +25,7 @@ export default function UploadButton({
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-
-    for (const file of Array.from(files)) {
-      const id = useUploadAttachmentsStore.getState().add(file);
-      useUploadAttachmentsStore.getState().markReady(id, file);
-    }
-
+    for (const file of Array.from(files)) processFile(file);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 

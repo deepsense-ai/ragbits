@@ -21,7 +21,6 @@ import {
   getTemporaryConversationId,
   initialConversationValues,
 } from "../../../core/stores/HistoryStore/utils";
-import { useUploadAttachmentsStore } from "../../../plugins/UploadPlugin/stores/attachmentsStore";
 import { v4 as uuidv4 } from "uuid";
 
 export const FLUSH_INTERVAL_MS = 100;
@@ -343,7 +342,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       return newConversation.conversationId;
     },
 
-    sendMessage: (text, ragbitsClient, additionalContext) => {
+    sendMessage: (text, ragbitsClient, additionalContext, userMessageExtra, files) => {
       const {
         _internal: { handleResponse },
         primitives: { addMessage, getCurrentConversation, stopAnswering },
@@ -355,6 +354,7 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
       addMessage(conversationId, {
         role: MessageRole.User,
         content: text,
+        ...(userMessageExtra ? { extra: userMessageExtra } : {}),
       });
 
       // Add empty assistant message that will be filled with the response
@@ -369,15 +369,11 @@ export const createHistoryStore = immer<HistoryStore>((set, get) => ({
         context: { ...getContext(), ...additionalContext },
       };
 
-      // Pick up any files staged by the upload plugin and switch to multipart.
-      const { files: pendingFiles } = useUploadAttachmentsStore
-        .getState()
-        .consumeReady();
       let requestBody: ChatRequest | FormData = chatRequest;
-      if (pendingFiles.length > 0) {
+      if (files && files.length > 0) {
         const formData = new FormData();
         formData.append("request", JSON.stringify(chatRequest));
-        for (const file of pendingFiles) {
+        for (const file of files) {
           formData.append("files", file, file.name);
         }
         requestBody = formData;

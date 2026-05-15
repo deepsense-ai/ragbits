@@ -15,6 +15,7 @@ import QuickMessageInput from "./inputs/QuickMessageInput";
 import { useConfigContext } from "../contexts/ConfigContext/useConfigContext";
 import { useRagbitsContext } from "@ragbits/api-client-react";
 import { markdownComponents } from "./markdownComponents";
+import { collectPreSendContext } from "../utils/messageContext";
 
 export default function Chat() {
   const {
@@ -35,7 +36,8 @@ export default function Chat() {
   const { client: ragbitsClient } = useRagbitsContext();
 
   const authorizedSendMessage = (text: string) => {
-    sendMessage(text, ragbitsClient);
+    const { context, userMessageExtra, files } = collectPreSendContext();
+    sendMessage(text, ragbitsClient, context, userMessageExtra, files);
   };
 
   const handleScroll = useCallback(() => {

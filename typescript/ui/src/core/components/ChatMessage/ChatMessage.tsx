@@ -9,6 +9,7 @@ import MessageReferences from "./MessageReferences.tsx";
 import MessageActions from "./MessageActions.tsx";
 import LoadingIndicator from "./LoadingIndicator.tsx";
 import ConfirmationDialogs from "./ConfirmationDialogs.tsx";
+import { Slot } from "../Slot.tsx";
 import {
   useConversationProperty,
   useHistoryActions,
@@ -169,10 +170,16 @@ const ChatMessage = forwardRef<HTMLDivElement, ChatMessageProps>(
             )}
           >
             {rightAlign ? (
-              <MarkdownContent
-                content={content}
-                classNames={classNames?.content}
-              />
+              <>
+                <Slot
+                  name="message.userBubble.prepend"
+                  props={{ message }}
+                />
+                <MarkdownContent
+                  content={content}
+                  classNames={classNames?.content}
+                />
+              </>
             ) : (
               <div className="flex flex-col gap-2">
                 {showLoadingIndicator && <LoadingIndicator />}

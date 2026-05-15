@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { AttachmentsConfig } from "@ragbits/api-client";
 
 interface BaseAttachment {
   id: string;
@@ -38,6 +39,8 @@ export interface AttachmentPreview {
 
 interface UploadAttachmentsStore {
   pending: PendingAttachment[];
+  config: AttachmentsConfig | null;
+  setConfig: (config: AttachmentsConfig | null) => void;
   add: (file: File) => string;
   addFailed: (file: File, error: string, retryFile?: File) => void;
   markReady: (id: string, file: File) => void;
@@ -57,6 +60,8 @@ const revokeBlob = (att: PendingAttachment): void => {
 export const useUploadAttachmentsStore = create<UploadAttachmentsStore>(
   (set, get) => ({
     pending: [],
+    config: null,
+    setConfig: (config) => set({ config }),
     add: (file: File) => {
       const id = crypto.randomUUID();
       const entry: UploadingAttachment = {

@@ -4,6 +4,8 @@ import { Form, FormProps } from "@heroui/form";
 import { cn } from "@heroui/theme";
 import {
   KeyboardEvent,
+  ClipboardEvent,
+  DragEvent,
   FormEvent,
   useCallback,
   useRef,
@@ -19,6 +21,7 @@ import { useCaretLogicalLineDetection } from "../../../utils/useTextAreaCaretDet
 import { Slot } from "../../Slot";
 import { MessageRole } from "@ragbits/api-client";
 import { ChatMessage } from "../../../types/history";
+import { dispatchDroppedFiles } from "../../../utils/fileHandlers";
 
 export interface PromptInputProps {
   submit: (text: string) => void;
@@ -146,6 +149,34 @@ const PromptInput = ({
     textAreaRef?.current?.focus();
   }, [stopAnswering]);
 
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragOver = useCallback((e: DragEvent<HTMLDivElement>) => {
+    if (!Array.from(e.dataTransfer.types).includes("Files")) return;
+    e.preventDefault();
+    setIsDragOver(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e: DragEvent<HTMLDivElement>) => {
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+    setIsDragOver(false);
+  }, []);
+
+  const handleDrop = useCallback((e: DragEvent<HTMLDivElement>) => {
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+    e.preventDefault();
+    setIsDragOver(false);
+    dispatchDroppedFiles(files);
+  }, []);
+
+  const handlePaste = useCallback((e: ClipboardEvent<HTMLInputElement>) => {
+    const files = Array.from(e.clipboardData.files);
+    if (files.length === 0) return;
+    e.preventDefault();
+    dispatchDroppedFiles(files);
+  }, []);
+
   const handleValueChange = useCallback((value: string) => {
     setQuickMessages((quickMessages) => {
       const newQuickMessages = [...quickMessages];
@@ -178,13 +209,26 @@ const PromptInput = ({
         sendMessage={(text: string) => handleSubmit(text)}
       />
 
+      <div
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+      >
       <Form
-        className="rounded-medium bg-default-100 dark:bg-default-100 flex w-full flex-row items-center pr-2 pl-0"
+        className={cn(
+          "rounded-medium bg-default-100 dark:bg-default-100 flex w-full flex-col items-stretch pr-2 pl-0",
+          isDragOver && "ring-primary ring-2",
+        )}
         validationBehavior="native"
         onSubmit={onSubmit}
         ref={formRef}
         {...formProps}
       >
+        <Slot
+          name="prompt.attachments"
+          props={{ isInputDisabled: isLoading || isDisabled }}
+        />
+        <div className="flex flex-row items-center">
         <PromptInputText
           ref={textAreaRef}
           aria-label="Message to the chat"
@@ -204,6 +248,7 @@ const PromptInput = ({
           minRows={1}
           value={message}
           onKeyDown={handleKeyDown}
+          onPaste={handlePaste}
           onValueChange={handleValueChange}
           data-testid="prompt-input-input"
           data-value={message}
@@ -254,7 +299,9 @@ const PromptInput = ({
             </>
           </Button>
         </div>
+        </div>
       </Form>
+      </div>
     </div>
   );
 };

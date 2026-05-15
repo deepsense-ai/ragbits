@@ -66,6 +66,8 @@ export interface HistoryStore {
       text: string,
       ragbitsClient: RagbitsClient,
       additionalContext?: Record<string, unknown>,
+      userMessageExtra?: Record<string, unknown>,
+      files?: File[],
     ) => void;
     sendSilentConfirmation: (
       messageId: string,

@@ -5,6 +5,8 @@ export type SlotName =
   | "layout.sidebar"
   | "layout.headerActions"
   | "message.actions"
+  | "message.userBubble.prepend"
+  | "prompt.attachments"
   | "prompt.beforeSend";
 
 export interface SlotPropsMap {
@@ -14,6 +16,12 @@ export interface SlotPropsMap {
     message: ChatMessage;
     content: string;
     serverId?: string;
+  };
+  "message.userBubble.prepend": {
+    message: ChatMessage;
+  };
+  "prompt.attachments": {
+    isInputDisabled: boolean;
   };
   "prompt.beforeSend": {
     isInputDisabled: boolean;
