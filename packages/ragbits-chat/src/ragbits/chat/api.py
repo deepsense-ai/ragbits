@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager, suppress
 from pathlib import Path
 from typing import Any, cast
 
+import filetype
 import uvicorn
 from fastapi import FastAPI, HTTPException, Request, UploadFile, status
 from fastapi.exceptions import RequestValidationError
@@ -309,6 +310,7 @@ class RagbitsAPI:
                     oauth2_providers=oauth2_providers,
                 ),
                 supports_upload=(self.chat_interface.supports_upload or self.chat_interface.upload_handler is not None),
+                attachments=self.chat_interface.attachments,
             )
 
             return JSONResponse(content=config_response.model_dump())
@@ -385,21 +387,110 @@ class RagbitsAPI:
     async def _build_attachments(self, files: list[UploadFile] | None) -> list[Attachment]:
         """Read multipart upload parts into ragbits-core Attachment objects.
 
+        Validates the request against `ChatInterface.attachments` first (count,
+        size, MIME allowlist; uploads must be enabled). All validation failures
+        are collected and reported together via RequestValidationError (422).
+
         If the chat interface defines an ``upload_handler``, it is invoked per
         file: a returned Attachment is appended, ``None`` drops the file. Without
         a handler, every file becomes a default Attachment carrying its bytes.
         """
+        if not files:
+            return []
+
         handler = self.chat_interface.upload_handler
+        uploads_enabled = self.chat_interface.supports_upload or handler is not None
+
+        if not uploads_enabled:
+            raise RequestValidationError(
+                errors=[
+                    {
+                        "loc": ("body", "files"),
+                        "msg": "File uploads are disabled. Use ChatInterface.supports_upload",
+                        "type": "value_error.uploads_disabled",
+                    }
+                ],
+                body=None,
+            )
+
+        config = self.chat_interface.attachments
+        max_bytes = config.max_size_mb * 1024 * 1024
+        allowed_mimes = {m.lower() for m in config.allowed_mime_types}
+        errors: list[dict[str, Any]] = []
+
+        if len(files) > config.max_attachments_per_message:
+            errors.append(
+                {
+                    "loc": ("body", "files"),
+                    "msg": (
+                        f"Too many attachments: {len(files)} exceeds limit of "
+                        f"{config.max_attachments_per_message}"
+                    ),
+                    "type": "value_error.too_many_attachments",
+                }
+            )
+
+        # Read each file once and sniff the actual MIME from the content
+        validated: list[tuple[UploadFile, bytes]] = []
+        for idx, f in enumerate(files):
+            loc = ("body", "files", idx)
+            declared_mime = (f.content_type or "").lower()
+            data = await f.read(max_bytes + 1)
+
+            if len(data) > max_bytes:
+                errors.append(
+                    {
+                        "loc": loc,
+                        "msg": f"Attachment '{f.filename}' too large: exceeds {config.max_size_mb} MB limit",
+                        "type": "value_error.file_too_large",
+                    }
+                )
+                continue
+
+            if declared_mime not in allowed_mimes:
+                errors.append(
+                    {
+                        "loc": loc,
+                        "msg": (
+                            f"Attachment '{f.filename}' has unsupported MIME type "
+                            f"'{declared_mime or 'unknown'}'"
+                        ),
+                        "type": "value_error.unsupported_mime",
+                    }
+                )
+                continue
+
+            sniffed = filetype.guess(data)
+            sniffed_mime = sniffed.mime.lower() if sniffed else None
+            if sniffed_mime and sniffed_mime != declared_mime:
+                errors.append(
+                    {
+                        "loc": loc,
+                        "msg": (
+                            f"Attachment '{f.filename}' content (detected as '{sniffed_mime}') "
+                            f"does not match declared MIME type '{declared_mime}'"
+                        ),
+                        "type": "value_error.mime_mismatch",
+                    }
+                )
+                continue
+
+            validated.append((f, data))
+
+        if errors:
+            raise RequestValidationError(errors=errors, body=None)
+
         attachments: list[Attachment] = []
-        for f in files or []:
+        for f, data in validated:
             if handler is not None:
+                await f.seek(0)
                 result = await handler(f)
                 if result is not None:
                     attachments.append(result)
             else:
                 attachments.append(
                     Attachment(
-                        data=await f.read(),
+                        data=data,
                         mime_type=f.content_type,
                         filename=f.filename,
                     )

@@ -239,9 +239,14 @@ def test_validation_exception_handler(client: TestClient) -> None:
 
 def test_chat_endpoint_multipart_with_file(api: RagbitsAPI, client: TestClient) -> None:
     """/api/chat accepts multipart with files and exposes them on ChatContext.attachments."""
+    from ragbits.chat.interface.types import AttachmentsConfig
+
     captured: dict = {}
 
     class RecordingChat(MockChatInterface):
+        supports_upload = True
+        attachments = AttachmentsConfig(allowed_mime_types=["text/plain"])
+
         async def chat(
             self, message: str, history: ChatFormat, context: ChatContext
         ) -> AsyncGenerator[ChatResponseUnion, None]:

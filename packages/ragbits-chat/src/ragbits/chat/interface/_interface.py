@@ -25,6 +25,7 @@ from ..metrics import ChatCounterMetric, ChatHistogramMetric
 from ..persistence import HistoryPersistenceStrategy
 from .forms import FeedbackConfig, UserSettings
 from .types import (
+    AttachmentsConfig,
     ChatContext,
     ChatResponseUnion,
     ClearMessageContent,
@@ -237,6 +238,7 @@ class ChatInterface(ABC):
     history_persistence: HistoryPersistenceStrategy | None = None
     summary_generator: SummaryGenerator = HeuristicSummaryGenerator()
     supports_upload: bool = False
+    attachments: AttachmentsConfig = AttachmentsConfig()
     upload_handler: Callable[[UploadFile], Awaitable[Attachment | None]] | None = None
 
     def __init_subclass__(cls, **kwargs: dict) -> None:

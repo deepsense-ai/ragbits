@@ -902,6 +902,21 @@ class AuthenticationConfig(BaseModel):
     )
 
 
+class AttachmentsConfig(BaseModel):
+    """Server-side limits for file attachments on /api/chat."""
+
+    max_size_mb: int = Field(default=10, ge=1, description="Maximum size of a single attachment in MB")
+    max_attachments_per_message: int = Field(
+        default=5,
+        ge=1,
+        description="Maximum number of attachments per chat message",
+    )
+    allowed_mime_types: list[str] = Field(
+        default_factory=lambda: ["image/png", "image/jpeg", "image/webp", "image/gif", "application/pdf"],
+        description="MIME types accepted by the server",
+    )
+
+
 class ConfigResponse(BaseModel):
     """Configuration response from the API."""
 
@@ -909,6 +924,10 @@ class ConfigResponse(BaseModel):
     customization: UICustomization | None = Field(default=None, description="UI customization")
     user_settings: UserSettings = Field(default_factory=UserSettings, description="User settings")
     supports_upload: bool = Field(default=False, description="Flag indicating whether API supports file upload")
+    attachments: AttachmentsConfig = Field(
+        default_factory=AttachmentsConfig,
+        description="Server-side attachment limits.",
+    )
     debug_mode: bool = Field(default=False, description="Debug mode flag")
     conversation_history: bool = Field(default=False, description="Flag to enable conversation history")
     show_usage: bool = Field(default=False, description="Flag to enable usage statistics")
