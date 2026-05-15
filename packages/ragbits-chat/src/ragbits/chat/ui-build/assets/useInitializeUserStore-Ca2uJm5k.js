@@ -1,1 +1,0 @@
-import{r as e,bu as r}from"./index-Be9Hu5e3.js";const i=()=>{const t=e.useContext(r);if(!t)throw new Error("useInitializeUserStore must be used within a HistoryStoreContextProvider");return t.initializeUserStore};export{i as u};
