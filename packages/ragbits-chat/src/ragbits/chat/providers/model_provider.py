@@ -49,6 +49,7 @@ class RagbitsChatModelProvider:
                 UserCredentials,
             )
             from ragbits.chat.interface.forms import UserSettings
+            from ragbits.core.prompt import Attachment
             from ragbits.chat.interface.types import (
                 AttachmentsConfig,
                 AuthenticationConfig,
@@ -93,6 +94,7 @@ class RagbitsChatModelProvider:
                 "MessageRole": MessageRole,
                 "TaskStatus": TaskStatus,
                 # Core data models
+                "Attachment": Attachment,
                 "ChatContext": ChatContext,
                 "ChunkedContent": ChunkedContent,
                 "LiveUpdate": LiveUpdate,
@@ -162,6 +164,7 @@ class RagbitsChatModelProvider:
             if self._models_cache
             else [],
             "core_data": [
+                "Attachment",
                 "ChatContext",
                 "ChunkedContent",
                 "LiveUpdate",

@@ -62,6 +62,16 @@ export const AuthType = {
 export type AuthType = TypeFrom<typeof AuthType>;
 
 /**
+ * Represents an attachment that can be passed to a LLM.
+ */
+export interface Attachment {
+  url: string | null;
+  data: string | null;
+  mime_type: string | null;
+  filename: string | null;
+}
+
+/**
  * Represents the context of a chat conversation.
  */
 export interface ChatContext {
