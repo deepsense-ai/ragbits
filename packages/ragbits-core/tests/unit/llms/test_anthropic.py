@@ -13,7 +13,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from ragbits.core.llms.anthropic import AnthropicLLM
+from ragbits.core.llms.anthropic import AnthropicLLM, AnthropicLLMOptions
 from ragbits.core.llms.exceptions import (
     LLMConnectionError,
     LLMEmptyResponseError,
@@ -188,6 +188,21 @@ def test_get_model_id():
     llm = _make_llm()
     llm.model_name = "claude-opus-4-6"
     assert llm.get_model_id() == "anthropic:claude-opus-4-6"
+
+
+def test_common_options_are_sent_to_anthropic_api():
+    llm = _make_llm()
+    kwargs = llm._build_create_kwargs(
+        conversation=[{"role": "user", "content": "Hello!"}],
+        system=None,
+        options=AnthropicLLMOptions(max_tokens=100, temperature=0.5, top_p=0.8),
+        tools=None,
+        tool_choice=None,
+    )
+
+    assert kwargs["max_tokens"] == 100
+    assert kwargs["temperature"] == 0.5
+    assert kwargs["top_p"] == 0.8
 
 
 # ---------------------------------------------------------------------------

@@ -39,8 +39,6 @@ class AnthropicLLMOptions(LLMOptions):
     Each of them is described in the [Anthropic API documentation](https://docs.anthropic.com/en/api/messages).
     """
 
-    temperature: float | None | NotGiven = NOT_GIVEN
-    top_p: float | None | NotGiven = NOT_GIVEN
     top_k: int | None | NotGiven = NOT_GIVEN
     stop_sequences: list[str] | None | NotGiven = NOT_GIVEN
     thinking: dict | None | NotGiven = NOT_GIVEN

@@ -25,7 +25,7 @@ from ragbits.core.llms.exceptions import (  # noqa: E402
     LLMEmptyResponseError,
     LLMStatusError,
 )
-from ragbits.core.llms.gemini import GeminiLLM  # noqa: E402
+from ragbits.core.llms.gemini import GeminiLLM, GeminiLLMOptions  # noqa: E402
 from ragbits.core.prompt.base import BasePrompt, ChatFormat  # noqa: E402
 
 
@@ -211,6 +211,22 @@ async def test_empty_parts_raises():
 def test_get_model_id():
     llm = _make_llm(model_name="gemini-2.5-flash")
     assert llm.get_model_id() == "gemini:gemini-2.5-flash"
+
+
+def test_common_options_are_sent_to_gemini_api(mock_genai_types: MagicMock):
+    llm = _make_llm()
+
+    llm._build_config(
+        system=None,
+        options=GeminiLLMOptions(max_tokens=100, temperature=0.5, top_p=0.8),
+        tools=None,
+        tool_choice=None,
+    )
+
+    config_kwargs = mock_genai_types.GenerateContentConfig.call_args.kwargs
+    assert config_kwargs["max_output_tokens"] == 100
+    assert config_kwargs["temperature"] == 0.5
+    assert config_kwargs["top_p"] == 0.8
 
 
 # ---------------------------------------------------------------------------

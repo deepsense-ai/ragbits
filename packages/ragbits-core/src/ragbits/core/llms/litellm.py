@@ -42,13 +42,10 @@ class LiteLLMOptions(LLMOptions):
     """
 
     frequency_penalty: float | None | NotGiven = NOT_GIVEN
-    max_tokens: int | None | NotGiven = NOT_GIVEN
     n: int | None | NotGiven = NOT_GIVEN
     presence_penalty: float | None | NotGiven = NOT_GIVEN
     seed: int | None | NotGiven = NOT_GIVEN
     stop: str | list[str] | None | NotGiven = NOT_GIVEN
-    temperature: float | None | NotGiven = NOT_GIVEN
-    top_p: float | None | NotGiven = NOT_GIVEN
     logprobs: bool | None | NotGiven = NOT_GIVEN
     top_logprobs: int | None | NotGiven = NOT_GIVEN
     logit_bias: dict | None | NotGiven = NOT_GIVEN

@@ -26,10 +26,8 @@ class LocalLLMOptions(LLMOptions):
     best_of: int | None | NotGiven = NOT_GIVEN
     max_new_tokens: int | None | NotGiven = NOT_GIVEN
     top_k: int | None | NotGiven = NOT_GIVEN
-    top_p: float | None | NotGiven = NOT_GIVEN
     seed: int | None | NotGiven = NOT_GIVEN
     stop_sequences: list[str] | None | NotGiven = NOT_GIVEN
-    temperature: float | None | NotGiven = NOT_GIVEN
 
 
 class LocalLLM(LLM[LocalLLMOptions]):
@@ -119,6 +117,14 @@ class LocalLLM(LLM[LocalLLMOptions]):
         input_ids = self.tokenizer.apply_chat_template(prompt.chat)
         return len(input_ids)
 
+    @staticmethod
+    def _get_generation_kwargs(options: LocalLLMOptions) -> dict[str, Any]:
+        options_dict = {key: value for key, value in options.dict().items() if value is not None}
+        max_tokens = options_dict.pop("max_tokens", None)
+        if max_tokens is not None and "max_new_tokens" not in options_dict:
+            options_dict["max_new_tokens"] = max_tokens
+        return options_dict
+
     async def _call(
         self,
         prompt: Iterable[BasePrompt],
@@ -159,7 +165,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
         outputs = self.model.generate(
             inputs_ids,
             eos_token_id=self.tokenizer.eos_token_id,
-            **options.dict(),
+            **self._get_generation_kwargs(options),
         )
 
         responses = [output[inputs_ids.shape[1] :] for output in outputs]
@@ -220,7 +226,7 @@ class LocalLLM(LLM[LocalLLMOptions]):
             self.model.device
         )
         streamer = self.TextIteratorStreamer(self.tokenizer, skip_prompt=True)
-        generation_kwargs = dict(streamer=streamer, **options.dict())
+        generation_kwargs = dict(streamer=streamer, **self._get_generation_kwargs(options))
         generation_thread = threading.Thread(target=self.model.generate, args=(input_ids,), kwargs=generation_kwargs)
 
         async def streamer_to_async_generator(

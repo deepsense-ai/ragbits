@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from ragbits.core.audit.metrics import MetricHandler, set_metric_handlers
 from ragbits.core.audit.metrics.base import LLMMetric, MetricType
 from ragbits.core.audit.traces import TraceHandler, set_trace_handlers
-from ragbits.core.llms.base import LLMResponseWithMetadata, Reasoning, ToolCall, Usage, UsageItem
+from ragbits.core.llms.base import LLMOptions, LLMResponseWithMetadata, Reasoning, ToolCall, Usage, UsageItem
 from ragbits.core.llms.mock import MockLLM, MockLLMOptions
 from ragbits.core.prompt.base import BasePrompt, BasePromptWithParser, ChatFormat, SimplePrompt
 
@@ -78,6 +78,14 @@ def get_weather(location: str) -> str:
         return json.dumps({"location": "San Francisco", "temperature": "72", "unit": "fahrenheit"})
     else:
         return json.dumps({"location": location, "temperature": "unknown"})
+
+
+def test_llm_options_include_common_generation_params() -> None:
+    options = LLMOptions(max_tokens=100, temperature=0.3, top_p=0.8)
+
+    assert options.dict()["max_tokens"] == 100
+    assert options.dict()["temperature"] == 0.3
+    assert options.dict()["top_p"] == 0.8
 
 
 def test_usage_aggregates_cached_tokens() -> None:

@@ -26,11 +26,15 @@ from ragbits.core.utils.function_schema import convert_function_to_function_sche
 
 class LLMOptions(Options):
     """
-    Options for the LLM.
+    Common options supported by all LLM providers.
     """
 
     max_tokens: int | None | NotGiven = NOT_GIVEN
-    """The maximum number of tokens the LLM can use, if None, LLM will run forever"""
+    """The maximum number of tokens the LLM can generate."""
+    temperature: float | None | NotGiven = NOT_GIVEN
+    """Controls response randomness. Lower values make output more deterministic."""
+    top_p: float | None | NotGiven = NOT_GIVEN
+    """Controls nucleus sampling probability mass."""
 
 
 LLMClientOptionsT = TypeVar("LLMClientOptionsT", bound=LLMOptions)

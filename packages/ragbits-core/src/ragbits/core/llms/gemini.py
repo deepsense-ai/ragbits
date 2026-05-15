@@ -40,8 +40,6 @@ class GeminiLLMOptions(LLMOptions):
     Each of them is described in the [Google AI documentation](https://ai.google.dev/api/generate-content).
     """
 
-    temperature: float | None | NotGiven = NOT_GIVEN
-    top_p: float | None | NotGiven = NOT_GIVEN
     top_k: int | None | NotGiven = NOT_GIVEN
     candidate_count: int | None | NotGiven = NOT_GIVEN
     stop_sequences: list[str] | None | NotGiven = NOT_GIVEN
