@@ -6,7 +6,10 @@ import time
 from collections.abc import AsyncGenerator, MutableSequence
 from copy import deepcopy
 from pathlib import PurePosixPath
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
+
+if TYPE_CHECKING:
+    import tiktoken as tiktoken_stubs
 from urllib.parse import urlparse
 
 import httpx
@@ -24,6 +27,7 @@ from ragbits.core.llms.exceptions import (
 from ragbits.core.llms.pricing import estimate_llm_cost_usd
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
+from ragbits.core.utils.chat_message_text import iter_text_segments_from_openai_message_content
 
 try:
     import openai
@@ -124,6 +128,10 @@ class OpenAILLM(LLM[OpenAILLMOptions]):
         """
         Counts tokens in the prompt using tiktoken when available.
 
+        Unknown OpenAI-compatible model names fall back to ``o200k_base`` then
+        ``cl100k_base``. If tiktoken is unavailable, uses a rough ``~4 chars``
+        per token estimate (never raw character count, which is far too high).
+
         Args:
             prompt: Formatted prompt template with conversation.
 
@@ -131,12 +139,37 @@ class OpenAILLM(LLM[OpenAILLMOptions]):
             Approximate token count.
         """
         if HAS_TIKTOKEN:
-            try:
-                enc = tiktoken.encoding_for_model(self.model_name)
-                return sum(len(enc.encode(str(msg.get("content") or ""))) for msg in prompt.chat)
-            except KeyError:
-                pass
-        return sum(len(str(msg.get("content") or "")) for msg in prompt.chat)
+            enc = self._tiktoken_encoding()
+            if enc is not None:
+                return sum(
+                    len(enc.encode(segment))
+                    for msg in prompt.chat
+                    for segment in iter_text_segments_from_openai_message_content(msg.get("content"))
+                )
+        return sum(
+            self._approx_tokens_no_tiktoken(segment)
+            for msg in prompt.chat
+            for segment in iter_text_segments_from_openai_message_content(msg.get("content"))
+        )
+
+    def _tiktoken_encoding(self) -> tiktoken_stubs.Encoding | None:
+        if not HAS_TIKTOKEN:
+            return None
+        try:
+            return tiktoken.encoding_for_model(self.model_name)
+        except KeyError:
+            for name in ("o200k_base", "cl100k_base"):
+                try:
+                    return tiktoken.get_encoding(name)
+                except KeyError:
+                    continue
+        return None
+
+    @staticmethod
+    def _approx_tokens_no_tiktoken(text: str) -> int:
+        if not text:
+            return 0
+        return max(1, (len(text) + 3) // 4)
 
     @staticmethod
     def _to_json_schema_response_format(output_schema: type[BaseModel] | dict) -> dict:

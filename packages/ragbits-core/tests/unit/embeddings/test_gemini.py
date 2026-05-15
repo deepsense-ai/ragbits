@@ -51,7 +51,9 @@ def _make_embedder(
 
 async def test_gemini_embedder_embed_text():
     embedder = _make_embedder()
-    embedder.client.aio.models.embed_content = AsyncMock(return_value=create_mock_response([[0.1, 0.2, 0.3]]))
+    embedder.client.aio.models.embed_content = AsyncMock(  # type: ignore[method-assign]
+        return_value=create_mock_response([[0.1, 0.2, 0.3]])
+    )
 
     result = await embedder.embed_text(["test"])
 
@@ -61,7 +63,9 @@ async def test_gemini_embedder_embed_text():
 
 async def test_gemini_embedder_embed_text_multiple():
     embedder = _make_embedder()
-    embedder.client.aio.models.embed_content = AsyncMock(return_value=create_mock_response([[0.1, 0.2], [0.3, 0.4]]))
+    embedder.client.aio.models.embed_content = AsyncMock(  # type: ignore[method-assign]
+        return_value=create_mock_response([[0.1, 0.2], [0.3, 0.4]])
+    )
 
     result = await embedder.embed_text(["hello", "world"])
 
@@ -84,7 +88,9 @@ async def test_gemini_embedder_get_vector_size_with_dimensionality():
 async def test_gemini_embedder_get_vector_size_with_none_dimensionality():
     options = GeminiEmbedderOptions(output_dimensionality=None)
     embedder = _make_embedder(default_options=options)
-    embedder.client.aio.models.embed_content = AsyncMock(return_value=create_mock_response([[0.1, 0.2, 0.3, 0.4, 0.5]]))
+    embedder.client.aio.models.embed_content = AsyncMock(  # type: ignore[method-assign]
+        return_value=create_mock_response([[0.1, 0.2, 0.3, 0.4, 0.5]])
+    )
 
     vector_size = await embedder.get_vector_size()
 
@@ -95,7 +101,9 @@ async def test_gemini_embedder_get_vector_size_with_none_dimensionality():
 async def test_gemini_embedder_get_vector_size_with_not_given_dimensionality():
     options = GeminiEmbedderOptions(output_dimensionality=NOT_GIVEN)
     embedder = _make_embedder(default_options=options)
-    embedder.client.aio.models.embed_content = AsyncMock(return_value=create_mock_response([[0.1, 0.2, 0.3]]))
+    embedder.client.aio.models.embed_content = AsyncMock(  # type: ignore[method-assign]
+        return_value=create_mock_response([[0.1, 0.2, 0.3]])
+    )
 
     vector_size = await embedder.get_vector_size()
 
@@ -105,7 +113,9 @@ async def test_gemini_embedder_get_vector_size_with_not_given_dimensionality():
 
 async def test_gemini_embedder_get_vector_size_fallback_to_sample():
     embedder = _make_embedder()
-    embedder.client.aio.models.embed_content = AsyncMock(return_value=create_mock_response([[0.1, 0.2, 0.3, 0.4]]))
+    embedder.client.aio.models.embed_content = AsyncMock(  # type: ignore[method-assign]
+        return_value=create_mock_response([[0.1, 0.2, 0.3, 0.4]])
+    )
 
     vector_size = await embedder.get_vector_size()
 
@@ -118,7 +128,9 @@ async def test_gemini_embedder_empty_response():
     embedder = _make_embedder()
     mock_response = MagicMock()
     mock_response.embeddings = []
-    embedder.client.aio.models.embed_content = AsyncMock(return_value=mock_response)
+    embedder.client.aio.models.embed_content = AsyncMock(  # type: ignore[method-assign]
+        return_value=mock_response
+    )
 
     with pytest.raises(EmbeddingEmptyResponseError):
         await embedder.embed_text(["test"])
@@ -133,7 +145,7 @@ async def test_gemini_embedder_api_call_error():
             self.code = code
 
     exc = MockGoogleAPICallError("Not found", 404)
-    embedder.client.aio.models.embed_content = AsyncMock(side_effect=exc)
+    embedder.client.aio.models.embed_content = AsyncMock(side_effect=exc)  # type: ignore[method-assign]
 
     with patch("ragbits.core.embeddings.dense.gemini.google_exceptions") as mock_google_exc:
         mock_google_exc.GoogleAPICallError = MockGoogleAPICallError
@@ -154,7 +166,7 @@ async def test_gemini_embedder_generic_api_error():
         pass
 
     exc = MockGoogleAPIError("Connection failed")
-    embedder.client.aio.models.embed_content = AsyncMock(side_effect=exc)
+    embedder.client.aio.models.embed_content = AsyncMock(side_effect=exc)  # type: ignore[method-assign]
 
     with patch("ragbits.core.embeddings.dense.gemini.google_exceptions") as mock_google_exc:
         mock_google_exc.GoogleAPICallError = MockGoogleAPICallError
@@ -166,7 +178,9 @@ async def test_gemini_embedder_generic_api_error():
 async def test_gemini_embedder_with_task_type():
     options = GeminiEmbedderOptions(task_type="RETRIEVAL_DOCUMENT")
     embedder = _make_embedder(default_options=options)
-    embedder.client.aio.models.embed_content = AsyncMock(return_value=create_mock_response([[0.1, 0.2]]))
+    embedder.client.aio.models.embed_content = AsyncMock(  # type: ignore[method-assign]
+        return_value=create_mock_response([[0.1, 0.2]])
+    )
 
     await embedder.embed_text(["test"])
 

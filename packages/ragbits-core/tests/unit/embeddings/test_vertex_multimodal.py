@@ -112,7 +112,7 @@ async def test_modern_embed_text():
     mock_embedding.values = [0.1, 0.2, 0.3]
     mock_response = MagicMock()
     mock_response.embeddings = [mock_embedding]
-    embedder._client.aio.models.embed_content = AsyncMock(return_value=mock_response)
+    embedder._client.aio.models.embed_content = AsyncMock(return_value=mock_response)  # type: ignore[method-assign]
 
     result = await embedder.embed_text(["test"])
 
@@ -130,7 +130,7 @@ async def test_modern_embed_multiple_texts():
         mock_response.embeddings = [mock_embedding]
         return mock_response
 
-    embedder._client.aio.models.embed_content = AsyncMock(
+    embedder._client.aio.models.embed_content = AsyncMock(  # type: ignore[method-assign]
         side_effect=[make_response([0.1, 0.2]), make_response([0.3, 0.4])]
     )
 
@@ -147,7 +147,7 @@ async def test_modern_omits_none_dimensions_in_config():
     mock_embedding.values = [0.1, 0.2, 0.3]
     mock_response = MagicMock()
     mock_response.embeddings = [mock_embedding]
-    embedder._client.aio.models.embed_content = AsyncMock(return_value=mock_response)
+    embedder._client.aio.models.embed_content = AsyncMock(return_value=mock_response)  # type: ignore[method-assign]
 
     options = VertexAIMultimodalEmbedderOptions(dimensions=None)
     await embedder.embed_text(["test"], options=options)
@@ -162,7 +162,7 @@ async def test_modern_timeout_error_mapped_to_embedding_connection_error():
         await asyncio.sleep(1.2)
         return MagicMock(embeddings=[MagicMock(values=[0.1, 0.2, 0.3])])
 
-    embedder._client.aio.models.embed_content = AsyncMock(side_effect=slow_embed)
+    embedder._client.aio.models.embed_content = AsyncMock(side_effect=slow_embed)  # type: ignore[method-assign]
 
     options = VertexAIMultimodalEmbedderOptions(timeout=1)
     with pytest.raises(EmbeddingConnectionError, match="Request timed out"):
@@ -173,7 +173,7 @@ async def test_modern_empty_response():
     embedder = _make_modern_embedder()
     mock_response = MagicMock()
     mock_response.embeddings = []
-    embedder._client.aio.models.embed_content = AsyncMock(return_value=mock_response)
+    embedder._client.aio.models.embed_content = AsyncMock(return_value=mock_response)  # type: ignore[method-assign]
 
     with pytest.raises(EmbeddingResponseError):
         await embedder.embed_text(["test"])
@@ -188,7 +188,7 @@ async def test_modern_api_call_error():
             self.code = code
 
     exc = MockGoogleAPICallError("Not found", 404)
-    embedder._client.aio.models.embed_content = AsyncMock(side_effect=exc)
+    embedder._client.aio.models.embed_content = AsyncMock(side_effect=exc)  # type: ignore[method-assign]
 
     with patch("ragbits.core.embeddings.dense.vertex_multimodal.google_exceptions") as mock_google_exc:
         mock_google_exc.GoogleAPICallError = MockGoogleAPICallError
@@ -209,7 +209,7 @@ async def test_modern_connection_error():
         pass
 
     exc = MockGoogleAPIError("Connection failed")
-    embedder._client.aio.models.embed_content = AsyncMock(side_effect=exc)
+    embedder._client.aio.models.embed_content = AsyncMock(side_effect=exc)  # type: ignore[method-assign]
 
     with patch("ragbits.core.embeddings.dense.vertex_multimodal.google_exceptions") as mock_google_exc:
         mock_google_exc.GoogleAPICallError = MockGoogleAPICallError

@@ -37,6 +37,21 @@ class MockPromptWithParser(BasePromptWithParser[int]):
         return 42
 
 
+class MockPromptMultimodalText(BasePrompt):
+    @property
+    def chat(self) -> ChatFormat:
+        return [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "hello"},
+                    {"type": "image_url", "image_url": {"url": "https://example.com/x.png"}},
+                    {"type": "text", "text": " world"},
+                ],
+            }
+        ]
+
+
 def _make_openai_response(
     content: str | None,
     tool_calls: list[MagicMock] | None = None,
@@ -89,6 +104,19 @@ async def test_generation():
     result = await llm.generate(MockPrompt("Hello, how are you?"))
 
     assert result == "I'm fine, thank you."
+
+
+def test_count_tokens_unknown_model_falls_back_to_bpe_not_char_length() -> None:
+    llm = OpenAILLM(model_name="unknown-custom-model-xyz", api_key="test-key")
+    text = "hello" * 40
+    n = llm.count_tokens(MockPrompt(text))
+    assert n < len(text)
+
+
+def test_count_tokens_multimodal_text_segments() -> None:
+    llm = OpenAILLM(api_key="test-key")
+    n = llm.count_tokens(MockPromptMultimodalText())
+    assert 2 <= n <= 16
 
 
 async def test_generation_with_parser():

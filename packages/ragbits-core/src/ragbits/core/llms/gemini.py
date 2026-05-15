@@ -17,6 +17,7 @@ from ragbits.core.llms.exceptions import (
 from ragbits.core.llms.pricing import estimate_llm_cost_usd
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
+from ragbits.core.utils.chat_message_text import iter_text_segments_from_openai_message_content
 
 try:
     from google import genai
@@ -110,6 +111,23 @@ class GeminiLLM(LLM[GeminiLLMOptions]):
         list prices as a baseline. Unknown ``model_name`` values yield ``0.0``.
         """
         return estimate_llm_cost_usd("gemini", self.model_name, prompt_tokens, completion_tokens)
+
+    def count_tokens(self, prompt: BasePrompt) -> int:  # noqa: PLR6301
+        """
+        Approximate token count for plain text using ``tiktoken`` (``o200k_base``).
+
+        Gemini uses a different tokenizer; this is a scale-correct preflight estimate
+        so metrics avoid treating each character as a token. Install the ``gemini``
+        extra so ``tiktoken`` is guaranteed for this path.
+        """
+        import tiktoken
+
+        enc = tiktoken.get_encoding("o200k_base")
+        return sum(
+            len(enc.encode(segment))
+            for msg in prompt.chat
+            for segment in iter_text_segments_from_openai_message_content(msg.get("content"))
+        )
 
     @staticmethod
     def _convert_messages(messages: list[dict]) -> tuple[str | None, list[genai_types.Content]]:  # noqa: PLR0912, PLR0915

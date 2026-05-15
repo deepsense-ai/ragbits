@@ -20,6 +20,7 @@ from ragbits.core.llms.exceptions import (
 from ragbits.core.llms.pricing import estimate_llm_cost_usd
 from ragbits.core.prompt.base import BasePrompt
 from ragbits.core.types import NOT_GIVEN, NotGiven
+from ragbits.core.utils.chat_message_text import iter_text_segments_from_openai_message_content
 
 try:
     import anthropic
@@ -96,6 +97,20 @@ class AnthropicLLM(LLM[AnthropicLLMOptions]):
         and residency pricing are not modeled.
         """
         return estimate_llm_cost_usd("anthropic", self.model_name, prompt_tokens, completion_tokens)
+
+    def count_tokens(self, prompt: BasePrompt) -> int:  # noqa: PLR6301
+        """
+        Counts tokens using Anthropic's local tokenizer (``anthropic-tokenizer``).
+
+        Text is taken from OpenAI-style string or multimodal ``text`` parts only.
+        """
+        import anthropic_tokenizer
+
+        return sum(
+            anthropic_tokenizer.count_tokens(segment)
+            for msg in prompt.chat
+            for segment in iter_text_segments_from_openai_message_content(msg.get("content"))
+        )
 
     @staticmethod
     def _convert_messages(messages: list[dict]) -> tuple[str | None, list[dict]]:  # noqa: PLR0912, PLR0915
