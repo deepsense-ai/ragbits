@@ -49,7 +49,6 @@ class RagbitsChatModelProvider:
                 UserCredentials,
             )
             from ragbits.chat.interface.forms import UserSettings
-            from ragbits.core.prompt import Attachment
             from ragbits.chat.interface.types import (
                 AttachmentsConfig,
                 AuthenticationConfig,
@@ -86,6 +85,7 @@ class RagbitsChatModelProvider:
                 PageMetaCustomization,
                 UICustomization,
             )
+            from ragbits.core.prompt import Attachment
 
             self._models_cache = {
                 # Enums

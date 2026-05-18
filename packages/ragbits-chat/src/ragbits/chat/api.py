@@ -423,8 +423,7 @@ class RagbitsAPI:
                 {
                     "loc": ("body", "files"),
                     "msg": (
-                        f"Too many attachments: {len(files)} exceeds limit of "
-                        f"{config.max_attachments_per_message}"
+                        f"Too many attachments: {len(files)} exceeds limit of " f"{config.max_attachments_per_message}"
                     ),
                     "type": "value_error.too_many_attachments",
                 }
@@ -452,8 +451,7 @@ class RagbitsAPI:
                     {
                         "loc": loc,
                         "msg": (
-                            f"Attachment '{f.filename}' has unsupported MIME type "
-                            f"'{declared_mime or 'unknown'}'"
+                            f"Attachment '{f.filename}' has unsupported MIME type " f"'{declared_mime or 'unknown'}'"
                         ),
                         "type": "value_error.unsupported_mime",
                     }
