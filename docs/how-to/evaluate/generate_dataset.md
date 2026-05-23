@@ -96,7 +96,7 @@ pipeline_config = OmegaConf.create(
 )
 
 
-topics = ["conspiracy theories", "retrival augmented generation"]
+topics = ["conspiracy theories", "retrieval augmented generation"]
 pipeline = DatasetGenerationPipeline.from_dict_config(dict_config=pipeline_config)
 dataset = pipeline(topics)
 print_dataset(dataset)
