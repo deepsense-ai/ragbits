@@ -37,6 +37,6 @@ def synthetic_rag_dataset() -> DocumentSearchDataLoader:
 
 def precision_recall_f1() -> MetricSet:
     """
-    Factory of precision recall f1 metric set for retrival evaluation.
+    Factory of precision recall f1 metric set for retrieval evaluation.
     """
     return MetricSet(DocumentSearchPrecisionRecallF1(matching_strategy=RougeChunkMatch()))
