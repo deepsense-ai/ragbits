@@ -463,3 +463,10 @@ def test_feedback_endpoint_unauthenticated(client: TestClient) -> None:
     assert response.status_code == 401
     data = response.json()
     assert data["detail"] == "Authentication required"
+
+
+def test_frontend_base_url_can_be_configured(mock_chat_interface: type[MockChatInterface]) -> None:
+    """RagbitsAPI accepts a frontend base URL for OAuth redirects."""
+    api = RagbitsAPI(mock_chat_interface, frontend_base_url="https://frontend.example")
+
+    assert api.frontend_base_url == "https://frontend.example"
