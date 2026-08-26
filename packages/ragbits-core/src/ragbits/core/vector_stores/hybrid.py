@@ -67,7 +67,10 @@ class HybridSearchVectorStore(VectorStore):
         retrieve_tasks = (vector_store.retrieve(text, options) for vector_store in self.vector_stores)
         results = await asyncio.gather(*retrieve_tasks)
 
-        return self.retrieval_strategy.join(results)
+        joined_results = self.retrieval_strategy.join(results)
+        if options is not None and options.score_threshold is not None:
+            joined_results = [result for result in joined_results if result.score >= options.score_threshold]
+        return joined_results if options is None else joined_results[: options.k]
 
     @traceable
     async def remove(self, ids: list[UUID]) -> None:

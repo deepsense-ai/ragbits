@@ -3,7 +3,7 @@ import uuid
 import pytest
 
 from ragbits.core.embeddings.dense import NoopEmbedder
-from ragbits.core.vector_stores.base import VectorStoreEntry
+from ragbits.core.vector_stores.base import VectorStoreEntry, VectorStoreOptions, VectorStoreResult
 from ragbits.core.vector_stores.hybrid import HybridSearchVectorStore
 from ragbits.core.vector_stores.in_memory import InMemoryVectorStore
 
@@ -124,3 +124,21 @@ async def test_hybrid_retrieve(entries: list[VectorStoreEntry]):
     entries_order = [2, 5, 3, 1, 4, 0]
     assert [r.entry for r in results] == [entries[i] for i in entries_order]
     assert [r.score for r in results] == [max(s.score for s in r.subresults) for r in results]
+
+
+async def test_hybrid_retrieve_applies_final_k_and_score_threshold(entries: list[VectorStoreEntry]):
+    class StubStore(InMemoryVectorStore):
+        async def retrieve(  # noqa: PLR6301
+            self, text: str, options: VectorStoreOptions | None = None
+        ) -> list[VectorStoreResult]:
+            return [
+                VectorStoreResult(entry=entry, vector=[0.0], score=score)
+                for entry, score in zip(entries, [0.9, 0.8, 0.7], strict=False)
+            ]
+
+    vs_hybrid = HybridSearchVectorStore(StubStore(embedder=NoopEmbedder()), StubStore(embedder=NoopEmbedder()))
+
+    results = await vs_hybrid.retrieve("query", VectorStoreOptions(k=1, score_threshold=0.75))
+
+    assert len(results) == 1
+    assert results[0].score == 0.9
