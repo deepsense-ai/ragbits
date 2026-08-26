@@ -1,7 +1,10 @@
+import threading
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
+import ragbits.document_search.ingestion.parsers.unstructured as unstructured_parser
 from ragbits.core.utils.config_handling import ObjectConstructionConfig
 from ragbits.document_search.documents.document import DocumentMeta, DocumentType
 from ragbits.document_search.documents.element import ImageElement, TextElement
@@ -88,3 +91,23 @@ async def test_parser_call_fail(parser_type: type[DocumentParser]) -> None:
     assert exc.value.message == f"Document type {DocumentType.PDF.value} is not supported by the {parser_type.__name__}"
     assert exc.value.document_type == DocumentType.PDF
     assert exc.value.parser_name == parser_type.__name__
+
+
+async def test_unstructured_local_partition_runs_off_event_loop(monkeypatch: pytest.MonkeyPatch) -> None:
+    parser = UnstructuredDocumentParser(partition_kwargs={"split_pdf_page": True})
+    document = SimpleNamespace(local_path=Path("document.pdf"))
+    event_loop_thread = threading.get_ident()
+    calls: list[tuple[int, dict[str, object]]] = []
+
+    def fake_partition(**kwargs: object) -> list[object]:
+        calls.append((threading.get_ident(), kwargs))
+        return [object()]
+
+    monkeypatch.setattr(unstructured_parser, "partition", fake_partition)
+
+    result = await parser._partition(document)
+
+    assert len(result) == 1
+    assert len(calls) == 1
+    assert calls[0][0] != event_loop_thread
+    assert calls[0][1]["split_pdf_page"] is True

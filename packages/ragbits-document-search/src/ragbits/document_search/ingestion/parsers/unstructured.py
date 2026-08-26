@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import inspect
 import os
@@ -153,7 +154,8 @@ class UnstructuredDocumentParser(DocumentParser):
             response = await self._client.general.partition_async(request=request)
             return elements_from_dicts(response.elements) if response.elements else []
 
-        return partition(
+        return await asyncio.to_thread(
+            partition,
             filename=str(document.local_path),
             metadata_filename=document.local_path.name,
             extract_image_block_types=["Image", "Table"],
