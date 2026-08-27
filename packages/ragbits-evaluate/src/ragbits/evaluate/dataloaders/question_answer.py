@@ -54,3 +54,17 @@ class QuestionAnswerDataLoader(DataLoader[QuestionAnswerData]):
             )
             for data in dataset
         ]
+
+
+class EvalPortDataLoader(QuestionAnswerDataLoader):
+    """Load EvalPort test cases as question-answer evaluation data."""
+
+    def __init__(self, source: Source, *, split: str = "data") -> None:
+        """Initialize the loader with the standard EvalPort field names."""
+        super().__init__(
+            source=source,
+            split=split,
+            question_key="input",
+            answer_key="expected_output",
+            context_key="retrieval_context",
+        )
