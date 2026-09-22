@@ -1,3 +1,4 @@
+import asyncio
 import base64
 import inspect
 import os
@@ -35,6 +36,8 @@ UNSTRUCTURED_SERVER_URL_ENV = "UNSTRUCTURED_SERVER_URL"
 class UnstructuredDocumentParser(DocumentParser):
     """
     Parser that uses the Unstructured API or local SDK to process the documents.
+
+    Local partitioning runs in a worker thread so it does not block the event loop.
     """
 
     supported_document_types = {
@@ -153,7 +156,8 @@ class UnstructuredDocumentParser(DocumentParser):
             response = await self._client.general.partition_async(request=request)
             return elements_from_dicts(response.elements) if response.elements else []
 
-        return partition(
+        return await asyncio.to_thread(
+            partition,
             filename=str(document.local_path),
             metadata_filename=document.local_path.name,
             extract_image_block_types=["Image", "Table"],

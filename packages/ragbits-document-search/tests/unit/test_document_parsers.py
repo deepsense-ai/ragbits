@@ -1,4 +1,6 @@
+import threading
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -88,3 +90,40 @@ async def test_parser_call_fail(parser_type: type[DocumentParser]) -> None:
     assert exc.value.message == f"Document type {DocumentType.PDF.value} is not supported by the {parser_type.__name__}"
     assert exc.value.document_type == DocumentType.PDF
     assert exc.value.parser_name == parser_type.__name__
+
+
+async def test_local_partition_runs_off_event_loop_thread() -> None:
+    document = await DocumentMeta.from_local_path(
+        Path(__file__).parent.parent / "assets" / "md" / "test_file.md"
+    ).fetch()
+    parser = UnstructuredDocumentParser(partition_kwargs={"strategy": "fast"})
+    event_loop_thread = threading.get_ident()
+    partition_threads = []
+
+    def partition_stub(**kwargs) -> list:
+        partition_threads.append(threading.get_ident())
+        assert kwargs["filename"] == str(document.local_path)
+        assert kwargs["metadata_filename"] == document.local_path.name
+        assert kwargs["strategy"] == "fast"
+        return []
+
+    with patch("ragbits.document_search.ingestion.parsers.unstructured.partition", partition_stub):
+        assert await parser._partition(document) == []
+
+    assert len(partition_threads) == 1
+    assert partition_threads[0] != event_loop_thread
+
+
+async def test_local_partition_propagates_errors() -> None:
+    document = await DocumentMeta.from_local_path(
+        Path(__file__).parent.parent / "assets" / "md" / "test_file.md"
+    ).fetch()
+    parser = UnstructuredDocumentParser()
+    with (
+        patch(
+            "ragbits.document_search.ingestion.parsers.unstructured.partition",
+            side_effect=ValueError("invalid document"),
+        ),
+        pytest.raises(ValueError, match="invalid document"),
+    ):
+        await parser._partition(document)
