@@ -61,6 +61,7 @@ class RagbitsAPI:
         debug_mode: bool = False,
         auth_backend: AuthenticationBackend | type[AuthenticationBackend] | str | None = None,
         theme_path: str | None = None,
+        frontend_base_url: str | None = None,
     ) -> None:
         """
         Initialize the RagbitsAPI.
@@ -73,6 +74,8 @@ class RagbitsAPI:
             debug_mode: Flag enabling debug tools in the default UI
             auth_backend: Authentication backend for user authentication. If None, no authentication required.
             theme_path: Path to a JSON file containing HeroUI theme configuration from heroui.com/themes
+            frontend_base_url: Frontend URL for OAuth redirects. None uses RAGBITS_BASE_URL;
+                an empty string enables relative redirects.
         """
         self.chat_interface: ChatInterface = self._load_chat_interface(chat_interface)
         self.dist_dir = Path(ui_build_dir) if ui_build_dir else Path(__file__).parent / "ui-build"
@@ -81,7 +84,7 @@ class RagbitsAPI:
         self.auth_backend = self._load_auth_backend(auth_backend)
         self.theme_path = Path(theme_path) if theme_path else None
 
-        self.frontend_base_url = BASE_URL
+        self.frontend_base_url = BASE_URL if frontend_base_url is None else frontend_base_url.rstrip("/")
 
         @asynccontextmanager
         async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:

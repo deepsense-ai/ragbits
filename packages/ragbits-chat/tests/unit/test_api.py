@@ -463,3 +463,19 @@ def test_feedback_endpoint_unauthenticated(client: TestClient) -> None:
     assert response.status_code == 401
     data = response.json()
     assert data["detail"] == "Authentication required"
+
+
+@pytest.mark.parametrize("base_url", ["https://chat.example.test", "https://chat.example.test/", ""])
+async def test_frontend_base_url_controls_oauth_redirect(base_url: str) -> None:
+    api = RagbitsAPI(MockChatInterface, frontend_base_url=base_url)
+    response = await api._handle_oauth2_callback(code=None, state=None, backend=MagicMock())
+    assert response.headers["location"] == f"{base_url.rstrip('/')}/login?error=missing_code"
+
+
+def test_frontend_base_url_default_is_unchanged_and_instances_are_isolated() -> None:
+    from ragbits.chat.config import BASE_URL
+
+    custom = RagbitsAPI(MockChatInterface, frontend_base_url="https://custom.example.test")
+    default = RagbitsAPI(MockChatInterface)
+    assert default.frontend_base_url == BASE_URL
+    assert custom.frontend_base_url == "https://custom.example.test"

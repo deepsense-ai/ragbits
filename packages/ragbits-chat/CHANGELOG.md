@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Allow configuring the frontend base URL for OAuth redirects, including relative redirects with an empty string.
+
 ## 1.6.2 (2026-03-26)
 
 - ragbits-agents updated to version v1.6.2
