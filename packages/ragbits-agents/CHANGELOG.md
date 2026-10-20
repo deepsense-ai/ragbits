@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Add `MCPServerWebSearch`, with free, keyless Parallel web search and page fetching as its default configuration.
 - added support for pydantic models as tool arguments
 
 ## 1.6.2 (2026-03-26)

@@ -13,3 +13,5 @@
 ::: ragbits.agents.mcp.server.MCPServerStreamableHttpParams
 
 ::: ragbits.agents.mcp.server.MCPServerStreamableHttp
+
+::: ragbits.agents.mcp.search.MCPServerWebSearch
