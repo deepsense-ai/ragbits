@@ -1,3 +1,4 @@
+from ragbits.agents.mcp.search import MCPServerWebSearch
 from ragbits.agents.mcp.server import (
     MCPServer,
     MCPServerSse,
@@ -16,4 +17,5 @@ __all__ = [
     "MCPServerStdioParams",
     "MCPServerStreamableHttp",
     "MCPServerStreamableHttpParams",
+    "MCPServerWebSearch",
 ]

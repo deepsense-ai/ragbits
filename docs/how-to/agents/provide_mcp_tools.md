@@ -53,6 +53,53 @@ async with MCPServerStdio(
 
 A complete example for local MCP integration is available [here](https://github.com/deepsense-ai/ragbits/blob/main/examples/agents/mcp/local.py).
 
+## Web search and page fetching
+
+Install `ragbits-agents[mcp]` to use [`MCPServerWebSearch`][ragbits.agents.mcp.search.MCPServerWebSearch].
+With no parameters, it connects to [Parallel Search MCP](https://docs.parallel.ai/integrations/mcp/search-mcp),
+which provides free web search in Fast mode and page fetching without an account or API key.
+The agent discovers the `web_search` and `web_fetch` tools through the existing MCP tool loader.
+
+```python
+from ragbits.agents import Agent
+from ragbits.agents.mcp import MCPServerWebSearch
+from ragbits.core.llms import LiteLLM
+
+async def research() -> str:
+    async with MCPServerWebSearch() as server:
+        agent = Agent(llm=LiteLLM(model_name="gpt-4.1-nano"), mcp_servers=[server])
+        result = await agent.run("Find the latest Ragbits release and read its release notes. Include source URLs.")
+        return result.content
+```
+
+Run `research()` from your application's async entrypoint. The model above still uses your configured LLM credentials.
+Search is enabled by attaching the server to the agent; agents without it keep their existing tools.
+The existing OpenAI `get_web_search_tool(model_name=...)` helper remains available explicitly.
+
+For a different Streamable HTTP search server, or authenticated Parallel access, pass `params` explicitly:
+
+```python
+import os
+
+server = MCPServerWebSearch(
+    params={
+        "url": "https://search.parallel.ai/mcp",
+        "headers": {"Authorization": f"Bearer {os.environ['PARALLEL_API_KEY']}"},
+        "timeout": 30,
+    },
+    cache_tools_list=False,
+    client_session_timeout_seconds=90,
+)
+```
+
+Explicit parameters replace the default server configuration. Errors from a configured server do not trigger a fallback.
+Anonymous access has usage limits; use authenticated access for higher limits.
+The MCP response timeout defaults to 60 seconds and can be adjusted with `client_session_timeout_seconds`.
+
+The server does not generate or store a conversation-level `session_id`. If your application supplies this optional
+tool argument, generate an opaque UUID once per conversation and reuse it for related searches, fetches and retries.
+Use a new ID for a new conversation, even when reusing a connected server. Do not use personal data as the ID.
+
 ## Caching
 
 Every time an Agent runs, it calls `list_tools()` on the MCP server. This can be a latency hit, especially if the server is a remote server. To automatically cache the list of tools, you can pass `cache_tools_list=True` to [`MCPServerStdio`][ragbits.agents.mcp.server.MCPServerStdio], [`MCPServerSse`][ragbits.agents.mcp.server.MCPServerSse], and [`MCPServerStreamableHttp`][ragbits.agents.mcp.server.MCPServerStreamableHttp]. You should only do this if you're certain the tool list will not change.
