@@ -6,7 +6,7 @@ from typing import Any
 import httpx
 import pytest
 
-from ragbits.agents import Agent
+from ragbits.agents import Agent, AgentResult, AgentResultStreaming
 from ragbits.agents.exceptions import AgentToolExecutionError
 from ragbits.agents.hooks import EventType, Hook, PreToolCallback
 from ragbits.agents.mcp import MCPServerStreamableHttp, MCPServerStreamableHttpParams, MCPServerWebSearch
@@ -62,8 +62,10 @@ def http_mcp(monkeypatch: pytest.MonkeyPatch) -> dict[str, Any]:
             }
         return httpx.Response(200, json={"jsonrpc": "2.0", "id": message["id"], "result": result})
 
-    def client_factory(**kwargs: Any) -> httpx.AsyncClient:
-        return httpx.AsyncClient(transport=httpx.MockTransport(handle), **kwargs)
+    def client_factory(
+        headers: dict[str, str] | None = None, timeout: httpx.Timeout | None = None, auth: httpx.Auth | None = None
+    ) -> httpx.AsyncClient:
+        return httpx.AsyncClient(transport=httpx.MockTransport(handle), headers=headers, timeout=timeout, auth=auth)
 
     monkeypatch.setattr(
         server_module,
@@ -111,7 +113,8 @@ async def test_unconfigured_search_through_agent(
         monkeypatch.delenv(key, raising=False)
     llm = search_llm(tool_name, arguments)
     async with MCPServerWebSearch() as server:
-        agent = Agent(llm=llm, mcp_servers=[server])
+        agent: Agent = Agent(llm=llm, mcp_servers=[server])
+        result: AgentResult[str] | AgentResultStreaming
         if streaming:
             result = agent.run_streaming("Find release notes")
             async for _ in result:
@@ -179,10 +182,11 @@ async def test_search_remains_disabled_without_server(http_mcp: dict[str, Any]):
 
 async def test_tool_permission_denial_does_not_search(http_mcp: dict[str, Any], deny_hook: PreToolCallback):
     async with MCPServerWebSearch() as server:
-        agent = Agent(
+        agent: Agent = Agent(
             llm=search_llm(), mcp_servers=[server], hooks=[Hook(event_type=EventType.PRE_TOOL, callback=deny_hook)]
         )
         result = await agent.run("Search")
+    assert result.tool_calls
     assert result.tool_calls[0].result == "Blocked by hook"
     assert not http_mcp["calls"]
 
@@ -193,9 +197,10 @@ async def test_errors_and_timeout_do_not_fall_back(http_mcp: dict[str, Any], err
     async with MCPServerWebSearch(
         params={"url": "https://configured.example.test/mcp"}, client_session_timeout_seconds=0.05
     ) as server:
-        agent = Agent(llm=search_llm(), mcp_servers=[server])
+        agent: Agent = Agent(llm=search_llm(), mcp_servers=[server])
         if error == "tool":
             result = await agent.run("Search")
+            assert result.tool_calls
             assert result.tool_calls[0].result.isError
         else:
             with pytest.raises(AgentToolExecutionError) as exc_info:
